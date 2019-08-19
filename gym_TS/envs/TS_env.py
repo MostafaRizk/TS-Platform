@@ -16,6 +16,10 @@ class TSEnv(gym.Env):
     }
 
     def __init__(self, goal_velocity = 0):
+        '''
+        Initialise position, speed, gravity and velocity. Also defines action space and observation space. Creates seed?
+        :param goal_velocity:
+        '''
         self.min_position = -1.2
         self.max_position = 0.6
         self.max_speed = 0.07
@@ -36,10 +40,22 @@ class TSEnv(gym.Env):
         self.seed()
 
     def seed(self, seed=None):
+        '''
+        Creates random seed and returns it
+        :param seed:
+        :return:
+        '''
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
     def step(self, action):
+        '''
+        Logs state, adjusts velocity according to action taken, adjusts position according to velocity and records new state.
+        :param action:
+        :return: The new state, the reward and whether or not the goal has been achieved
+        '''
+
+        #Returns an error if the action is invalid
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
 
         position, velocity = self.state
@@ -47,7 +63,9 @@ class TSEnv(gym.Env):
         velocity = np.clip(velocity, -self.max_speed, self.max_speed)
         position += velocity
         position = np.clip(position, self.min_position, self.max_position)
-        if (position==self.min_position and velocity<0): velocity = 0
+
+        if (position==self.min_position and velocity<0):
+            velocity = 0
 
         done = bool(position >= self.goal_position and velocity >= self.goal_velocity)
         reward = -1.0
@@ -56,13 +74,28 @@ class TSEnv(gym.Env):
         return np.array(self.state), reward, done, {}
 
     def reset(self):
+        '''
+        Sets a new random location between -0.6 and -0.4 and sets velocity to 0
+        :return:
+        '''
+
         self.state = np.array([self.np_random.uniform(low=-0.6, high=-0.4), 0])
         return np.array(self.state)
 
     def _height(self, xs):
+        '''
+        Returns...height?
+        :param xs:
+        :return:
+        '''
         return np.sin(3 * xs)*.45+.55
 
     def render(self, mode='human'):
+        '''
+        Renders the environment and agent(s)
+        :param mode:
+        :return:
+        '''
         screen_width = 600
         screen_height = 400
 
@@ -70,9 +103,12 @@ class TSEnv(gym.Env):
         scale = screen_width/world_width
         carwidth=40
         carheight=20
+        reswidth=20
+        resheight=30
 
 
         if self.viewer is None:
+            #Create track
             from gym.envs.classic_control import rendering
             self.viewer = rendering.Viewer(screen_width, screen_height)
             xs = np.linspace(self.min_position, self.max_position, 100)
@@ -85,8 +121,10 @@ class TSEnv(gym.Env):
 
             clearance = 10
 
+            #Create car
             l,r,t,b = -carwidth/2, carwidth/2, carheight, 0
             car = rendering.FilledPolygon([(l,b), (l,t), (r,t), (r,b)])
+            car.set_color(0, 0, 1)
             car.add_attr(rendering.Transform(translation=(0, clearance)))
             self.cartrans = rendering.Transform()
             car.add_attr(self.cartrans)
@@ -101,6 +139,9 @@ class TSEnv(gym.Env):
             backwheel.add_attr(self.cartrans)
             backwheel.set_color(.5, .5, .5)
             self.viewer.add_geom(backwheel)
+
+            #Create flag
+            '''
             flagx = (self.goal_position-self.min_position)*scale
             flagy1 = self._height(self.goal_position)*scale
             flagy2 = flagy1 + 50
@@ -109,7 +150,19 @@ class TSEnv(gym.Env):
             flag = rendering.FilledPolygon([(flagx, flagy2), (flagx, flagy2-10), (flagx+25, flagy2-5)])
             flag.set_color(.8,.8,0)
             self.viewer.add_geom(flag)
+            '''
 
+            #Create resource
+            l, r, t, b = (self.goal_position-self.min_position)*scale -reswidth / 2, (self.goal_position-self.min_position)*scale + reswidth / 2, self._height(self.goal_position)*scale + resheight, self._height(self.goal_position)*scale
+            resource = rendering.FilledPolygon([(l, b), (l, t), (r, t), (r, b)])
+            #resource.add_attr(rendering.Transform(translation=(0, clearance)))
+            #self.cartrans = rendering.Transform()
+            #car.add_attr(self.cartrans)
+            self.viewer.add_geom(resource)
+            resource.set_color(0, 1, 0)
+
+
+        #Set position of car
         pos = self.state[0]
         self.cartrans.set_translation((pos-self.min_position)*scale, self._height(pos)*scale)
         self.cartrans.set_rotation(math.cos(3 * pos))
