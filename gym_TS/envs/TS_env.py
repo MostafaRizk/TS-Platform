@@ -89,7 +89,7 @@ class TSEnv(gym.Env):
         :return:
         '''
         #return np.sin(3 * xs)*.45+.55
-        return 1 / (1+np.exp(-x))
+        return (1 / (1+np.exp(-10*xs)))*0.75+0.1
 
     def render(self, mode='human'):
         '''
