@@ -88,7 +88,8 @@ class TSEnv(gym.Env):
         :param xs:
         :return:
         '''
-        return np.sin(3 * xs)*.45+.55
+        #return np.sin(3 * xs)*.45+.55
+        return 1 / (1+np.exp(-x))
 
     def render(self, mode='human'):
         '''
@@ -139,18 +140,6 @@ class TSEnv(gym.Env):
             backwheel.add_attr(self.cartrans)
             backwheel.set_color(.5, .5, .5)
             self.viewer.add_geom(backwheel)
-
-            #Create flag
-            '''
-            flagx = (self.goal_position-self.min_position)*scale
-            flagy1 = self._height(self.goal_position)*scale
-            flagy2 = flagy1 + 50
-            flagpole = rendering.Line((flagx, flagy1), (flagx, flagy2))
-            self.viewer.add_geom(flagpole)
-            flag = rendering.FilledPolygon([(flagx, flagy2), (flagx, flagy2-10), (flagx+25, flagy2-5)])
-            flag.set_color(.8,.8,0)
-            self.viewer.add_geom(flag)
-            '''
 
             #Create resource
             l, r, t, b = (self.goal_position-self.min_position)*scale -reswidth / 2, (self.goal_position-self.min_position)*scale + reswidth / 2, self._height(self.goal_position)*scale + resheight, self._height(self.goal_position)*scale
