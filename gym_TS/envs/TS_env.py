@@ -1,5 +1,5 @@
 """
-Code modified from OpenAI's Mountain Car example
+Code modified from OpenAI's Mountain robot example
 """
 
 import gym
@@ -8,6 +8,7 @@ from gym.utils import seeding
 
 import math
 import numpy as np
+import copy
 
 class TSEnv(gym.Env):
     metadata = {
@@ -20,8 +21,8 @@ class TSEnv(gym.Env):
         Initialise position, speed, gravity and velocity. Also defines action space and observation space. Creates seed?
         :param goal_velocity:
         '''
-        self.car_width=40
-        self.car_height=20
+        self.robot_width=40
+        self.robot_height=20
         self.res_width=20
         self.res_height=30
 
@@ -38,8 +39,9 @@ class TSEnv(gym.Env):
         self.slope_angle = 10
 
         #self.position = np.random.uniform(low=self.min_position, high=self.cache_start)
-        self.position = np.random.uniform(low=7.5, high=9)
-        self.res_position = np.random.uniform(low=self.slope_end, high=self.max_position)
+        self.position = np.random.uniform(low=2, high=3)
+        #self.res_position = np.random.uniform(low=self.slope_end, high=self.max_position)
+        self.res_position = np.random.uniform(low=3, high=4)
 
         self.behaviour_list = [self.phototaxis_step, self.antiphototaxis_step, self.random_walk_step]
 
@@ -90,18 +92,26 @@ class TSEnv(gym.Env):
             want_resource = not want_resource
 
         self.behaviour_list[behaviour]()
-        np.clip(self.position, self.min_position, self.max_position)
+        self.position = np.clip(self.position, self.min_position, self.max_position)
         area = self.get_robot_location(self.position)
 
         if self.res_position - self.sensor_range < self.position < self.res_position + self.sensor_range:
-            if want_resource:
+            if want_resource and not has_resource:
                 self.pickup_step()
                 has_resource = True
+
+        if has_resource and want_resource:
+            #print("Has resource")
+            self.res_position = copy.deepcopy(self.position)
+        else:
+            #print("Does not have resource")
+            if self.slope_start <= self.res_position < self.slope_end:
+                self.slide_cylinder()
 
         #TODO: Plug observations into NN
 
         #done = bool(position >= self.goal_position and velocity >= self.goal_velocity)
-        done = False
+        done = self.res_position < self.cache_start and not self.state[2] #Done if resource is at the nest and not in the robot's possession
         reward = -1.0
 
         self.state = (area, want_resource, has_resource, behaviour)
@@ -112,9 +122,11 @@ class TSEnv(gym.Env):
         Sets a new random location between 0 and 1 and sets velocity to 0
         :return:
         '''
+        self.position = np.random.uniform(low=2, high=3)
+        self.res_position = np.random.uniform(low=3, high=4)
         self.state = np.array([self.get_robot_location(self.position), #Location
                                self.np_random.randint(low=0, high=2),  #Object want_resource (0- WANT_OBJECT=False, 1- WANT_OBJECT=True)
-                               self.np_random.randint(low=0, high=2),  #Object has_resource (0- HAS_OBJECT=False, 1- HAS_OBJECT=True)
+                               0,  #Object has_resource (0- HAS_OBJECT=False, 1- HAS_OBJECT=True)
                                self.np_random.randint(low=0, high=3)]) #Current behaviour (0-Phototaxis, 1-Antiphototaxis, 2-Random walk)
         return np.array(self.state)
 
@@ -169,33 +181,42 @@ class TSEnv(gym.Env):
             self.track.set_linewidth(4)
             self.viewer.add_geom(self.track)
 
-            car_clearance = 10
+            robot_clearance = 10
             res_clearance = 0
 
-            #Create car
-            l,r,t,b = -self.car_width/2, self.car_width/2, self.car_height, 0
-            car = rendering.FilledPolygon([(l,b), (l,t), (r,t), (r,b)])
-            car.set_color(0, 0, 1)
-            car.add_attr(rendering.Transform(translation=(0, car_clearance)))
-            self.cartrans = rendering.Transform()
-            car.add_attr(self.cartrans)
-            self.viewer.add_geom(car)
-            frontwheel = rendering.make_circle(self.car_height/2.5)
+            #Create robot
+            l,r,t,b = -self.robot_width/2, \
+                      self.robot_width/2, \
+                      self.robot_height, \
+                      0
+            robot = rendering.FilledPolygon([(l,b), (l,t), (r,t), (r,b)])
+            robot.set_color(0, 0, 1)
+            robot.add_attr(rendering.Transform(translation=(0, robot_clearance)))
+            self.robottrans = rendering.Transform()
+            robot.add_attr(self.robottrans)
+            self.viewer.add_geom(robot)
+            frontwheel = rendering.make_circle(self.robot_height/2.5)
             frontwheel.set_color(.5, .5, .5)
-            frontwheel.add_attr(rendering.Transform(translation=(self.car_width/4,car_clearance)))
-            frontwheel.add_attr(self.cartrans)
+            frontwheel.add_attr(rendering.Transform(translation=(self.robot_width/4,robot_clearance)))
+            frontwheel.add_attr(self.robottrans)
             self.viewer.add_geom(frontwheel)
-            backwheel = rendering.make_circle(self.car_height/2.5)
-            backwheel.add_attr(rendering.Transform(translation=(-self.car_width/4,car_clearance)))
-            backwheel.add_attr(self.cartrans)
+            backwheel = rendering.make_circle(self.robot_height/2.5)
+            backwheel.add_attr(rendering.Transform(translation=(-self.robot_width/4,robot_clearance)))
+            backwheel.add_attr(self.robottrans)
             backwheel.set_color(.5, .5, .5)
             self.viewer.add_geom(backwheel)
 
             #Create resource
+            '''
             l, r, t, b = (self.res_position-self.min_position)*scale -self.res_width / 2, \
                          (self.res_position-self.min_position)*scale + self.res_width / 2, \
                          self._height(self.res_position)*scale + self.res_height, \
                          self._height(self.res_position)*scale
+            '''
+            l, r, t, b = -self.res_width / 2, \
+                         self.res_width / 2, \
+                         self.res_height, \
+                         0
             resource = rendering.FilledPolygon([(l, b), (l, t), (r, t), (r, b)])
             resource.add_attr(rendering.Transform(translation=(0, res_clearance)))
             self.restrans = rendering.Transform()
@@ -203,14 +224,15 @@ class TSEnv(gym.Env):
             self.viewer.add_geom(resource)
             resource.set_color(0, 1, 0)
 
-        #Set position of car
-        car_pos = self.position
-        self.cartrans.set_translation((car_pos-self.min_position)*scale, self._height(car_pos)*scale)
-        #self.cartrans.set_translation(car_pos * scale, self._height(0) * scale)
+        #Set position of robot
+        robot_pos = self.position
+        self.robottrans.set_translation((robot_pos-self.min_position)*scale, self._height(robot_pos)*scale)
+        #self.robottrans.set_translation(robot_pos * scale, self._height(robot_pos) * scale)
 
         #Set position of resource
         res_pos = self.res_position
-        self.restrans.set_translation(res_pos, self._height(res_pos) )
+        self.restrans.set_translation((res_pos - self.min_position) * scale, self._height(res_pos) * scale)
+        #self.restrans.set_translation(res_pos, self._height(res_pos) )
         #self.restrans.set_rotation(math.cos(3 * pos))
 
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
@@ -241,8 +263,11 @@ class TSEnv(gym.Env):
         self.position += choice*self.max_speed
 
     def pickup_step(self):
-        print("Picking up resource")
-        self.res_position = self.position
+        #print("Picking up resource")
+        self.res_position = copy.deepcopy(self.position)
+
+    def slide_cylinder(self):
+        self.res_position -= 2
 
     def get_keys_to_action(self):
         return {():1,(276,):0,(275,):2,(275,276):1} #control with left and right arrow keys
