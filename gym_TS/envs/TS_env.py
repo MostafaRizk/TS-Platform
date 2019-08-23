@@ -33,17 +33,31 @@ class TSEnv(gym.Env):
 
         self.gravity = 0.0025
 
-        self.cache_start = 1
+        self.cache_start = 2
         self.slope_start = 2.5
         self.slope_end = 7.5
         self.slope_angle = 10
 
-        #self.position = np.random.uniform(low=self.min_position, high=self.cache_start)
-        self.position = np.random.uniform(low=2, high=3)
-        #self.res_position = np.random.uniform(low=self.slope_end, high=self.max_position)
-        self.res_position = np.random.uniform(low=3, high=4)
+        self.pickup_delay = 20
+        self.pickup_delay_counter = 0
+        self.behaviour_delay = 100
+        self.behaviour_delay_counter = 0
 
-        self.behaviour_list = [self.phototaxis_step, self.antiphototaxis_step, self.random_walk_step]
+        self.random_walk_counter = 0
+        self.random_walk_length = 10
+        self.last_step_was_random = False
+        self.last_step_direction = 0
+
+
+        self.position = np.random.uniform(low=self.min_position, high=self.cache_start)
+        #self.position = np.random.uniform(low=2, high=3)
+        self.res_position = np.random.uniform(low=self.slope_end, high=self.max_position)
+        #self.res_position = np.random.uniform(low=3, high=4)
+
+        self.position_map = ["ON_NEST", "ON_CACHE", "ON_SLOPE", "ON_SOURCE"]
+        self.behaviour_map = [self.phototaxis_step, self.antiphototaxis_step, self.random_walk_step]
+        self.want_map = ["WANT_RESOURCE = False", "WANT_RESOURCE = True"]
+        self.has_map = ["HAS_RESOURCE = False", "HAS_RESOURCE = True"]
 
         self.viewer = None
 
@@ -87,34 +101,46 @@ class TSEnv(gym.Env):
 
         #if action is 0,1 or 2, do a new step. if it's 3 or 4, continue current behaviour and do other action
         if action <= 2:
-            behaviour = action
+            if self.behaviour_delay_counter == 0:
+                behaviour = action
+                if behaviour == 2:
+                    self.last_step_was_random = True
+                else:
+                    self.last_step_was_random = False
+                self.behaviour_delay_counter += 1
+            elif self.behaviour_delay_counter < self.behaviour_delay:
+                self.behaviour_delay_counter += 1
+            else:
+                self.behaviour_delay_counter = 0
         else:
             want_resource = not want_resource
 
-        self.behaviour_list[behaviour]()
+        self.behaviour_map[behaviour]()
         self.position = np.clip(self.position, self.min_position, self.max_position)
+        self.res_position = np.clip(self.res_position, self.min_position, self.max_position)
         area = self.get_robot_location(self.position)
 
-        if self.res_position - self.sensor_range < self.position < self.res_position + self.sensor_range:
-            if want_resource and not has_resource:
+        resource_is_in_range = self.res_position - self.sensor_range < self.position < self.res_position + self.sensor_range
+
+        if want_resource and has_resource:
+            self.res_position = copy.deepcopy(self.position)
+        elif want_resource and not has_resource:
+            if resource_is_in_range:
                 self.pickup_step()
                 has_resource = True
-
-        if has_resource and want_resource:
-            #print("Has resource")
-            self.res_position = copy.deepcopy(self.position)
-        else:
-            #print("Does not have resource")
+        elif not want_resource:
+            has_resource = False
             if self.slope_start <= self.res_position < self.slope_end:
                 self.slide_cylinder()
 
         #TODO: Plug observations into NN
 
-        #done = bool(position >= self.goal_position and velocity >= self.goal_velocity)
         done = self.res_position < self.cache_start and not self.state[2] #Done if resource is at the nest and not in the robot's possession
         reward = -1.0
+        print("Task is done: "+str(done))
 
         self.state = (area, want_resource, has_resource, behaviour)
+        self.log_data()
         return np.array(self.state), reward, done, {}
 
     def reset(self):
@@ -122,8 +148,8 @@ class TSEnv(gym.Env):
         Sets a new random location between 0 and 1 and sets velocity to 0
         :return:
         '''
-        self.position = np.random.uniform(low=2, high=3)
-        self.res_position = np.random.uniform(low=3, high=4)
+        self.position = np.random.uniform(low=self.min_position, high=self.cache_start)
+        self.res_position = np.random.uniform(low=self.slope_end, high=self.max_position)
         self.state = np.array([self.get_robot_location(self.position), #Location
                                self.np_random.randint(low=0, high=2),  #Object want_resource (0- WANT_OBJECT=False, 1- WANT_OBJECT=True)
                                0,  #Object has_resource (0- HAS_OBJECT=False, 1- HAS_OBJECT=True)
@@ -259,8 +285,22 @@ class TSEnv(gym.Env):
         self.position -= 1*self.max_speed
 
     def random_walk_step(self):
-        choice = np.random.randint(low=-1, high=2)
-        self.position += choice*self.max_speed
+        direction_list = [-1,1]
+        # if the last step was a random walk, increment walk counter until it reaches a limit
+        # step in the same direction as last step
+        if self.last_step_was_random:
+            self.random_walk_counter += 1
+            if self.random_walk_counter < self.random_walk_length:
+                choice = self.last_step_direction
+            else:
+                self.random_walk_counter = 0
+                choice = np.random.randint(low=0, high=2)
+        # otherwise reset the walk counter
+        else:
+           choice = np.random.randint(low=0, high=2)
+           self.random_walk_counter += 1
+
+        self.position += direction_list[choice]*self.max_speed
 
     def pickup_step(self):
         #print("Picking up resource")
@@ -268,6 +308,13 @@ class TSEnv(gym.Env):
 
     def slide_cylinder(self):
         self.res_position -= 2
+
+    def log_data(self):
+        print(self.position_map[self.state[0]])
+        print(self.want_map[self.state[1]])
+        print(self.has_map[self.state[2]])
+        print(self.behaviour_map[self.state[3]])
+        print("---------------------------------")
 
     def get_keys_to_action(self):
         return {():1,(276,):0,(275,):2,(275,276):1} #control with left and right arrow keys
