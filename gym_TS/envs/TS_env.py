@@ -1,5 +1,5 @@
 """
-Code modified from OpenAI's Mountain robot example
+Code modified from OpenAI's Mountain car example
 """
 
 import gym
@@ -27,15 +27,15 @@ class TSEnv(gym.Env):
         self.res_height=30
 
         self.min_position = 0
-        self.max_position = 10
+        self.max_position = 20
         self.max_speed = 0.07
         self.sensor_range = 1
 
         self.gravity = 0.0025
 
-        self.cache_start = 2
-        self.slope_start = 2.5
-        self.slope_end = 7.5
+        self.cache_start = 4
+        self.slope_start = 5
+        self.slope_end = 15
         self.slope_angle = 10
 
         self.pickup_delay = 20
@@ -47,7 +47,6 @@ class TSEnv(gym.Env):
         self.random_walk_length = 10
         self.last_step_was_random = False
         self.last_step_direction = 0
-
 
         self.position = np.random.uniform(low=self.min_position, high=self.cache_start)
         #self.position = np.random.uniform(low=2, high=3)
@@ -61,7 +60,6 @@ class TSEnv(gym.Env):
 
         self.viewer = None
 
-        #TODO: Modify to have relevant actions and observations
         self.action_space = spaces.Discrete(4) #0-Phototaxis, 1-Antiphototaxis, 2-Random walk, 3-Flip want
         self.observation_space = spaces.Discrete(4) #position, want_resource, has_resource, behaviour
 
