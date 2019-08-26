@@ -8,6 +8,8 @@ import random
 from collections import deque
 from keras.models import Sequential
 from keras.layers import Dense
+from keras.layers import LSTM
+from keras.layers import Reshape
 from keras.optimizers import Adam
 
 
@@ -26,7 +28,10 @@ class DQNAgent:
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
         model = Sequential()
+        #model.add(LSTM(64, return_sequences=False, dropout=0.1, recurrent_dropout=0.1, input_shape=(1, self.state_size)))
         model.add(Dense(24, input_dim=self.state_size, activation='relu'))
+        model.add(Reshape((1, 24)))
+        model.add(LSTM(64, return_sequences=False, dropout=0.1, recurrent_dropout=0.1))
         model.add(Dense(24, activation='relu'))
         model.add(Dense(self.action_size, activation='linear'))
         model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))
