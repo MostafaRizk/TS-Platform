@@ -49,12 +49,11 @@ class TSEnv(gym.Env):
         self.last_step_direction = 0
 
         self.position = np.random.uniform(low=self.min_position, high=self.cache_start)
-        #self.position = np.random.uniform(low=2, high=3)
         self.res_position = np.random.uniform(low=self.slope_end, high=self.max_position)
-        #self.res_position = np.random.uniform(low=3, high=4)
 
         self.position_map = ["ON_NEST", "ON_CACHE", "ON_SLOPE", "ON_SOURCE"]
         self.behaviour_map = [self.phototaxis_step, self.antiphototaxis_step, self.random_walk_step]
+        self.behaviour_map_display = ["DO_PHOTOTAXIS", "DO_ANTIPHOTOTAXIS", "DO_RANDOM_WALK"]
         self.want_map = ["WANT_RESOURCE = False", "WANT_RESOURCE = True"]
         self.has_map = ["HAS_RESOURCE = False", "HAS_RESOURCE = True"]
 
@@ -64,8 +63,6 @@ class TSEnv(gym.Env):
         self.observation_space = spaces.Discrete(4) #position, want_resource, has_resource, behaviour
 
         self.seed()
-
-        #TODO: Initialise neural network
 
     def seed(self, seed=None):
         '''
@@ -78,7 +75,7 @@ class TSEnv(gym.Env):
 
     def step(self, action):
         '''
-        Logs state, adjusts velocity according to action taken, adjusts position according to velocity and records new state.
+
         :param action:
         :return: The new state, the reward and whether or not the goal has been achieved
         '''
@@ -87,15 +84,6 @@ class TSEnv(gym.Env):
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
 
         area, want_resource, has_resource, behaviour = self.state
-        '''
-        velocity += (action-1)*self.force + math.cos(3*position)*(-self.gravity)
-        velocity = np.clip(velocity, -self.max_speed, self.max_speed)
-        position += velocity
-        position = np.clip(position, self.min_position, self.max_position)
-
-        if (position==self.min_position and velocity<0):
-            velocity = 0
-        '''
 
         #if action is 0,1 or 2, do a new step. if it's 3 or 4, continue current behaviour and do other action
         if action <= 2:
@@ -134,11 +122,15 @@ class TSEnv(gym.Env):
         #TODO: Plug observations into NN
 
         done = self.res_position < self.cache_start and not self.state[2] #Done if resource is at the nest and not in the robot's possession
-        reward = -1.0
-        print("Task is done: "+str(done))
+        reward = 0.0
+        if done:
+            reward += 1.0
+        else:
+            reward -= 1.0
+        # print("Task is done: "+str(done))
 
         self.state = (area, want_resource, has_resource, behaviour)
-        self.log_data()
+        # self.log_data()
         return np.array(self.state), reward, done, {}
 
     def reset(self):
@@ -187,8 +179,8 @@ class TSEnv(gym.Env):
         :param mode:
         :return:
         '''
-        screen_width = 600
-        screen_height = 400
+        screen_width = 1200
+        screen_height = 800
 
         world_width = self.max_position - self.min_position
         scale = screen_width/world_width
@@ -311,7 +303,7 @@ class TSEnv(gym.Env):
         print(self.position_map[self.state[0]])
         print(self.want_map[self.state[1]])
         print(self.has_map[self.state[2]])
-        print(self.behaviour_map[self.state[3]])
+        print(self.behaviour_map_display[self.state[3]])
         print("---------------------------------")
 
     def get_keys_to_action(self):
