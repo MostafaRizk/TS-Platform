@@ -4,6 +4,7 @@ Taken from example at https://keon.io/deep-q-learning/
 '''
 import numpy as np
 import random
+from time import time
 
 from collections import deque
 from keras.models import Sequential
@@ -11,6 +12,7 @@ from keras.layers import Dense
 from keras.layers import LSTM
 from keras.layers import Reshape
 from keras.optimizers import Adam
+from keras.callbacks import TensorBoard
 
 
 class DQNAgent:
@@ -24,15 +26,15 @@ class DQNAgent:
         self.epsilon_decay = 0.995
         self.learning_rate = 0.001
         self.model = self._build_model()
+        self.tensorboard = TensorBoard(log_dir="./gym_TS/logs/DQN_{}".format(time()))
 
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
         model = Sequential()
-        #model.add(LSTM(64, return_sequences=False, dropout=0.1, recurrent_dropout=0.1, input_shape=(1, self.state_size)))
-        model.add(Dense(24, input_dim=self.state_size, activation='relu'))
-        model.add(Reshape((1, 24)))
-        model.add(LSTM(64, return_sequences=False, dropout=0.1, recurrent_dropout=0.1))
-        model.add(Dense(24, activation='relu'))
+        model.add(Dense(50, input_dim=self.state_size, activation='relu'))
+        # model.add(Dense(24, activation='relu'))
+        # model.add(Reshape((1, 24)))
+        # model.add(LSTM(64, return_sequences=False, dropout=0.1, recurrent_dropout=0.1))
         model.add(Dense(self.action_size, activation='linear'))
         model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))
 
@@ -59,7 +61,11 @@ class DQNAgent:
 
             target_f = self.model.predict(state)
             target_f[0][action] = target
+            # self.model.fit(state, target_f, epochs=1, verbose=0, callbacks=[self.tensorboard])
             self.model.fit(state, target_f, epochs=1, verbose=0)
 
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
+
+    def save(self, filename):
+        self.model.save(filename)

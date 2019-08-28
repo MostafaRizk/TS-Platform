@@ -16,11 +16,13 @@ class TSEnv(gym.Env):
       'video.frames_per_second': 30
     }
 
-    def __init__(self, goal_velocity = 0):
+    def __init__(self, logging=False):
         '''
         Initialise position, speed, gravity and velocity. Also defines action space and observation space. Creates seed?
         :param goal_velocity:
         '''
+        self.logging = logging
+
         self.robot_width=40
         self.robot_height=20
         self.res_width=20
@@ -40,13 +42,15 @@ class TSEnv(gym.Env):
 
         self.pickup_delay = 20
         self.pickup_delay_counter = 0
-        self.behaviour_delay = 100
+        self.behaviour_delay = 50
         self.behaviour_delay_counter = 0
 
         self.random_walk_counter = 0
         self.random_walk_length = 10
         self.last_step_was_random = False
         self.last_step_direction = 0
+
+        self.last_behaviour = -1
 
         self.position = np.random.uniform(low=self.min_position, high=self.cache_start)
         self.res_position = np.random.uniform(low=self.slope_end, high=self.max_position)
@@ -59,7 +63,8 @@ class TSEnv(gym.Env):
 
         self.viewer = None
 
-        self.action_space = spaces.Discrete(4) #0-Phototaxis, 1-Antiphototaxis, 2-Random walk, 3-Flip want
+        # self.action_space = spaces.Discrete(4) #0-Phototaxis, 1-Antiphototaxis, 2-Random walk, 3-Flip want
+        self.action_space = spaces.Discrete(3)  # 0-Phototaxis, 1-Antiphototaxis, 2-Flip want
         self.observation_space = spaces.Discrete(4) #position, want_resource, has_resource, behaviour
 
         self.seed()
@@ -73,7 +78,7 @@ class TSEnv(gym.Env):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
-    def step(self, action):
+    def step(self, action, time_step):
         '''
 
         :param action:
@@ -83,16 +88,25 @@ class TSEnv(gym.Env):
         #Returns an error if the action is invalid
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
 
+        reward = 0.0
+
         area, want_resource, has_resource, behaviour = self.state
 
-        #if action is 0,1 or 2, do a new step. if it's 3 or 4, continue current behaviour and do other action
-        if action <= 2:
+        # Random walk version: if action is 0,1 or 2, do a new step. if it's 3 or 4, continue current behaviour and do other action
+        # No random walk version: if action is 0 or 1 do a new step. if it's 2 or 3, continue current behaviour and do other action
+        # if action <= 2:
+        if action <= 1:
             if self.behaviour_delay_counter == 0:
                 behaviour = action
+                # if behaviour != self.last_behaviour:
+                    # reward -= 10.0
+                '''
                 if behaviour == 2:
                     self.last_step_was_random = True
                 else:
                     self.last_step_was_random = False
+                '''
+                self.last_step_was_random = False
                 self.behaviour_delay_counter += 1
             elif self.behaviour_delay_counter < self.behaviour_delay:
                 self.behaviour_delay_counter += 1
@@ -110,6 +124,7 @@ class TSEnv(gym.Env):
 
         if want_resource and has_resource:
             self.res_position = copy.deepcopy(self.position)
+            # reward += 10.0
         elif want_resource and not has_resource:
             if resource_is_in_range:
                 self.pickup_step()
@@ -119,18 +134,20 @@ class TSEnv(gym.Env):
             if self.slope_start <= self.res_position < self.slope_end:
                 self.slide_cylinder()
 
-        #TODO: Plug observations into NN
+        done = self.res_position < self.cache_start and not self.state[2] # Done if resource is at the nest and not in the robot's possession
 
-        done = self.res_position < self.cache_start and not self.state[2] #Done if resource is at the nest and not in the robot's possession
-        reward = 0.0
+        '''
         if done:
-            reward += 1.0
+            reward += 20000.0
         else:
             reward -= 1.0
-        # print("Task is done: "+str(done))
+        '''
+
+        reward -= 1.0
 
         self.state = (area, want_resource, has_resource, behaviour)
-        # self.log_data()
+        if self.logging:
+            self.log_data(time_step)
         return np.array(self.state), reward, done, {}
 
     def reset(self):
@@ -140,10 +157,11 @@ class TSEnv(gym.Env):
         '''
         self.position = np.random.uniform(low=self.min_position, high=self.cache_start)
         self.res_position = np.random.uniform(low=self.slope_end, high=self.max_position)
-        self.state = np.array([self.get_robot_location(self.position), #Location
-                               self.np_random.randint(low=0, high=2),  #Object want_resource (0- WANT_OBJECT=False, 1- WANT_OBJECT=True)
-                               0,  #Object has_resource (0- HAS_OBJECT=False, 1- HAS_OBJECT=True)
-                               self.np_random.randint(low=0, high=3)]) #Current behaviour (0-Phototaxis, 1-Antiphototaxis, 2-Random walk)
+        self.state = np.array([self.get_robot_location(self.position), # Location
+                               self.np_random.randint(low=0, high=2),  # Object want_resource (0- WANT_OBJECT=False, 1- WANT_OBJECT=True)
+                               0,  # Object has_resource (0- HAS_OBJECT=False, 1- HAS_OBJECT=True)
+                               # self.np_random.randint(low=0, high=3)]) # Random walk version: Current behaviour (0-Phototaxis, 1-Antiphototaxis, 2-Random walk)
+                               self.np_random.randint(low=0, high=2)]) # No random walk version: Current behaviour (0-Phototaxis, 1-Antiphototaxis, 2-Random walk)
         return np.array(self.state)
 
     def height_map(self, x):
@@ -179,8 +197,8 @@ class TSEnv(gym.Env):
         :param mode:
         :return:
         '''
-        screen_width = 1200
-        screen_height = 800
+        screen_width = 900
+        screen_height = 600
 
         world_width = self.max_position - self.min_position
         scale = screen_width/world_width
@@ -299,7 +317,8 @@ class TSEnv(gym.Env):
     def slide_cylinder(self):
         self.res_position -= 2
 
-    def log_data(self):
+    def log_data(self, time_step):
+        print("Step " + str(time_step))
         print(self.position_map[self.state[0]])
         print(self.want_map[self.state[1]])
         print(self.has_map[self.state[2]])
