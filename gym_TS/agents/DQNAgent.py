@@ -14,6 +14,9 @@ from keras.layers import Reshape
 from keras.optimizers import Adam
 from keras.callbacks import TensorBoard
 
+# import warnings
+# warnings.filterwarnings('ignore',category=FutureWarning)
+
 
 class DQNAgent:
     def __init__(self, state_size, action_size):

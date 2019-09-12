@@ -152,17 +152,32 @@ class TSEnv(gym.Env):
 
     def reset(self):
         '''
-        Sets a new random location between 0 and 1 and sets velocity to 0
+
         :return:
         '''
         self.position = np.random.uniform(low=self.min_position, high=self.cache_start)
         self.res_position = np.random.uniform(low=self.slope_end, high=self.max_position)
+
         self.state = np.array([self.get_robot_location(self.position), # Location
                                self.np_random.randint(low=0, high=2),  # Object want_resource (0- WANT_OBJECT=False, 1- WANT_OBJECT=True)
                                0,  # Object has_resource (0- HAS_OBJECT=False, 1- HAS_OBJECT=True)
                                # self.np_random.randint(low=0, high=3)]) # Random walk version: Current behaviour (0-Phototaxis, 1-Antiphototaxis, 2-Random walk)
                                self.np_random.randint(low=0, high=2)]) # No random walk version: Current behaviour (0-Phototaxis, 1-Antiphototaxis, 2-Random walk)
+
         return np.array(self.state)
+
+    #WARNING: Make sure this matches reset
+    def get_num_states(self):
+        return 4*2*2*2
+
+    def one_hot_encode(self, state):
+        state_value = state[0][0] * (2**3) + \
+                      state[0][1] * (2**2) + \
+                      state[0][2] * (2**1) + \
+                      state[0][3] * (2**0)
+
+        return np.identity(self.get_num_states()) * state_value
+
 
     def height_map(self, x):
         '''
