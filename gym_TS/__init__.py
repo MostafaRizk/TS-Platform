@@ -7,5 +7,10 @@ register(
 
 register(
     id='TS-v1',
+    entry_point='gym_TS.envs:TSSimpEnv',
+)
+
+register(
+    id='TS-v2',
     entry_point='gym_TS.envs:TSMultiEnv',
 )

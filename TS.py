@@ -5,26 +5,29 @@ from time import time
 
 from gym_TS.agents.DQNAgent import DQNAgent
 
-env = gym.make('gym_TS:TS-v0')
+env = gym.make('gym_TS:TS-v1')
 agent = DQNAgent(env.get_num_states(), 3)
-finished_count = []
 episodes = 20000
+simulation_length = 1000
+batch_size = 64
+save_rate = 100
+display_rate = 100
 current_dir = os.getcwd()
 
 for e in range(episodes):
     state = env.reset()
-    state = np.reshape(state, [1, 4])
+    state = np.reshape(state, [1, 2])
     state = env.one_hot_encode(state)
     run_finished = False
     total_reward = 0
 
-    for t in range(1000):
-        if e % 100 == 0:
+    for t in range(simulation_length):
+        if e % display_rate == 0:
             env.render()
         # action = env.action_space.sample()
         action = agent.act(state)
         next_state, reward, done, info = env.step(action, t)
-        next_state = np.reshape(next_state, [1, 4])
+        next_state = np.reshape(next_state, [1, 2])
         next_state = env.one_hot_encode(next_state)
 
         total_reward += reward
@@ -38,13 +41,13 @@ for e in range(episodes):
             total_reward = 0
             break
         else:
-            if t==999:
+            if t == simulation_length-1:
                 print("episode: {}/{}, reward: {}, FAILED".format(e, episodes, total_reward))
                 total_reward = 0
 
-    agent.replay(64)
+    agent.replay(batch_size)
 
-    if e % 100 == 0:
+    if e % save_rate == 0:
         agent.save(current_dir + '/gym_TS/models/DQN/DQN_{}_{}.h5'.format(time(), e))
 
 env.close()
