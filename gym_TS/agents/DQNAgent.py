@@ -5,6 +5,7 @@ Taken from example at https://keon.io/deep-q-learning/
 import numpy as np
 import random
 from time import time
+import copy
 
 from collections import deque
 from keras.models import Sequential
@@ -54,7 +55,11 @@ class DQNAgent:
         return np.argmax(act_values[0])  # returns action
 
     def replay(self, batch_size):
-        minibatch = random.sample(self.memory, batch_size)
+        minibatch = []
+        try:
+            minibatch = random.sample(self.memory, batch_size)
+        except ValueError:
+            minibatch = copy.deepcopy(self.memory)
 
         for state, action, reward, next_state, done in minibatch:
             target = reward
@@ -72,3 +77,8 @@ class DQNAgent:
 
     def save(self, filename):
         self.model.save(filename)
+
+    def generate_q_table(self, possible_states):
+        for state in possible_states:
+            print(str(state) + ": " + str(self.model.predict(state)))
+

@@ -9,6 +9,7 @@ from gym.utils import seeding
 import math
 import numpy as np
 import copy
+from keras.utils import to_categorical
 
 class TSSimpEnv(gym.Env):
     metadata = {
@@ -92,7 +93,7 @@ class TSSimpEnv(gym.Env):
 
         reward = 0.0
 
-        area, has_resource = self.state
+        area, has_resource, resource_location_dummy = self.state
 
         self.position = np.clip(self.position, self.min_position, self.max_position)
         self.res_position = np.clip(self.res_position, self.min_position, self.max_position)
@@ -119,6 +120,7 @@ class TSSimpEnv(gym.Env):
             if resource_is_in_range:
                 self.pickup_step() # If resource is in range, keep it in agent's possession
         else:
+            self.drop_step()
             if self.slope_start <= self.res_position < self.slope_end:
                     self.slide_cylinder()
             self.behaviour = -1
@@ -130,7 +132,7 @@ class TSSimpEnv(gym.Env):
 
         reward -= 1.0
 
-        self.state = (area, has_resource)
+        self.state = (area, has_resource, self.get_robot_location(self.res_position))
         if self.logging:
             self.log_data(time_step)
         return np.array(self.state), reward, done, {}
@@ -144,19 +146,20 @@ class TSSimpEnv(gym.Env):
         self.res_position = np.random.uniform(low=self.slope_end, high=self.max_position)
 
         self.state = np.array([self.get_robot_location(self.position),  # Location
-                               0])  # Object has_resource (0- HAS_OBJECT=False, 1- HAS_OBJECT=True)
+                               0, # Object has_resource (0- HAS_OBJECT=False, 1- HAS_OBJECT=True)
+                               self.get_robot_location(self.res_position)])
 
         return np.array(self.state)
 
-    #WARNING: Make sure this matches reset
-    def get_num_states(self):
-        return 4*2
+    def get_state_size(self):
+        return 4 + 2 + 4
 
     def one_hot_encode(self, state):
-        state_value = state[0][0] * (2**1) + \
-                      state[0][1] * (2**0)
-
-        return np.identity(self.get_num_states()) * state_value
+        classes = [4, 2, 4]
+        encoded_state = np.array([])
+        for i in range(len(state)):
+            encoded_state = np.append(encoded_state, to_categorical(state[i], num_classes=classes[i]))
+        return encoded_state
 
 
     def height_map(self, x):
@@ -300,7 +303,9 @@ class TSSimpEnv(gym.Env):
             self.position = self.slope_end - 1
 
     def pickup_step(self):
-        #print("Picking up resource")
+        self.res_position = self.position# copy.deepcopy(self.position)
+
+    def drop_step(self):
         self.res_position = copy.deepcopy(self.position)
 
     def slide_cylinder(self):
