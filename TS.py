@@ -2,17 +2,19 @@ import gym
 import numpy as np
 import os
 from time import time
+import matplotlib.pyplot as plt
 
 from gym_TS.agents.DQNAgent import DQNAgent
 
 env = gym.make('gym_TS:TS-v1')
 agent = DQNAgent(env.get_state_size(), 3)
-episodes = 20000
+episodes = 500
 simulation_length = 5000
 batch_size = 64
 save_rate = 100
-display_rate = 100
+display_rate = 10000000
 current_dir = os.getcwd()
+losses = []
 
 for e in range(episodes):
     state = env.reset()
@@ -24,7 +26,7 @@ for e in range(episodes):
     total_reward = 0
 
     for t in range(simulation_length):
-        if e % display_rate == 0: #999:
+        if e % display_rate == display_rate-1:
             env.render()
         # action = env.action_space.sample()
         action = agent.act(state)
@@ -49,7 +51,9 @@ for e in range(episodes):
                 print("episode: {}/{}, reward: {}, FAILED".format(e, episodes, total_reward))
                 total_reward = 0
 
-    agent.replay(batch_size)
+    loss = agent.replay(batch_size)
+    print("Loss is: " + str(loss))
+    losses += [loss]
 
     if e % save_rate == 0:
         agent.save(current_dir + '/gym_TS/models/DQN/DQN_{}_{}.h5'.format(time(), e))
@@ -58,7 +62,10 @@ for e in range(episodes):
     test_states = [ np.reshape(env.one_hot_encode(np.array([0, 0, 3])), [1, env.get_state_size()]),
                     np.reshape(env.one_hot_encode(np.array([3, 1, 3])), [1, env.get_state_size()]),
                     np.reshape(env.one_hot_encode(np.array([0, 1, 0])), [1, env.get_state_size()])]
-    agent.generate_q_table(test_states)
+    # agent.generate_q_table(test_states)
 
 env.close()
 agent.save(current_dir+'/gym_TS/models/DQN/DQN_{}_final.h5'.format(time()))
+#print("Losses: " + str(losses))
+plt.plot(losses)
+plt.savefig("v1_loss.png")

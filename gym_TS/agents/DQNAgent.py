@@ -14,6 +14,8 @@ from keras.layers import LSTM
 from keras.layers import Reshape
 from keras.optimizers import Adam
 from keras.callbacks import TensorBoard
+from keras import backend as K
+from keras.losses import mean_squared_error
 
 # import warnings
 # warnings.filterwarnings('ignore',category=FutureWarning)
@@ -61,19 +63,37 @@ class DQNAgent:
         except ValueError:
             minibatch = copy.deepcopy(self.memory)
 
+        y_predicted = np.zeros([batch_size, self.action_size])
+        y_true = np.zeros([batch_size, self.action_size])
+        h = 0
+
         for state, action, reward, next_state, done in minibatch:
+            old_qs = self.model.predict(state)  # Q values for state
+
             target = reward
 
             if not done:
-              target = reward + self.gamma * np.amax(self.model.predict(next_state)[0])
+                target = reward + self.gamma * np.amax(self.model.predict(next_state)[0])
 
             target_f = self.model.predict(state)
-            target_f[0][action] = target
+            target_f[0][action] = target  # q_values = [ blah, blah, target, blah]
             # self.model.fit(state, target_f, epochs=1, verbose=0, callbacks=[self.tensorboard])
             self.model.fit(state, target_f, epochs=1, verbose=0)
 
+            y_predicted[h] = np.array(old_qs)
+            y_true[h] = np.array(target_f)
+            h += 1
+
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
+
+        # print("y_predicted: " + str(y_predicted))
+        # print("y_true: " + str(y_true))
+        y_predicted = K.variable(y_predicted)
+        y_true = K.variable(y_true)
+        loss = np.mean(K.eval(mean_squared_error(y_predicted,  y_true)))
+        # print("Loss: " + str(loss))
+        return loss
 
     def save(self, filename):
         self.model.save(filename)
