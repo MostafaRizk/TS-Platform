@@ -97,8 +97,6 @@ class TSEnv(gym.Env):
 
         resource_is_in_range = self.res_position - self.sensor_range < self.position < self.res_position + self.sensor_range
 
-        # Random walk version: if action is 0,1 or 2, do a new step. if it's 3 or 4, continue current behaviour and do other action
-        # No random walk version: if action is 0 or 1 do a new step. if it's 2 or 3, continue current behaviour and do other action
         # if action <= 2:
         if action <= 1:
             if self.behaviour_delay_counter == 0:
@@ -301,7 +299,7 @@ class TSEnv(gym.Env):
         Calculates an integer representing which area the robot is on depending on its position
         :return:
         '''
-        #(0 - ON_SOURCE, 1 - ON_CACHE, 2 - ON_SLOPE, 3 - ON_NEST)
+        #(0 - ON_NEST, 1 - ON_CACHE, 2 - ON_SLOPE, 3 - ON_SOURCE)
         if self.min_position <= position < self.cache_start:
             return 0
         if self.cache_start <= position < self.slope_start:

@@ -32,6 +32,7 @@ class DQNAgent:
         self.epsilon_decay = 0.995
         self.learning_rate = 0.001
         self.model = self._build_model()
+        self.weights_loaded = False
         self.tensorboard = TensorBoard(log_dir="./gym_TS/logs/DQN_{}".format(time()))
 
     def _build_model(self):
@@ -46,15 +47,24 @@ class DQNAgent:
 
         return model
 
+    def load_model(self, weight_path):
+        self.model.load_weights(weight_path)
+        self.weights_loaded = True
+
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
 
     def act(self, state):
-        if np.random.rand() <= self.epsilon:
-            return random.randrange(self.action_size)
-        act_values = self.model.predict(state)
+        if not self.weights_loaded:
+            if np.random.rand() <= self.epsilon:
+                return random.randrange(self.action_size)
+            act_values = self.model.predict(state)
 
-        return np.argmax(act_values[0])  # returns action
+            return np.argmax(act_values[0])  # returns action
+
+        else:
+            act_values = self.model.predict(state)
+            return np.argmax(act_values[0])
 
     def replay(self, batch_size):
         minibatch = []

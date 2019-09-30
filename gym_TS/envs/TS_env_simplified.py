@@ -41,6 +41,8 @@ class TSSimpEnv(gym.Env):
         self.slope_end = 15
         self.slope_angle = 10
 
+        self.behaviour = -1
+
         self.pickup_delay = 20
         self.pickup_delay_counter = 0
         self.behaviour_delay = 50
@@ -56,11 +58,9 @@ class TSSimpEnv(gym.Env):
         self.position = np.random.uniform(low=self.min_position, high=self.cache_start)
         self.res_position = np.random.uniform(low=self.slope_end, high=self.max_position)
 
-        self.behaviour = -1
-
         self.position_map = ["ON_NEST", "ON_CACHE", "ON_SLOPE", "ON_SOURCE"]
-        self.behaviour_map = [self.phototaxis_step, self.antiphototaxis_step]
-        self.behaviour_map_display = ["DO_PHOTOTAXIS", "DO_ANTIPHOTOTAXIS"]
+        self.behaviour_map = [self.phototaxis_step, self.antiphototaxis_step, self.random_walk_step]
+        self.behaviour_map_display = ["DO_PHOTOTAXIS", "DO_ANTIPHOTOTAXIS", "DO_RANDOM_WALK"]
         self.want_map = ["WANT_RESOURCE = False", "WANT_RESOURCE = True"]
         self.has_map = ["HAS_RESOURCE = False", "HAS_RESOURCE = True"]
 
@@ -93,46 +93,48 @@ class TSSimpEnv(gym.Env):
 
         reward = 0.0
 
-        area, has_resource, resource_location_dummy = self.state
+        area, has_resource, resource_location = self.state
+
+        resource_is_in_range = self.get_robot_location(self.res_position) == self.get_robot_location(self.position)
+
+        '''
+        if self.behaviour_delay_counter == 0:
+            self.behaviour = action
+            self.last_step_was_random = False
+            self.behaviour_delay_counter += 1
+
+        elif self.behaviour_delay_counter < self.behaviour_delay:
+            self.behaviour_delay_counter += 1
+
+        else:
+            self.behaviour_delay_counter = 0
+        '''
+        self.behaviour = action
+
+        if self.behaviour != -1:
+            self.behaviour_map[self.behaviour]()
+
+        if resource_is_in_range:
+            self.pickup_and_hold_resource()  # If resource is in range, keep it in agent's possession
+            has_resource = 1
 
         self.position = np.clip(self.position, self.min_position, self.max_position)
         self.res_position = np.clip(self.res_position, self.min_position, self.max_position)
         area = self.get_robot_location(self.position)
 
-        resource_is_in_range = self.get_robot_location(self.res_position) == self.get_robot_location(self.position)
+        done = self.res_position < self.cache_start
 
-        # Random walk version: if action is 0,1 or 2, do a new step. if it's 3 or 4, continue current behaviour and do other action
-        # No random walk version: if action is 0 or 1 do a new step. if it's 2 or 3, continue current behaviour and do other action
-        # if action <= 2:
-        if action <= 1:
-            self.behaviour = action
-            '''
-            if self.behaviour_delay_counter == 0:
-                if self.behaviour_delay_counter == 0:
-                    self.behaviour = action
-                    self.behaviour_delay_counter += 1
-                elif self.behaviour_delay_counter < self.behaviour_delay:
-                    self.behaviour_delay_counter += 1
-                else:
-                    self.behaviour_delay_counter = 0
-            '''
-
-            if resource_is_in_range:
-                self.pickup_step() # If resource is in range, keep it in agent's possession
+        '''
+        if done:
+            reward += 20000.0
         else:
-            self.drop_step()
-            if self.slope_start <= self.res_position < self.slope_end:
-                    self.slide_cylinder()
-            self.behaviour = -1
-
-        if self.behaviour != -1:
-            self.behaviour_map[self.behaviour]()
-
-        done = self.res_position < self.cache_start and not self.state[1]  # Done if resource is at the nest and not in the robot's possession
+            reward -= 1.0
+        '''
 
         reward -= 1.0
 
         self.state = (area, has_resource, self.get_robot_location(self.res_position))
+
         if self.logging:
             self.log_data(time_step)
         return np.array(self.state), reward, done, {}
@@ -145,21 +147,35 @@ class TSSimpEnv(gym.Env):
         self.position = np.random.uniform(low=self.min_position, high=self.cache_start)
         self.res_position = np.random.uniform(low=self.slope_end, high=self.max_position)
 
-        self.state = np.array([self.get_robot_location(self.position),  # Location
-                               0, # Object has_resource (0- HAS_OBJECT=False, 1- HAS_OBJECT=True)
+        self.state = np.array([self.get_robot_location(self.position), # Location
+                               0,  # Object has_resource (0- HAS_OBJECT=False, 1- HAS_OBJECT=True)
                                self.get_robot_location(self.res_position)])
 
         return np.array(self.state)
 
+
     def get_state_size(self):
-        return 4 + 2 + 4
+        return 4+2+4
 
     def one_hot_encode(self, state):
         classes = [4, 2, 4]
         encoded_state = np.array([])
+
         for i in range(len(state)):
             encoded_state = np.append(encoded_state, to_categorical(state[i], num_classes=classes[i]))
+
         return encoded_state
+
+    def get_possible_states(self):
+        classes = [4, 2, 4]
+        possible_states = []
+
+        for i_1 in range(classes[0]):
+            for i_2 in range(classes[1]):
+                for i_3 in range(classes[2]):
+                    possible_states += [np.reshape( self.one_hot_encode(np.array([i_1, i_2, i_3])), [1, self.get_state_size()] )]
+
+        return possible_states
 
 
     def height_map(self, x):
@@ -285,27 +301,33 @@ class TSSimpEnv(gym.Env):
             return 3
 
     def phototaxis_step(self):
-        location = self.get_robot_location(self.position)
-        if location == 0:
-            self.position = self.cache_start + 1
-        elif location == 1:
-            self.position = self.slope_start + 1
-        elif location == 2:
-            self.position = self.slope_end + 1
+        self.position += 1 # 1*self.max_speed
 
     def antiphototaxis_step(self):
-        location = self.get_robot_location(self.position)
-        if location == 1:
-            self.position = self.cache_start - 1
-        elif location == 2:
-            self.position = self.slope_start - 1
-        elif location == 3:
-            self.position = self.slope_end - 1
+        self.position -= 1 # 1*self.max_speed
 
-    def pickup_step(self):
-        self.res_position = self.position# copy.deepcopy(self.position)
+    def random_walk_step(self):
+        direction_list = [-1,1]
+        # if the last step was a random walk, increment walk counter until it reaches a limit
+        # step in the same direction as last step
+        if self.last_step_was_random:
+            self.random_walk_counter += 1
+            if self.random_walk_counter < self.random_walk_length:
+                choice = self.last_step_direction
+            else:
+                self.random_walk_counter = 0
+                choice = np.random.randint(low=0, high=2)
+        # otherwise reset the walk counter
+        else:
+           choice = np.random.randint(low=0, high=2)
+           self.random_walk_counter += 1
 
-    def drop_step(self):
+        self.position += direction_list[choice]*self.max_speed
+
+    def pickup_and_hold_resource(self):
+        self.res_position = self.position  # copy.deepcopy(self.position)
+
+    def drop_resource(self):
         self.res_position = copy.deepcopy(self.position)
 
     def slide_cylinder(self):

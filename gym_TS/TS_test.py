@@ -6,20 +6,17 @@ import matplotlib.pyplot as plt
 
 from gym_TS.agents.DQNAgent import DQNAgent
 
-env = gym.make('gym_TS:TS-v0')  # Simple
-agent = DQNAgent(env.get_state_size(), 2)  # Simple
-#env = gym.make('gym_TS:TS-v1') # Normal
-#agent = DQNAgent(env.get_state_size(), 3)  # Normal
-episodes = 100
+env = gym.make('gym_TS:TS-v1')
+agent = DQNAgent(env.get_state_size(), 3)
+episodes = 1000
 simulation_length = 5000
 batch_size = 64
 save_rate = 100
-display_rate = 1
+display_rate = 10000000
 current_dir = os.getcwd()
 
 def train():
     losses = []
-    times = []
 
     for e in range(episodes):
         state = env.reset()
@@ -44,13 +41,11 @@ def train():
 
             if done:
                 print("episode: {}/{}, reward: {}, time: {}".format(e, episodes, total_reward, t))
-                times += [t]
                 total_reward = 0
                 break
             else:
                 if t == simulation_length-1:
                     print("episode: {}/{}, reward: {}, FAILED".format(e, episodes, total_reward))
-                    times += [simulation_length + 1]
                     total_reward = 0
 
         loss = agent.replay(batch_size)
@@ -62,21 +57,10 @@ def train():
 
     env.close()
     agent.save(current_dir+'/gym_TS/models/DQN/DQN_{}_final.h5'.format(time()))
-    plt.subplot(2, 1, 1)
     plt.plot(losses)
-    plt.title('Loss and Time taken')
-    plt.ylabel('Loss')
+    plt.savefig("v1_loss.png")
 
-    plt.subplot(2, 1, 2)
-    plt.plot(times)
-    plt.ylabel('Time Taken')
-    plt.savefig("v0_loss.png")
-
-
-def test(filename):
-    times = []
-    agent.load_model(current_dir + '/gym_TS/models/DQN/' + filename)  # Load model
-
+def test():
     for e in range(episodes):
         state = env.reset()
         state = env.one_hot_encode(state)
@@ -87,28 +71,26 @@ def test(filename):
         for t in range(simulation_length):
             if e % display_rate == display_rate - 1:
                 env.render()
-
-            action = agent.act(state)  # act on state based on model
+            action = agent.act(state)
             next_state, reward, done, info = env.step(action, t)
+            next_state = env.one_hot_encode(next_state)
+            next_state = np.reshape(next_state, [1, env.get_state_size()])
+
+            state = next_state
 
             if done:
                 print("episode: {}/{}, reward: {}, time: {}".format(e, episodes, total_reward, t))
-                times += [t]
                 total_reward = 0
                 break
             else:
                 if t == simulation_length - 1:
                     print("episode: {}/{}, reward: {}, FAILED".format(e, episodes, total_reward))
-                    times += [simulation_length + 1]
                     total_reward = 0
 
+        if e % save_rate == 0:
+            agent.save(current_dir + '/gym_TS/models/DQN/DQN_{}_{}.h5'.format(time(), e))
+
     env.close()
-    plt.plot(times)
-    plt.savefig("v0_test.png")
 
-#train()
-#test('DQN_1569803016.8962076_final.h5')
-#test('DQN_1569823461.39184_final.h5')
-
-test('DQN_1569823563.4333408_final.h5')
+train()
 
