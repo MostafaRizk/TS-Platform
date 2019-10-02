@@ -10,11 +10,11 @@ env = gym.make('gym_TS:TS-v0')  # Simple
 agent = DQNAgent(env.get_state_size(), 2)  # Simple
 #env = gym.make('gym_TS:TS-v1') # Normal
 #agent = DQNAgent(env.get_state_size(), 3)  # Normal
-episodes = 100
-simulation_length = 5000
-batch_size = 64
+episodes = 10000
+simulation_length = 1000
+batch_size = 32
 save_rate = 100
-display_rate = 1
+display_rate = 10
 current_dir = os.getcwd()
 
 def train():
@@ -106,9 +106,11 @@ def test(filename):
     plt.plot(times)
     plt.savefig("v0_test.png")
 
-#train()
+train()
 #test('DQN_1569803016.8962076_final.h5')
 #test('DQN_1569823461.39184_final.h5')
 
-test('DQN_1569823563.4333408_final.h5')
+#test('DQN_1569832820.8286672_final.h5')
+
+
 
