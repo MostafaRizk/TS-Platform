@@ -17,9 +17,10 @@ class BasicQAgent:
         self.memory = deque(maxlen=2000)
         self.gamma = 0.95  # discount rate
         self.epsilon = 1.0  # exploration rate
-        self.epsilon_min = 0.01
+        self.epsilon_min = 0.00
         self.epsilon_decay = 0.995
         self.learning_rate = 0.001
+        self.model_loaded = False
 
     def _build_q_table(self):
         for state in self.possible_states:
@@ -75,14 +76,20 @@ class BasicQAgent:
         return loss
 
     def act(self, state):
-        if np.random.rand() <= self.epsilon:
-            return random.randrange(self.action_size)
+        if not self.model_loaded:
+            if np.random.rand() <= self.epsilon:
+                return random.randrange(self.action_size)
 
-        act_values = self.q_table[str(state)]
-        return np.argmax(act_values)  # returns action
+            act_values = self.q_table[str(state)]
+            return np.argmax(act_values)  # returns action
+
+        else:
+            act_values = self.q_table[str(state)]
+            return np.argmax(act_values)  # returns action
 
     def display(self):
-        print(self.q_table)
+        for key in self.q_table:
+            print(key + str("     ") + str(self.q_table[key][0]) + str("     ") + str(self.q_table[key][1]))
 
     def save(self, filepath):
         json_dict = {}
@@ -103,3 +110,5 @@ class BasicQAgent:
         self.q_table = {}
         for key in json_dict:
             self.q_table[key] = np.array(json_dict[key])
+
+        self.model_loaded = True

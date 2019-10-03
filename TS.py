@@ -8,20 +8,20 @@ from gym_TS.agents.DQNAgent import DQNAgent
 from gym_TS.agents.BasicQAgent import BasicQAgent
 
 env = gym.make('gym_TS:TS-v0')  # Simple
-#agent = DQNAgent(env.get_state_size(), 2)  # Simple
+agent = DQNAgent(env.get_state_size(), 2)  # Simple
 
 #BasicQ
-agent = BasicQAgent(env.get_possible_states(), 2)
+#agent = BasicQAgent(env.get_possible_states(), 2)
 
 #env = gym.make('gym_TS:TS-v1') # Normal
 #agent = DQNAgent(env.get_state_size(), 3)  # Normal
-training_episodes = 1000
+training_episodes = 200
 testing_episodes = 100
 simulation_length = 5000
 batch_size = simulation_length # 32
 save_rate = 100
 display_rate_train = 1000
-display_rate_test = 100
+display_rate_test = 1
 current_dir = os.getcwd()
 
 
@@ -36,6 +36,8 @@ def train_basic_agent():
 
         for t in range(simulation_length):
             if e % display_rate_train == display_rate_train-1:
+                env.render()
+            elif e > training_episodes * 0.8:
                 env.render()
             action = agent.act(state)
             next_state, reward, done, info = env.step(action, t)
@@ -148,6 +150,9 @@ def test(filename):
 
             action = agent.act(state)  # act on state based on model
             next_state, reward, done, info = env.step(action, t)
+            next_state = env.one_hot_encode(next_state)
+            next_state = np.reshape(next_state, [1, env.get_state_size()])
+            state = next_state
 
             if done:
                 print("episode: {}/{}, reward: {}, time: {}".format(e, testing_episodes, total_reward, t))
@@ -180,6 +185,7 @@ def test_basic_agent(filename):
 
             action = agent.act(state)  # act on state based on model
             next_state, reward, done, info = env.step(action, t)
+            state = next_state
 
             if done:
                 print("episode: {}/{}, reward: {}, time: {}".format(e, testing_episodes, total_reward, t))
@@ -198,11 +204,13 @@ def test_basic_agent(filename):
     plt.savefig("v0_test.png")
 
 #train()
-#test('v0_2.h5')
+test('v0_2.h5')
 #test('DQN_1570063893.753158_0.h5')
 
 #train_basic_agent()
-test_basic_agent('Q_1570081335.2363036_0.json')
+#agent.display()
+#test_basic_agent('Q_1570086600.6342318_final.json')
+#agent.display()
 
 
 
