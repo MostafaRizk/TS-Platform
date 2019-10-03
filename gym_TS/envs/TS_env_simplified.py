@@ -204,6 +204,18 @@ class TSSimpEnv(gym.Env):
         for i_1 in range(classes[0]):
             for i_2 in range(classes[1]):
                 for i_3 in range(classes[2]):
+                    possible_states += [np.array([i_1, i_2, i_3])]
+
+        return possible_states
+
+
+    def get_possible_encoded_states(self):
+        classes = [4, 2, 4]
+        possible_states = []
+
+        for i_1 in range(classes[0]):
+            for i_2 in range(classes[1]):
+                for i_3 in range(classes[2]):
                     possible_states += [np.reshape(self.one_hot_encode(
                         np.array([i_1, i_2, i_3])), [1, self.get_state_size()])]
 
