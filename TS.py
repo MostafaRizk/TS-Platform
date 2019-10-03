@@ -10,11 +10,12 @@ env = gym.make('gym_TS:TS-v0')  # Simple
 agent = DQNAgent(env.get_state_size(), 2)  # Simple
 #env = gym.make('gym_TS:TS-v1') # Normal
 #agent = DQNAgent(env.get_state_size(), 3)  # Normal
-episodes = 10000
-simulation_length = 1000
-batch_size = 32
+episodes = 500
+simulation_length = 5000
+batch_size = simulation_length #32
 save_rate = 100
-display_rate = 10
+display_rate_train = 1000
+display_rate_test = 10
 current_dir = os.getcwd()
 
 def train():
@@ -29,7 +30,7 @@ def train():
         total_reward = 0
 
         for t in range(simulation_length):
-            if e % display_rate == display_rate-1:
+            if e % display_rate_train == display_rate_train-1:
                 env.render()
             action = agent.act(state)
             next_state, reward, done, info = env.step(action, t)
@@ -85,7 +86,7 @@ def test(filename):
         total_reward = 0
 
         for t in range(simulation_length):
-            if e % display_rate == display_rate - 1:
+            if e % display_rate_test == display_rate_test - 1:
                 env.render()
 
             action = agent.act(state)  # act on state based on model
@@ -106,11 +107,8 @@ def test(filename):
     plt.plot(times)
     plt.savefig("v0_test.png")
 
-train()
-#test('DQN_1569803016.8962076_final.h5')
-#test('DQN_1569823461.39184_final.h5')
-
-#test('DQN_1569832820.8286672_final.h5')
+#train()
+test('v0_2.h5')
 
 
 

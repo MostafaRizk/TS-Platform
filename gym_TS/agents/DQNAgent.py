@@ -16,6 +16,7 @@ from keras.optimizers import Adam
 from keras.callbacks import TensorBoard
 from keras import backend as K
 from keras.losses import mean_squared_error
+from keras.models import load_model
 
 # import warnings
 # warnings.filterwarnings('ignore',category=FutureWarning)
@@ -29,7 +30,7 @@ class DQNAgent:
         self.gamma = 0.95    # discount rate
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.01
-        self.epsilon_decay = 0.995
+        self.epsilon_decay = 0.99999995
         self.learning_rate = 0.001
         self.model = self._build_model()
         self.weights_loaded = False
@@ -47,8 +48,9 @@ class DQNAgent:
 
         return model
 
-    def load_model(self, weight_path):
-        self.model.load_weights(weight_path)
+    def load_model(self, model_path):
+        #self.model.load_weights(weight_path)
+        self.model = load_model(model_path)
         self.weights_loaded = True
 
     def remember(self, state, action, reward, next_state, done):
