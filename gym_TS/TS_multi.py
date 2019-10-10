@@ -15,7 +15,7 @@ testing_episodes = 100
 simulation_length = 5000
 batch_size = simulation_length
 save_rate = 100
-display_rate_train = 1000
+display_rate_train = 1
 display_rate_test = 1
 current_dir = os.getcwd()
 
@@ -26,7 +26,6 @@ def train():
 
     for e in range(training_episodes):
         state = env.reset()
-        print(state)
 
         for t in range(simulation_length):
             if e % display_rate_train == display_rate_train-1:
