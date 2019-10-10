@@ -26,17 +26,6 @@ class TSMultiEnv(gym.Env):
         '''
         self.logging = logging
 
-        # Robot constants
-        self.robot_width = 40
-        self.robot_height = 20
-        self.max_speed = 1
-        self.sensor_range = 1
-
-        # Resource constants
-        self.res_width = 20
-        self.res_height = 30
-        self.sliding_speed = 2
-
         # Environment dimensions
         self.arena_constraints = {"x_min": 0, "x_max": 4, "y_min": 0, "y_max": 12}
         self.nest_size = self.arena_constraints["y_max"] / 12  # 4/48
@@ -51,15 +40,38 @@ class TSMultiEnv(gym.Env):
         self.slope_angle = 10
         self.gravity = 9.81
 
+        # Robot constants
+        self.robot_width = 0.8
+        self.robot_height = 0.8
+        self.max_speed = 1
+        self.sensor_range = 1
+
+        # Resource constants
+        self.resource_width = 0.8
+        self.resource_height = 0.8
+        self.sliding_speed = 2
+
         # Other constants
         self.num_robots = 1
         self.num_resources = 1
 
+        # Rendering variables
         self.viewer = None
         self.scale = 50  # Scale for rendering
+        self.robot_transforms = [rendering.Transform() for i in range(self.num_robots)]
+        self.resource_transforms = [rendering.Transform() for i in range(self.num_resources)]
+        self.robot_positions = [None for i in range(self.num_robots)]
+        self.resource_positions = [None for i in range(self.num_resources)]
+        self.nest_colour = [0.25, 0.25, 0.25]
+        self.cache_colour = [0.5, 0.5, 0.5]
+        self.slope_colour = [0.5, 0.25, 0.25]
+        self.source_colour = [0.25, 0.5, 0.5]
+        self.robot_colour = [0, 0, 0.25]
+        self.resource_colour = [0, 0.25, 0]
 
-        self.action_space = spaces.Discrete(3)  # 0- Phototaxis 1- Antiphototaxis 2-Random walk
+        # Observation and action spaces
         self.observation_space = spaces.Discrete(self.num_arena_tiles)  # Every square in the arena
+        self.action_space = spaces.Discrete(3)  # 0- Phototaxis 1- Antiphototaxis 2-Random walk
 
         self.seed()
 
@@ -117,6 +129,7 @@ class TSMultiEnv(gym.Env):
                 x, y = self.generate_robot_position()
                 if self.state[y][x] != 'r':
                     self.state[y][x] = 'r'
+                    self.robot_positions[i] = (x, y)
                     robot_placed = True
 
         # Places all resources
@@ -126,6 +139,7 @@ class TSMultiEnv(gym.Env):
                 x, y = self.generate_resource_position()
                 if self.state[y][x] != 'o':
                     self.state[y][x] = 'o'
+                    self.resource_positions[i] = (x, y)
                     resource_placed = True
 
         return np.array(self.state)
@@ -216,33 +230,66 @@ class TSMultiEnv(gym.Env):
 
         if self.viewer is None:
             self.viewer = rendering.Viewer(screen_width, screen_height)
-            nest_colour = [0.25, 0.25, 0.25]
-            cache_colour = [1, 0, 0]
-            slope_colour = [0, 1, 0]
-            source_colour = [0, 0, 1]
 
             # Draw nest
-            nest = self.draw_arena_segment(self.nest_size, self.nest_start, nest_colour)
+            nest = self.draw_arena_segment(self.nest_size, self.nest_start, self.nest_colour)
             self.viewer.add_geom(nest)
 
             # Draw cache
             cache = self.draw_arena_segment(self.cache_start + self.cache_size,
-                                            self.cache_start, cache_colour)
+                                            self.cache_start, self.cache_colour)
             self.viewer.add_geom(cache)
 
             # Draw slope
             slope = self.draw_arena_segment(self.slope_start + self.slope_size,
-                                            self.slope_start, slope_colour)
+                                            self.slope_start, self.slope_colour)
             self.viewer.add_geom(slope)
 
             # Draw slope
             source = self.draw_arena_segment(self.source_start + self.source_size,
-                                             self.source_start, source_colour)
+                                             self.source_start, self.source_colour)
             self.viewer.add_geom(source)
 
+            # Draw grid
             grid_lines = self.draw_grid()
             for line in grid_lines:
                 self.viewer.add_geom(line)
+
+            # Draw robot(s)
+            for i in range(self.num_robots):
+                robot = rendering.make_circle(self.robot_width/2 * self.scale)
+                robot.set_color(self.robot_colour[0], self.robot_colour[1], self.robot_colour[2])
+                robot.add_attr(
+                    rendering.Transform(
+                        translation=(
+                            0,
+                            0)))
+                robot.add_attr(self.robot_transforms[i])
+                self.viewer.add_geom(robot)
+
+            # Draw resource(s)
+            for i in range(self.num_resources):
+                resource = rendering.make_circle(self.resource_width/2 * self.scale)
+                resource.set_color(self.resource_colour[0], self.resource_colour[1], self.resource_colour[2])
+                resource.add_attr(
+                    rendering.Transform(
+                        translation=(
+                            0,
+                            0)))
+                resource.add_attr(self.resource_transforms[i])
+                self.viewer.add_geom(resource)
+
+        # Set position of robot(s)
+        for i in range(self.num_robots):
+            self.robot_transforms[i].set_translation(
+                (self.robot_positions[i][0] - self.arena_constraints["x_min"] + 0.5) * self.scale,
+                (self.robot_positions[i][1] - self.arena_constraints["y_min"] + 0.5) * self.scale)
+
+        # Set position of resource(s)
+        for i in range(self.num_resources):
+            self.resource_transforms[i].set_translation(
+                (self.resource_positions[i][0] - self.arena_constraints["x_min"] + 0.5) * self.scale,
+                (self.resource_positions[i][1] - self.arena_constraints["y_min"] + 0.5) * self.scale)
 
         return self.viewer.render(return_rgb_array=mode == 'rgb_array')
 
