@@ -26,6 +26,7 @@ def train():
 
     for e in range(training_episodes):
         state = env.reset()
+        #print(state)
 
         for t in range(simulation_length):
             if e % display_rate_train == display_rate_train-1:
@@ -38,6 +39,8 @@ def train():
             agent.remember(state, action, reward, next_state, done)
             state = next_state
             '''
+            robot_actions = [env.action_space.sample() for i in range(env.get_num_robots())]
+            next_state, reward, done, info = env.step(robot_actions, t)
             done = False
 
             if done:
