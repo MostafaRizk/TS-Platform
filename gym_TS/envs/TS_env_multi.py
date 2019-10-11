@@ -20,10 +20,10 @@ class TSMultiEnv(gym.Env):
     }
 
     def __init__(self, logging=False):
-        '''
+        """
         Initialises constants and variables for robots, resources and environment
         :param logging:
-        '''
+        """
         self.logging = logging
 
         # Environment dimensions
@@ -51,17 +51,14 @@ class TSMultiEnv(gym.Env):
         self.resource_height = 0.6
         self.sliding_speed = 2
 
-        # Other constants
-        self.num_robots = 2
-        self.num_resources = 4
+        # Other constants/variables
+        self.num_robots = 1
+        self.default_num_resources = 1
+        self.current_num_resources = self.default_num_resources
+        self.dumping_position = (-10, -10)
 
-        # Rendering variables
-        self.viewer = None
+        # Rendering constants
         self.scale = 50  # Scale for rendering
-        self.robot_transforms = [rendering.Transform() for i in range(self.num_robots)]
-        self.resource_transforms = [rendering.Transform() for i in range(self.num_resources)]
-        self.robot_positions = [None for i in range(self.num_robots)]
-        self.resource_positions = [None for i in range(self.num_resources)]
         self.nest_colour = [0.25, 0.25, 0.25]
         self.cache_colour = [0.5, 0.5, 0.5]
         self.slope_colour = [0.5, 0.25, 0.25]
@@ -69,25 +66,33 @@ class TSMultiEnv(gym.Env):
         self.robot_colour = [0, 0, 0.25]
         self.resource_colour = [0, 0.25, 0]
 
-        # Observation and action spaces
-        self.observation_space = spaces.Discrete(self.num_arena_tiles)  # Every square in the arena
+        # Rendering variables
+        self.viewer = None
+        self.robot_transforms = [rendering.Transform() for i in range(self.num_robots)]
+        self.resource_transforms = [rendering.Transform() for i in range(self.default_num_resources)]
+        self.robot_positions = [None for i in range(self.num_robots)]
+        self.resource_positions = [None for i in range(self.default_num_resources)]
+
+        # Observation space
+        # The state has 2 copies of the arena, one with robot locations and one with the resource locations
+        # NOTE: To change this, the reset function must also be changed
+        self.observation_space = spaces.Discrete(self.num_arena_tiles*2)
+
+        # Action space
         self.action_space = spaces.Discrete(3)  # 0- Phototaxis 1- Antiphototaxis 2-Random walk
 
         self.seed()
 
         # Step variables
-        self.behaviour_map = [
-            self.phototaxis_step,
-            self.antiphototaxis_step,
-            self.random_walk_step]
+        self.behaviour_map = [self.phototaxis_step, self.antiphototaxis_step, self.random_walk_step]
         self.has_resource = [None for i in range(self.num_robots)]
 
     def seed(self, seed=None):
-        '''
+        """
         Generates random seed for np.random
         :param seed:
         :return:
-        '''
+        """
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
@@ -106,6 +111,8 @@ class TSMultiEnv(gym.Env):
         for action in robot_actions:
             assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
 
+        done = False
+
         reward = 0.0
 
         # The robots act
@@ -117,9 +124,34 @@ class TSMultiEnv(gym.Env):
         for position in old_robot_positions:
             self.state[position[1]][position[0]] = 0
 
+        # The resources' old positions are wiped out
+        for position in self.resource_positions:
+            self.state[position[1] + self.arena_constraints["y_max"]][position[0]] = 0
+
+        robot_collision_positions = copy.deepcopy(self.robot_positions)
         # The robots' new positions are updated
         for i in range(len(self.robot_positions)):
-            self.state[self.robot_positions[i][1]][self.robot_positions[i][0]] = i+1
+            for j in range(len(self.robot_positions)):
+                # If the robot's new position is the same as another robot's new position, it stays where it was
+                if self.robot_positions[i] == self.robot_positions[j] and i != j:
+                    # If robot i is colliding with robot j, it keeps its old position
+                    # But do not update robot i's position in self.robot_positions so that robot j has the chance to
+                    # update its position too. Otherwise, robot i will back off but robot j will continue and robots
+                    # with higher indices will have an advantage
+                    robot_collision_positions[i] = old_robot_positions[i]
+
+            # If robot i's new position is the same as resource j and it is carrying a resource and that resource
+            # is not resource j, then stay at the previous position
+            # i.e Robots should only collide with resources to pick them up and they can only hold one resource at a
+            # time
+            for j in range(len(self.resource_positions)):
+                if self.robot_positions[i] == self.resource_positions[j]:
+                    if self.has_resource[i] is not None and self.has_resource != j:
+                        robot_collision_positions[i] = old_robot_positions[i]
+
+            self.state[robot_collision_positions[i][1]][robot_collision_positions[i][0]] = i+1
+
+        self.robot_positions = robot_collision_positions
 
         # Ensure that a resource that was at the same location as a robot in the last time step moves with the robot
         # (i.e. the robot holds onto the resource).
@@ -128,40 +160,62 @@ class TSMultiEnv(gym.Env):
                 if self.resource_positions[i] == old_robot_positions[j]:
                     # If the robot has no resource, pick this resource up
                     # If the robot is carrying a resource and it's this one, keep holding it
-                    if self.has_resource[j] == i or not self.has_resource[j]:
+                    if self.has_resource[j] == i or self.has_resource[j] is None:
                         self.pickup_or_hold_resource(j, i)
 
-        return self.state, reward, False, {}
+        # If a robot has returned a resource to the nest it gets a reward
+        for i in range(self.num_robots):
+            if self.get_area_from_position(self.robot_positions[i]) == "NEST" and self.has_resource[i] is not None:
+                reward += 2000.0
+                self.resource_positions[self.has_resource[i]] = self.dumping_position
+                self.has_resource[i] = None
+                self.current_num_resources -= 1
+
+        # Update the state with the new resource positions
+        for i in range(len(self.resource_positions)):
+            if self.resource_positions[i] != self.dumping_position:
+                self.state[self.resource_positions[i][1] + self.arena_constraints["y_max"]][self.resource_positions[i][0]] = i + 1
+
+        # -1 reward at each time step to promote faster runtimes
+        reward -= 1
+
+        # The task is done when all resources are removed from the environment
+        if self.current_num_resources == 0:
+            done = True
+        elif self.current_num_resources < 0:
+            raise ValueError("There should never be a negative number of resources")
+
+        return self.state, reward, done, {}
 
 
     def generate_arena(self):
-        '''
+        """
         Generates empty arena where each tile contains a 0
         :return:
-        '''
+        """
 
         return [[0 for i in range(self.arena_constraints["x_max"])] for j in range(self.arena_constraints["y_max"])]
 
     def generate_robot_position(self):
-        '''
+        """
         Generates and returns valid coordinates for a single robot
         :return: x and y coordinates of the robot
-        '''
+        """
         x = np.random.randint(low=self.arena_constraints["x_min"], high=self.arena_constraints["x_max"])
         y = np.random.randint(low=self.nest_start, high=self.nest_start + self.nest_size)
         return x, y
 
     def generate_resource_position(self):
-        '''
+        """
         Generates and returns valid coordinates for a single resource
         :return: x and y coordinates of the resource
-        '''
+        """
         x = np.random.randint(low=self.arena_constraints["x_min"], high=self.arena_constraints["x_max"])
         y = np.random.randint(low=self.source_start, high=self.arena_constraints["y_max"])
         return x, y
 
     def reset(self):
-        '''
+        """
         Creates a new environment with robots and resources placed in acceptable locations.
         NOTE: The environment is a flipped version of the state matrix. That is, 0 is the first row of the matrix but
         the bottom of the rendered environment. Additionally, the x,y coordinate of an item in the environment is at
@@ -211,12 +265,12 @@ class TSMultiEnv(gym.Env):
          0 R 0 0
 
          The robot is at coordinate 1,0 but this would be [0][1] in the first matrix in the state representation
-        '''
+        """
 
         # Make sure robots and resources will all fit in the environment
         assert self.num_robots < self.arena_constraints[
             "x_max"] * self.nest_size, "Not enough room in the nest for all robots"
-        assert self.num_resources < self.arena_constraints[
+        assert self.default_num_resources < self.arena_constraints[
             "x_max"] * self.source_size, "Not enough room in the source for all resources"
 
         # Creates empty state
@@ -235,7 +289,7 @@ class TSMultiEnv(gym.Env):
                     robot_placed = True
 
         # Places all resources
-        for i in range(self.num_resources):
+        for i in range(self.default_num_resources):
             resource_placed = False
             while not resource_placed:
                 x, y = self.generate_resource_position()
@@ -244,12 +298,20 @@ class TSMultiEnv(gym.Env):
                     self.resource_positions[i] = (x, y)
                     resource_placed = True
 
+        # NOTE: To change this, must also change the observation space in __init__
         self.state = np.concatenate((self.robot_map, self.resource_map), axis=0)
+
+        # Reset variables that were changed during runtime
+        self.has_resource = [None for i in range(self.num_robots)]
+        self.current_num_resources = self.default_num_resources
 
         return np.array(self.state)
 
     def get_state_size(self):
-        pass
+        return self.observation_space.n
+
+    def get_action_size(self):
+        return self.action_space.n
 
     def one_hot_encode(self, state):
         pass
@@ -261,14 +323,14 @@ class TSMultiEnv(gym.Env):
         pass
 
     def draw_arena_segment(self, top, bottom, rgb_tuple):
-        '''
+        """
         Helper function that creates the geometry for a segment of the arena. Intended to be used by the viewer
 
         :param top:
         :param bottom:
         :param rgb_tuple:
         :return: A FilledPolygon object that can be added to the viewer using add_geom
-        '''
+        """
 
         l, r, t, b = self.arena_constraints["x_min"] * self.scale, \
                      self.arena_constraints["x_max"] * self.scale, \
@@ -285,11 +347,11 @@ class TSMultiEnv(gym.Env):
         return arena_segment
 
     def draw_grid(self):
-        '''
+        """
         Helper function that creates the geometry of gridlines to be used by the viewer
 
         :return: List of grid lines (PolyLine objects) each to be added to the viewer as a geometry object with add_geom
-        '''
+        """
 
         grid_lines = []
 
@@ -323,11 +385,11 @@ class TSMultiEnv(gym.Env):
         return grid_lines
 
     def render(self, mode='human'):
-        '''
+        """
         Renders the environment, placing all robots and resources in appropriate positions
         :param mode:
         :return:
-        '''
+        """
 
         screen_width = self.arena_constraints["x_max"] * self.scale
         screen_height = self.arena_constraints["y_max"] * self.scale
@@ -372,7 +434,7 @@ class TSMultiEnv(gym.Env):
                 self.viewer.add_geom(robot)
 
             # Draw resource(s)
-            for i in range(self.num_resources):
+            for i in range(self.default_num_resources):
                 resource = rendering.make_circle(self.resource_width/2 * self.scale)
                 resource.set_color(self.resource_colour[0], self.resource_colour[1], self.resource_colour[2])
                 resource.add_attr(
@@ -390,44 +452,65 @@ class TSMultiEnv(gym.Env):
                 (self.robot_positions[i][1] - self.arena_constraints["y_min"] + 0.5) * self.scale)
 
         # Set position of resource(s)
-        for i in range(self.num_resources):
+        for i in range(self.default_num_resources):
             self.resource_transforms[i].set_translation(
                 (self.resource_positions[i][0] - self.arena_constraints["x_min"] + 0.5) * self.scale,
                 (self.resource_positions[i][1] - self.arena_constraints["y_min"] + 0.5) * self.scale)
 
         return self.viewer.render(return_rgb_array=mode == 'rgb_array')
 
-    def get_robot_location(self, position):
-        pass
+    def get_area_from_position(self, position):
+        """
+        Gets the area of the environment corresponding to a position i.e. NEST, SOURCE etc
+        :param position:
+        :return: A string representing the area's name in uppercase
+        """
+
+        x = position[0]
+        y = position[1]
+
+        if x < self.arena_constraints["x_min"] or x > self.arena_constraints["x_max"]:
+            raise ValueError("x position is not valid")
+
+        if self.nest_start <= y < self.cache_start:
+            return "NEST"
+        elif self.cache_start <= y < self.slope_start:
+            return "CACHE"
+        elif self.slope_start <= y < self.source_start:
+            return "SLOPE"
+        elif self.source_start <= y < self.arena_constraints["y_max"]:
+            return "SOURCE"
+        else:
+            raise ValueError("y position is not valid")
 
     def phototaxis_step(self, robot_id):
-        '''
+        """
         Robot with id robot_id moves one step forward i.e. up in the y direction
         :param robot_id: Index of the robot in self.robot_positions
         :return:
-        '''
+        """
         self.robot_positions[robot_id] = (
             self.robot_positions[robot_id][0],
             np.clip(self.robot_positions[robot_id][1] + 1, self.arena_constraints["y_min"],
                     self.arena_constraints["y_max"]-1))
 
     def antiphototaxis_step(self, robot_id):
-        '''
+        """
         Robot with id robot_id moves one step back i.e. down in the y direction
         :param robot_id: Index of the robot in self.robot_positions
         :return:
-        '''
+        """
         self.robot_positions[robot_id] = (
             self.robot_positions[robot_id][0],
             np.clip(self.robot_positions[robot_id][1] - 1, self.arena_constraints["y_min"],
                     self.arena_constraints["y_max"]-1))
 
     def random_walk_step(self, robot_id):
-        '''
+        """
         Robot with id robot_id moves randomly to an adjacent tile
         :param robot_id: Index of the robot in self.robot_positions
-        :return: 
-        '''
+        :return:
+        """
         x_movement = np.random.randint(low=-1, high=2)
         y_movement = np.random.randint(low=-1, high=2)
 
@@ -438,6 +521,13 @@ class TSMultiEnv(gym.Env):
                     self.arena_constraints["y_max"]-1))
 
     def pickup_or_hold_resource(self, robot_id, resource_id):
+        """
+        Lets a robot pick up or hold a resource. I.e. the position of the resource is updated to match that of the
+        robot that has picked it up or is holding it. Ensures that the robot is marked as having that resource.
+        :param robot_id: Index of the robot in self.robot_positions
+        :param resource_id: Index of the resource in self.resource_positions
+        :return:
+        """
         self.resource_positions[resource_id] = self.robot_positions[robot_id]
         self.has_resource[robot_id] = resource_id
 

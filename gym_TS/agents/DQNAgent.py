@@ -34,7 +34,7 @@ class DQNAgent:
         self.learning_rate = 0.001
         self.model = self._build_model()
         self.weights_loaded = False
-        self.tensorboard = TensorBoard(log_dir="./gym_TS/logs/DQN_{}".format(time()))
+        # self.tensorboard = TensorBoard(log_dir="./gym_TS/logs/DQN_{}".format(time()))
 
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
@@ -49,7 +49,6 @@ class DQNAgent:
         return model
 
     def load_model(self, model_path):
-        #self.model.load_weights(weight_path)
         self.model = load_model(model_path)
         self.weights_loaded = True
 
