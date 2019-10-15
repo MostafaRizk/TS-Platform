@@ -102,7 +102,7 @@ class BasicQAgent:
         f.write(json_string)
         f.close()
 
-    def load(self, filepath):
+    def load_model(self, filepath):
         f = open(filepath)
         json_dict = json.loads(f.read())
         f.close()

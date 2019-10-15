@@ -76,7 +76,7 @@ class TSMultiEnv(gym.Env):
         # Observation space
         # The state has 2 copies of the arena, one with robot locations and one with the resource locations
         # NOTE: To change this, the reset function must also be changed
-        self.observation_space = spaces.Discrete(self.num_arena_tiles*2)
+        self.observation_space = spaces.Discrete(self.num_arena_tiles * 2)
 
         # Action space
         self.action_space = spaces.Discrete(3)  # 0- Phototaxis 1- Antiphototaxis 2-Random walk
@@ -97,11 +97,41 @@ class TSMultiEnv(gym.Env):
         return [seed]
 
     def get_num_robots(self):
-        '''
+        """
         Returns number of robots
-        :return:
-        '''
+        :return: Integer representing number of robots
+        """
         return self.num_robots
+
+    def get_default_num_resources(self):
+        """
+        Returns default number of resources
+        :return: Integer representing number of resources
+        """
+        return self.default_num_resources
+
+    def get_possible_states(self):
+        """
+        Generate an array of all possible states
+        WARNING: ONLY IMPLEMENTED FOR ONE ROBOT AND ONE RESOURCE
+        :return: Array of possible states
+        """
+        robot_map = self.generate_arena()
+        resource_map = self.generate_arena()
+        possible_states = []
+
+        for i in range(len(robot_map)):
+            for j in range(len(robot_map[0])):
+                robot_map[i][j] = 1
+                possible_states += [np.concatenate((robot_map, resource_map), axis=0)]
+                for k in range(len(resource_map)):
+                    for l in range(len(resource_map[0])):
+                        resource_map[k][l] = 1
+                        possible_states += [np.concatenate((robot_map, resource_map), axis=0)]
+                        resource_map[k][l] = 0
+                robot_map[i][j] = 0
+
+        return possible_states
 
     def step(self, robot_actions, time_step):
         # Returns an error if the number of actions is incorrect
@@ -126,15 +156,19 @@ class TSMultiEnv(gym.Env):
 
         # The resources' old positions are wiped out
         for position in self.resource_positions:
-            self.state[position[1] + self.arena_constraints["y_max"]][position[0]] = 0
+            if position != self.dumping_position:
+                self.state[position[1] + self.arena_constraints["y_max"]][position[0]] = 0
 
         robot_collision_positions = copy.deepcopy(self.robot_positions)
         # The robots' new positions are updated
         for i in range(len(self.robot_positions)):
             for j in range(len(self.robot_positions)):
                 # If the robot's new position is the same as another robot's new position, it stays where it was
-                if self.robot_positions[i] == self.robot_positions[j] and i != j:
-                    # If robot i is colliding with robot j, it keeps its old position
+                if (self.robot_positions[i] == self.robot_positions[j] or self.robot_positions[i] ==
+                    old_robot_positions[j]) and i != j:
+                    # If robot i is colliding with robot j's new position, it keeps its old position
+                    # If robot i is colliding with robot j's old position, it keeps its old position (this is in case
+                    # robot j changes its mind and decides to stay where it is to avoid a collision with a third robot)
                     # But do not update robot i's position in self.robot_positions so that robot j has the chance to
                     # update its position too. Otherwise, robot i will back off but robot j will continue and robots
                     # with higher indices will have an advantage
@@ -149,7 +183,7 @@ class TSMultiEnv(gym.Env):
                     if self.has_resource[i] is not None and self.has_resource != j:
                         robot_collision_positions[i] = old_robot_positions[i]
 
-            self.state[robot_collision_positions[i][1]][robot_collision_positions[i][0]] = i+1
+            self.state[robot_collision_positions[i][1]][robot_collision_positions[i][0]] = i + 1
 
         self.robot_positions = robot_collision_positions
 
@@ -166,7 +200,6 @@ class TSMultiEnv(gym.Env):
         # If a robot has returned a resource to the nest it gets a reward
         for i in range(self.num_robots):
             if self.get_area_from_position(self.robot_positions[i]) == "NEST" and self.has_resource[i] is not None:
-                reward += 2000.0
                 self.resource_positions[self.has_resource[i]] = self.dumping_position
                 self.has_resource[i] = None
                 self.current_num_resources -= 1
@@ -174,7 +207,8 @@ class TSMultiEnv(gym.Env):
         # Update the state with the new resource positions
         for i in range(len(self.resource_positions)):
             if self.resource_positions[i] != self.dumping_position:
-                self.state[self.resource_positions[i][1] + self.arena_constraints["y_max"]][self.resource_positions[i][0]] = i + 1
+                self.state[self.resource_positions[i][1] + self.arena_constraints["y_max"]][
+                    self.resource_positions[i][0]] = i + 1
 
         # -1 reward at each time step to promote faster runtimes
         reward -= 1
@@ -186,7 +220,6 @@ class TSMultiEnv(gym.Env):
             raise ValueError("There should never be a negative number of resources")
 
         return self.state, reward, done, {}
-
 
     def generate_arena(self):
         """
@@ -284,7 +317,7 @@ class TSMultiEnv(gym.Env):
             while not robot_placed:
                 x, y = self.generate_robot_position()
                 if self.robot_map[y][x] == 0:
-                    self.robot_map[y][x] = i+1
+                    self.robot_map[y][x] = i + 1
                     self.robot_positions[i] = (x, y)
                     robot_placed = True
 
@@ -294,7 +327,7 @@ class TSMultiEnv(gym.Env):
             while not resource_placed:
                 x, y = self.generate_resource_position()
                 if self.resource_map[y][x] == 0:
-                    self.resource_map[y][x] = i+1
+                    self.resource_map[y][x] = i + 1
                     self.resource_positions[i] = (x, y)
                     resource_placed = True
 
@@ -312,15 +345,6 @@ class TSMultiEnv(gym.Env):
 
     def get_action_size(self):
         return self.action_space.n
-
-    def one_hot_encode(self, state):
-        pass
-
-    def get_possible_states(self):
-        pass
-
-    def get_possible_encoded_states(self):
-        pass
 
     def draw_arena_segment(self, top, bottom, rgb_tuple):
         """
@@ -423,7 +447,7 @@ class TSMultiEnv(gym.Env):
 
             # Draw robot(s)
             for i in range(self.num_robots):
-                robot = rendering.make_circle(self.robot_width/2 * self.scale)
+                robot = rendering.make_circle(self.robot_width / 2 * self.scale)
                 robot.set_color(self.robot_colour[0], self.robot_colour[1], self.robot_colour[2])
                 robot.add_attr(
                     rendering.Transform(
@@ -435,7 +459,7 @@ class TSMultiEnv(gym.Env):
 
             # Draw resource(s)
             for i in range(self.default_num_resources):
-                resource = rendering.make_circle(self.resource_width/2 * self.scale)
+                resource = rendering.make_circle(self.resource_width / 2 * self.scale)
                 resource.set_color(self.resource_colour[0], self.resource_colour[1], self.resource_colour[2])
                 resource.add_attr(
                     rendering.Transform(
@@ -492,7 +516,7 @@ class TSMultiEnv(gym.Env):
         self.robot_positions[robot_id] = (
             self.robot_positions[robot_id][0],
             np.clip(self.robot_positions[robot_id][1] + 1, self.arena_constraints["y_min"],
-                    self.arena_constraints["y_max"]-1))
+                    self.arena_constraints["y_max"] - 1))
 
     def antiphototaxis_step(self, robot_id):
         """
@@ -503,7 +527,7 @@ class TSMultiEnv(gym.Env):
         self.robot_positions[robot_id] = (
             self.robot_positions[robot_id][0],
             np.clip(self.robot_positions[robot_id][1] - 1, self.arena_constraints["y_min"],
-                    self.arena_constraints["y_max"]-1))
+                    self.arena_constraints["y_max"] - 1))
 
     def random_walk_step(self, robot_id):
         """
@@ -516,9 +540,9 @@ class TSMultiEnv(gym.Env):
 
         self.robot_positions[robot_id] = (
             np.clip(self.robot_positions[robot_id][0] + x_movement, self.arena_constraints["x_min"],
-                    self.arena_constraints["x_max"]-1),
+                    self.arena_constraints["x_max"] - 1),
             np.clip(self.robot_positions[robot_id][1] + y_movement, self.arena_constraints["y_min"],
-                    self.arena_constraints["y_max"]-1))
+                    self.arena_constraints["y_max"] - 1))
 
     def pickup_or_hold_resource(self, robot_id, resource_id):
         """

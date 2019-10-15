@@ -1,6 +1,6 @@
 '''
 Deep Q-learning Agent
-Taken from example at https://keon.io/deep-q-learning/
+Modified from example at https://keon.io/deep-q-learning/
 '''
 import numpy as np
 import random
@@ -30,7 +30,7 @@ class DQNAgent:
         self.gamma = 0.95    # discount rate
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.01
-        self.epsilon_decay = 0.99999995
+        self.epsilon_decay = 0.999999995
         self.learning_rate = 0.001
         self.model = self._build_model()
         self.weights_loaded = False
@@ -39,7 +39,8 @@ class DQNAgent:
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
         model = Sequential()
-        model.add(Dense(50, input_dim=self.state_size, activation='relu'))
+        model.add(Dense(20, input_dim=self.state_size, activation='relu'))
+        # model.add(Dense(24, activation='relu'))
         # model.add(Dense(24, activation='relu'))
         # model.add(Reshape((1, 24)))
         # model.add(LSTM(64, return_sequences=False, dropout=0.1, recurrent_dropout=0.1))
