@@ -15,6 +15,8 @@ categories_length = max(env.get_num_robots(), env.get_default_num_resources()) +
 categories = [range(categories_length) for i in range(env.get_state_size())]
 one_hot_encoder = OneHotEncoder(sparse=False, categories=categories)
 encoded_state_size = env.get_state_size()*categories_length
+#print("The size of the state is ", encoded_state_size)
+print("The number of possible states is ", len(env.get_possible_states()))
 
 agent = DQNAgent(encoded_state_size, env.get_action_size())
 # agent = BasicQAgent(env.get_possible_states(), env.get_action_size())
@@ -27,7 +29,7 @@ current_dir = os.getcwd()
 # Training variables
 training_episodes = 1000
 batch_size = simulation_length
-display_rate_train = 100
+display_rate_train = 1
 save_rate = 100
 
 # Testing variables
@@ -176,5 +178,5 @@ def test(filename):
     plt.savefig("v0_test.png")
 
 
-train()
-#test('DQN_Multi_1571108191.953154_500.h5')
+#train()
+test('DQN_Multi_1571116723.5618603_final.h5')

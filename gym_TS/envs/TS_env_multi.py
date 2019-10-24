@@ -110,10 +110,10 @@ class TSMultiEnv(gym.Env):
         """
         return self.default_num_resources
 
+    # WARNING: ONLY IMPLEMENTED FOR ONE ROBOT AND ONE RESOURCE
     def get_possible_states(self):
         """
         Generate an array of all possible states
-        WARNING: ONLY IMPLEMENTED FOR ONE ROBOT AND ONE RESOURCE
         :return: Array of possible states
         """
         robot_map = self.generate_arena()
