@@ -77,15 +77,21 @@ class TSMultiEnv(gym.Env):
         # Observation space
         # The state has 2 copies of the arena, one with robot locations and one with the resource locations
         # NOTE: To change this, the reset function must also be changed
-        self.observation_space = spaces.Discrete(self.num_arena_tiles * 2)
+        #self.observation_space = spaces.Discrete(self.num_arena_tiles * 2)
+
+        # Each robot observes the 8 tiles around it
+        self.observation_space = spaces.Discrete(8)
 
         # Action space
         self.action_space = spaces.Discrete(3)  # 0- Phototaxis 1- Antiphototaxis 2-Random walk
+        # self.action_space = spaces.Discrete(6)  # 0- Forward, 1- Backward, 2- Left, 3- Right, 4- Pick up, 5- Drop
 
         self.seed()
 
         # Step variables
         self.behaviour_map = [self.phototaxis_step, self.antiphototaxis_step, self.random_walk_step]
+        # self.behaviour_map = [self.forward_step, self.backward_step, self.left_step, self.right_step]
+        self.action_name = ["FORWARD", "BACKWARD", "LEFT", "RIGHT", "PICKUP", "DROP"]
         self.has_resource = [None for i in range(self.num_robots)]
 
     def seed(self, seed=None):
@@ -149,6 +155,8 @@ class TSMultiEnv(gym.Env):
         # The robots act
         old_robot_positions = copy.deepcopy(self.robot_positions)
         for i in range(len(robot_actions)):
+            # if robot_actions[i] < 4:
+            #    self.behaviour_map[robot_actions[i]](i)
             self.behaviour_map[robot_actions[i]](i)
 
         # The robots' old positions are wiped out
@@ -193,10 +201,11 @@ class TSMultiEnv(gym.Env):
         for i in range(len(self.resource_positions)):
             for j in range(len(old_robot_positions)):
                 if self.resource_positions[i] == old_robot_positions[j]:
-                    # If the robot has no resource, pick this resource up
                     # If the robot is carrying a resource and it's this one, keep holding it
+                    # If the robot has no resource, pick this resource up (unless it was just dropped)
                     if self.has_resource[j] == i or \
-                            (self.has_resource[j] is None and self.action_name[robot_actions[j]] != "DROP"):
+                            self.has_resource[
+                                j] is None:  # (self.has_resource[j] is None and self.action_name[robot_actions[j]] != "DROP"):
                         self.pickup_or_hold_resource(j, i)
 
         # If a robot has returned a resource to the nest it gets a reward
@@ -205,6 +214,7 @@ class TSMultiEnv(gym.Env):
                 self.resource_positions[self.has_resource[i]] = self.dumping_position
                 self.has_resource[i] = None
                 self.current_num_resources -= 1
+                #reward += 1000
 
         # Update the state with the new resource positions
         for i in range(len(self.resource_positions)):
@@ -221,7 +231,10 @@ class TSMultiEnv(gym.Env):
         elif self.current_num_resources < 0:
             raise ValueError("There should never be a negative number of resources")
 
-        return self.state, reward, done, {}
+        observations = self.generate_robot_observations()
+
+        #return self.state, reward, done, {}
+        return observations, reward, done, {}
 
     def generate_arena(self):
         """
@@ -248,6 +261,49 @@ class TSMultiEnv(gym.Env):
         x = np.random.randint(low=self.arena_constraints["x_min"], high=self.arena_constraints["x_max"])
         y = np.random.randint(low=self.source_start, high=self.arena_constraints["y_max"])
         return x, y
+
+    def generate_robot_observations(self):
+        """
+        Generate a list of observations made by each robot
+        :return: An np array of observations
+        """
+        adjacent_positions_x = [-1, 0, 1, 0, 1, 0, -1, -1]
+        adjacent_positions_y = [1, 1, 1, 1, -1, -1, -1, 0]
+
+        observations = []
+
+        for position in self.robot_positions:
+            observation = []
+
+            for i in range(len(adjacent_positions_x)):
+                adjacent_position = (position[0] + adjacent_positions_x[i], position[1] + adjacent_positions_y[i])
+
+                if self.arena_constraints["y_max"] <= adjacent_position[1] or \
+                        adjacent_position[1] < 0 or \
+                        self.arena_constraints["x_max"] <= adjacent_position[0] or \
+                        adjacent_position[0] < 0:
+                    observation += ["W"]  # Wall
+
+                elif self.robot_map[adjacent_position[1]][adjacent_position[0]] != 0:
+                    observation += ["R"]  # Robot
+
+                elif self.resource_map[adjacent_position[1]][adjacent_position[0]] != 0:
+                    observation += ["O"]  # Resource
+
+                else:
+                    observation += ["B"]
+
+            observations += [np.array(observation)]
+
+        return observations
+
+    def get_observation_categories(self):
+        """
+        Returns categories of all possible observations for use in onehotencoding
+        :return: List of cateogires
+        """
+
+        return [["B", "O", "R", "W"] for i in range(self.get_observation_size())]
 
     def reset(self):
         """
@@ -340,9 +396,10 @@ class TSMultiEnv(gym.Env):
         self.has_resource = [None for i in range(self.num_robots)]
         self.current_num_resources = self.default_num_resources
 
-        return np.array(self.state)
+        #return np.array(self.state)
+        return self.generate_robot_observations()
 
-    def get_state_size(self):
+    def get_observation_size(self):
         return self.observation_space.n
 
     def get_action_size(self):
@@ -575,18 +632,20 @@ class TSMultiEnv(gym.Env):
         :return:
         """
         self.robot_positions[robot_id] = (
-            np.clip(self.robot_positions[robot_id][0] + x_movement, self.arena_constraints["x_min"],
+            np.clip(self.robot_positions[robot_id][0] - 1, self.arena_constraints["x_min"],
                     self.arena_constraints["x_max"] - 1),
-            np.clip(self.robot_positions[robot_id][1] + y_movement, self.arena_constraints["y_min"],
-                    self.arena_constraints["y_max"] - 1))
+            self.robot_positions[robot_id][1])
 
     def right_step(self, robot_id):
         """
-        Moves robot right one step
+        Robot with id robot_id moves one step to the right
         :param robot_id: Index of the robot in self.robot_positions
         :return:
         """
-        pass
+        self.robot_positions[robot_id] = (
+            np.clip(self.robot_positions[robot_id][0] + 1, self.arena_constraints["x_min"],
+                    self.arena_constraints["x_max"] - 1),
+            self.robot_positions[robot_id][1])
 
     def pickup_or_hold_resource(self, robot_id, resource_id):
         """
@@ -622,7 +681,7 @@ class TSMultiEnv(gym.Env):
             if self.resource_map[y][x] == 0:
                 self.resource_map[y][x] = self.latest_resource_id + 1
                 self.latest_resource_id += 1
-                self.resource_positions += (x,y)
+                self.resource_positions += (x, y)
                 # self.resource_positions[self.latest_resource_id] = (x, y)
                 self.resource_transforms += [rendering.Transform()]
                 resource_placed = True
@@ -649,7 +708,6 @@ class TSMultiEnv(gym.Env):
                     return False
 
         return True
-
 
     def log_data(self, time_step):
         pass
