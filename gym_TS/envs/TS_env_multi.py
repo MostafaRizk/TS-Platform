@@ -55,6 +55,7 @@ class TSMultiEnv(gym.Env):
         self.num_robots = 1
         self.default_num_resources = 1
         self.current_num_resources = self.default_num_resources
+        self.latest_resource_id = self.default_num_resources - 1
         self.dumping_position = (-10, -10)
 
         # Rendering constants
@@ -188,13 +189,14 @@ class TSMultiEnv(gym.Env):
         self.robot_positions = robot_collision_positions
 
         # Ensure that a resource that was at the same location as a robot in the last time step moves with the robot
-        # (i.e. the robot holds onto the resource).
+        # (i.e. the robot holds onto the resource). Also ensure that robot picks it up (unless it was just dropped)
         for i in range(len(self.resource_positions)):
             for j in range(len(old_robot_positions)):
                 if self.resource_positions[i] == old_robot_positions[j]:
                     # If the robot has no resource, pick this resource up
                     # If the robot is carrying a resource and it's this one, keep holding it
-                    if self.has_resource[j] == i or self.has_resource[j] is None:
+                    if self.has_resource[j] == i or \
+                            (self.has_resource[j] is None and self.action_name[robot_actions[j]] != "DROP"):
                         self.pickup_or_hold_resource(j, i)
 
         # If a robot has returned a resource to the nest it gets a reward
@@ -544,6 +546,48 @@ class TSMultiEnv(gym.Env):
             np.clip(self.robot_positions[robot_id][1] + y_movement, self.arena_constraints["y_min"],
                     self.arena_constraints["y_max"] - 1))
 
+    def forward_step(self, robot_id):
+        """
+        Robot with id robot_id moves one step forward i.e. up in the y direction
+        :param robot_id: Index of the robot in self.robot_positions
+        :return:
+        """
+        self.robot_positions[robot_id] = (
+            self.robot_positions[robot_id][0],
+            np.clip(self.robot_positions[robot_id][1] + 1, self.arena_constraints["y_min"],
+                    self.arena_constraints["y_max"] - 1))
+
+    def backward_step(self, robot_id):
+        """
+        Robot with id robot_id moves one step back i.e. down in the y direction
+        :param robot_id: Index of the robot in self.robot_positions
+        :return:
+        """
+        self.robot_positions[robot_id] = (
+            self.robot_positions[robot_id][0],
+            np.clip(self.robot_positions[robot_id][1] - 1, self.arena_constraints["y_min"],
+                    self.arena_constraints["y_max"] - 1))
+
+    def left_step(self, robot_id):
+        """
+        Robot with id robot_id moves one step to the left
+        :param robot_id: Index of the robot in self.robot_positions
+        :return:
+        """
+        self.robot_positions[robot_id] = (
+            np.clip(self.robot_positions[robot_id][0] + x_movement, self.arena_constraints["x_min"],
+                    self.arena_constraints["x_max"] - 1),
+            np.clip(self.robot_positions[robot_id][1] + y_movement, self.arena_constraints["y_min"],
+                    self.arena_constraints["y_max"] - 1))
+
+    def right_step(self, robot_id):
+        """
+        Moves robot right one step
+        :param robot_id: Index of the robot in self.robot_positions
+        :return:
+        """
+        pass
+
     def pickup_or_hold_resource(self, robot_id, resource_id):
         """
         Lets a robot pick up or hold a resource. I.e. the position of the resource is updated to match that of the
@@ -555,11 +599,57 @@ class TSMultiEnv(gym.Env):
         self.resource_positions[resource_id] = self.robot_positions[robot_id]
         self.has_resource[robot_id] = resource_id
 
-    def drop_resource(self):
+    def drop_resource(self, robot_id, resource_id):
+        self.has_resource[robot_id] = None
+
+    def slide_resource(self):
         pass
 
-    def slide_cylinder(self):
-        pass
+    def spawn_resource(self):
+        """
+        Spawn a new resource in the source area if it is possible to do so
+        :return: x,y coordinate of new resource if successful. None otherwise
+        """
+        # Places all resources
+        resource_placed = False
+
+        # If there is no space to spawn new resources, don't spawn
+        if self.source_is_full():
+            return None
+
+        while not resource_placed:
+            x, y = self.generate_resource_position()
+            if self.resource_map[y][x] == 0:
+                self.resource_map[y][x] = self.latest_resource_id + 1
+                self.latest_resource_id += 1
+                self.resource_positions += (x,y)
+                # self.resource_positions[self.latest_resource_id] = (x, y)
+                self.resource_transforms += [rendering.Transform()]
+                resource_placed = True
+                self.current_num_resources += 1
+                return x, y
+
+    def delete_resource(self, resource_id):
+        """
+        Sends a resource to the dumping position and decrements the resource count
+        :param resource_id:
+        :return:
+        """
+        self.resource_positions[resource_id] = self.dumping_position
+        self.current_num_resources -= 1
+
+    def source_is_full(self):
+        """
+        Determines if the source area has a resource at every grid position and is thus "full"
+        :return: True if full, False otherwise
+        """
+        for y in range(self.source_size):
+            for x in range(self.arena_constraints["x_max"]):
+                if self.resource_map[y][x] == 0:
+                    return False
+
+        return True
+
 
     def log_data(self, time_step):
         pass
