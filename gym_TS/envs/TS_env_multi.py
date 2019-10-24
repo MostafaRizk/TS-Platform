@@ -83,14 +83,14 @@ class TSMultiEnv(gym.Env):
         self.observation_space = spaces.Discrete(8)
 
         # Action space
-        self.action_space = spaces.Discrete(3)  # 0- Phototaxis 1- Antiphototaxis 2-Random walk
-        # self.action_space = spaces.Discrete(6)  # 0- Forward, 1- Backward, 2- Left, 3- Right, 4- Pick up, 5- Drop
+        #self.action_space = spaces.Discrete(3)  # 0- Phototaxis 1- Antiphototaxis 2-Random walk
+        self.action_space = spaces.Discrete(6)  # 0- Forward, 1- Backward, 2- Left, 3- Right, 4- Pick up, 5- Drop
 
         self.seed()
 
         # Step variables
-        self.behaviour_map = [self.phototaxis_step, self.antiphototaxis_step, self.random_walk_step]
-        # self.behaviour_map = [self.forward_step, self.backward_step, self.left_step, self.right_step]
+        #self.behaviour_map = [self.phototaxis_step, self.antiphototaxis_step, self.random_walk_step]
+        self.behaviour_map = [self.forward_step, self.backward_step, self.left_step, self.right_step]
         self.action_name = ["FORWARD", "BACKWARD", "LEFT", "RIGHT", "PICKUP", "DROP"]
         self.has_resource = [None for i in range(self.num_robots)]
 
@@ -155,9 +155,8 @@ class TSMultiEnv(gym.Env):
         # The robots act
         old_robot_positions = copy.deepcopy(self.robot_positions)
         for i in range(len(robot_actions)):
-            # if robot_actions[i] < 4:
-            #    self.behaviour_map[robot_actions[i]](i)
-            self.behaviour_map[robot_actions[i]](i)
+            if robot_actions[i] < 4:
+                self.behaviour_map[robot_actions[i]](i)
 
         # The robots' old positions are wiped out
         for position in old_robot_positions:
@@ -204,8 +203,7 @@ class TSMultiEnv(gym.Env):
                     # If the robot is carrying a resource and it's this one, keep holding it
                     # If the robot has no resource, pick this resource up (unless it was just dropped)
                     if self.has_resource[j] == i or \
-                            self.has_resource[
-                                j] is None:  # (self.has_resource[j] is None and self.action_name[robot_actions[j]] != "DROP"):
+                            (self.has_resource[j] is None and self.action_name[robot_actions[j]] != "DROP"):
                         self.pickup_or_hold_resource(j, i)
 
         # If a robot has returned a resource to the nest it gets a reward

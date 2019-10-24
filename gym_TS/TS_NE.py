@@ -3,10 +3,7 @@ Modified from code by Giuseppe Cuccu
 """
 
 import numpy as np
-import os
 import math
-from time import time, sleep
-import matplotlib.pyplot as plt
 import gym
 
 from gym_TS.agents.TinyAgent import TinyAgent
@@ -19,18 +16,7 @@ categories = env.get_observation_categories()
 one_hot_encoder = OneHotEncoder(sparse=False, categories=categories)
 
 # Training & testing variables
-simulation_length = 1000
-current_dir = os.getcwd()
-
-# Training variables
-training_episodes = 1000
-batch_size = simulation_length
-display_rate_train = 1
-save_rate = 100
-
-# Testing variables
-testing_episodes = 100
-display_rate_test = 1
+simulation_length = 5000
 
 # Get size of input and output space and creates agent
 observation_size = env.get_observation_size() * len(env.get_observation_categories()[0])  # env.get_observation_size()
@@ -77,12 +63,13 @@ max_score = -math.inf
 for nind in range(max_ninds):
     individual = TinyAgent(observation_size, action_size)
     individual.load_weights()  # No parameters means random weights are generated
-    score = fitness(individual)
+    score = fitness(individual, render=True)
     print(f"{nind} Score: {score}")
     if score > max_score:
         max_score = score
         best_individual = individual
-        fitness(best_individual, render=True)
+        if nind != 0:
+            fitness(best_individual, render=True)
 
 # Replay winning individual
 if best_individual:
