@@ -47,6 +47,8 @@ def fitness(individual, render=False):
         if render:
             env.render()
 
+        observation = np.reshape(observation, [1, env.get_state_size()])
+
         # All agents act using same controller.
         robot_actions = [individual.act(observation) for i in range(env.get_num_robots())]
 
