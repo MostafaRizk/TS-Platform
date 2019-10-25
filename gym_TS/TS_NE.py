@@ -12,14 +12,12 @@ from sklearn.preprocessing import OneHotEncoder
 env = gym.make('gym_TS:TS-v2')
 # env = gym.wrappers.Monitor(env, 'video', force = True) # Uncomment to save video
 
-categories = env.get_observation_categories()
-one_hot_encoder = OneHotEncoder(sparse=False, categories=categories)
-
-# Training & testing variables
-simulation_length = 5000
+#categories = env.get_observation_categories()
+#one_hot_encoder = OneHotEncoder(sparse=False, categories=categories)
 
 # Get size of input and output space and creates agent
-observation_size = env.get_observation_size() * len(env.get_observation_categories()[0])  # env.get_observation_size()
+#observation_size = env.get_observation_size() * len(env.get_observation_categories()[0])  # env.get_observation_size()
+observation_size = env.get_observation_size()
 action_size = env.get_action_size()
 
 # Get random seed for deterministic fitness (for simplicity)
@@ -38,10 +36,12 @@ def fitness(individual, render=False):
             env.render()
 
         #observation = np.reshape(observation, [1, env.get_observation_size()])
-        encoded_observations = [one_hot_encoder.fit_transform(observation.reshape(1, -1)) for observation in observations]
+        #encoded_observations = [one_hot_encoder.fit_transform(observation.reshape(1, -1)) for observation in observations]
 
         # All agents act using same controller.
-        robot_actions = [individual.act(encoded_observations[i]) for i in range(env.get_num_robots())]
+        robot_actions = [individual.act(np.reshape(observations[j], [1, env.get_observation_size()]))
+                         for j in range(env.get_num_robots())]
+        #robot_actions = [individual.act(encoded_observations[i]) for i in range(env.get_num_robots())]
 
         # The environment changes according to all their actions
         observations, reward, done, info = env.step(robot_actions, t)
@@ -54,7 +54,9 @@ def fitness(individual, render=False):
 
 
 # RWG does not distinguish between populations and generations
-max_ninds = 100
+max_ninds = 1000
+
+simulation_length = 1000
 
 best_individual = None
 max_score = -math.inf
@@ -63,7 +65,7 @@ max_score = -math.inf
 for nind in range(max_ninds):
     individual = TinyAgent(observation_size, action_size)
     individual.load_weights()  # No parameters means random weights are generated
-    score = fitness(individual, render=True)
+    score = fitness(individual)
     print(f"{nind} Score: {score}")
     if score > max_score:
         max_score = score
@@ -73,5 +75,7 @@ for nind in range(max_ninds):
 
 # Replay winning individual
 if best_individual:
-    for i in range(10):
-        fitness(best_individual, render=True)
+    test_scores = []
+    for i in range(100):
+        test_scores += [fitness(best_individual)]
+    print(f"The best individual scored {test_scores}")

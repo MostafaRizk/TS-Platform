@@ -79,8 +79,11 @@ class TSMultiEnv(gym.Env):
         # NOTE: To change this, the reset function must also be changed
         #self.observation_space = spaces.Discrete(self.num_arena_tiles * 2)
 
-        # Each robot observes the 8 tiles around it
-        self.observation_space = spaces.Discrete(8)
+        # Each robot observes the 8 tiles around it and whether or not it has food
+        #self.observation_space = spaces.Discrete(9)
+
+        # Each robot observes directly in front of it, its location and whether or not it has a resource
+        self.observation_space = spaces.Discrete(3)
 
         # Action space
         #self.action_space = spaces.Discrete(3)  # 0- Phototaxis 1- Antiphototaxis 2-Random walk
@@ -265,12 +268,15 @@ class TSMultiEnv(gym.Env):
         Generate a list of observations made by each robot
         :return: An np array of observations
         """
+
+        '''
         adjacent_positions_x = [-1, 0, 1, 0, 1, 0, -1, -1]
         adjacent_positions_y = [1, 1, 1, 1, -1, -1, -1, 0]
 
         observations = []
 
-        for position in self.robot_positions:
+        for j in range(len(self.robot_positions)):
+            position = self.robot_positions[j]
             observation = []
 
             for i in range(len(adjacent_positions_x)):
@@ -289,7 +295,63 @@ class TSMultiEnv(gym.Env):
                     observation += ["O"]  # Resource
 
                 else:
-                    observation += ["B"]
+                    area = self.get_area_from_position(adjacent_position)
+                    if area == "SLOPE":
+                        observation += ["L"]
+                    else:
+                        observation += [area[0]]
+                    #observation += ["B"]
+
+
+            if self.has_resource[j]:
+                observation += ["F"]
+            else:
+                observation += ["f"]
+
+            observations += [np.array(observation)]
+
+        return observations
+        '''
+
+        observations = []
+
+        for j in range(len(self.robot_positions)):
+            position = self.robot_positions[j]
+            observation = [None, None, None]
+
+            front = (position[0], position[1] + 1)
+
+            # observation[0] is the space in front of the robot
+            # 0- Blank, 1- Another robot, 2- A resource, 3- A wall
+            if self.arena_constraints["y_max"] <= front[1] or \
+                    front[1] < 0:
+                observation[0] = [3]
+            elif self.robot_map[front[1]][front[0]] != 0:
+                observation[0] = [1]
+            elif self.resource_map[front[1]][front[0]] != 0:
+                observation[0] = [2]
+            else:
+                observation[0] = [0]
+
+            area = self.get_area_from_position(position)
+
+            # observation[1] is the area the robot is located in
+            # 0- Nest, 1- Cache, 2- Slope, 3- Source
+            if area == "NEST":
+                observation[1] = [0]
+            elif area == "CACHE":
+                observation[1] = [1]
+            elif area == "SLOPE":
+                observation[1] = [2]
+            else:
+                observation[1] = [3]
+
+            # observation[2] is whether or not the robot has a resource
+            # 0- Has no resource, 1- Has resource
+            if self.has_resource[j]:
+                observation[2] = [1]
+            else:
+                observation[2] = [0]
 
             observations += [np.array(observation)]
 
@@ -301,7 +363,8 @@ class TSMultiEnv(gym.Env):
         :return: List of cateogires
         """
 
-        return [["B", "O", "R", "W"] for i in range(self.get_observation_size())]
+        #return [["B", "O", "R", "W"] for i in range(self.get_observation_size())]
+        return [["C", "F", "L", "N", "O", "R", "S", "W", "f"] for i in range(self.get_observation_size())]
 
     def reset(self):
         """
