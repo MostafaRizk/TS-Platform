@@ -21,4 +21,5 @@ class TinyAgent:
         return action
 
     def save_model(self):
-        pass
+        weights = self.net.get_weights()
+        np.save("models/Tiny/weights", weights)

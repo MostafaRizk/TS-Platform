@@ -39,9 +39,11 @@ def fitness(individual, render=False):
         #encoded_observations = [one_hot_encoder.fit_transform(observation.reshape(1, -1)) for observation in observations]
 
         # All agents act using same controller.
-        robot_actions = [individual.act(np.reshape(observations[j], [1, env.get_observation_size()]))
-                         for j in range(env.get_num_robots())]
+        #robot_actions = [individual.act(np.reshape(observations[j], [1, env.get_observation_size()]))
+        #                 for j in range(env.get_num_robots())]
         #robot_actions = [individual.act(encoded_observations[i]) for i in range(env.get_num_robots())]
+
+        robot_actions = [env.action_space.sample() for el in range(env.get_num_robots())]
 
         # The environment changes according to all their actions
         observations, reward, done, info = env.step(robot_actions, t)
@@ -54,7 +56,7 @@ def fitness(individual, render=False):
 
 
 # RWG does not distinguish between populations and generations
-max_ninds = 1000
+max_ninds = 10000
 
 simulation_length = 1000
 
@@ -65,17 +67,20 @@ max_score = -math.inf
 for nind in range(max_ninds):
     individual = TinyAgent(observation_size, action_size)
     individual.load_weights()  # No parameters means random weights are generated
-    score = fitness(individual)
+    score = fitness(individual, render=True)
     print(f"{nind} Score: {score}")
     if score > max_score:
         max_score = score
         best_individual = individual
         if nind != 0:
             fitness(best_individual, render=True)
+            best_individual.save_model()
 
 # Replay winning individual
 if best_individual:
     test_scores = []
+    avg_score = 0
     for i in range(100):
         test_scores += [fitness(best_individual)]
-    print(f"The best individual scored {test_scores}")
+    avg_score = sum(test_scores)/len(test_scores)
+    print(f"The best individual scored {avg_score} on average")

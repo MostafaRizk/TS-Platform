@@ -53,7 +53,7 @@ class TSMultiEnv(gym.Env):
 
         # Other constants/variables
         self.num_robots = 1
-        self.default_num_resources = 1
+        self.default_num_resources = 3
         self.current_num_resources = self.default_num_resources
         self.latest_resource_id = self.default_num_resources - 1
         self.dumping_position = (-10, -10)
@@ -198,33 +198,48 @@ class TSMultiEnv(gym.Env):
 
         self.robot_positions = robot_collision_positions
 
-        # Ensure that a resource that was at the same location as a robot in the last time step moves with the robot
-        # (i.e. the robot holds onto the resource). Also ensure that robot picks it up (unless it was just dropped)
         for i in range(len(self.resource_positions)):
             for j in range(len(old_robot_positions)):
+                # Ensure that a resource that was at the same location as a robot in the last time step moves with the robot
+                # (i.e. the robot holds onto the resource). Also ensure that robot picks it up (unless it was just dropped)
                 if self.resource_positions[i] == old_robot_positions[j]:
-                    # If the robot is carrying a resource and it's this one, keep holding it
-                    # If the robot has no resource, pick this resource up (unless it was just dropped)
-                    if self.has_resource[j] == i or \
-                            (self.has_resource[j] is None and self.action_name[robot_actions[j]] != "DROP"):
-                        self.pickup_or_hold_resource(j, i)
+                    # If a robot currently has a resource and is doing a drop action, drop the resource
+                    # If a robot currently has a resource and is NOT doing a drop action, hold onto it
+                    if self.has_resource[j] == i:
+                        if self.action_name[robot_actions[j]] == "DROP":
+                            self.drop_resource(j)
+                        else:
+                            self.pickup_or_hold_resource(j, i)
 
-        # If a robot has returned a resource to the nest it gets a reward
+                # Ensure that a resource that is at the same location as a robot now gets picked up if the robot is
+                # doing a pickup action
+                if self.resource_positions[i] == self.robot_positions[j]:
+                    if self.has_resource[j] is None:
+                        if self.action_name[robot_actions[j]] == "PICKUP":
+                            self.pickup_or_hold_resource(j, i)
+
+
+            # If a resource is on the slope and not in the possession of a robot, it slides
+            if self.resource_positions[i] != self.dumping_position and \
+                    self.get_area_from_position(self.resource_positions[i]) == "SLOPE" and i not in self.has_resource:
+                self.slide_resource(i)
+
+        # If a robot has returned a resource to the nest a new one spawns (sometimes the robot is rewarded)
         for i in range(self.num_robots):
             if self.get_area_from_position(self.robot_positions[i]) == "NEST" and self.has_resource[i] is not None:
                 self.resource_positions[self.has_resource[i]] = self.dumping_position
                 self.has_resource[i] = None
                 self.current_num_resources -= 1
-                #reward += 1000
+                reward += 1
+                self.spawn_resource()
 
         # Update the state with the new resource positions
         for i in range(len(self.resource_positions)):
             if self.resource_positions[i] != self.dumping_position:
-                self.state[self.resource_positions[i][1] + self.arena_constraints["y_max"]][
-                    self.resource_positions[i][0]] = i + 1
+                self.state[self.resource_positions[i][1] + self.arena_constraints["y_max"]][self.resource_positions[i][0]] = i + 1
 
         # -1 reward at each time step to promote faster runtimes
-        reward -= 1
+        #reward -= 1
 
         # The task is done when all resources are removed from the environment
         if self.current_num_resources == 0:
@@ -425,6 +440,11 @@ class TSMultiEnv(gym.Env):
         assert self.default_num_resources < self.arena_constraints[
             "x_max"] * self.source_size, "Not enough room in the source for all resources"
 
+        self.resource_positions = [None for i in range(self.default_num_resources)]
+        self.resource_transforms = [rendering.Transform() for i in range(self.default_num_resources)]
+        self.latest_resource_id = self.default_num_resources - 1
+
+
         # Creates empty state
         self.robot_map = self.generate_arena()  # Empty robot map
 
@@ -596,12 +616,23 @@ class TSMultiEnv(gym.Env):
                 (self.robot_positions[i][1] - self.arena_constraints["y_min"] + 0.5) * self.scale)
 
         # Set position of resource(s)
-        for i in range(self.default_num_resources):
+        for i in range(self.current_num_resources):
             self.resource_transforms[i].set_translation(
                 (self.resource_positions[i][0] - self.arena_constraints["x_min"] + 0.5) * self.scale,
                 (self.resource_positions[i][1] - self.arena_constraints["y_min"] + 0.5) * self.scale)
 
         return self.viewer.render(return_rgb_array=mode == 'rgb_array')
+
+    def add_resource_to_rendering(self, resource_id):
+        resource = rendering.make_circle(self.resource_width / 2 * self.scale)
+        resource.set_color(self.resource_colour[0], self.resource_colour[1], self.resource_colour[2])
+        resource.add_attr(
+            rendering.Transform(
+                translation=(
+                    0,
+                    0)))
+        resource.add_attr(self.resource_transforms[resource_id])
+        self.viewer.add_geom(resource)
 
     def get_area_from_position(self, position):
         """
@@ -719,11 +750,21 @@ class TSMultiEnv(gym.Env):
         self.resource_positions[resource_id] = self.robot_positions[robot_id]
         self.has_resource[robot_id] = resource_id
 
-    def drop_resource(self, robot_id, resource_id):
+    def drop_resource(self, robot_id):
+        """
+        Lets a robot drop a resource. I.e. Ensures that the robot is marked as no longer having that resource.
+        :param robot_id: Index of the robot in self.robot_positions
+        :return:
+        """
         self.has_resource[robot_id] = None
 
-    def slide_resource(self):
-        pass
+    def slide_resource(self, resource_id):
+        """
+        Lets a resource slide. I.e. the position moves towards the nest
+        :param resource_id:
+        :return:
+        """
+        self.resource_positions[resource_id] = (self.resource_positions[resource_id][0], self.resource_positions[resource_id][1] - self.sliding_speed)
 
     def spawn_resource(self):
         """
@@ -742,11 +783,12 @@ class TSMultiEnv(gym.Env):
             if self.resource_map[y][x] == 0:
                 self.resource_map[y][x] = self.latest_resource_id + 1
                 self.latest_resource_id += 1
-                self.resource_positions += (x, y)
+                self.resource_positions += [(x, y)]
                 # self.resource_positions[self.latest_resource_id] = (x, y)
                 self.resource_transforms += [rendering.Transform()]
                 resource_placed = True
                 self.current_num_resources += 1
+                self.add_resource_to_rendering(self.latest_resource_id)
                 return x, y
 
     def delete_resource(self, resource_id):
@@ -763,7 +805,7 @@ class TSMultiEnv(gym.Env):
         Determines if the source area has a resource at every grid position and is thus "full"
         :return: True if full, False otherwise
         """
-        for y in range(self.source_size):
+        for y in range(int(self.source_size)):
             for x in range(self.arena_constraints["x_max"]):
                 if self.resource_map[y][x] == 0:
                     return False
