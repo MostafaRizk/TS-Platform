@@ -67,7 +67,7 @@ max_score = -math.inf
 for nind in range(max_ninds):
     individual = TinyAgent(observation_size, action_size)
     individual.load_weights()  # No parameters means random weights are generated
-    score = fitness(individual, render=True)
+    score = fitness(individual)
     print(f"{nind} Score: {score}")
     if score > max_score:
         max_score = score
