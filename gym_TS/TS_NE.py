@@ -39,11 +39,11 @@ def fitness(individual, render=False):
         #encoded_observations = [one_hot_encoder.fit_transform(observation.reshape(1, -1)) for observation in observations]
 
         # All agents act using same controller.
-        #robot_actions = [individual.act(np.reshape(observations[j], [1, env.get_observation_size()]))
-        #                 for j in range(env.get_num_robots())]
+        robot_actions = [individual.act(np.reshape(observations[j], [1, env.get_observation_size()]))
+                         for j in range(env.get_num_robots())]
         #robot_actions = [individual.act(encoded_observations[i]) for i in range(env.get_num_robots())]
 
-        robot_actions = [env.action_space.sample() for el in range(env.get_num_robots())]
+        #robot_actions = [env.action_space.sample() for el in range(env.get_num_robots())]
 
         # The environment changes according to all their actions
         observations, reward, done, info = env.step(robot_actions, t)
