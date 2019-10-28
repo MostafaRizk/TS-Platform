@@ -89,13 +89,13 @@ class TSMultiEnv(gym.Env):
         #self.action_space = spaces.Discrete(3)  # 0- Phototaxis 1- Antiphototaxis 2-Random walk
         self.action_space = spaces.Discrete(6)  # 0- Forward, 1- Backward, 2- Left, 3- Right, 4- Pick up, 5- Drop
 
-        self.seed()
-
         # Step variables
         #self.behaviour_map = [self.phototaxis_step, self.antiphototaxis_step, self.random_walk_step]
         self.behaviour_map = [self.forward_step, self.backward_step, self.left_step, self.right_step]
         self.action_name = ["FORWARD", "BACKWARD", "LEFT", "RIGHT", "PICKUP", "DROP"]
         self.has_resource = [None for i in range(self.num_robots)]
+
+        self.seed_value = None
 
     def seed(self, seed=None):
         """
@@ -104,6 +104,7 @@ class TSMultiEnv(gym.Env):
         :return:
         """
         self.np_random, seed = seeding.np_random(seed)
+        self.seed_value = seed
         return [seed]
 
     def get_num_robots(self):
@@ -227,9 +228,8 @@ class TSMultiEnv(gym.Env):
         # If a robot has returned a resource to the nest a new one spawns (sometimes the robot is rewarded)
         for i in range(self.num_robots):
             if self.get_area_from_position(self.robot_positions[i]) == "NEST" and self.has_resource[i] is not None:
-                self.resource_positions[self.has_resource[i]] = self.dumping_position
+                self.delete_resource(self.has_resource[i])
                 self.has_resource[i] = None
-                self.current_num_resources -= 1
                 reward += 1
                 self.spawn_resource()
 
@@ -265,8 +265,8 @@ class TSMultiEnv(gym.Env):
         Generates and returns valid coordinates for a single robot
         :return: x and y coordinates of the robot
         """
-        x = np.random.randint(low=self.arena_constraints["x_min"], high=self.arena_constraints["x_max"])
-        y = np.random.randint(low=self.nest_start, high=self.nest_start + self.nest_size)
+        x = self.np_random.randint(low=self.arena_constraints["x_min"], high=self.arena_constraints["x_max"])
+        y = self.np_random.randint(low=self.nest_start, high=self.nest_start + self.nest_size)
         return x, y
 
     def generate_resource_position(self):
@@ -274,8 +274,8 @@ class TSMultiEnv(gym.Env):
         Generates and returns valid coordinates for a single resource
         :return: x and y coordinates of the resource
         """
-        x = np.random.randint(low=self.arena_constraints["x_min"], high=self.arena_constraints["x_max"])
-        y = np.random.randint(low=self.source_start, high=self.arena_constraints["y_max"])
+        x = self.np_random.randint(low=self.arena_constraints["x_min"], high=self.arena_constraints["x_max"])
+        y = self.np_random.randint(low=self.source_start, high=self.arena_constraints["y_max"])
         return x, y
 
     def generate_robot_observations(self):
@@ -439,6 +439,13 @@ class TSMultiEnv(gym.Env):
             "x_max"] * self.nest_size, "Not enough room in the nest for all robots"
         assert self.default_num_resources < self.arena_constraints[
             "x_max"] * self.source_size, "Not enough room in the source for all resources"
+
+        try:
+            self.viewer.close()
+        except:
+            pass
+
+        self.viewer = None
 
         self.resource_positions = [None for i in range(self.default_num_resources)]
         self.resource_transforms = [rendering.Transform() for i in range(self.default_num_resources)]
@@ -616,7 +623,7 @@ class TSMultiEnv(gym.Env):
                 (self.robot_positions[i][1] - self.arena_constraints["y_min"] + 0.5) * self.scale)
 
         # Set position of resource(s)
-        for i in range(self.current_num_resources):
+        for i in range(len(self.resource_positions)):
             self.resource_transforms[i].set_translation(
                 (self.resource_positions[i][0] - self.arena_constraints["x_min"] + 0.5) * self.scale,
                 (self.resource_positions[i][1] - self.arena_constraints["y_min"] + 0.5) * self.scale)
@@ -686,8 +693,8 @@ class TSMultiEnv(gym.Env):
         :param robot_id: Index of the robot in self.robot_positions
         :return:
         """
-        x_movement = np.random.randint(low=-1, high=2)
-        y_movement = np.random.randint(low=-1, high=2)
+        x_movement = self.np_random.randint(low=-1, high=2)
+        y_movement = self.np_random.randint(low=-1, high=2)
 
         self.robot_positions[robot_id] = (
             np.clip(self.robot_positions[robot_id][0] + x_movement, self.arena_constraints["x_min"],

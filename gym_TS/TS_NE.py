@@ -20,13 +20,17 @@ env = gym.make('gym_TS:TS-v2')
 observation_size = env.get_observation_size()
 action_size = env.get_action_size()
 
-# Get random seed for deterministic fitness (for simplicity)
-random_seed = np.random.randint(1e10)
+#random_seed = np.random.randint(1e10)
+random_seed = 0
+
+# Action space uses a separate random number generator so need to set its seed separately
+env.action_space.np_random.seed(random_seed)
 
 
 # Fitness function: gameplay loop
 def fitness(individual, render=False):
-    env.seed(random_seed)  # makes fitness deterministic
+    #env.seed(random_seed)  # makes fitness deterministic
+    env.seed(random_seed)
     observations = env.reset()
     score = 0
     done = False
@@ -39,11 +43,11 @@ def fitness(individual, render=False):
         #encoded_observations = [one_hot_encoder.fit_transform(observation.reshape(1, -1)) for observation in observations]
 
         # All agents act using same controller.
-        robot_actions = [individual.act(np.reshape(observations[j], [1, env.get_observation_size()]))
-                         for j in range(env.get_num_robots())]
+        #robot_actions = [individual.act(np.reshape(observations[j], [1, env.get_observation_size()]))
+        #                 for j in range(env.get_num_robots())]
         #robot_actions = [individual.act(encoded_observations[i]) for i in range(env.get_num_robots())]
 
-        #robot_actions = [env.action_space.sample() for el in range(env.get_num_robots())]
+        robot_actions = [env.action_space.sample() for el in range(env.get_num_robots())]
 
         # The environment changes according to all their actions
         observations, reward, done, info = env.step(robot_actions, t)
@@ -67,14 +71,15 @@ max_score = -math.inf
 for nind in range(max_ninds):
     individual = TinyAgent(observation_size, action_size)
     individual.load_weights()  # No parameters means random weights are generated
-    score = fitness(individual)
+    score = fitness(individual, render=True)
     print(f"{nind} Score: {score}")
     if score > max_score:
         max_score = score
         best_individual = individual
         if nind != 0:
             fitness(best_individual, render=True)
-            best_individual.save_model()
+            #best_individual.save_model()
+    random_seed += 1
 
 # Replay winning individual
 if best_individual:
@@ -82,5 +87,6 @@ if best_individual:
     avg_score = 0
     for i in range(100):
         test_scores += [fitness(best_individual)]
+        random_seed += 1
     avg_score = sum(test_scores)/len(test_scores)
     print(f"The best individual scored {avg_score} on average")
