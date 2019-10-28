@@ -9,7 +9,8 @@ class TinyAgent:
         self.net_struct = [observation_size, *self.hidden, action_size]
 
         # Network setup is straightforward (defaults: `act_fn=np.tanh, init_weights=None`)
-        self.net = tinynet.RNN(self.net_struct)
+        #self.net = tinynet.RNN(self.net_struct)
+        self.net = tinynet.FFNN(self.net_struct)
 
     def load_weights(self, weights=[]):
         if not weights:

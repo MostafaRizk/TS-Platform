@@ -83,7 +83,12 @@ class TSMultiEnv(gym.Env):
         #self.observation_space = spaces.Discrete(9)
 
         # Each robot observes directly in front of it, its location and whether or not it has a resource
-        self.observation_space = spaces.Discrete(3)
+        #self.observation_space = spaces.Discrete(3)
+
+        # Each robot observes directly in front of it, its location and whether or not it has a resource
+        # The details are explained in self.generate_robot_observations()
+        self.observation_space = spaces.Discrete(9)
+
 
         # Action space
         #self.action_space = spaces.Discrete(3)  # 0- Phototaxis 1- Antiphototaxis 2-Random walk
@@ -284,89 +289,49 @@ class TSMultiEnv(gym.Env):
         :return: An np array of observations
         """
 
-        '''
-        adjacent_positions_x = [-1, 0, 1, 0, 1, 0, -1, -1]
-        adjacent_positions_y = [1, 1, 1, 1, -1, -1, -1, 0]
-
         observations = []
 
         for j in range(len(self.robot_positions)):
             position = self.robot_positions[j]
-            observation = []
-
-            for i in range(len(adjacent_positions_x)):
-                adjacent_position = (position[0] + adjacent_positions_x[i], position[1] + adjacent_positions_y[i])
-
-                if self.arena_constraints["y_max"] <= adjacent_position[1] or \
-                        adjacent_position[1] < 0 or \
-                        self.arena_constraints["x_max"] <= adjacent_position[0] or \
-                        adjacent_position[0] < 0:
-                    observation += ["W"]  # Wall
-
-                elif self.robot_map[adjacent_position[1]][adjacent_position[0]] != 0:
-                    observation += ["R"]  # Robot
-
-                elif self.resource_map[adjacent_position[1]][adjacent_position[0]] != 0:
-                    observation += ["O"]  # Resource
-
-                else:
-                    area = self.get_area_from_position(adjacent_position)
-                    if area == "SLOPE":
-                        observation += ["L"]
-                    else:
-                        observation += [area[0]]
-                    #observation += ["B"]
-
-
-            if self.has_resource[j]:
-                observation += ["F"]
-            else:
-                observation += ["f"]
-
-            observations += [np.array(observation)]
-
-        return observations
-        '''
-
-        observations = []
-
-        for j in range(len(self.robot_positions)):
-            position = self.robot_positions[j]
-            observation = [None, None, None]
+            observation = [0]*9
 
             front = (position[0], position[1] + 1)
 
-            # observation[0] is the space in front of the robot
-            # 0- Blank, 1- Another robot, 2- A resource, 3- A wall
+            # If the space in front of the robot is
+            # Blank-            observation[0] = 1, otherwise 0
+            # Another robot-    observation[1] = 1, otherwise 0
+            # A resource-       observation[2] = 1, otherwise 0
+            # A wall-           observation[3] = 1, otherwise 0
             if self.arena_constraints["y_max"] <= front[1] or \
                     front[1] < 0:
-                observation[0] = [3]
+                observation[3] = 1  # Wall
             elif self.robot_map[front[1]][front[0]] != 0:
-                observation[0] = [1]
+                observation[1] = 1  # Another robot
             elif self.resource_map[front[1]][front[0]] != 0:
-                observation[0] = [2]
+                observation[2] = 1  # A resource
             else:
-                observation[0] = [0]
+                observation[0] = 1  # Blank space
 
             area = self.get_area_from_position(position)
 
-            # observation[1] is the area the robot is located in
-            # 0- Nest, 1- Cache, 2- Slope, 3- Source
+            # If the area the robot is located in is
+            # The nest-     observation[4] = 1, otherwise 0
+            # The cache-    observation[5] = 1, otherwise 0
+            # The slope-    observation[6] = 1, otherwise 0
+            # The source-   observation[7] = 1, otherwise 0
             if area == "NEST":
-                observation[1] = [0]
+                observation[4] = 1
             elif area == "CACHE":
-                observation[1] = [1]
+                observation[5] = 1
             elif area == "SLOPE":
-                observation[1] = [2]
+                observation[6] = 1
             else:
-                observation[1] = [3]
+                observation[7] = 1
 
-            # observation[2] is whether or not the robot has a resource
-            # 0- Has no resource, 1- Has resource
+            # If the robot
+            # Has a resource-   observation[8] = 1, otherwise 0
             if self.has_resource[j]:
-                observation[2] = [1]
-            else:
-                observation[2] = [0]
+                observation[8] = 1
 
             observations += [np.array(observation)]
 
