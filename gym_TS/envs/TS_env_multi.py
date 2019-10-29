@@ -604,7 +604,8 @@ class TSMultiEnv(gym.Env):
                     0,
                     0)))
         resource.add_attr(self.resource_transforms[resource_id])
-        self.viewer.add_geom(resource)
+        if self.viewer is not None:
+            self.viewer.add_geom(resource)
 
     def get_area_from_position(self, position):
         """
