@@ -52,7 +52,7 @@ class TSMultiEnv(gym.Env):
         self.sliding_speed = 2
 
         # Other constants/variables
-        self.num_robots = 1
+        self.num_robots = 3
         self.default_num_resources = 3
         self.current_num_resources = self.default_num_resources
         self.latest_resource_id = self.default_num_resources - 1
@@ -83,19 +83,24 @@ class TSMultiEnv(gym.Env):
         #self.observation_space = spaces.Discrete(9)
 
         # Each robot observes directly in front of it, its location and whether or not it has a resource
-        self.observation_space = spaces.Discrete(3)
+        #self.observation_space = spaces.Discrete(3)
+
+        # Each robot observes directly in front of it, its location and whether or not it has a resource
+        # The details are explained in self.generate_robot_observations()
+        self.observation_space = spaces.Discrete(9)
+
 
         # Action space
         #self.action_space = spaces.Discrete(3)  # 0- Phototaxis 1- Antiphototaxis 2-Random walk
         self.action_space = spaces.Discrete(6)  # 0- Forward, 1- Backward, 2- Left, 3- Right, 4- Pick up, 5- Drop
-
-        self.seed()
 
         # Step variables
         #self.behaviour_map = [self.phototaxis_step, self.antiphototaxis_step, self.random_walk_step]
         self.behaviour_map = [self.forward_step, self.backward_step, self.left_step, self.right_step]
         self.action_name = ["FORWARD", "BACKWARD", "LEFT", "RIGHT", "PICKUP", "DROP"]
         self.has_resource = [None for i in range(self.num_robots)]
+
+        self.seed_value = None
 
     def seed(self, seed=None):
         """
@@ -104,6 +109,7 @@ class TSMultiEnv(gym.Env):
         :return:
         """
         self.np_random, seed = seeding.np_random(seed)
+        self.seed_value = seed
         return [seed]
 
     def get_num_robots(self):
@@ -227,9 +233,8 @@ class TSMultiEnv(gym.Env):
         # If a robot has returned a resource to the nest a new one spawns (sometimes the robot is rewarded)
         for i in range(self.num_robots):
             if self.get_area_from_position(self.robot_positions[i]) == "NEST" and self.has_resource[i] is not None:
-                self.resource_positions[self.has_resource[i]] = self.dumping_position
+                self.delete_resource(self.has_resource[i])
                 self.has_resource[i] = None
-                self.current_num_resources -= 1
                 reward += 1
                 self.spawn_resource()
 
@@ -265,8 +270,8 @@ class TSMultiEnv(gym.Env):
         Generates and returns valid coordinates for a single robot
         :return: x and y coordinates of the robot
         """
-        x = np.random.randint(low=self.arena_constraints["x_min"], high=self.arena_constraints["x_max"])
-        y = np.random.randint(low=self.nest_start, high=self.nest_start + self.nest_size)
+        x = self.np_random.randint(low=self.arena_constraints["x_min"], high=self.arena_constraints["x_max"])
+        y = self.np_random.randint(low=self.nest_start, high=self.nest_start + self.nest_size)
         return x, y
 
     def generate_resource_position(self):
@@ -274,8 +279,8 @@ class TSMultiEnv(gym.Env):
         Generates and returns valid coordinates for a single resource
         :return: x and y coordinates of the resource
         """
-        x = np.random.randint(low=self.arena_constraints["x_min"], high=self.arena_constraints["x_max"])
-        y = np.random.randint(low=self.source_start, high=self.arena_constraints["y_max"])
+        x = self.np_random.randint(low=self.arena_constraints["x_min"], high=self.arena_constraints["x_max"])
+        y = self.np_random.randint(low=self.source_start, high=self.arena_constraints["y_max"])
         return x, y
 
     def generate_robot_observations(self):
@@ -284,89 +289,49 @@ class TSMultiEnv(gym.Env):
         :return: An np array of observations
         """
 
-        '''
-        adjacent_positions_x = [-1, 0, 1, 0, 1, 0, -1, -1]
-        adjacent_positions_y = [1, 1, 1, 1, -1, -1, -1, 0]
-
         observations = []
 
         for j in range(len(self.robot_positions)):
             position = self.robot_positions[j]
-            observation = []
-
-            for i in range(len(adjacent_positions_x)):
-                adjacent_position = (position[0] + adjacent_positions_x[i], position[1] + adjacent_positions_y[i])
-
-                if self.arena_constraints["y_max"] <= adjacent_position[1] or \
-                        adjacent_position[1] < 0 or \
-                        self.arena_constraints["x_max"] <= adjacent_position[0] or \
-                        adjacent_position[0] < 0:
-                    observation += ["W"]  # Wall
-
-                elif self.robot_map[adjacent_position[1]][adjacent_position[0]] != 0:
-                    observation += ["R"]  # Robot
-
-                elif self.resource_map[adjacent_position[1]][adjacent_position[0]] != 0:
-                    observation += ["O"]  # Resource
-
-                else:
-                    area = self.get_area_from_position(adjacent_position)
-                    if area == "SLOPE":
-                        observation += ["L"]
-                    else:
-                        observation += [area[0]]
-                    #observation += ["B"]
-
-
-            if self.has_resource[j]:
-                observation += ["F"]
-            else:
-                observation += ["f"]
-
-            observations += [np.array(observation)]
-
-        return observations
-        '''
-
-        observations = []
-
-        for j in range(len(self.robot_positions)):
-            position = self.robot_positions[j]
-            observation = [None, None, None]
+            observation = [0]*9
 
             front = (position[0], position[1] + 1)
 
-            # observation[0] is the space in front of the robot
-            # 0- Blank, 1- Another robot, 2- A resource, 3- A wall
+            # If the space in front of the robot is
+            # Blank-            observation[0] = 1, otherwise 0
+            # Another robot-    observation[1] = 1, otherwise 0
+            # A resource-       observation[2] = 1, otherwise 0
+            # A wall-           observation[3] = 1, otherwise 0
             if self.arena_constraints["y_max"] <= front[1] or \
                     front[1] < 0:
-                observation[0] = [3]
+                observation[3] = 1  # Wall
             elif self.robot_map[front[1]][front[0]] != 0:
-                observation[0] = [1]
+                observation[1] = 1  # Another robot
             elif self.resource_map[front[1]][front[0]] != 0:
-                observation[0] = [2]
+                observation[2] = 1  # A resource
             else:
-                observation[0] = [0]
+                observation[0] = 1  # Blank space
 
             area = self.get_area_from_position(position)
 
-            # observation[1] is the area the robot is located in
-            # 0- Nest, 1- Cache, 2- Slope, 3- Source
+            # If the area the robot is located in is
+            # The nest-     observation[4] = 1, otherwise 0
+            # The cache-    observation[5] = 1, otherwise 0
+            # The slope-    observation[6] = 1, otherwise 0
+            # The source-   observation[7] = 1, otherwise 0
             if area == "NEST":
-                observation[1] = [0]
+                observation[4] = 1
             elif area == "CACHE":
-                observation[1] = [1]
+                observation[5] = 1
             elif area == "SLOPE":
-                observation[1] = [2]
+                observation[6] = 1
             else:
-                observation[1] = [3]
+                observation[7] = 1
 
-            # observation[2] is whether or not the robot has a resource
-            # 0- Has no resource, 1- Has resource
+            # If the robot
+            # Has a resource-   observation[8] = 1, otherwise 0
             if self.has_resource[j]:
-                observation[2] = [1]
-            else:
-                observation[2] = [0]
+                observation[8] = 1
 
             observations += [np.array(observation)]
 
@@ -439,6 +404,13 @@ class TSMultiEnv(gym.Env):
             "x_max"] * self.nest_size, "Not enough room in the nest for all robots"
         assert self.default_num_resources < self.arena_constraints[
             "x_max"] * self.source_size, "Not enough room in the source for all resources"
+
+        try:
+            self.viewer.close()
+        except:
+            pass
+
+        self.viewer = None
 
         self.resource_positions = [None for i in range(self.default_num_resources)]
         self.resource_transforms = [rendering.Transform() for i in range(self.default_num_resources)]
@@ -616,7 +588,7 @@ class TSMultiEnv(gym.Env):
                 (self.robot_positions[i][1] - self.arena_constraints["y_min"] + 0.5) * self.scale)
 
         # Set position of resource(s)
-        for i in range(self.current_num_resources):
+        for i in range(len(self.resource_positions)):
             self.resource_transforms[i].set_translation(
                 (self.resource_positions[i][0] - self.arena_constraints["x_min"] + 0.5) * self.scale,
                 (self.resource_positions[i][1] - self.arena_constraints["y_min"] + 0.5) * self.scale)
@@ -632,7 +604,8 @@ class TSMultiEnv(gym.Env):
                     0,
                     0)))
         resource.add_attr(self.resource_transforms[resource_id])
-        self.viewer.add_geom(resource)
+        if self.viewer is not None:
+            self.viewer.add_geom(resource)
 
     def get_area_from_position(self, position):
         """
@@ -686,8 +659,8 @@ class TSMultiEnv(gym.Env):
         :param robot_id: Index of the robot in self.robot_positions
         :return:
         """
-        x_movement = np.random.randint(low=-1, high=2)
-        y_movement = np.random.randint(low=-1, high=2)
+        x_movement = self.np_random.randint(low=-1, high=2)
+        y_movement = self.np_random.randint(low=-1, high=2)
 
         self.robot_positions[robot_id] = (
             np.clip(self.robot_positions[robot_id][0] + x_movement, self.arena_constraints["x_min"],
