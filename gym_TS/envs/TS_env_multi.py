@@ -9,7 +9,7 @@ from gym.utils import seeding
 import math
 import numpy as np
 import copy
-from keras.utils import to_categorical
+# from keras.utils import to_categorical
 from gym.envs.classic_control import rendering
 
 
