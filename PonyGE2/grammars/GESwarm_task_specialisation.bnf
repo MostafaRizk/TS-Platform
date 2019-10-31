@@ -1,0 +1,19 @@
+#GESwarm Grammar
+<rule_set> ::= <rule>"#"<rule_set>|<rule>"#"
+<rule> ::= <precondition_set>":"<behaviour_set>":"<action_set>
+<precondition_set> ::= <precondition>";"<precondition_set>|<epsilon>
+<behaviour_set> ::= <behaviour>";"<behaviour_set>|<epsilon>
+<action_set> ::= <action>";"<action_set>|<action>
+
+<precondition> ::= <precondition_terminal>","<boolean>
+<precondition_terminal> ::= "P_ON_SOURCE"|"P_ON_NEST"|"P_HAS_OBJECT"|"P_ON_SLOPE"|"P_ON_CACHE"|"P_MOTIVATION_1_LT"|"P_MOTIVATION_1_GT"|"P_MOTIVATION_2_LT"|"P_MOTIVATION_2_GT"
+
+<action> ::= <A_B>|<A_IS>
+<A_B> ::= <behaviour>","<probability>
+<A_IS> ::= <IS_name>","<boolean>","<probability>
+
+<behaviour> ::= "B_PHOTOTAXIS"|"B_ANTI_PHOTOTAXIS"|"B_RANDOM_WALK"
+<IS_name> ::= "IS_WANT_OBJECT"|"IS_DROP_OBJECT"|"IS_MOTIVATION_1_INC"|"IS_MOTIVATION_1_DEC"|"IS_MOTIVATION_2_INC"|"IS_MOTIVATION_2_DEC"
+<boolean> ::= "true"|"false"
+<probability> ::= GE_RANGE:101
+<epsilon> ::= "*"

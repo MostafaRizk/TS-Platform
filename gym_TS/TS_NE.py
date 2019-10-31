@@ -10,6 +10,7 @@ import cma
 
 from gym_TS.agents.TinyAgent import TinyAgent
 from gym.utils import seeding
+
 # from sklearn.preprocessing import OneHotEncoder
 
 env = gym.make('gym_TS:TS-v2')
@@ -34,6 +35,9 @@ np_random, seed = seeding.np_random(random_seed)
 
 # Fitness function: gameplay loop
 def fitness(individual, render=False):
+    if not isinstance(individual, TinyAgent):
+        individual = TinyAgent(observation_size, action_size, random_seed)
+
     # env.seed(random_seed)  # makes fitness deterministic
     env.seed(random_seed)
     observations = env.reset()
@@ -52,7 +56,8 @@ def fitness(individual, render=False):
         #                 for j in range(env.get_num_robots())]
         # robot_actions = [individual.act(encoded_observations[i]) for i in range(env.get_num_robots())]
 
-        robot_actions = [env.action_space.sample() for el in range(env.get_num_robots())]
+        #robot_actions = [env.action_space.sample() for el in range(env.get_num_robots())]
+        robot_actions = [individual.act(observations[i]) for i in range(len(observations))]
 
         # The environment changes according to all their actions
         observations, reward, done, info = env.step(robot_actions, t)
@@ -100,7 +105,8 @@ def rwg(seed_value, population_size=1000):
 
 # Things to change:
 # Mutation method
-def ga(seed_value, num_generations=2000, population_size=100, num_trials=3, mutation_rate=0.01, elitism_percentage=0.05):
+def ga(seed_value, num_generations=2000, population_size=100, num_trials=3, mutation_rate=0.01,
+       elitism_percentage=0.05):
     # population_size = 10
     # num_generations = 40
     # num_trials = 3
@@ -170,7 +176,7 @@ def ga(seed_value, num_generations=2000, population_size=100, num_trials=3, muta
                 gene = child_genome[j]
 
                 # Create a bit string from the float of the genome
-                bit_string = bin(int(gene*(10**decimal_places)))  # Gene is a float, turn into int
+                bit_string = bin(int(gene * (10 ** decimal_places)))  # Gene is a float, turn into int
                 start_index = bit_string.find('b') + 1  # Prefix is either 0b or -0b. Start after 'b'
                 bit_list = list(bit_string[start_index:])
 
@@ -184,7 +190,7 @@ def ga(seed_value, num_generations=2000, population_size=100, num_trials=3, muta
                         else:
                             bit_list[b] = '0'
 
-                mutated_gene = float(int(''.join(bit_list), 2)) / (10**decimal_places)
+                mutated_gene = float(int(''.join(bit_list), 2)) / (10 ** decimal_places)
                 child_genome[j] = mutated_gene
 
             # Create child individual and add to population
@@ -199,11 +205,17 @@ def ga(seed_value, num_generations=2000, population_size=100, num_trials=3, muta
     return best_individual
 
 
-def cma_es():
-    res = cma.fmin(fitness, 60 * [0], 0.5)
-    es = cma.CMAEvolutionStrategy(60 * [0], 0.5).optimize(fitness)
+def cma_es(sigma=0.5):
+    demo_agent = TinyAgent(observation_size, action_size, random_seed)
+    num_weights = demo_agent.get_num_weights()
+    # res = cma.fmin(fitness, num_weights * [0], 0.5)
+    es = cma.CMAEvolutionStrategy(num_weights * [0], sigma).optimize(fitness)
     print(f"Best score iss {es.result[1]}")
     return es.result[0]
+
+
+def ge():
+    # Run PonyGE
 
 # Replay winning individual
 def evaluate_best(best, seed, num_trials=100):
@@ -220,11 +232,12 @@ def evaluate_best(best, seed, num_trials=100):
         print(f"The best individual scored {avg_score} on average")
 
 
-#best_individual = rwg(random_seed, 100)
-#best_individual = ga(random_seed, num_generations=20, population_size=5, num_trials=5)
-best_genome = cma_es()
+#best_individual = rwg(random_seed)
+#best_individual = ga(random_seed, num_generations=20, population_size=5, num_trials=3)
+
+
 best_individual = TinyAgent(observation_size, action_size, random_seed)
+best_genome = cma_es(0.9)
 best_individual.load_weights(best_genome)
 
 evaluate_best(best_individual, random_seed)
-

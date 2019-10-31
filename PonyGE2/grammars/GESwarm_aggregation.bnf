@@ -1,0 +1,17 @@
+#GESwarm Grammar
+<rule_set> ::= <rule>"#"<rule_set>|<rule>"#"
+<rule> ::= <precondition_set>":"<behaviour_set>":"<action_set>
+<precondition_set> ::= <precondition>";"<precondition_set>|<epsilon>
+<behaviour_set> ::= <behaviour>";"<behaviour_set>|<epsilon>
+<action_set> ::= <action>";"<action_set>|<action>
+
+<precondition> ::= <precondition_terminal>","<boolean>
+<precondition_terminal> ::= "P_NEAR_NEIGHBOURS"
+
+<action> ::= <A_B>
+<A_B> ::= <behaviour>","<probability>
+
+<behaviour> ::= "B_RANDOM_WALK"|"B_FLOCK"
+<boolean> ::= "true"|"false"
+<probability> ::= GE_RANGE:101
+<epsilon> ::= "*"

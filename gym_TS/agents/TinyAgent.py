@@ -19,6 +19,9 @@ class TinyAgent:
     def get_weights(self):
         return self.net.get_weights()
 
+    def get_num_weights(self):
+        return self.net.nweights
+
     def load_weights(self, weights=[]):
         if weights == []:
             weights = self.np_random.randn(self.net.nweights)
