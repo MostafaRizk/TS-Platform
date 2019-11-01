@@ -4,72 +4,16 @@ Modified from code by Giuseppe Cuccu
 
 import numpy as np
 import math
-import gym
 import copy
 import cma
 
 from gym_TS.agents.TinyAgent import TinyAgent
-from gym.utils import seeding
 
-# from sklearn.preprocessing import OneHotEncoder
+from .fitness_calculator import FitnessCalculator
 
-env = gym.make('gym_TS:TS-v2')
-# env = gym.wrappers.Monitor(env, 'video', force = True) # Uncomment to save video
-
-# categories = env.get_observation_categories()
-# one_hot_encoder = OneHotEncoder(sparse=False, categories=categories)
-
-# Get size of input and output space and creates agent
-# observation_size = env.get_observation_size() * len(env.get_observation_categories()[0])  # env.get_observation_size()
-observation_size = env.get_observation_size()
-action_size = env.get_action_size()
-
-# random_seed = np.random.randint(1e10)
 random_seed = 0
-
-# Action space uses a separate random number generator so need to set its seed separately
-env.action_space.np_random.seed(random_seed)
-
-np_random, seed = seeding.np_random(random_seed)
-
-
-# Fitness function: gameplay loop
-def fitness(individual, render=False):
-    if not isinstance(individual, TinyAgent):
-        individual = TinyAgent(observation_size, action_size, random_seed)
-
-    # env.seed(random_seed)  # makes fitness deterministic
-    env.seed(random_seed)
-    observations = env.reset()
-    score = 0
-    done = False
-
-    for t in range(simulation_length):
-        if render:
-            env.render()
-
-        # observation = np.reshape(observation, [1, env.get_observation_size()])
-        # encoded_observations = [one_hot_encoder.fit_transform(observation.reshape(1, -1)) for observation in observations]
-
-        # All agents act using same controller.
-        # robot_actions = [individual.act(np.reshape(observations[j], [1, env.get_observation_size()]))
-        #                 for j in range(env.get_num_robots())]
-        # robot_actions = [individual.act(encoded_observations[i]) for i in range(env.get_num_robots())]
-
-        #robot_actions = [env.action_space.sample() for el in range(env.get_num_robots())]
-        robot_actions = [individual.act(observations[i]) for i in range(len(observations))]
-
-        # The environment changes according to all their actions
-        observations, reward, done, info = env.step(robot_actions, t)
-        score += reward
-
-        if done:
-            break
-
-    return score
-
-
 simulation_length = 1000
+fitness_calculator = FitnessCalculator(random_seed=random_seed, simulation_length=simulation_length)
 
 
 def rwg(seed_value, population_size=1000):
@@ -83,11 +27,11 @@ def rwg(seed_value, population_size=1000):
     for nind in range(max_ninds):
 
         # Create individual
-        individual = TinyAgent(observation_size, action_size, random_seed)
+        individual = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), seed_value)
         individual.load_weights()  # No parameters means random weights are generated
 
         # Evaluate individual's fitness
-        score = fitness(individual)
+        score = fitness_calculator.calculate_fitness(individual)
         print(f"{nind} Score: {score}")
 
         # Save the best individual
@@ -95,7 +39,7 @@ def rwg(seed_value, population_size=1000):
             max_score = score
             best_individual = individual
             if nind != 0:
-                fitness(best_individual)
+                fitness_calculator.calculate_fitness(best_individual)
                 # best_individual.save_model()
 
         seed_value += 1
@@ -105,8 +49,8 @@ def rwg(seed_value, population_size=1000):
 
 # Things to change:
 # Mutation method
-def ga(seed_value, num_generations=2000, population_size=100, num_trials=3, mutation_rate=0.01,
-       elitism_percentage=0.05):
+def genetic_algorithm(seed_value, num_generations=2000, population_size=100, num_trials=3, mutation_rate=0.01,
+                      elitism_percentage=0.05):
     # population_size = 10
     # num_generations = 40
     # num_trials = 3
@@ -119,7 +63,7 @@ def ga(seed_value, num_generations=2000, population_size=100, num_trials=3, muta
     population = []
 
     for i in range(population_size):
-        individual = TinyAgent(observation_size, action_size, seed_value)
+        individual = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), seed_value)
         individual.load_weights()  # No parameters means random weights are generated
         population += [individual]
         seed_value += 1
@@ -133,7 +77,7 @@ def ga(seed_value, num_generations=2000, population_size=100, num_trials=3, muta
             # Get fitness of individual and add to fitness_scores
             avg_fitness = 0
             for trial in range(num_trials):
-                avg_fitness += fitness(population[i])
+                avg_fitness += fitness_calculator.calculate_fitness(population[i])
             avg_fitness /= num_trials
             fitness_scores[i] = avg_fitness
 
@@ -166,7 +110,8 @@ def ga(seed_value, num_generations=2000, population_size=100, num_trials=3, muta
             parent2_genome = new_population[1].get_weights()
 
             # Do crossover
-            crossover_point = np_random.randint(low=0, high=len(parent1_genome))
+            rng = fitness_calculator.get_rng()
+            crossover_point = rng.randint(low=0, high=len(parent1_genome))
             child_genome = np.append(parent1_genome[0:crossover_point], parent2_genome[crossover_point:])
 
             # Mutate with probability and add to population
@@ -182,7 +127,7 @@ def ga(seed_value, num_generations=2000, population_size=100, num_trials=3, muta
 
                 # Iterate through bit string and flip each bit according to mutation probability
                 for b in range(len(bit_list)):
-                    random_number = np_random.rand()
+                    random_number = rng.rand()
 
                     if random_number < mutation_rate:
                         if bit_list[b] == '0':
@@ -194,7 +139,7 @@ def ga(seed_value, num_generations=2000, population_size=100, num_trials=3, muta
                 child_genome[j] = mutated_gene
 
             # Create child individual and add to population
-            child = TinyAgent(observation_size, action_size, seed_value)
+            child = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), seed_value)
             child.load_weights(child_genome)
             new_population += [child]
 
@@ -206,37 +151,42 @@ def ga(seed_value, num_generations=2000, population_size=100, num_trials=3, muta
 
 
 def cma_es(sigma=0.5):
-    demo_agent = TinyAgent(observation_size, action_size, random_seed)
+    demo_agent = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), random_seed)
     num_weights = demo_agent.get_num_weights()
     # res = cma.fmin(fitness, num_weights * [0], 0.5)
-    es = cma.CMAEvolutionStrategy(num_weights * [0], sigma).optimize(fitness)
-    print(f"Best score iss {es.result[1]}")
+    es = cma.CMAEvolutionStrategy(num_weights * [0], sigma).optimize(fitness_calculator.calculate_fitness)
+    print(f"Best score is {es.result[1]}")
     return es.result[0]
 
 
-def ge():
+def grammatical_evolution():
     # Run PonyGE
+    # python3 ponyge.py --parameters task_specialisation.txt --random_seed random_seed
+    pass
+
 
 # Replay winning individual
 def evaluate_best(best, seed, num_trials=100):
     if best:
         test_scores = []
         avg_score = 0
+
         for i in range(num_trials):
             render_flag = False
             if i == 0:
                 render_flag = True
-            test_scores += [fitness(best, render=render_flag)]
+            test_scores += [fitness_calculator.calculate_fitness(best, render=render_flag)]
             seed += 1
+
         avg_score = sum(test_scores) / len(test_scores)
         print(f"The best individual scored {avg_score} on average")
 
 
-#best_individual = rwg(random_seed)
-#best_individual = ga(random_seed, num_generations=20, population_size=5, num_trials=3)
+# best_individual = rwg(random_seed)
+# best_individual = genetic_algorithm(random_seed, num_generations=20, population_size=5, num_trials=3)
 
 
-best_individual = TinyAgent(observation_size, action_size, random_seed)
+best_individual = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), random_seed)
 best_genome = cma_es(0.9)
 best_individual.load_weights(best_genome)
 
