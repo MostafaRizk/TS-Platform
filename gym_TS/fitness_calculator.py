@@ -5,7 +5,7 @@ from gym.utils import seeding
 
 
 class FitnessCalculator:
-    def __init__(self, random_seed=0, simulation_length=1000):
+    def __init__(self, output_selection_method, random_seed=0, simulation_length=1000):
         self.env = gym.make('gym_TS:TS-v2')
         # env = gym.wrappers.Monitor(env, 'video', force = True) # Uncomment to save video
         # Get size of input and output space and creates agent
@@ -20,6 +20,8 @@ class FitnessCalculator:
         self.env.action_space.np_random.seed(self.random_seed)
 
         self.simulation_length = simulation_length
+
+        self.output_selection_method = output_selection_method
 
     def get_observation_size(self):
         return self.observation_size
@@ -36,7 +38,7 @@ class FitnessCalculator:
         :return:
         """
         if not isinstance(individual, TinyAgent):
-            individual = TinyAgent(self.observation_size, self.action_size, self.random_seed)
+            individual = TinyAgent(self.observation_size, self.action_size, self.output_selection_method, self.random_seed)
 
         self.env.seed(self.random_seed)  # makes fitness deterministic
         observations = self.env.reset()

@@ -6,15 +6,11 @@ import numpy as np
 import math
 import copy
 import cma
+import sys
+import getopt
 
 from gym_TS.agents.TinyAgent import TinyAgent
-
-from .fitness_calculator import FitnessCalculator
-
-random_seed = 0
-simulation_length = 1000
-fitness_calculator = FitnessCalculator(random_seed=random_seed, simulation_length=simulation_length)
-
+from fitness_calculator import FitnessCalculator
 
 def rwg(seed_value, population_size=1000):
     # RWG does not distinguish between populations and generations
@@ -49,7 +45,7 @@ def rwg(seed_value, population_size=1000):
 
 # Things to change:
 # Mutation method
-def genetic_algorithm(seed_value, num_generations=2000, population_size=100, num_trials=3, mutation_rate=0.01,
+def genetic_algorithm(calculator, seed_value, output_selection_method, num_generations=2000, population_size=100, num_trials=3, mutation_rate=0.01,
                       elitism_percentage=0.05):
     # population_size = 10
     # num_generations = 40
@@ -63,7 +59,7 @@ def genetic_algorithm(seed_value, num_generations=2000, population_size=100, num
     population = []
 
     for i in range(population_size):
-        individual = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), seed_value)
+        individual = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), output_selection_method, seed_value)
         individual.load_weights()  # No parameters means random weights are generated
         population += [individual]
         seed_value += 1
@@ -77,7 +73,7 @@ def genetic_algorithm(seed_value, num_generations=2000, population_size=100, num
             # Get fitness of individual and add to fitness_scores
             avg_fitness = 0
             for trial in range(num_trials):
-                avg_fitness += fitness_calculator.calculate_fitness(population[i])
+                avg_fitness += calculator.calculate_fitness(population[i])
             avg_fitness /= num_trials
             fitness_scores[i] = avg_fitness
 
@@ -110,7 +106,7 @@ def genetic_algorithm(seed_value, num_generations=2000, population_size=100, num
             parent2_genome = new_population[1].get_weights()
 
             # Do crossover
-            rng = fitness_calculator.get_rng()
+            rng = calculator.get_rng()
             crossover_point = rng.randint(low=0, high=len(parent1_genome))
             child_genome = np.append(parent1_genome[0:crossover_point], parent2_genome[crossover_point:])
 
@@ -139,7 +135,7 @@ def genetic_algorithm(seed_value, num_generations=2000, population_size=100, num
                 child_genome[j] = mutated_gene
 
             # Create child individual and add to population
-            child = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), seed_value)
+            child = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), output_selection_method, seed_value)
             child.load_weights(child_genome)
             new_population += [child]
 
@@ -150,11 +146,11 @@ def genetic_algorithm(seed_value, num_generations=2000, population_size=100, num
     return best_individual
 
 
-def cma_es(sigma=0.5):
-    demo_agent = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), random_seed)
+def cma_es(calculator, seed_value, sigma=0.5):
+    demo_agent = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), seed_value)
     num_weights = demo_agent.get_num_weights()
     # res = cma.fmin(fitness, num_weights * [0], 0.5)
-    es = cma.CMAEvolutionStrategy(num_weights * [0], sigma).optimize(fitness_calculator.calculate_fitness)
+    es = cma.CMAEvolutionStrategy(num_weights * [0], sigma).optimize(calculator.calculate_fitness)
     print(f"Best score is {es.result[1]}")
     return es.result[0]
 
@@ -166,7 +162,7 @@ def grammatical_evolution():
 
 
 # Replay winning individual
-def evaluate_best(best, seed, num_trials=100):
+def evaluate_best(calculator, best, seed, num_trials=100):
     if best:
         test_scores = []
         avg_score = 0
@@ -175,7 +171,7 @@ def evaluate_best(best, seed, num_trials=100):
             render_flag = False
             if i == 0:
                 render_flag = True
-            test_scores += [fitness_calculator.calculate_fitness(best, render=render_flag)]
+            test_scores += [calculator.calculate_fitness(best, render=render_flag)]
             seed += 1
 
         avg_score = sum(test_scores) / len(test_scores)
@@ -183,11 +179,78 @@ def evaluate_best(best, seed, num_trials=100):
 
 
 # best_individual = rwg(random_seed)
-# best_individual = genetic_algorithm(random_seed, num_generations=20, population_size=5, num_trials=3)
+#best_individual = genetic_algorithm(random_seed, num_generations=100, population_size=5, num_trials=3)
+
+# CMA segment
+#best_genome = cma_es(0.5)
+#best_individual = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), random_seed)
+#best_individual.load_weights(best_genome)
+
+# Testing & saving segment
+#evaluate_best(best_individual, random_seed)
+#best_individual.save_model()
+
+def main(argv):
+
+    # Necessary arguments
+    # Algorithm ?
+    # Generations
+    # Population
+    # Trials
+    # argmax vs probability
+
+    try:
+        opts, args = getopt.getopt(argv, "", ["algorithm=", "generations=", "population=", "trials=", "simulation_length=", "seed=", "argmax="])
+
+    except getopt.GetoptError:
+        print("There was an error")
+        sys.exit(2)
+
+    training_algorithm = None
+    num_generations = None
+    population_size = None
+    num_trials = None
+    simulation_length = None
+    selection_method = None
+    random_seed = None
+
+    for opt, arg in opts:
+        if opt == "--algorithm":
+            if arg == "ga":
+                training_algorithm = genetic_algorithm
+            else:
+                print("This algorithm is either misspelled or not supported")
+                sys.exit(2)
+        if opt == "--generations":
+            num_generations = int(arg)
+        if opt == "--population":
+            population_size = int(arg)
+        if opt == "--trials":
+            num_trials = int(arg)
+        if opt == "--simulation_length":
+            simulation_length = int(arg)
+        if opt == "--argmax":
+            if arg == "True":
+                selection_method = "argmax"
+            elif arg == "False":
+                selection_method = "weighted_probability"
+            else:
+                raise IOError("Please use 'True' or 'False' for argmax")
+        if opt == "--seed":
+            random_seed = int(arg)
+
+    fitness_calculator = FitnessCalculator(random_seed=random_seed,
+                                           simulation_length=simulation_length,
+                                           output_selection_method=selection_method)
+
+    best_individual = training_algorithm(calculator=fitness_calculator,
+                                         seed_value=random_seed,
+                                         output_selection_method=selection_method,
+                                         num_generations=num_generations,
+                                         population_size=population_size,
+                                         num_trials=num_trials)
+    #best_individual.save_model()
 
 
-best_individual = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), random_seed)
-best_genome = cma_es(0.9)
-best_individual.load_weights(best_genome)
-
-evaluate_best(best_individual, random_seed)
+if __name__ == "__main__":
+    main(sys.argv[1:])
