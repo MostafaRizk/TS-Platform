@@ -1,0 +1,17 @@
+Bootstrap: debootstrap
+MirrorURL: http://au.archive.ubuntu.com/ubuntu/
+OSVersion: xenial
+Include: apt wget sudo git nano apt-transport-https software-properties-common less vim
+
+%post
+    apt-add-repository -y universe
+    apt-add-repository -y multiverse
+    apt update
+    sudo apt-get install -y python-setuptools python-dev build-essential
+    sudo easy_install pip
+    #to conform with  python/3.5.1-gcc
+    
+    cd /opt
+    git clone https://github.com/MostafaRizk/gym-TS
+    pip3 install -e gym-TS
+
