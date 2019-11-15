@@ -249,8 +249,10 @@ def main(argv):
                                          num_generations=num_generations,
                                          population_size=population_size,
                                          num_trials=num_trials)
-    #best_individual.save_model()
+    best_individual.save_model()
 
 
+# To run, use:
+# python3 TS_NE.py --algorithm ga --generations 5 --population 5 --trials 3 --simulation_length 1000 --argmax True --seed 1
 if __name__ == "__main__":
     main(sys.argv[1:])
