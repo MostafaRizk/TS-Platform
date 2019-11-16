@@ -1,2 +1,2 @@
-python3 TS_NE.py --algorithm ga --generations 2000 --population 100 --trials 3 --simulation_length 1000 --argmax True --seed 1
-python3 TS_NE.py --algorithm ga --generations 2000 --population 100 --trials 3 --simulation_length 1000 --argmax False --seed 1
+time python3 TS_NE.py --algorithm ga --generations 2000 --population 100 --trials 3 --simulation_length 1000 --argmax True --seed 1
+time python3 TS_NE.py --algorithm ga --generations 2000 --population 100 --trials 3 --simulation_length 1000 --argmax False --seed 1
