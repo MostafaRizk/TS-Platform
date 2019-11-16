@@ -1,6 +1,7 @@
 import tinynet
 import numpy as np
 import os
+from datetime import datetime
 
 from gym.utils import seeding
 
@@ -54,11 +55,14 @@ class TinyAgent:
                 if current > choice:
                     return i
 
-    def save_model(self):
+    def save_model(self, name):
         weights = self.net.get_weights()
 
         directory = "models/Tiny/"
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-        np.save(directory+"weights", weights)
+        now = datetime.now()
+        timestamp = datetime.timestamp(now)
+
+        np.save(directory +"weights_"+ name + "_" + str(timestamp), weights)

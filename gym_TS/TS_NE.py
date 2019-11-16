@@ -55,6 +55,8 @@ def genetic_algorithm(calculator, seed_value, output_selection_method, num_gener
     # elitism_percentage = 0.05  # Generational replacement with roulette-wheel selection
     num_elite = max(2, int(population_size * elitism_percentage))
 
+    model_saving_rate = 10
+
     # Create randomly initialised population
     population = []
 
@@ -94,10 +96,11 @@ def genetic_algorithm(calculator, seed_value, output_selection_method, num_gener
             new_population += [copy.deepcopy(population[best_index])]
             fitness_scores[best_index] = -math.inf
 
-            if e == 0:
-                print(f"Best score at generation {generation} is {best_score} ")
-
         best_individual = new_population[0]
+
+        if generation % model_saving_rate == 0:
+            print(f"Best score at generation {generation} is {best_score} ")
+            best_individual.save_model(f"{output_selection_method}_{generation}")
 
         # Create new generation
         for i in range(population_size - num_elite):
@@ -249,7 +252,7 @@ def main(argv):
                                          num_generations=num_generations,
                                          population_size=population_size,
                                          num_trials=num_trials)
-    best_individual.save_model()
+    best_individual.save_model(f"{selection_method}_final")
 
     #evaluate_best(calculator=fitness_calculator, seed=random_seed, best=best_individual, num_trials=2)
 
