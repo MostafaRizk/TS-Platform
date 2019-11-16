@@ -1,0 +1,16 @@
+#!/bin/env bash
+#SBATCH --job-name=GA_prelim_short
+#SBATCH --time=0:30:00
+#SBATCH --array=1
+#SBATCH --output=GA_prelim_short.out
+#SBATCH --open-mode=append
+#SBATCH --ntasks=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=1
+#SBATCH --mail-type=FAIL,BEGIN,END
+#SBATCH --mail-user=mostafa.rizk@monash.edu
+
+export OMP_NUM_THREADS=1
+CMD=`head -n ${SLURM_ARRAY_TASK_ID} LIST_test | tail -1`
+singularity exec -B /home:/home -B /mnt/lustre:/mnt/lustre ~/no45/mriz9/gym-TS.img $CMD
+

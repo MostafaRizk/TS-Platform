@@ -1,0 +1,1 @@
+python3 TS_NE.py --algorithm ga --generations 1 --population 100 --trials 3 --simulation_length 1000 --argmax True --seed 1
