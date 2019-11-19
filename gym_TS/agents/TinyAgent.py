@@ -10,6 +10,7 @@ def linear_activation(x):
     y = x
     return y
 
+
 class TinyAgent:
     def __init__(self, observation_size, action_size, output_selection_method, seed=None,):
         # Hidden layers are arbitrarily added

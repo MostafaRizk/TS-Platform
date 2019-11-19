@@ -12,6 +12,7 @@ numpy = "*"
 gym = "*"
 matplotlib = "*"
 cma = "*"
+tinynet = "*"
 
 [requires]
 python_version = "3.6"

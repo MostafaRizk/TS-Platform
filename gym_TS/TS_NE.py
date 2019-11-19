@@ -9,8 +9,9 @@ import cma
 import sys
 import getopt
 
-from gym_TS.agents.TinyAgent import TinyAgent
+from agents.TinyAgent import TinyAgent
 from fitness_calculator import FitnessCalculator
+
 
 def rwg(seed_value, population_size=1000):
     # RWG does not distinguish between populations and generations

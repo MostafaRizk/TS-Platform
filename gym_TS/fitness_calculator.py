@@ -1,6 +1,6 @@
 import gym
 
-from gym_TS.agents.TinyAgent import TinyAgent
+from agents.TinyAgent import TinyAgent
 from gym.utils import seeding
 
 
