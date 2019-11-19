@@ -260,4 +260,12 @@ def main(argv):
 # To run, use:
 # python3 TS_NE.py --algorithm ga --generations 5 --population 5 --trials 3 --simulation_length 1000 --argmax True --seed 1
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    #main(sys.argv[1:])
+    fitness_calculator = FitnessCalculator(random_seed=1,
+                                           simulation_length=1000,
+                                           output_selection_method="argmax")
+    best_individual = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
+                                1)
+    best_genome = cma_es(calculator = fitness_calculator, seed_value=1, sigma=0.5)
+    best_individual.load_weights(best_genome)
+    #evaluate_best(calculator=fitness_calculator, seed=1, best=best_individual, num_trials=2)

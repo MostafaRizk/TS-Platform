@@ -11,8 +11,9 @@ import numpy as np
 import copy
 # from keras.utils import to_categorical
 
+from gym.envs.classic_control import rendering
 try:
-    #from gym.envs.classic_control import rendering
+    from gym.envs.classic_control import rendering
     pass
 except:
     raise UserWarning("Could not import rendering")
