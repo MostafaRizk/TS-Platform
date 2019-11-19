@@ -10,7 +10,12 @@ import math
 import numpy as np
 import copy
 # from keras.utils import to_categorical
-from gym.envs.classic_control import rendering
+
+try:
+    from gym.envs.classic_control import rendering
+    pass
+except:
+    raise UserWarning("Could not import rendering")
 
 
 class TSMultiEnv(gym.Env):
@@ -69,8 +74,15 @@ class TSMultiEnv(gym.Env):
 
         # Rendering variables
         self.viewer = None
-        self.robot_transforms = [rendering.Transform() for i in range(self.num_robots)]
-        self.resource_transforms = [rendering.Transform() for i in range(self.default_num_resources)]
+        self.robot_transforms = None
+        self.resource_transforms = None
+
+        try:
+            self.robot_transforms = [rendering.Transform() for i in range(self.num_robots)]
+            self.resource_transforms = [rendering.Transform() for i in range(self.default_num_resources)]
+        except:
+            pass
+
         self.robot_positions = [None for i in range(self.num_robots)]
         self.resource_positions = [None for i in range(self.default_num_resources)]
 
@@ -348,55 +360,6 @@ class TSMultiEnv(gym.Env):
 
     def reset(self):
         """
-        Creates a new environment with robots and resources placed in acceptable locations.
-        NOTE: The environment is a flipped version of the state matrix. That is, 0 is the first row of the matrix but
-        the bottom of the rendered environment. Additionally, the x,y coordinate of an item in the environment is at
-        location [y][x] in the matrix.
-        :return: The state of the environment. The state is two concatenated matrices, each representing the
-        environment. The first matrix is all 0s except the positions of the robots (robot 0 is 1, robot 1 is 2 etc) and
-        the second matrix is all 0s except the positions of the resources.
-
-        Example:
-        The environment has y_max=12 and x_max=4
-        This is the state representation
-        [[0 1 0 0]<--- This is the robot
-         [0 0 0 0]
-         [0 0 0 0]
-         [0 0 0 0]
-         [0 0 0 0]
-         [0 0 0 0]
-         [0 0 0 0]
-         [0 0 0 0]
-         [0 0 0 0]
-         [0 0 0 0]
-         [0 0 0 0]
-         [0 0 0 0]
-         [0 0 0 0]<--- Second matrix starts here
-         [0 0 0 0]
-         [0 0 0 0]
-         [0 0 0 0]
-         [0 0 0 0]
-         [0 0 0 0]
-         [0 0 0 0]
-         [0 0 0 0]
-         [0 0 0 0]
-         [1 0 0 0]<--- This is the resource
-         [0 0 0 0]
-         [0 0 0 0]]
-
-         This is the arena that would be rendered (R is the robot and S is the resource)
-         0 0 0 0
-         0 0 0 0
-         S 0 0 0
-         0 0 0 0
-         0 0 0 0
-         0 0 0 0
-         0 0 0 0
-         0 0 0 0
-         0 0 0 0
-         0 R 0 0
-
-         The robot is at coordinate 1,0 but this would be [0][1] in the first matrix in the state representation
         """
 
         # Make sure robots and resources will all fit in the environment
@@ -413,7 +376,12 @@ class TSMultiEnv(gym.Env):
         self.viewer = None
 
         self.resource_positions = [None for i in range(self.default_num_resources)]
-        self.resource_transforms = [rendering.Transform() for i in range(self.default_num_resources)]
+
+        try:
+            self.resource_transforms = [rendering.Transform() for i in range(self.default_num_resources)]
+        except:
+            pass
+
         self.latest_resource_id = self.default_num_resources - 1
 
 
@@ -758,7 +726,10 @@ class TSMultiEnv(gym.Env):
                 self.latest_resource_id += 1
                 self.resource_positions += [(x, y)]
                 # self.resource_positions[self.latest_resource_id] = (x, y)
-                self.resource_transforms += [rendering.Transform()]
+                try:
+                    self.resource_transforms += [rendering.Transform()]
+                except:
+                    pass
                 resource_placed = True
                 self.current_num_resources += 1
                 self.add_resource_to_rendering(self.latest_resource_id)
