@@ -12,7 +12,7 @@ import copy
 # from keras.utils import to_categorical
 
 try:
-    from gym.envs.classic_control import rendering
+    #from gym.envs.classic_control import rendering
     pass
 except:
     raise UserWarning("Could not import rendering")
