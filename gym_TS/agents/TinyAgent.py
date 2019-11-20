@@ -14,7 +14,7 @@ def linear_activation(x):
 class TinyAgent:
     def __init__(self, observation_size, action_size, output_selection_method, seed=None,):
         # Hidden layers are arbitrarily added
-        self.hidden = [9,9]
+        self.hidden = []
         self.net_struct = [observation_size, *self.hidden, action_size]
 
         # Network setup is straightforward (defaults: `act_fn=np.tanh, init_weights=None`)
