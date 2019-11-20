@@ -3,6 +3,8 @@ import gym
 from agents.TinyAgent import TinyAgent
 from gym.utils import seeding
 
+import time
+
 
 class FitnessCalculator:
     def __init__(self, output_selection_method, random_seed=0, simulation_length=1000):
@@ -57,7 +59,13 @@ class FitnessCalculator:
             observations, reward, done, info = self.env.step(robot_actions, t)
             score += reward
 
+            #time.sleep(1)
+
             if done:
                 break
 
         return score
+
+    def calculate_fitness_negation(self, individual, render=False):
+        #render = True
+        return -1*self.calculate_fitness(individual=individual, render=render)
