@@ -165,7 +165,16 @@ def cma_es(calculator, seed_value, sigma=0.5):
     es = cma.CMAEvolutionStrategy(num_weights * [0], sigma)
 
     #es.optimize(calculator.calculate_fitness)
-    es.optimize(calculator.calculate_fitness_negation)
+    #es.optimize(calculator.calculate_fitness_negation)
+
+    while not es.stop():
+        solutions = es.ask()
+        es.tell(solutions, [calculator.calculate_fitness_negation(x) for x in solutions])
+        es.logger.add()
+        es.disp()
+
+    es.result_pretty()
+    cma.plot()  # shortcut for es.logger.plot()
 
     print(f"Best score is {es.result[1]}")
     return es.result[0]
