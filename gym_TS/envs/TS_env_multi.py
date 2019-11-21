@@ -98,9 +98,9 @@ class TSMultiEnv(gym.Env):
         # Each robot observes directly in front of it, its location and whether or not it has a resource
         #self.observation_space = spaces.Discrete(3)
 
-        # Each robot observes directly in front of it, its location and whether or not it has a resource
+        # Each robot observes the tile it is on, its location and whether or not it has a resource
         # The details are explained in self.generate_robot_observations()
-        self.observation_space = spaces.Discrete(9)
+        self.observation_space = spaces.Discrete(6)
 
 
         # Action space
@@ -306,24 +306,15 @@ class TSMultiEnv(gym.Env):
 
         for j in range(len(self.robot_positions)):
             position = self.robot_positions[j]
-            observation = [0]*9
+            observation = [0]*self.observation_space.n
 
-            front = (position[0], position[1] + 1)
+            #front = (position[0], position[1] + 1)
 
-            # If the space in front of the robot is
-            # Blank-            observation[0] = 1, otherwise 0
-            # Another robot-    observation[1] = 1, otherwise 0
-            # A resource-       observation[2] = 1, otherwise 0
-            # A wall-           observation[3] = 1, otherwise 0
-            if self.arena_constraints["y_max"] <= front[1] or \
-                    front[1] < 0:
-                observation[3] = 1  # Wall
-            elif self.robot_map[front[1]][front[0]] != 0:
-                observation[1] = 1  # Another robot
-            elif self.resource_map[front[1]][front[0]] != 0:
-                observation[2] = 1  # A resource
-            else:
-                observation[0] = 1  # Blank space
+            # If the space the robot is in
+            # Does not contain a resource-  observation[0] = 0
+            # Contains a resource-          observation[0] = 1
+            if self.resource_map[position[1]][position[0]] != 0:
+                observation[0] = 1
 
             area = self.get_area_from_position(position)
 
@@ -333,18 +324,18 @@ class TSMultiEnv(gym.Env):
             # The slope-    observation[6] = 1, otherwise 0
             # The source-   observation[7] = 1, otherwise 0
             if area == "NEST":
-                observation[4] = 1
+                observation[1] = 1
             elif area == "CACHE":
-                observation[5] = 1
+                observation[2] = 1
             elif area == "SLOPE":
-                observation[6] = 1
+                observation[3] = 1
             else:
-                observation[7] = 1
+                observation[4] = 1
 
             # If the robot
             # Has a resource-   observation[8] = 1, otherwise 0
             if self.has_resource[j]:
-                observation[8] = 1
+                observation[5] = 1
 
             observations += [np.array(observation)]
 

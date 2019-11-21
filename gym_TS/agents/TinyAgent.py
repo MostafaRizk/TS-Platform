@@ -40,6 +40,7 @@ class TinyAgent:
     def act(self, observation):
         if self.output_selection_method == "argmax":
             #print("Using this one")
+            action_list = self.net.activate(observation)
             action = self.net.activate(observation).argmax()
             return action
 
