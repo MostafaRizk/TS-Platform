@@ -4,11 +4,16 @@ import os
 from datetime import datetime
 
 from gym.utils import seeding
+from scipy.special import softmax
 
 
 def linear_activation(x):
     y = x
     return y
+
+
+#def softmax(x):
+#   return np.exp(x)/sum(np.exp(x))
 
 
 class TinyAgent:
@@ -20,7 +25,8 @@ class TinyAgent:
         # Network setup is straightforward (defaults: `act_fn=np.tanh, init_weights=None`)
         #self.net = tinynet.RNN(self.net_struct)
 
-        self.net = tinynet.FFNN(self.net_struct, act_fn=linear_activation)
+        #self.net = tinynet.FFNN(self.net_struct, act_fn=linear_activation)
+        self.net = tinynet.FFNN(self.net_struct, act_fn=softmax)
 
         self.np_random, seed = seeding.np_random(seed)
 
@@ -46,9 +52,11 @@ class TinyAgent:
 
         elif self.output_selection_method == "weighted_probability":
             action_list = self.net.activate(observation)
-            min_value = action_list.min()
-            action_list = [value + np.abs(min_value) for value in action_list]
+            #print(action_list)
+            #min_value = action_list.min()
+            #action_list = [value + np.abs(min_value) for value in action_list]
             sum_actions = np.sum(action_list)
+            #print(sum_actions)
             choice = self.np_random.uniform(0, sum_actions)
 
             current = 0
