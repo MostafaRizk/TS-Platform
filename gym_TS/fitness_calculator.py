@@ -34,38 +34,48 @@ class FitnessCalculator:
     def get_rng(self):
         return self.np_random
 
-    def calculate_fitness(self, individual, render=False):
+    def calculate_fitness(self, individual, num_trials=1, render=False):
         """
         Calculates fitness of a controller by running a simulation
         :return:
         """
-        if not isinstance(individual, TinyAgent):
-            individual = TinyAgent(self.observation_size, self.action_size, self.output_selection_method, self.random_seed)
 
-        self.env.seed(self.random_seed)  # makes fitness deterministic
-        observations = self.env.reset()
-        score = 0
-        done = False
+        average_score = 0
+        seed_value = self.random_seed
 
-        for t in range(self.simulation_length):
-            if render:
-                self.env.render()
+        for trial in range(num_trials):
 
-            # All agents act using same controller.
-            robot_actions = [individual.act(observations[i]) for i in range(len(observations))]
-            # robot_actions = [env.action_space.sample() for el in range(env.get_num_robots())]
+            if not isinstance(individual, TinyAgent):
+                individual = TinyAgent(self.observation_size, self.action_size, self.output_selection_method, seed_value)
 
-            # The environment changes according to all their actions
-            observations, reward, done, info = self.env.step(robot_actions, t)
-            score += reward
+            self.env.seed(seed_value)  # makes fitness deterministic
+            observations = self.env.reset()
+            score = 0
+            done = False
 
-            #time.sleep(1)
+            for t in range(self.simulation_length):
+                if render:
+                    self.env.render()
 
-            if done:
-                break
+                # All agents act using same controller.
+                robot_actions = [individual.act(observations[i]) for i in range(len(observations))]
+                # robot_actions = [env.action_space.sample() for el in range(env.get_num_robots())]
 
-        return score
+                # The environment changes according to all their actions
+                observations, reward, done, info = self.env.step(robot_actions, t)
+                score += reward
+
+                #time.sleep(1)
+
+                if done:
+                    break
+
+            average_score += score
+            seed_value += 1
+
+        return average_score/num_trials
 
     def calculate_fitness_negation(self, individual, render=False):
         #render = True
-        return -1*self.calculate_fitness(individual=individual, render=render)
+        num_trials = 10
+        return -1*self.calculate_fitness(individual=individual, num_trials=num_trials, render=render)
