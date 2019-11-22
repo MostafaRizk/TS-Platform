@@ -33,11 +33,11 @@ class TSMultiEnv(gym.Env):
         self.logging = logging
 
         # Environment dimensions
-        self.arena_constraints = {"x_min": 0, "x_max": 8, "y_min": 0, "y_max": 12}
-        self.nest_size = self.arena_constraints["y_max"] / 12  # 4/48
-        self.cache_size = self.nest_size * 2  # 8/48
-        self.slope_size = self.nest_size * 6  # 24/48
-        self.source_size = self.nest_size * 3  # 12/48
+        self.arena_constraints = {"x_min": 0, "x_max": 2, "y_min": 0, "y_max": 6}
+        self.nest_size = self.arena_constraints["y_max"] / 6  # 4/48
+        self.cache_size = self.nest_size * 1  # 8/48
+        self.slope_size = self.nest_size * 2  # 24/48
+        self.source_size = self.nest_size * 2  # 12/48
         self.nest_start = self.arena_constraints["y_min"]
         self.cache_start = self.nest_start + self.nest_size
         self.slope_start = self.cache_start + self.cache_size
@@ -58,8 +58,8 @@ class TSMultiEnv(gym.Env):
         self.sliding_speed = 2
 
         # Other constants/variables
-        self.num_robots = 4
-        self.default_num_resources = 5
+        self.num_robots = 1
+        self.default_num_resources = 1
         self.current_num_resources = self.default_num_resources
         self.latest_resource_id = self.default_num_resources - 1
         self.dumping_position = (-10, -10)

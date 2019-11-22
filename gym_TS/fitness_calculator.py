@@ -64,8 +64,9 @@ class FitnessCalculator:
             if done:
                 break
 
+        print("Done")
         return score
 
     def calculate_fitness_negation(self, individual, render=False):
-        #render = True
+        render = True
         return -1*self.calculate_fitness(individual=individual, render=render)
