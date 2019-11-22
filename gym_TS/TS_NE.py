@@ -13,7 +13,7 @@ from agents.TinyAgent import TinyAgent
 from fitness_calculator import FitnessCalculator
 
 
-def rwg(seed_value, population_size=1000):
+def rwg(seed_value, calculator, output_selection_method, population_size=1000):
     # RWG does not distinguish between populations and generations
     max_ninds = population_size
 
@@ -24,12 +24,11 @@ def rwg(seed_value, population_size=1000):
     for nind in range(max_ninds):
 
         # Create individual
-        individual = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
-                               seed_value)
+        individual = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), output_selection_method=output_selection_method, seed=seed_value)
         individual.load_weights()  # No parameters means random weights are generated
 
         # Evaluate individual's fitness
-        score = fitness_calculator.calculate_fitness(individual)
+        score = calculator.calculate_fitness(individual)
         print(f"{nind} Score: {score}")
 
         # Save the best individual
@@ -37,7 +36,7 @@ def rwg(seed_value, population_size=1000):
             max_score = score
             best_individual = individual
             if nind != 0:
-                fitness_calculator.calculate_fitness(best_individual)
+                calculator.calculate_fitness(best_individual)
                 # best_individual.save_model()
 
         seed_value += 1
@@ -165,8 +164,9 @@ def cma_es(calculator, seed_value, sigma=0.5):
     es = cma.CMAEvolutionStrategy(num_weights * [0], sigma)
 
     #es.optimize(calculator.calculate_fitness)
-    #es.optimize(calculator.calculate_fitness_negation)
+    es.optimize(calculator.calculate_fitness_negation)
 
+    '''
     while not es.stop():
         solutions = es.ask()
         es.tell(solutions, [calculator.calculate_fitness_negation(x) for x in solutions])
@@ -175,6 +175,7 @@ def cma_es(calculator, seed_value, sigma=0.5):
 
     es.result_pretty()
     cma.plot()  # shortcut for es.logger.plot()
+    '''
 
     print(f"Best score is {es.result[1]}")
     return es.result[0]
@@ -288,10 +289,14 @@ if __name__ == "__main__":
     # CMA
     fitness_calculator = FitnessCalculator(random_seed=1,
                                            simulation_length=1000,
-                                           #output_selection_method="argmax")
-                                           output_selection_method="weighted_probability")
+                                           output_selection_method="argmax")
+                                           #output_selection_method="weighted_probability")
     best_individual = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
                                 1)
     best_genome = cma_es(calculator=fitness_calculator, seed_value=1, sigma=0.5)
     best_individual.load_weights(best_genome)
+
+    #RWG
+    #best_individual = rwg(seed_value=1, calculator=fitness_calculator, output_selection_method="argmax", population_size=1000)
+
     # evaluate_best(calculator=fitness_calculator, seed=1, best=best_individual, num_trials=2)
