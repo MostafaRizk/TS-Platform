@@ -289,8 +289,8 @@ if __name__ == "__main__":
     # CMA
     fitness_calculator = FitnessCalculator(random_seed=1,
                                            simulation_length=1000,
-                                           output_selection_method="argmax")
-                                           #output_selection_method="weighted_probability")
+                                          #output_selection_method="argmax")
+                                           output_selection_method="weighted_probability")
     best_individual = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
                                 1)
     best_genome = cma_es(calculator=fitness_calculator, seed_value=1, sigma=0.5)
