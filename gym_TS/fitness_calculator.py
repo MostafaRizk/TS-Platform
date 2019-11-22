@@ -60,6 +60,7 @@ class FitnessCalculator:
             score += reward
 
             #time.sleep(1)
+            #print(robot_actions)
 
             if done:
                 break

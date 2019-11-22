@@ -100,18 +100,20 @@ class TSMultiEnv(gym.Env):
 
         # Each robot observes directly in front of it, its location and whether or not it has a resource
         # The details are explained in self.generate_robot_observations()
-        self.observation_space = spaces.Discrete(9)
+        self.observation_space = spaces.Discrete(10)
 
 
         # Action space
         #self.action_space = spaces.Discrete(3)  # 0- Phototaxis 1- Antiphototaxis 2-Random walk
-        self.action_space = spaces.Discrete(6)  # 0- Forward, 1- Backward, 2- Left, 3- Right, 4- Pick up, 5- Drop
+        #self.action_space = spaces.Discrete(6)  # 0- Forward, 1- Backward, 2- Left, 3- Right, 4- Pick up, 5- Drop
+        self.action_space = spaces.Discrete(5)  # 0- Forward, 1- Backward, 2- Left, 3- Right, 4- Flip want
 
         # Step variables
         #self.behaviour_map = [self.phototaxis_step, self.antiphototaxis_step, self.random_walk_step]
         self.behaviour_map = [self.forward_step, self.backward_step, self.left_step, self.right_step]
-        self.action_name = ["FORWARD", "BACKWARD", "LEFT", "RIGHT", "PICKUP", "DROP"]
+        self.action_name = ["FORWARD", "BACKWARD", "LEFT", "RIGHT", "FLIP_WANT"]
         self.has_resource = [None for i in range(self.num_robots)]
+        self.want_resource = [False for i in range(self.num_robots)]
 
         self.seed_value = None
 
@@ -179,6 +181,8 @@ class TSMultiEnv(gym.Env):
         for i in range(len(robot_actions)):
             if robot_actions[i] < 4:
                 self.behaviour_map[robot_actions[i]](i)
+            elif robot_actions[i] == 4:
+                self.want_resource[i] = not self.want_resource[i]
 
         # The robots' old positions are wiped out
         for position in old_robot_positions:
@@ -225,7 +229,8 @@ class TSMultiEnv(gym.Env):
                     # If a robot currently has a resource and is doing a drop action, drop the resource
                     # If a robot currently has a resource and is NOT doing a drop action, hold onto it
                     if self.has_resource[j] == i:
-                        if self.action_name[robot_actions[j]] == "DROP":
+                        #if self.action_name[robot_actions[j]] == "DROP":
+                        if not self.want_resource[j]:
                             self.drop_resource(j)
                         else:
                             self.pickup_or_hold_resource(j, i)
@@ -234,7 +239,8 @@ class TSMultiEnv(gym.Env):
                 # doing a pickup action
                 if self.resource_positions[i] == self.robot_positions[j]:
                     if self.has_resource[j] is None:
-                        if self.action_name[robot_actions[j]] == "PICKUP":
+                        #if self.action_name[robot_actions[j]] == "PICKUP":
+                        if self.want_resource[j]:
                             self.pickup_or_hold_resource(j, i)
 
 
@@ -306,7 +312,7 @@ class TSMultiEnv(gym.Env):
 
         for j in range(len(self.robot_positions)):
             position = self.robot_positions[j]
-            observation = [0]*9
+            observation = [0]*10
 
             front = (position[0], position[1] + 1)
 
@@ -345,6 +351,9 @@ class TSMultiEnv(gym.Env):
             # Has a resource-   observation[8] = 1, otherwise 0
             if self.has_resource[j]:
                 observation[8] = 1
+
+            if self.want_resource[j]:
+                observation[9] = 1
 
             observations += [np.array(observation)]
 
@@ -416,6 +425,7 @@ class TSMultiEnv(gym.Env):
 
         # Reset variables that were changed during runtime
         self.has_resource = [None for i in range(self.num_robots)]
+        self.want_resource = [False for i in range(self.num_robots)]
         self.current_num_resources = self.default_num_resources
 
         #return np.array(self.state)
