@@ -182,7 +182,9 @@ def cma_es(calculator, seed_value, sigma=0.5):
     return es.result[0]
 
 
-def grammatical_evolution():
+def grammatical_evolution(random_seed, num_generations=2000, population_size=100,
+                      num_trials=3, mutation_rate=0.01,
+                      elitism_percentage=0.05):
     # Run PonyGE
     # python3 ponyge.py --parameters task_specialisation.txt --random_seed random_seed
     pass
@@ -195,7 +197,7 @@ def dqn(calculator, num_episodes):
         render = False
         #if e%10 == 0:
          #   render = True
-        score, agent = calculator.calculate_fitness(agent, num_trials=1, render=render, dqn=True)
+        score, agent = calculator.calculate_fitness(agent, num_trials=1, render=render, learning_method="DQN")
         print(f'Score at episode {e} is {score}')
 
     return agent
@@ -208,8 +210,8 @@ def evaluate_best(calculator, best, seed, num_trials=100):
 
         for i in range(num_trials):
             render_flag = False
-            if i == 0:
-                render_flag = True
+            #if i == 0:
+            #    render_flag = True
             test_scores += [calculator.calculate_fitness(best, render=render_flag)]
             seed += 1
 
@@ -316,9 +318,9 @@ if __name__ == "__main__":
 
     #DQN
     fitness_calculator = FitnessCalculator(random_seed=1,
-                                           simulation_length=1000,
+                                           simulation_length=5000,
                                            output_selection_method="argmax")
                                            #output_selection_method="weighted_probability")
-    best_individual = dqn(calculator=fitness_calculator, num_episodes=100)
+    best_individual = dqn(calculator=fitness_calculator, num_episodes=10)
 
-    # evaluate_best(calculator=fitness_calculator, seed=1, best=best_individual, num_trials=2)
+    evaluate_best(calculator=fitness_calculator, seed=1, best=best_individual, num_trials=10)

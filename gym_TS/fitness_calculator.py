@@ -35,21 +35,25 @@ class FitnessCalculator:
     def get_rng(self):
         return self.np_random
 
-    def calculate_fitness(self, individual, num_trials=1, render=False, dqn=False):
+    def calculate_fitness(self, individual, num_trials=1, render=False, learning_method="NE"):
         """
         Calculates fitness of a controller by running a simulation
+        :param render:
+        :param num_trials:
+        :param individual:
+        :param learning_method Accepts NE, DQN or GE
         :return:
         """
 
         average_score = 0
 
         for trial in range(num_trials):
-            if not dqn and not isinstance(individual, TinyAgent):
+            if learning_method == "NE" and not isinstance(individual, TinyAgent):
                 individual = TinyAgent(self.observation_size, self.action_size, self.output_selection_method, self.random_seed)
 
             self.env.seed(self.random_seed)  # makes fitness deterministic
             observations = self.env.reset()
-            if dqn:
+            if learning_method == "DQN":
                 for i in range(len(observations)):
                     observations[i] = np.array(observations[i])
                     observations[i] = np.reshape(observations[i], [1, self.get_observation_size()])
@@ -67,14 +71,14 @@ class FitnessCalculator:
                 # The environment changes according to all their actions
                 old_observations = observations[:]
                 observations, reward, done, info = self.env.step(robot_actions, t)
-                if dqn:
+                if learning_method == "DQN":
                     for i in range(len(observations)):
                         observations[i] = np.array(observations[i])
                         observations[i] = np.reshape(observations[i], [1, self.get_observation_size()])
 
                 score += reward
 
-                if dqn:
+                if learning_method == "DQN":
                     for i in range(len(robot_actions)):
                         individual.remember(old_observations[i], robot_actions[i], reward, observations[i], done)
 
@@ -85,10 +89,10 @@ class FitnessCalculator:
 
             average_score += score
 
-            if dqn:
+            if learning_method == "DQN":
                 loss = individual.replay()
 
-        if dqn:
+        if learning_method == "DQN":
             return average_score/num_trials, individual
 
         return average_score/num_trials
