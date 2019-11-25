@@ -10,6 +10,7 @@ import sys
 import getopt
 
 from agents.TinyAgent import TinyAgent
+from agents.DQNAgent import DQNAgent
 from fitness_calculator import FitnessCalculator
 
 
@@ -187,6 +188,18 @@ def grammatical_evolution():
     pass
 
 
+def dqn(calculator, num_episodes):
+    agent = DQNAgent(calculator.get_observation_size(), calculator.get_action_size())
+
+    for e in range(num_episodes):
+        render = False
+        #if e%10 == 0:
+         #   render = True
+        score, agent = calculator.calculate_fitness(agent, num_trials=1, render=render, dqn=True)
+        print(f'Score at episode {e} is {score}')
+
+    return agent
+
 # Replay winning individual
 def evaluate_best(calculator, best, seed, num_trials=100):
     if best:
@@ -287,6 +300,7 @@ if __name__ == "__main__":
     # main(sys.argv[1:])
 
     # CMA
+    '''
     fitness_calculator = FitnessCalculator(random_seed=1,
                                            simulation_length=1000,
                                           #output_selection_method="argmax")
@@ -295,8 +309,16 @@ if __name__ == "__main__":
                                 1)
     best_genome = cma_es(calculator=fitness_calculator, seed_value=1, sigma=0.5)
     best_individual.load_weights(best_genome)
+    '''
 
     #RWG
     #best_individual = rwg(seed_value=1, calculator=fitness_calculator, output_selection_method="argmax", population_size=1000)
+
+    #DQN
+    fitness_calculator = FitnessCalculator(random_seed=1,
+                                           simulation_length=1000,
+                                           output_selection_method="argmax")
+                                           #output_selection_method="weighted_probability")
+    best_individual = dqn(calculator=fitness_calculator, num_episodes=100)
 
     # evaluate_best(calculator=fitness_calculator, seed=1, best=best_individual, num_trials=2)

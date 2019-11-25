@@ -1,4 +1,5 @@
 import gym
+import numpy as np
 
 from agents.TinyAgent import TinyAgent
 from gym.utils import seeding
@@ -34,7 +35,7 @@ class FitnessCalculator:
     def get_rng(self):
         return self.np_random
 
-    def calculate_fitness(self, individual, num_trials=1, render=False):
+    def calculate_fitness(self, individual, num_trials=1, render=False, dqn=False):
         """
         Calculates fitness of a controller by running a simulation
         :return:
@@ -43,11 +44,15 @@ class FitnessCalculator:
         average_score = 0
 
         for trial in range(num_trials):
-            if not isinstance(individual, TinyAgent):
+            if not dqn and not isinstance(individual, TinyAgent):
                 individual = TinyAgent(self.observation_size, self.action_size, self.output_selection_method, self.random_seed)
 
             self.env.seed(self.random_seed)  # makes fitness deterministic
             observations = self.env.reset()
+            if dqn:
+                for i in range(len(observations)):
+                    observations[i] = np.array(observations[i])
+                    observations[i] = np.reshape(observations[i], [1, self.get_observation_size()])
             score = 0
             done = False
 
@@ -60,19 +65,35 @@ class FitnessCalculator:
                 # robot_actions = [env.action_space.sample() for el in range(env.get_num_robots())]
 
                 # The environment changes according to all their actions
+                old_observations = observations[:]
                 observations, reward, done, info = self.env.step(robot_actions, t)
+                if dqn:
+                    for i in range(len(observations)):
+                        observations[i] = np.array(observations[i])
+                        observations[i] = np.reshape(observations[i], [1, self.get_observation_size()])
+
                 score += reward
 
-                #time.sleep(1)
+                if dqn:
+                    for i in range(len(robot_actions)):
+                        individual.remember(old_observations[i], robot_actions[i], reward, observations[i], done)
+
+                # time.sleep(1)
 
                 if done:
                     break
 
             average_score += score
 
+            if dqn:
+                loss = individual.replay()
+
+        if dqn:
+            return average_score/num_trials, individual
+
         return average_score/num_trials
 
     def calculate_fitness_negation(self, individual, render=False):
-        #render = True
-        num_trials = 10
+        # render = True
+        num_trials = 30
         return -1*self.calculate_fitness(individual=individual, num_trials=num_trials, render=render)
