@@ -190,15 +190,17 @@ def grammatical_evolution(random_seed, num_generations=2000, population_size=100
     pass
 
 
-def dqn(calculator, num_episodes):
-    agent = DQNAgent(calculator.get_observation_size(), calculator.get_action_size())
+def dqn(calculator, num_episodes, random_seed):
+    agent = DQNAgent(calculator.get_observation_size(), calculator.get_action_size(), random_seed)
 
     for e in range(num_episodes):
         render = False
-        #if e%10 == 0:
-         #   render = True
+        #if e == 0:
+        #    render = True
         score, agent = calculator.calculate_fitness(agent, num_trials=1, render=render, learning_method="DQN")
         print(f'Score at episode {e} is {score}')
+
+    agent.save("DQN_best")
 
     return agent
 
@@ -313,14 +315,14 @@ if __name__ == "__main__":
     best_individual.load_weights(best_genome)
     '''
 
-    #RWG
-    #best_individual = rwg(seed_value=1, calculator=fitness_calculator, output_selection_method="argmax", population_size=1000)
+    # RWG
+    # best_individual = rwg(seed_value=1, calculator=fitness_calculator, output_selection_method="argmax", population_size=1000)
 
-    #DQN
+    # DQN
     fitness_calculator = FitnessCalculator(random_seed=1,
                                            simulation_length=5000,
                                            output_selection_method="argmax")
                                            #output_selection_method="weighted_probability")
-    best_individual = dqn(calculator=fitness_calculator, num_episodes=10)
+    best_individual = dqn(calculator=fitness_calculator, num_episodes=150, random_seed=1)
 
     evaluate_best(calculator=fitness_calculator, seed=1, best=best_individual, num_trials=10)

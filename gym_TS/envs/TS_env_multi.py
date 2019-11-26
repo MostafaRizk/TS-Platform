@@ -182,12 +182,14 @@ class TSMultiEnv(gym.Env):
 
         # The robots' old positions are wiped out
         for position in old_robot_positions:
-            self.state[position[1]][position[0]] = 0
+            #self.state[position[1]][position[0]] = 0
+            self.robot_map[position[1]][position[0]] = 0
 
         # The resources' old positions are wiped out
         for position in self.resource_positions:
             if position != self.dumping_position:
-                self.state[position[1] + self.arena_constraints["y_max"]][position[0]] = 0
+                #self.state[position[1] + self.arena_constraints["y_max"]][position[0]] = 0
+                self.resource_map[position[1]][position[0]] = 0
 
         robot_collision_positions = copy.deepcopy(self.robot_positions)
         # The robots' new positions are updated
@@ -213,7 +215,8 @@ class TSMultiEnv(gym.Env):
                     if self.has_resource[i] is not None and self.has_resource != j:
                         robot_collision_positions[i] = old_robot_positions[i]
 
-            self.state[robot_collision_positions[i][1]][robot_collision_positions[i][0]] = i + 1
+            #self.state[robot_collision_positions[i][1]][robot_collision_positions[i][0]] = i + 1
+            self.robot_map[robot_collision_positions[i][1]][robot_collision_positions[i][0]] = i + 1
 
         self.robot_positions = robot_collision_positions
 
@@ -254,7 +257,8 @@ class TSMultiEnv(gym.Env):
         # Update the state with the new resource positions
         for i in range(len(self.resource_positions)):
             if self.resource_positions[i] != self.dumping_position:
-                self.state[self.resource_positions[i][1] + self.arena_constraints["y_max"]][self.resource_positions[i][0]] = i + 1
+                #self.state[self.resource_positions[i][1] + self.arena_constraints["y_max"]][self.resource_positions[i][0]] = i + 1
+                self.resource_map[self.resource_positions[i][1]][self.resource_positions[i][0]] = i + 1
 
         # -1 reward at each time step to promote faster runtimes
         #reward -= 1
@@ -265,6 +269,7 @@ class TSMultiEnv(gym.Env):
         elif self.current_num_resources < 0:
             raise ValueError("There should never be a negative number of resources")
 
+        self.state = np.concatenate((self.robot_map, self.resource_map), axis=0)  # Fully observable environment
         observations = self.generate_robot_observations()
 
         #return self.state, reward, done, {}
@@ -752,7 +757,7 @@ class TSMultiEnv(gym.Env):
         """
         for y in range(int(self.source_size)):
             for x in range(self.arena_constraints["x_max"]):
-                if self.resource_map[y][x] == 0:
+                if self.resource_map[int(self.source_start) + y][x] == 0:
                     return False
 
         return True

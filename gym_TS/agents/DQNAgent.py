@@ -21,31 +21,32 @@ from keras import backend as K
 from keras.losses import mean_squared_error
 from keras.models import load_model
 
-import tinynet
+from gym.utils import seeding
 
 # import warnings
 # warnings.filterwarnings('ignore',category=FutureWarning)
 
 
 class DQNAgent:
-    def __init__(self, state_size, action_size):
+    def __init__(self, state_size, action_size, random_seed):
         self.state_size = state_size
         self.action_size = action_size
         self.memory = deque(maxlen=2000)
         self.gamma = 0.95    # discount rate
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.01
-        self.epsilon_decay = 0.995
+        self.epsilon_decay = 0.999995
         self.learning_rate = 0.001
         self.model = self._build_model()
         self.weights_loaded = False
+        self.np_random, seed = seeding.np_random(random_seed)
 
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
         model = Sequential()
         model.add(Dense(self.action_size, input_dim=self.state_size, activation='linear'))
-        #model.add(Dense(self.state_size, activation='linear'))
-        #model.add(Dense(self.state_size, activation='linear'))
+        #model.add(Dense(self.action_size, activation='linear'))
+        #model.add(Dense(self.action_size, activation='linear'))
         model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))
         return model
 
@@ -58,8 +59,8 @@ class DQNAgent:
 
     def act(self, state):
         if not self.weights_loaded:
-            if np.random.rand() <= self.epsilon:
-                return random.randrange(self.action_size)
+            if self.np_random.rand() <= self.epsilon:
+                return self.np_random.randint(self.action_size-1)
             act_values = self.model.predict(state)
 
             return np.argmax(act_values[0])  # returns action
@@ -69,11 +70,10 @@ class DQNAgent:
             return np.argmax(act_values[0])
 
     def replay(self, batch_size=32):
-        minibatch = []
-        try:
-            minibatch = random.sample(self.memory, batch_size)
-        except ValueError:
-            minibatch = copy.deepcopy(self.memory)
+        #minibatch = []
+        #minibatch = random.sample(self.memory, batch_size)
+        indicies = self.np_random.choice(np.arange(len(self.memory)), batch_size)
+        minibatch = [self.memory[x] for x in indicies]
 
         y_predicted = np.zeros([batch_size, self.action_size])
         y_true = np.zeros([batch_size, self.action_size])
@@ -112,10 +112,10 @@ class DQNAgent:
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-        now = datetime.now()
-        timestamp = datetime.timestamp(now)
+        #now = datetime.now()
+        #timestamp = datetime.timestamp(now)
 
-        self.model.save(f'{directory}{filename}_{timestamp}')
+        self.model.save(f'{directory}{filename}')
 
     def generate_q_table(self, possible_states):
         for state in possible_states:
