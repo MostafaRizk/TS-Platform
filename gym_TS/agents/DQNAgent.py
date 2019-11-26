@@ -28,7 +28,7 @@ from gym.utils import seeding
 
 
 class DQNAgent:
-    def __init__(self, state_size, action_size, random_seed):
+    def __init__(self, state_size, action_size, random_seed, batch_size=32):
         self.state_size = state_size
         self.action_size = action_size
         self.memory = deque(maxlen=2000)
@@ -40,12 +40,15 @@ class DQNAgent:
         self.model = self._build_model()
         self.weights_loaded = False
         self.np_random, seed = seeding.np_random(random_seed)
+        self.batch_size = batch_size
 
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
         model = Sequential()
         model.add(Dense(self.action_size, input_dim=self.state_size, activation='linear'))
-        #model.add(Dense(self.action_size, activation='linear'))
+        #model.add(Dense(25, input_dim=self.state_size, activation='linear'))
+        #model.add(Dense(25, activation='linear'))
+        #model.add(Dense(25, activation='linear'))
         #model.add(Dense(self.action_size, activation='linear'))
         model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))
         return model
@@ -69,14 +72,14 @@ class DQNAgent:
             act_values = self.model.predict(state)
             return np.argmax(act_values[0])
 
-    def replay(self, batch_size=32):
+    def replay(self):
         #minibatch = []
         #minibatch = random.sample(self.memory, batch_size)
-        indicies = self.np_random.choice(np.arange(len(self.memory)), batch_size)
+        indicies = self.np_random.choice(np.arange(len(self.memory)), self.batch_size)
         minibatch = [self.memory[x] for x in indicies]
 
-        y_predicted = np.zeros([batch_size, self.action_size])
-        y_true = np.zeros([batch_size, self.action_size])
+        y_predicted = np.zeros([self.batch_size, self.action_size])
+        y_true = np.zeros([self.batch_size, self.action_size])
         h = 0
 
         for state, action, reward, next_state, done in minibatch:

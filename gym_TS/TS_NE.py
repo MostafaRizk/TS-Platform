@@ -11,6 +11,7 @@ import getopt
 
 from agents.TinyAgent import TinyAgent
 from agents.DQNAgent import DQNAgent
+from agents.BasicQAgent import BasicQAgent
 from fitness_calculator import FitnessCalculator
 
 
@@ -190,8 +191,22 @@ def grammatical_evolution(random_seed, num_generations=2000, population_size=100
     pass
 
 
-def dqn(calculator, num_episodes, random_seed):
-    agent = DQNAgent(calculator.get_observation_size(), calculator.get_action_size(), random_seed)
+def q_learning(calculator, num_episodes, random_seed):
+    # Information for BasicQ
+    front = [[0,0,0,1],[0,0,1,0],[0,1,0,0],[1,0,0,0]]
+    locations = [[0,0,0,1],[0,0,1,0],[0,1,0,0],[1,0,0,0]]
+    has_obj = [[0],[1]]
+
+    possible_observations = []
+
+    for x in front:
+        for y in locations:
+            for z in has_obj:
+                possible_observations += [np.array([x + y + z])]
+
+    agent = BasicQAgent(possible_observations, calculator.get_action_size(), random_seed, batch_size=calculator.simulation_length*calculator.env.num_robots)
+
+    # agent = DQNAgent(calculator.get_observation_size(), calculator.get_action_size(), random_seed, batch_size=calculator.simulation_length*calculator.env.num_robots)
 
     for e in range(num_episodes):
         render = False
@@ -200,7 +215,8 @@ def dqn(calculator, num_episodes, random_seed):
         score, agent = calculator.calculate_fitness(agent, num_trials=1, render=render, learning_method="DQN")
         print(f'Score at episode {e} is {score}')
 
-    agent.save("DQN_best")
+    agent.save("Q_best")
+    agent.display()
 
     return agent
 
@@ -318,11 +334,12 @@ if __name__ == "__main__":
     # RWG
     # best_individual = rwg(seed_value=1, calculator=fitness_calculator, output_selection_method="argmax", population_size=1000)
 
-    # DQN
+    # Q-learning
+    ''''''
     fitness_calculator = FitnessCalculator(random_seed=1,
-                                           simulation_length=5000,
+                                           simulation_length=10000,
                                            output_selection_method="argmax")
                                            #output_selection_method="weighted_probability")
-    best_individual = dqn(calculator=fitness_calculator, num_episodes=150, random_seed=1)
+    best_individual = q_learning(calculator=fitness_calculator, num_episodes=3000, random_seed=1)
 
-    evaluate_best(calculator=fitness_calculator, seed=1, best=best_individual, num_trials=10)
+    evaluate_best(calculator=fitness_calculator, seed=1, best=best_individual, num_trials=100)
