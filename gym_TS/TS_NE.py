@@ -209,7 +209,7 @@ def q_learning(calculator, num_episodes, random_seed):
     # agent = DQNAgent(calculator.get_observation_size(), calculator.get_action_size(), random_seed, batch_size=calculator.simulation_length*calculator.env.num_robots)
 
     for e in range(num_episodes):
-        render = False
+        render = True#False
         #if e == 0:
         #    render = True
         score, agent = calculator.calculate_fitness(agent, num_trials=1, render=render, learning_method="DQN")

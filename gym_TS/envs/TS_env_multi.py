@@ -233,9 +233,9 @@ class TSMultiEnv(gym.Env):
                         else:
                             self.pickup_or_hold_resource(j, i)
 
-                # Ensure that a resource that is at the same location as a robot now gets picked up if the robot is
+                # Ensure that a resource that is at the tile ahead of a robot now gets picked up if the robot is
                 # doing a pickup action
-                if self.resource_positions[i] == self.robot_positions[j]:
+                if self.resource_positions[i][1] == self.robot_positions[j][1]+1 and self.resource_positions[i][0] == self.robot_positions[j][0]:
                     if self.has_resource[j] is None:
                         if self.action_name[robot_actions[j]] == "PICKUP":
                             self.pickup_or_hold_resource(j, i)
