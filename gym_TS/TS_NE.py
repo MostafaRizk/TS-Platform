@@ -215,8 +215,9 @@ def q_learning(calculator, num_episodes, random_seed):
         score, agent = calculator.calculate_fitness(agent, num_trials=1, render=render, learning_method="DQN")
         print(f'Score at episode {e} is {score}')
 
-    agent.save("Q_best")
-    agent.display()
+        if e % 100 == 99:
+            agent.save(f"Q_best_{e}")
+            agent.display()
 
     return agent
 
@@ -340,6 +341,6 @@ if __name__ == "__main__":
                                            simulation_length=10000,
                                            output_selection_method="argmax")
                                            #output_selection_method="weighted_probability")
-    best_individual = q_learning(calculator=fitness_calculator, num_episodes=3000, random_seed=1)
+    best_individual = q_learning(calculator=fitness_calculator, num_episodes=1000, random_seed=1)
 
     evaluate_best(calculator=fitness_calculator, seed=1, best=best_individual, num_trials=100)

@@ -58,9 +58,9 @@ class BasicQAgent:
 
             target_f = self.q_table[str(state)]
             target_f[action] = target  # q_values = [ blah, blah, target, blah]
-            #self.model.fit(state, target_f, epochs=1, verbose=0)
+            # self.model.fit(state, target_f, epochs=1, verbose=0)
 
-            self.q_table[str(state)][action] += self.learning_rate*target_f[action]
+            self.q_table[str(state)][action] += self.learning_rate * target_f[action]
 
             y_predicted[h] = np.array(old_qs)
             y_true[h] = np.array(target_f)
@@ -90,16 +90,45 @@ class BasicQAgent:
             return np.argmax(act_values)  # returns action
 
     def display(self):
+        actions = ["Forward ", "Backward", "Left    ", "Right   ", "Drop    ", "Pickup  "]
+        tile = ["Blank", "Robot", "Res  ", "Wall "]
+        location = ["Nest  ", "Cache ", "Slope ", "Source"]
+        carrying = ["Not carrying", "Carrying    "]
+
+        print(
+            f'     Key                  {actions[0]}                  {actions[1]}                  {actions[2]}                  {actions[3]}                  {actions[4]}                  {actions[5]}')
+
         for key in self.q_table:
-            print(key + str("     ") + str(self.q_table[key][0]) + str("     ") + str(self.q_table[key][1]) + str("     ")
-                  + str(self.q_table[key][2]) + str("     ") + str(self.q_table[key][3]) + str("     ") + str(
-                self.q_table[key][4]) + str("     ") + str(self.q_table[key][5]))
-            #print(f'{key}     {np.argmax(self.q_table[key])}')
+            print(
+                f'{key}     {self.q_table[key][0]}     {self.q_table[key][1]}     {self.q_table[key][2]}     {self.q_table[key][3]}     {self.q_table[key][4]}     {self.q_table[key][5]}')
 
         print("\n")
 
+        print(f'Tile      Loc        Carrying       --->   Action')
+        print('--------------------------------------------------')
+
         for key in self.q_table:
-            print(f'{key}     {np.argmax(self.q_table[key])}')
+            observation = []
+            for i in key:
+                if i == '0' or i == '1':
+                    observation += [int(i)]
+
+            sensed_tile = ''
+            sensed_location = ''
+            sensed_object = ''
+
+            for j in range(len(observation)):
+                if observation[j] == 1:
+                    if 0 <= j <= 3:
+                        sensed_tile = tile[j]
+                    if 4 <= j <= 7:
+                        sensed_location = location[j-4]
+                    if j == 8:
+                        sensed_object = carrying[j-7]
+                if observation[j] == 0 and j == 8:
+                    sensed_object = carrying[j-8]
+
+            print(f'{sensed_tile}     {sensed_location}     {sensed_object}   --->   {actions[int(np.argmax(self.q_table[key]))]}')
 
     def save(self, filepath):
         json_dict = {}
