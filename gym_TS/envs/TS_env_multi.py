@@ -58,7 +58,7 @@ class TSMultiEnv(gym.Env):
         self.sliding_speed = 2
 
         # Other constants/variables
-        self.num_robots = 4
+        self.num_robots = 1
         self.default_num_resources = 5
         self.current_num_resources = self.default_num_resources
         self.latest_resource_id = self.default_num_resources - 1

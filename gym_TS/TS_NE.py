@@ -209,7 +209,7 @@ def q_learning(calculator, num_episodes, random_seed):
     # agent = DQNAgent(calculator.get_observation_size(), calculator.get_action_size(), random_seed, batch_size=calculator.simulation_length*calculator.env.num_robots)
 
     for e in range(num_episodes):
-        render = True#False
+        render = False
         #if e == 0:
         #    render = True
         score, agent = calculator.calculate_fitness(agent, num_trials=1, render=render, learning_method="DQN")
@@ -341,6 +341,6 @@ if __name__ == "__main__":
                                            simulation_length=10000,
                                            output_selection_method="argmax")
                                            #output_selection_method="weighted_probability")
-    best_individual = q_learning(calculator=fitness_calculator, num_episodes=1000, random_seed=1)
+    best_individual = q_learning(calculator=fitness_calculator, num_episodes=10000, random_seed=1)
 
     evaluate_best(calculator=fitness_calculator, seed=1, best=best_individual, num_trials=100)
