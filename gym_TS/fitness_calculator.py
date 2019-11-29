@@ -49,7 +49,9 @@ class FitnessCalculator:
 
         for trial in range(num_trials):
             if learning_method == "NE" and not isinstance(individual, TinyAgent):
-                individual = TinyAgent(self.observation_size, self.action_size, self.output_selection_method, self.random_seed)
+                temp_individual = TinyAgent(self.observation_size, self.action_size, self.output_selection_method, self.random_seed)
+                temp_individual.load_weights(individual)
+                individual = temp_individual
 
             self.env.seed(self.random_seed)  # makes fitness deterministic
             observations = self.env.reset()

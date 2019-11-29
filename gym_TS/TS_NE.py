@@ -31,7 +31,7 @@ def rwg(seed_value, calculator, output_selection_method, population_size=1000):
         individual.load_weights()  # No parameters means random weights are generated
 
         # Evaluate individual's fitness
-        score = calculator.calculate_fitness(individual, render=True)
+        score = calculator.calculate_fitness(individual, render=False)
         print(f"{nind} Score: {score}")
         if score > 0.0:
             '''
@@ -165,12 +165,11 @@ def genetic_algorithm(calculator, seed_value, output_selection_method, num_gener
 
 
 def cma_es(calculator, seed_value, sigma=0.5):
-    demo_agent = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(),
-                           output_selection_method=calculator.output_selection_method, seed=seed_value)
-    num_weights = demo_agent.get_num_weights()
+    #demo_agent = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), output_selection_method=calculator.output_selection_method, seed=seed_value)
+    #num_weights = demo_agent.get_num_weights()
     # res = cma.fmin(fitness, num_weights * [0], 0.5)
 
-    options = {'popsize': 100}
+    #options = {'popsize': 100}
 
     '''
     seed_weights = [-1.0431838425825934, -2.2288783089256503, -0.8398726300883669, 1.2707672580006588,
@@ -247,8 +246,7 @@ def cma_es(calculator, seed_value, sigma=0.5):
                     0.4401878832579056,
                     ]'''
 
-    seed_individual = rwg(seed_value=1, calculator=fitness_calculator, output_selection_method="argmax",
-                          population_size=100000)
+    seed_individual = rwg(seed_value=1, calculator=fitness_calculator, output_selection_method="argmax", population_size=100000)
     seed_weights = seed_individual.get_weights()
     # es = cma.CMAEvolutionStrategy(num_weights * [0], sigma, options)
     #es = cma.CMAEvolutionStrategy(num_weights * [0], sigma)
@@ -318,7 +316,7 @@ def evaluate_best(calculator, best, seed, num_trials=100):
         avg_score = 0
 
         for i in range(num_trials):
-            render_flag = True  # False
+            render_flag = False
             # if i == 0:
             #    render_flag = True
             test_scores += [calculator.calculate_fitness(best, render=render_flag)]
@@ -413,7 +411,7 @@ if __name__ == "__main__":
     # CMA
 
     fitness_calculator = FitnessCalculator(random_seed=1,
-                                           simulation_length=10000,
+                                           simulation_length=1000,
                                            output_selection_method="argmax")
     # output_selection_method="weighted_probability")
 
