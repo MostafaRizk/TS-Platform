@@ -346,7 +346,7 @@ if __name__ == "__main__":
     ''' '''
     best_individual = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), output_selection_method="argmax",
                                 seed=1)
-    best_genome = cma_es(calculator=fitness_calculator, seed_value=1, sigma=0.05)
+    best_genome = cma_es(calculator=fitness_calculator, seed_value=3, sigma=0.01)
     best_individual.load_weights(best_genome)
 
 

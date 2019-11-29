@@ -58,8 +58,8 @@ class TSMultiEnv(gym.Env):
         self.sliding_speed = 2
 
         # Other constants/variables
-        self.num_robots = 1
-        self.default_num_resources = self.arena_constraints["x_max"]
+        self.num_robots = 4
+        self.default_num_resources = 5
         self.current_num_resources = self.default_num_resources
         self.latest_resource_id = self.default_num_resources - 1
         self.dumping_position = (-10, -10)
@@ -252,7 +252,7 @@ class TSMultiEnv(gym.Env):
                 self.delete_resource(self.has_resource[i])
                 self.has_resource[i] = None
                 reward += 1
-                #self.spawn_resource()
+                self.spawn_resource()
 
         # Update the state with the new resource positions
         for i in range(len(self.resource_positions)):

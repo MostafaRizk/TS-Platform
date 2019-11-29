@@ -46,14 +46,15 @@ class FitnessCalculator:
         """
 
         average_score = 0
+        temp_seed = self.random_seed
 
         for trial in range(num_trials):
             if learning_method == "NE" and not isinstance(individual, TinyAgent):
-                temp_individual = TinyAgent(self.observation_size, self.action_size, self.output_selection_method, self.random_seed)
+                temp_individual = TinyAgent(self.observation_size, self.action_size, self.output_selection_method, temp_seed)
                 temp_individual.load_weights(individual)
                 individual = temp_individual
 
-            self.env.seed(self.random_seed)  # makes fitness deterministic
+            self.env.seed(temp_seed)  # makes fitness deterministic
             observations = self.env.reset()
             if learning_method == "DQN":
                 for i in range(len(observations)):
@@ -121,6 +122,7 @@ class FitnessCalculator:
                     break
 
             average_score += score
+            temp_seed += 1
 
             if learning_method == "DQN":
                 loss = individual.replay()
@@ -132,5 +134,5 @@ class FitnessCalculator:
 
     def calculate_fitness_negation(self, individual, render=False):
         #render = True
-        num_trials = 1
-        return -1*self.calculate_fitness(individual=individual, num_trials=num_trials, render=render)
+        #num_trials = 5
+        return -1*self.calculate_fitness(individual=individual, render=render)
