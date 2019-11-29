@@ -84,7 +84,37 @@ class FitnessCalculator:
                     for i in range(len(robot_actions)):
                         individual.remember(old_observations[i], robot_actions[i], reward, observations[i], done)
 
-                # time.sleep(1)
+                #Display observation/action in readable format
+                '''
+                actions = ["Forward ", "Backward", "Left    ", "Right   ", "Drop    ", "Pickup  "]
+                tile = ["Empty", "Contains thing"]
+                location = ["Nest  ", "Cache ", "Slope ", "Source"]
+                carrying = ["Not carrying", "Carrying    "]
+
+                sensed_tile = ''
+                sensed_location = ''
+                sensed_object = ''
+
+                observation = old_observations[0]
+
+                for j in range(len(observation)):
+                    if observation[j] == 1:
+                        if j == 0:
+                            sensed_tile = tile[1]
+                        if 1 <= j <= 4:
+                            sensed_location = location[j - 1]
+                        if j == 5:
+                            sensed_object = carrying[1]
+                    if observation[j] == 0 and j == 5:
+                        sensed_object = carrying[0]
+                    if observation[j] == 0 and j == 0:
+                        sensed_tile = tile[0]
+
+                print(
+                    f'{sensed_tile}     {sensed_location}     {sensed_object}   --->   {actions[robot_actions[0]]}')
+                '''
+
+                #time.sleep(1)
                 # print(f'Time: {t} || Score: {score}')
 
                 if done:

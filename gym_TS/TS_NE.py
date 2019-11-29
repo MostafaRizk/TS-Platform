@@ -169,88 +169,13 @@ def cma_es(calculator, seed_value, sigma=0.5):
     #num_weights = demo_agent.get_num_weights()
     # res = cma.fmin(fitness, num_weights * [0], 0.5)
 
-    #options = {'popsize': 100}
-
-    '''
-    seed_weights = [-1.0431838425825934, -2.2288783089256503, -0.8398726300883669, 1.2707672580006588,
-                    -0.2167935254021543, -1.666569523924776, -0.3082967403858032, 0.7763690381527228,
-                    2.005092377532404,
-                    -0.1853335647265951,
-                    1.8299754294173278,
-                    0.5075368496803073,
-                    -0.15607214541021946,
-                    -1.472280526471345,
-                    -0.7304654828926199,
-                    -1.1792376049254294,
-                    -0.6560920576211264,
-                    -1.5191097182849012,
-                    -0.7765926259602857,
-                    0.8652669301949172,
-                    -1.4502787784963347,
-                    0.577256668402082,
-                    0.3122145230983185,
-                    -0.9496927993664452,
-                    -1.0205209794882264,
-                    0.7994240228421706,
-                    1.2452174671106035,
-                    -2.11548699151305,
-                    0.4236486552187126,
-                    -0.14550298602780937,
-                    -0.07952386573114836,
-                    0.07140212202805567,
-                    -1.4378176233120352,
-                    0.1109630301133251,
-                    0.560290463854857,
-                    0.5225739537219691,
-                    -1.0172759909451599,
-                    0.36742603774117155,
-                    0.4385228046927393,
-                    -0.7866899315065242,
-                    1.0391257022698626,
-                    0.8043974410915099,
-                    0.25270970415633737,
-                    -0.490924796358224,
-                    0.09333950572418107,
-                    0.4891891713027423,
-                    0.19401738758384357,
-                    0.6013658365752675,
-                    0.5234824753259328,
-                    0.16591472881733896,
-                    -1.0306169175972422,
-                    -0.22828414744759767,
-                    0.3656060419217717,
-                    -1.3956987241955983,
-                    -3.073363674591713,
-                    -0.9551890350277024,
-                    2.058606549810594,
-                    0.022134264916920495,
-                    -0.10568080797250205,
-                    -0.553330199552867,
-                    0.03776194538831502,
-                    -0.8276803679851683,
-                    0.7938405697160578,
-                    -1.4058452667511598,
-                    0.21901443634943546,
-                    0.2254266900347852,
-                    1.0357062678229885,
-                    1.2022376571585547,
-                    -1.2131335497619717,
-                    0.8469800455228851,
-                    2.2992040472687627,
-                    0.6510267740851221,
-                    -0.30787805071041063,
-                    1.0376018282534878,
-                    -0.4531398926911327,
-                    -0.3284468316211783,
-                    -0.5239372070484186,
-                    0.4401878832579056,
-                    ]'''
+    options = {'seed': seed_value}#seed=55183 failed with sigma=2
 
     seed_individual = rwg(seed_value=1, calculator=fitness_calculator, output_selection_method="argmax", population_size=100000)
     seed_weights = seed_individual.get_weights()
     # es = cma.CMAEvolutionStrategy(num_weights * [0], sigma, options)
     #es = cma.CMAEvolutionStrategy(num_weights * [0], sigma)
-    es = cma.CMAEvolutionStrategy(seed_weights, sigma)
+    es = cma.CMAEvolutionStrategy(seed_weights, sigma, options)
 
     # es.optimize(calculator.calculate_fitness)
     es.optimize(calculator.calculate_fitness_negation)
@@ -421,7 +346,7 @@ if __name__ == "__main__":
     ''' '''
     best_individual = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), output_selection_method="argmax",
                                 seed=1)
-    best_genome = cma_es(calculator=fitness_calculator, seed_value=1, sigma=0.1)
+    best_genome = cma_es(calculator=fitness_calculator, seed_value=1, sigma=0.05)
     best_individual.load_weights(best_genome)
 
 
@@ -435,4 +360,4 @@ if __name__ == "__main__":
     best_individual = q_learning(calculator=fitness_calculator, num_episodes=1000, random_seed=1, batch_size=10000)
     '''
 
-    evaluate_best(calculator=fitness_calculator, seed=1, best=best_individual, num_trials=1)
+    evaluate_best(calculator=fitness_calculator, seed=1, best=best_individual, num_trials=10)
