@@ -83,7 +83,7 @@ class FitnessCalculator:
                         individual.remember(old_observations[i], robot_actions[i], reward, observations[i], done)
 
                 # time.sleep(1)
-                #print(f'Time: {t} || Score: {score}')
+                # print(f'Time: {t} || Score: {score}')
 
                 if done:
                     break
@@ -99,6 +99,6 @@ class FitnessCalculator:
         return average_score/num_trials
 
     def calculate_fitness_negation(self, individual, render=False):
-        # render = True
-        num_trials = 30
+        #render = True
+        num_trials = 1
         return -1*self.calculate_fitness(individual=individual, num_trials=num_trials, render=render)

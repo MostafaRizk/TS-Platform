@@ -18,9 +18,9 @@ class TinyAgent:
         self.net_struct = [observation_size, *self.hidden, action_size]
 
         # Network setup is straightforward (defaults: `act_fn=np.tanh, init_weights=None`)
-        #self.net = tinynet.RNN(self.net_struct)
+        self.net = tinynet.RNN(self.net_struct, act_fn=linear_activation)
 
-        self.net = tinynet.FFNN(self.net_struct, act_fn=linear_activation)
+        #self.net = tinynet.FFNN(self.net_struct, act_fn=linear_activation)
 
         self.np_random, seed = seeding.np_random(seed)
 

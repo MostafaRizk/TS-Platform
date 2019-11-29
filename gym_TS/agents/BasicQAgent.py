@@ -20,7 +20,7 @@ class BasicQAgent:
         self.gamma = 0.95  # discount rate
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.00
-        self.epsilon_decay = 0.995
+        self.epsilon_decay = 0.9999995
         self.learning_rate = 0.001
         self.model_loaded = False
         self.np_random, seed = seeding.np_random(random_seed)
@@ -31,7 +31,8 @@ class BasicQAgent:
             action_values = []
 
             for i in range(self.action_size):
-                action_values += [np.random.rand()]
+                #action_values += [np.random.rand()]
+                action_values += [0]
 
             self.q_table[str(state)] = np.array(action_values)
 
@@ -78,6 +79,7 @@ class BasicQAgent:
         return loss
 
     def act(self, state):
+
         if not self.model_loaded:
             if np.random.rand() <= self.epsilon:
                 return random.randrange(self.action_size)

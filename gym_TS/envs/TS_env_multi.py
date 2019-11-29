@@ -59,7 +59,7 @@ class TSMultiEnv(gym.Env):
 
         # Other constants/variables
         self.num_robots = 1
-        self.default_num_resources = 5
+        self.default_num_resources = 8
         self.current_num_resources = self.default_num_resources
         self.latest_resource_id = self.default_num_resources - 1
         self.dumping_position = (-10, -10)
@@ -100,7 +100,7 @@ class TSMultiEnv(gym.Env):
 
         # Each robot observes directly in front of it, its location and whether or not it has a resource
         # The details are explained in self.generate_robot_observations()
-        self.observation_space = spaces.Discrete(9)
+        self.observation_space = spaces.Discrete(6)
 
 
         # Action space
@@ -233,9 +233,9 @@ class TSMultiEnv(gym.Env):
                         else:
                             self.pickup_or_hold_resource(j, i)
 
-                # Ensure that a resource that is at the tile ahead of a robot now gets picked up if the robot is
+                # Ensure that a resource that is at the same location as a robot now gets picked up if the robot is
                 # doing a pickup action
-                if self.resource_positions[i][1] == self.robot_positions[j][1]+1 and self.resource_positions[i][0] == self.robot_positions[j][0]:
+                if self.resource_positions[i] == self.robot_positions[j]:
                     if self.has_resource[j] is None:
                         if self.action_name[robot_actions[j]] == "PICKUP":
                             self.pickup_or_hold_resource(j, i)
@@ -311,24 +311,15 @@ class TSMultiEnv(gym.Env):
 
         for j in range(len(self.robot_positions)):
             position = self.robot_positions[j]
-            observation = [0]*9
+            observation = [0] * self.observation_space.n
 
-            front = (position[0], position[1] + 1)
+            # front = (position[0], position[1] + 1)
 
-            # If the space in front of the robot is
-            # Blank-            observation[0] = 1, otherwise 0
-            # Another robot-    observation[1] = 1, otherwise 0
-            # A resource-       observation[2] = 1, otherwise 0
-            # A wall-           observation[3] = 1, otherwise 0
-            if self.arena_constraints["y_max"] <= front[1] or \
-                    front[1] < 0:
-                observation[3] = 1  # Wall
-            elif self.robot_map[front[1]][front[0]] != 0:
-                observation[1] = 1  # Another robot
-            elif self.resource_map[front[1]][front[0]] != 0:
-                observation[2] = 1  # A resource
-            else:
-                observation[0] = 1  # Blank space
+            # If the space the robot is in
+            # Does not contain a resource-  observation[0] = 0
+            # Contains a resource-          observation[0] = 1
+            if self.resource_map[position[1]][position[0]] != 0:
+                observation[0] = 1
 
             area = self.get_area_from_position(position)
 
@@ -338,18 +329,18 @@ class TSMultiEnv(gym.Env):
             # The slope-    observation[6] = 1, otherwise 0
             # The source-   observation[7] = 1, otherwise 0
             if area == "NEST":
-                observation[4] = 1
+                observation[1] = 1
             elif area == "CACHE":
-                observation[5] = 1
+                observation[2] = 1
             elif area == "SLOPE":
-                observation[6] = 1
+                observation[3] = 1
             else:
-                observation[7] = 1
+                observation[4] = 1
 
             # If the robot
             # Has a resource-   observation[8] = 1, otherwise 0
             if self.has_resource[j]:
-                observation[8] = 1
+                observation[5] = 1
 
             observations += [np.array(observation)]
 
@@ -407,6 +398,7 @@ class TSMultiEnv(gym.Env):
                     robot_placed = True
 
         # Places all resources
+        '''
         for i in range(self.default_num_resources):
             resource_placed = False
             while not resource_placed:
@@ -415,6 +407,13 @@ class TSMultiEnv(gym.Env):
                     self.resource_map[y][x] = i + 1
                     self.resource_positions[i] = (x, y)
                     resource_placed = True
+        '''
+
+        # Places straight line of resources
+        for i in range(self.default_num_resources):
+            x, y = i, self.arena_constraints["y_max"]-1
+            self.resource_map[y][x] = i + 1
+            self.resource_positions[i] = (x,y)
 
         # NOTE: To change this, must also change the observation space in __init__
         self.state = np.concatenate((self.robot_map, self.resource_map), axis=0)
