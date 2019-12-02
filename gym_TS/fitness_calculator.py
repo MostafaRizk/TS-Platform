@@ -35,7 +35,7 @@ class FitnessCalculator:
     def get_rng(self):
         return self.np_random
 
-    def calculate_fitness(self, individual, num_trials=1, render=False, learning_method="NE"):
+    def calculate_fitness(self, individual, num_trials=5, render=False, learning_method="NE"):
         """
         Calculates fitness of a controller by running a simulation
         :param render:
@@ -45,6 +45,7 @@ class FitnessCalculator:
         :return:
         """
 
+        #render=True
         average_score = 0
         temp_seed = self.random_seed
 

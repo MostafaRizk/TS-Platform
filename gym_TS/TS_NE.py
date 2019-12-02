@@ -171,7 +171,7 @@ def cma_es(calculator, seed_value, sigma=0.5):
 
     options = {'seed': seed_value}#seed=55183 failed with sigma=2
 
-    seed_individual = rwg(seed_value=1, calculator=fitness_calculator, output_selection_method="argmax", population_size=100000)
+    seed_individual = rwg(seed_value=seed_value, calculator=fitness_calculator, output_selection_method="argmax", population_size=100000)
     seed_weights = seed_individual.get_weights()
     # es = cma.CMAEvolutionStrategy(num_weights * [0], sigma, options)
     #es = cma.CMAEvolutionStrategy(num_weights * [0], sigma)
@@ -346,7 +346,7 @@ if __name__ == "__main__":
     ''' '''
     best_individual = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), output_selection_method="argmax",
                                 seed=1)
-    best_genome = cma_es(calculator=fitness_calculator, seed_value=3, sigma=0.01)
+    best_genome = cma_es(calculator=fitness_calculator, seed_value=3, sigma=0.05)
     best_individual.load_weights(best_genome)
 
 

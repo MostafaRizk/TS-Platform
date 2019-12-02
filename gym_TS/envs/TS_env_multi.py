@@ -58,7 +58,7 @@ class TSMultiEnv(gym.Env):
         self.sliding_speed = 2
 
         # Other constants/variables
-        self.num_robots = 4
+        self.num_robots = 1
         self.default_num_resources = 5
         self.current_num_resources = self.default_num_resources
         self.latest_resource_id = self.default_num_resources - 1
@@ -88,20 +88,10 @@ class TSMultiEnv(gym.Env):
         self.resource_positions = [None for i in range(self.default_num_resources)]
 
         # Observation space
-        # The state has 2 copies of the arena, one with robot locations and one with the resource locations
-        # NOTE: To change this, the reset function must also be changed
-        #self.observation_space = spaces.Discrete(self.num_arena_tiles * 2)
-
-        # Each robot observes the 8 tiles around it and whether or not it has food
-        #self.observation_space = spaces.Discrete(9)
-
-        # Each robot observes directly in front of it, its location and whether or not it has a resource
-        #self.observation_space = spaces.Discrete(3)
-
-        # Each robot observes directly in front of it, its location and whether or not it has a resource
+        #
         # The details are explained in self.generate_robot_observations()
-        self.observation_space = spaces.Discrete(6)
-
+        self.tiles_in_sensing_range = (2*self.sensor_range + 1)**2  # Range=1 -> 9 tiles. Range=2 -> 25 tiles. Robot at the center.
+        self.observation_space = spaces.Discrete(self.tiles_in_sensing_range*4 + 5)  # Tiles are onehotencoded
 
         # Action space
         #self.action_space = spaces.Discrete(3)  # 0- Phototaxis 1- Antiphototaxis 2-Random walk
@@ -304,24 +294,55 @@ class TSMultiEnv(gym.Env):
     def generate_robot_observations(self):
         """
         Generate a list of observations made by each robot
-        :return: An np array of observations
+        :return:
         """
 
         observations = []
+        readable_observations = []
 
         for j in range(len(self.robot_positions)):
             position = self.robot_positions[j]
             observation = [0] * self.observation_space.n
+            readable_observation = []
 
-            # front = (position[0], position[1] + 1)
+            # If a tile in the robot's sensing range is:
+            # Blank-            observation[k + 0] = 1, otherwise 0
+            # Another robot-    observation[k + 1] = 1, otherwise 0
+            # A resource-       observation[k + 2] = 1, otherwise 0
+            # A wall-           observation[k + 3] = 1, otherwise 0
+            # Each tile is represented by 4 indices instead of 1(for purposes of onehotencoding)
+            current_x = position[0] - self.sensor_range
+            current_y = position[1] + self.sensor_range
+            row_progress = 0
 
-            # If the space the robot is in
-            # Does not contain a resource-  observation[0] = 0
-            # Contains a resource-          observation[0] = 1
-            if self.resource_map[position[1]][position[0]] != 0:
-                observation[0] = 1
+            for k in range(self.tiles_in_sensing_range):
+                # If coordinate is out of bounds then it is a wall
+                if self.arena_constraints["x_max"] <= current_x or current_x < 0 or self.arena_constraints["y_max"] <= current_y or current_y < 0:
+                    observation[4*k+3] = 1  # Wall
+                    readable_observation += ["Wall"]
+                # If coordinate contains a robot and the robot is not this robot
+                elif self.robot_map[current_y][current_x] != 0 and not (current_x == position[0] and current_y == position[1]):
+                    observation[4*k+1] = 1  # Another robot
+                    readable_observation += ["Robot"]
+                # If coordinate is a resource
+                elif self.resource_map[current_y][current_x] != 0:
+                    observation[4*k+2] = 1  # A resource
+                    readable_observation += ["Resource"]
+                else:
+                    observation[4*k+0] = 1  # Blank space
+                    readable_observation += ["Blank"]
+
+                row_progress += 1
+
+                if row_progress >= self.sensor_range*2 + 1:
+                    row_progress = 0
+                    current_x = position[0] - self.sensor_range
+                    current_y -= 1
+                else:
+                    current_x += row_progress
 
             area = self.get_area_from_position(position)
+            obs_index = self.tiles_in_sensing_range*4
 
             # If the area the robot is located in is
             # The nest-     observation[4] = 1, otherwise 0
@@ -329,20 +350,26 @@ class TSMultiEnv(gym.Env):
             # The slope-    observation[6] = 1, otherwise 0
             # The source-   observation[7] = 1, otherwise 0
             if area == "NEST":
-                observation[1] = 1
+                observation[obs_index] = 1
             elif area == "CACHE":
-                observation[2] = 1
+                observation[obs_index+1] = 1
             elif area == "SLOPE":
-                observation[3] = 1
+                observation[obs_index+2] = 1
             else:
-                observation[4] = 1
+                observation[obs_index+3] = 1
+
+            readable_observation += [area]
 
             # If the robot
             # Has a resource-   observation[8] = 1, otherwise 0
             if self.has_resource[j]:
-                observation[5] = 1
+                observation[obs_index+4] = 1
+                readable_observation += ["Has"]
+            else:
+                readable_observation += ["Doesn't have"]
 
             observations += [np.array(observation)]
+            readable_observations += [readable_observation]
 
         return observations
 
