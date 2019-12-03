@@ -134,6 +134,5 @@ class FitnessCalculator:
         return average_score/num_trials
 
     def calculate_fitness_negation(self, individual, render=False):
-        #render = True
-        #num_trials = 5
+        render = True
         return -1*self.calculate_fitness(individual=individual, render=render)

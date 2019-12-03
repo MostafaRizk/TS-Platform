@@ -216,15 +216,15 @@ def q_learning(calculator, num_episodes, random_seed, batch_size):
             for z in has_obj:
                 possible_observations += [np.array([x + y + z])]
 
-    agent = BasicQAgent(possible_observations, calculator.get_action_size(), random_seed, batch_size=batch_size)
+    #agent = BasicQAgent(possible_observations, calculator.get_action_size(), random_seed, batch_size=batch_size)
 
-    # agent = DQNAgent(calculator.get_observation_size(), calculator.get_action_size(), random_seed, batch_size=calculator.simulation_length*calculator.env.num_robots)
+    agent = DQNAgent(calculator.get_observation_size(), calculator.get_action_size(), random_seed, batch_size=128)#calculator.simulation_length*calculator.env.num_robots)
 
     for e in range(num_episodes):
-        render = True  # False
+        render = False
         # if e%10 == 0:
         #    render = True
-        score, agent = calculator.calculate_fitness(agent, num_trials=1, render=render, learning_method="DQN")
+        score, agent = calculator.calculate_fitness(agent, num_trials=5, render=render, learning_method="DQN")
         print(f'Score at episode {e} is {score}')
 
         if e % 100 == 99:
@@ -350,14 +350,15 @@ if __name__ == "__main__":
     best_individual.load_weights(best_genome)
 
 
-
     # Q-learning
-    '''
+    ''' 
     fitness_calculator = FitnessCalculator(random_seed=1,
-                                           simulation_length=10000,
+                                           simulation_length=1000,
                                            output_selection_method="argmax")
                                            #output_selection_method="weighted_probability")
     best_individual = q_learning(calculator=fitness_calculator, num_episodes=1000, random_seed=1, batch_size=10000)
     '''
 
     evaluate_best(calculator=fitness_calculator, seed=1, best=best_individual, num_trials=10)
+
+    best_individual.save_model("Best_multiagent_cma_policy")
