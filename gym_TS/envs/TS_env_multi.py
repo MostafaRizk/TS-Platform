@@ -130,6 +130,16 @@ class TSMultiEnv(gym.Env):
         return self.default_num_resources
 
     def step(self, robot_actions, time_step):
+        """
+        Given the current state of the environment and the actions the robots are taking, updates the environment accordingly
+
+        :param robot_actions A list of integers representing the action each robot is taking
+        :param time_step The current time step within the simulation
+
+        :return A 4-tuple containing: a list containing each robot's observation, the reward at this time step,
+        a boolean indicating if the simulation is done, any additional information
+        """
+
         # Returns an error if the number of actions is incorrect
         assert len(robot_actions) == self.num_robots, "Incorrect number of actions"
 
@@ -231,6 +241,7 @@ class TSMultiEnv(gym.Env):
         #reward -= 1
 
         # The task is done when all resources are removed from the environment
+        #
         if self.current_num_resources == 0:
             done = True
         elif self.current_num_resources < 0:
@@ -270,7 +281,18 @@ class TSMultiEnv(gym.Env):
 
     def generate_robot_observations(self):
         """
-        Generate a list of observations made by each robot
+        Generate a list containing each robot's observation. Each robot observes:
+
+        1. A radius of self.sensor_range around itself. If sensor range is 0, it only checks the tile it is currently
+        on. A onehotencoded bit-vector is added to the observation denoting whether the robot detects a blank space,
+        another robot (not possible if it's the tile directly underneath), a resource or a wall (also not possible).
+        If the radius is greater than 0, then the robot is at the center of a square (side=3 if radius=1,
+        side=5 if radius=2 etc). The same readings are added starting from the top left tile and going row by row
+        until the bottom right tile.
+
+        2. Where the robot is (Nest, Cache, Slope, Source) also encoded as a bit-vector
+
+        3. Whether or not the robot is carrying a resource (encoded as a single bit)
         :return:
         """
 
@@ -298,11 +320,11 @@ class TSMultiEnv(gym.Env):
                     observation[4*k+3] = 1  # Wall
                     readable_observation += ["Wall"]
                 # If coordinate contains a robot and the robot is not this robot
-                elif self.robot_map[current_y][current_x] != 0 and not (current_x == position[0] and current_y == position[1]):
+                elif self.robot_map[current_y][current_x] != 0 and (current_x != position[0] or current_y != position[1]):
                     observation[4*k+1] = 1  # Another robot
                     readable_observation += ["Robot"]
                 # If coordinate is a resource
-                elif self.resource_map[current_y][current_x] != 0:
+                elif self.resource_map[current_y][current_x] != 0 and self.has_resource[j] != self.resource_map[current_y][current_x]-1:
                     observation[4*k+2] = 1  # A resource
                     readable_observation += ["Resource"]
                 else:
@@ -316,7 +338,7 @@ class TSMultiEnv(gym.Env):
                     current_x = position[0] - self.sensor_range
                     current_y -= 1
                 else:
-                    current_x += row_progress
+                    current_x += 1
 
             area = self.get_area_from_position(position)
             obs_index = self.tiles_in_sensing_range*4
@@ -339,7 +361,7 @@ class TSMultiEnv(gym.Env):
 
             # If the robot
             # Has a resource-   observation[8] = 1, otherwise 0
-            if self.has_resource[j]:
+            if self.has_resource[j] is not None:
                 observation[obs_index+4] = 1
                 readable_observation += ["Has"]
             else:
@@ -349,15 +371,6 @@ class TSMultiEnv(gym.Env):
             readable_observations += [readable_observation]
 
         return observations
-
-    def get_observation_categories(self):
-        """
-        Returns categories of all possible observations for use in onehotencoding
-        :return: List of cateogires
-        """
-
-        #return [["B", "O", "R", "W"] for i in range(self.get_observation_size())]
-        return [["C", "F", "L", "N", "O", "R", "S", "W", "f"] for i in range(self.get_observation_size())]
 
     def reset(self):
         """
@@ -606,43 +619,6 @@ class TSMultiEnv(gym.Env):
             return "SOURCE"
         else:
             raise ValueError("y position is not valid")
-
-    def phototaxis_step(self, robot_id):
-        """
-        Robot with id robot_id moves one step forward i.e. up in the y direction
-        :param robot_id: Index of the robot in self.robot_positions
-        :return:
-        """
-        self.robot_positions[robot_id] = (
-            self.robot_positions[robot_id][0],
-            np.clip(self.robot_positions[robot_id][1] + 1, self.arena_constraints["y_min"],
-                    self.arena_constraints["y_max"] - 1))
-
-    def antiphototaxis_step(self, robot_id):
-        """
-        Robot with id robot_id moves one step back i.e. down in the y direction
-        :param robot_id: Index of the robot in self.robot_positions
-        :return:
-        """
-        self.robot_positions[robot_id] = (
-            self.robot_positions[robot_id][0],
-            np.clip(self.robot_positions[robot_id][1] - 1, self.arena_constraints["y_min"],
-                    self.arena_constraints["y_max"] - 1))
-
-    def random_walk_step(self, robot_id):
-        """
-        Robot with id robot_id moves randomly to an adjacent tile
-        :param robot_id: Index of the robot in self.robot_positions
-        :return:
-        """
-        x_movement = self.np_random.randint(low=-1, high=2)
-        y_movement = self.np_random.randint(low=-1, high=2)
-
-        self.robot_positions[robot_id] = (
-            np.clip(self.robot_positions[robot_id][0] + x_movement, self.arena_constraints["x_min"],
-                    self.arena_constraints["x_max"] - 1),
-            np.clip(self.robot_positions[robot_id][1] + y_movement, self.arena_constraints["y_min"],
-                    self.arena_constraints["y_max"] - 1))
 
     def forward_step(self, robot_id):
         """
