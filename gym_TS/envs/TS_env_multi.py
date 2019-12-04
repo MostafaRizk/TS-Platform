@@ -1,17 +1,19 @@
 """
-Code modified from OpenAI's Mountain car example
+Sets up environment for task specialisation experiments based on the setup by Ferrante et al. 2015
+https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004273
+
+Note: In the code and documentation, the term 'robot' is used to refer to the agents.
 """
 
 import gym
 from gym import spaces
 from gym.utils import seeding
 
-import math
 import numpy as np
 import copy
-# from keras.utils import to_categorical
 
 from gym.envs.classic_control import rendering
+
 try:
     from gym.envs.classic_control import rendering
     pass
@@ -33,17 +35,17 @@ class TSMultiEnv(gym.Env):
         self.logging = logging
 
         # Environment dimensions
-        self.arena_constraints = {"x_min": 0, "x_max": 8, "y_min": 0, "y_max": 24}
-        self.nest_size = self.arena_constraints["y_max"] / 12  # 4/48
-        self.cache_size = self.nest_size * 2  # 8/48
-        self.slope_size = self.nest_size * 6  # 24/48
-        self.source_size = self.nest_size * 3  # 12/48
+        self.arena_constraints = {"x_min": 0, "x_max": 8, "y_min": 0, "y_max": 12}
+        self.nest_size = self.arena_constraints["y_max"] / 12
+        self.cache_size = self.nest_size * 2
+        self.slope_size = self.nest_size * 6
+        self.source_size = self.nest_size * 3
         self.nest_start = self.arena_constraints["y_min"]
         self.cache_start = self.nest_start + self.nest_size
         self.slope_start = self.cache_start + self.cache_size
         self.source_start = self.slope_start + self.slope_size
         self.num_arena_tiles = self.arena_constraints["x_max"] * self.arena_constraints["y_max"]
-        self.slope_angle = 40
+        self.slope_angle = 10
         self.gravity = 9.81
 
         # Robot constants
@@ -55,7 +57,7 @@ class TSMultiEnv(gym.Env):
         # Resource constants
         self.resource_width = 0.6
         self.resource_height = 0.6
-        self.sliding_speed = self.slope_angle / 10
+        self.sliding_speed = 2  # self.slope_angle / 10
 
         # Other constants/variables
         self.num_robots = 1
@@ -94,11 +96,9 @@ class TSMultiEnv(gym.Env):
         self.observation_space = spaces.Discrete(self.tiles_in_sensing_range*4 + 5)  # Tiles are onehotencoded
 
         # Action space
-        #self.action_space = spaces.Discrete(3)  # 0- Phototaxis 1- Antiphototaxis 2-Random walk
         self.action_space = spaces.Discrete(6)  # 0- Forward, 1- Backward, 2- Left, 3- Right, 4- Pick up, 5- Drop
 
         # Step variables
-        #self.behaviour_map = [self.phototaxis_step, self.antiphototaxis_step, self.random_walk_step]
         self.behaviour_map = [self.forward_step, self.backward_step, self.left_step, self.right_step]
         self.action_name = ["FORWARD", "BACKWARD", "LEFT", "RIGHT", "PICKUP", "DROP"]
         self.has_resource = [None for i in range(self.num_robots)]
@@ -128,29 +128,6 @@ class TSMultiEnv(gym.Env):
         :return: Integer representing number of resources
         """
         return self.default_num_resources
-
-    # WARNING: ONLY IMPLEMENTED FOR ONE ROBOT AND ONE RESOURCE
-    def get_possible_states(self):
-        """
-        Generate an array of all possible states
-        :return: Array of possible states
-        """
-        robot_map = self.generate_arena()
-        resource_map = self.generate_arena()
-        possible_states = []
-
-        for i in range(len(robot_map)):
-            for j in range(len(robot_map[0])):
-                robot_map[i][j] = 1
-                possible_states += [np.concatenate((robot_map, resource_map), axis=0)]
-                for k in range(len(resource_map)):
-                    for l in range(len(resource_map[0])):
-                        resource_map[k][l] = 1
-                        possible_states += [np.concatenate((robot_map, resource_map), axis=0)]
-                        resource_map[k][l] = 0
-                robot_map[i][j] = 0
-
-        return possible_states
 
     def step(self, robot_actions, time_step):
         # Returns an error if the number of actions is incorrect
@@ -267,7 +244,7 @@ class TSMultiEnv(gym.Env):
 
     def generate_arena(self):
         """
-        Generates empty arena where each tile contains a 0
+        Generates 2D matrix representing an empty arena i.e. each tile contains a 0
         :return:
         """
 

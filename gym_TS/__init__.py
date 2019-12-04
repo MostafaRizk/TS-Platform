@@ -1,6 +1,6 @@
 from gym.envs.registration import register
 
 register(
-    id='TS-v2',
+    id='TS-v1',
     entry_point='gym_TS.envs:TSMultiEnv',
 )

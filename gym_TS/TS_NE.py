@@ -9,9 +9,10 @@ import cma
 import sys
 import getopt
 
-from agents.TinyAgent import TinyAgent
 from agents.DQNAgent import DQNAgent
 from agents.BasicQAgent import BasicQAgent
+
+from agents.TinyAgent import TinyAgent
 from fitness_calculator import FitnessCalculator
 
 

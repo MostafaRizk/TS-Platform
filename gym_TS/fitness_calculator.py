@@ -9,7 +9,7 @@ import time
 
 class FitnessCalculator:
     def __init__(self, output_selection_method, random_seed=0, simulation_length=1000):
-        self.env = gym.make('gym_TS:TS-v2')
+        self.env = gym.make('gym_TS:TS-v1')
         # env = gym.wrappers.Monitor(env, 'video', force = True) # Uncomment to save video
         # Get size of input and output space and creates agent
         self.observation_size = self.env.get_observation_size()
