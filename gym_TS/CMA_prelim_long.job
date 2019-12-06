@@ -13,5 +13,5 @@
 export OMP_NUM_THREADS=1
 module load singularity
 CMD=`head -n ${SLURM_ARRAY_TASK_ID} LIST_cma | tail -1`
-singularity exec -B /home:/home -B /mnt/lustre:/mnt/lustre ~/no45/mriz9/gym-TS.img $CMD
+singularity exec -B /home:/home -B /mnt/lustre:/mnt/lustre ~/no45/mriz9/gym-TS/gym_TS/gym-TS.img $CMD
 
