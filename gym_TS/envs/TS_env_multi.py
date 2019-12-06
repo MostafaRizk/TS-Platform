@@ -12,11 +12,11 @@ from gym.utils import seeding
 import numpy as np
 import copy
 
-from gym.envs.classic_control import rendering
+#from gym.envs.classic_control import rendering
 from pyglet.window import NoSuchDisplayException
 
 try:
-    #from gym.envs.classic_control import rendering
+    from gym.envs.classic_control import rendering
     pass
 except NoSuchDisplayException:
     raise UserWarning("Could not import rendering")
