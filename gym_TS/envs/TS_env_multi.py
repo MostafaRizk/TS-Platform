@@ -27,41 +27,39 @@ class TSMultiEnv(gym.Env):
         'video.frames_per_second': 30
     }
 
-    def __init__(self, logging=False):
+    def __init__(self, num_robots=4, num_resources=5, sensor_range=1, slope_angle=20, arena_length=12, arena_width=8, cache_start=1, slope_start=3, source_start=9):
         """
         Initialises constants and variables for robots, resources and environment
-        :param logging:
+        :param
         """
-        self.logging = logging
-
         # Environment dimensions
-        self.arena_constraints = {"x_min": 0, "x_max": 8, "y_min": 0, "y_max": 12}
-        self.nest_size = self.arena_constraints["y_max"] / 12
-        self.cache_size = self.nest_size * 2
-        self.slope_size = self.nest_size * 6
-        self.source_size = self.nest_size * 3
+        self.arena_constraints = {"x_min": 0, "x_max": arena_width, "y_min": 0, "y_max": arena_length}
+        self.nest_size = cache_start #self.arena_constraints["y_max"] / 12
+        self.cache_size = slope_start - cache_start #self.nest_size * 2
+        self.slope_size = source_start - slope_start #self.nest_size * 6
+        self.source_size = arena_length - source_start #self.nest_size * 3
         self.nest_start = self.arena_constraints["y_min"]
-        self.cache_start = self.nest_start + self.nest_size
-        self.slope_start = self.cache_start + self.cache_size
-        self.source_start = self.slope_start + self.slope_size
+        self.cache_start = cache_start #self.nest_start + self.nest_size
+        self.slope_start = slope_start #self.cache_start + self.cache_size
+        self.source_start = source_start #self.slope_start + self.slope_size
         self.num_arena_tiles = self.arena_constraints["x_max"] * self.arena_constraints["y_max"]
-        self.slope_angle = 10
+        self.slope_angle = slope_angle
         self.gravity = 9.81
 
         # Robot constants
         self.robot_width = 0.8
         self.robot_height = 0.8
         self.max_speed = 1
-        self.sensor_range = 1
+        self.sensor_range = sensor_range
 
         # Resource constants
         self.resource_width = 0.6
         self.resource_height = 0.6
-        self.sliding_speed = 2  # self.slope_angle / 10
+        self.sliding_speed = int(self.slope_angle / 10)
 
         # Other constants/variables
-        self.num_robots = 1
-        self.default_num_resources = 5
+        self.num_robots = num_robots
+        self.default_num_resources = num_resources
         self.current_num_resources = self.default_num_resources
         self.latest_resource_id = self.default_num_resources - 1
         self.dumping_position = (-10, -10)
