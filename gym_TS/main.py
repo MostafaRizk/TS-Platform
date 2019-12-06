@@ -81,6 +81,8 @@ def main(argv):
 
     model_name = f"CMA_{simulation_length}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{sigma}"
 
+    print(f"Evaluating {model_name}")
+
     # Get best genome using CMA
     best_genome = training_algorithm(fitness_calculator=fitness_calculator, seed_value=random_seed, sigma=sigma, model_name=model_name)
 
