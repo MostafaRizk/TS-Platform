@@ -79,14 +79,16 @@ def main(argv):
                                            arena_length=arena_length, arena_width=arena_width, cache_start=cache_start,
                                            slope_start=slope_start, source_start=source_start)
 
+    model_name = f"CMA_{simulation_length}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{sigma}"
+
     # Get best genome using CMA
-    best_genome = training_algorithm(fitness_calculator=fitness_calculator, seed_value=random_seed, sigma=sigma)
+    best_genome = training_algorithm(fitness_calculator=fitness_calculator, seed_value=random_seed, sigma=sigma, model_name=model_name)
 
     # Create individual using genome so that it can be saved
     best_individual = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
                                 seed=random_seed)
     best_individual.load_weights(best_genome)
-    best_individual.save_model(f"CMA_{simulation_length}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{sigma}")
+    best_individual.save_model(model_name)
 
 
 # To run, use:

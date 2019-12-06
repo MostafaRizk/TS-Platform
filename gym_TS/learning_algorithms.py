@@ -196,7 +196,7 @@ def rwg(seed_value, calculator, population_size):
     return best_individual
 
 
-def cma_es(fitness_calculator, seed_value, sigma):
+def cma_es(fitness_calculator, seed_value, sigma, model_name):
     options = {'seed': seed_value}
 
     seed_individual = rwg(seed_value=seed_value, calculator=fitness_calculator, population_size=1000)
@@ -214,7 +214,7 @@ def cma_es(fitness_calculator, seed_value, sigma):
     es.result_pretty()
     # cma.savefig("Some_figure.png")
     cma.plot()
-    es.logger.save_to("some_file")
+    es.logger.save_to(model_name)
 
     print(f"Best score is {es.result[1]}")
     return es.result[0]
