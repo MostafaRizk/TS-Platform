@@ -715,7 +715,10 @@ class TSMultiEnv(gym.Env):
                     pass
                 resource_placed = True
                 self.current_num_resources += 1
-                self.add_resource_to_rendering(self.latest_resource_id)
+                try:
+                    self.add_resource_to_rendering(self.latest_resource_id)
+                except:
+                    pass
                 return x, y
 
     def delete_resource(self, resource_id):
