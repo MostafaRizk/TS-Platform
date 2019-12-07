@@ -13,13 +13,13 @@ import numpy as np
 import copy
 
 #from gym.envs.classic_control import rendering
-from pyglet.window import NoSuchDisplayException
+#from pyglet.window import NoSuchDisplayException
 
-try:
+#try:
     #from gym.envs.classic_control import rendering
-    pass
-except NoSuchDisplayException:
-    raise UserWarning("Could not import rendering")
+#    pass
+#except NoSuchDisplayException:
+#    raise UserWarning("Could not import rendering")
 
 
 class TSMultiEnv(gym.Env):
