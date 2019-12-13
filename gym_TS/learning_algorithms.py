@@ -211,9 +211,9 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name):
         es.logger.add()  # write data to disc to be plotted
         es.disp()
 
-    es.result_pretty()
+    #es.result_pretty()
     # cma.savefig("Some_figure.png")
-    cma.plot()
+    #cma.plot()
     es.logger.save_to(model_name)
 
     print(f"Best score is {es.result[1]}")

@@ -94,6 +94,6 @@ def main(argv):
 
 
 # To run, use:
-# python3 gym_TS/main.py --algorithm cma --simulation_length 10000 --trials 3  --seed 1 --num_robots 1 --num_resources 5 --sensor_range 1 --slope_angle 20 --arena_length 12 --arena_width 8 --cache_start 1 --slope_start 3 --source_start 9 --sigma 0.01
+# python3 gym_TS/main.py --algorithm cma --simulation_length 1000 --trials 1  --seed 1 --num_robots 1 --num_resources 3 --sensor_range 1 --slope_angle 0 --arena_length 7 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 6 --sigma 0.01
 if __name__ == "__main__":
     main(sys.argv[1:])

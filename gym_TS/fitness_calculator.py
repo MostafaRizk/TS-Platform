@@ -78,6 +78,9 @@ class FitnessCalculator:
                 old_observations = observations[:]
                 observations, reward, done, info = self.env.step(robot_actions, t)
 
+                #if reward == 1:
+                #    print(f"Agent got a reward at timestep {t}")
+
                 if learning_method == "qn" or learning_method == "bq":
                     for i in range(len(observations)):
                         observations[i] = np.array(observations[i])
