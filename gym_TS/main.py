@@ -1,5 +1,6 @@
 import sys
 import getopt
+import os
 
 from agents.DQNAgent import DQNAgent
 from agents.BasicQAgent import BasicQAgent
@@ -81,10 +82,20 @@ def main(argv):
 
     model_name = f"CMA_{simulation_length}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{sigma}"
 
+    # Create results file if it doesn't exist
+    results_file_name = "results.csv"
+
+    if os.path.exists(results_file_name):
+        pass
+    else:
+        results_file = open(results_file_name, 'w')
+        results_file.write("Algorithm Name, Simulation Length, Num Trials, Random Seed, Num Robots, Num Resources, Sensor Range, Slope Angle, Arena Length, Arena Width, Cache Start, Slope Start, Source Start, Sigma, Log File, Fitness\n")
+        results_file.close()
+
     print(f"Evaluating {model_name}")
 
     # Get best genome using CMA
-    best_genome = training_algorithm(fitness_calculator=fitness_calculator, seed_value=random_seed, sigma=sigma, model_name=model_name)
+    best_genome = training_algorithm(fitness_calculator=fitness_calculator, seed_value=random_seed, sigma=sigma, model_name=model_name, results_file_name=results_file_name)
 
     # Create individual using genome so that it can be saved
     best_individual = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
@@ -94,6 +105,6 @@ def main(argv):
 
 
 # To run, use:
-# python3 gym_TS/main.py --algorithm cma --simulation_length 1000 --trials 1  --seed 1 --num_robots 1 --num_resources 3 --sensor_range 1 --slope_angle 0 --arena_length 7 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 6 --sigma 0.01
+# python3 gym_TS/main.py --algorithm cma --simulation_length 1000 --trials 1  --seed 1 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 20 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --sigma 0.01
 if __name__ == "__main__":
     main(sys.argv[1:])

@@ -2,6 +2,8 @@ import numpy as np
 import math
 import copy
 import cma
+import sys
+import os
 
 from agents.DQNAgent import DQNAgent
 from agents.BasicQAgent import BasicQAgent
@@ -196,25 +198,42 @@ def rwg(seed_value, calculator, population_size):
     return best_individual
 
 
-def cma_es(fitness_calculator, seed_value, sigma, model_name):
+def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name):
     options = {'seed': seed_value}
 
     seed_individual = rwg(seed_value=seed_value, calculator=fitness_calculator, population_size=1000)
     seed_weights = seed_individual.get_weights()
     es = cma.CMAEvolutionStrategy(seed_weights, sigma, options)
 
-    #es.optimize(fitness_calculator.calculate_fitness_negation)
+    # Send output to log file
+    old_stdout = sys.stdout
+    log_file_name = model_name + ".log"
+    log_file = open(log_file_name, "w")
+    sys.stdout = log_file
 
-    while not es.stop():
-        solutions = es.ask()
-        es.tell(solutions, [fitness_calculator.calculate_fitness_negation(x) for x in solutions])
-        es.logger.add()  # write data to disc to be plotted
-        es.disp()
+    es.optimize(fitness_calculator.calculate_fitness_negation)
+
+    #while not es.stop():
+    #    solutions = es.ask()
+    #    es.tell(solutions, [fitness_calculator.calculate_fitness_negation(x) for x in solutions])
+    #    es.logger.add()  # write data to disc to be plotted
+    #    es.disp()
 
     #es.result_pretty()
     # cma.savefig("Some_figure.png")
     #cma.plot()
-    es.logger.save_to(model_name)
+    #es.logger.save_to(model_name)
 
     print(f"Best score is {es.result[1]}")
+
+    sys.stdout = old_stdout
+    log_file.close()
+
+    # Append results to results file. Create file if it doesn't exist
+    results = model_name.replace("_", ",")
+    results += f",{log_file_name}, {es.result[1]}\n"
+    results_file = open(results_file_name, 'a')
+    results_file.write(results)
+    results_file.close()
+
     return es.result[0]
