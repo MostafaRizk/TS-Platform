@@ -36,25 +36,41 @@ class FitnessCalculator:
     def get_rng(self):
         return self.np_random
 
-    def calculate_fitness(self, individual, learning_method="cma", render=False):
+    def calculate_fitness(self, individual1, team_type, learning_method="cma", render=False):
         """
         Calculates fitness of a controller by running a simulation
+        :param individual1:
+        :param team_type Accepts "homogeneous" or "heterogeneous"
+        :param learning_method Accepts cma. Also accepts qn or bq but will only work for homogeneous teams
         :param render:
-        :param num_trials:
-        :param individual:
-        :param learning_method Accepts cma or qn or bq
         :return:
         """
 
         #render = True
         average_score = 0
         temp_seed = self.random_seed
+        full_genome = None
+
+        if not isinstance(individual1, TinyAgent):
+            full_genome = individual1
+        else:
+            full_genome = individual1.get_weights()
+
+        individual2 = None
 
         for trial in range(self.num_trials):
-            if learning_method == "cma" and not isinstance(individual, TinyAgent):
+            if team_type == "homogeneous":
+                if learning_method == "cma":
+                    temp_individual = TinyAgent(self.observation_size, self.action_size, temp_seed)
+                    temp_individual.load_weights(full_genome)
+                    individual1 = temp_individual
+            elif team_type == "heterogeneous":
+                mid = int(len(full_genome) / 2)
                 temp_individual = TinyAgent(self.observation_size, self.action_size, temp_seed)
-                temp_individual.load_weights(individual)
-                individual = temp_individual
+                temp_individual.load_weights(full_genome[0:mid])
+                individual1 = temp_individual
+                temp_individual.load_weights(full_genome[mid:])
+                individual2 = temp_individual
 
             self.env.seed(temp_seed)  # makes fitness deterministic
             observations = self.env.reset()
@@ -71,8 +87,18 @@ class FitnessCalculator:
                 if render:
                     self.env.render()
 
-                # All agents act using same controller.
-                robot_actions = [individual.act(observations[i]) for i in range(len(observations))]
+
+                robot_actions = []
+
+                if team_type == "homogeneous":
+                    # All agents act using same controller.
+                    robot_actions = [individual1.act(observations[i]) for i in range(len(observations))]
+                elif team_type == "heterogeneous":
+                    for i in range(len(observations)):
+                        if i % 2 == 0:
+                            robot_actions += [individual1.act(observations[i])]
+                        else:
+                            robot_actions += [individual2.act(observations[i])]
 
                 # The environment changes according to all their actions
                 old_observations = observations[:]
@@ -90,7 +116,7 @@ class FitnessCalculator:
 
                 if learning_method == "qn" or learning_method == "bq":
                     for i in range(len(robot_actions)):
-                        individual.remember(old_observations[i], robot_actions[i], reward, observations[i], done)
+                        individual1.remember(old_observations[i], robot_actions[i], reward, observations[i], done)
 
                 #time.sleep(1)
                 # print(f'Time: {t} || Score: {score}')
@@ -102,12 +128,14 @@ class FitnessCalculator:
             temp_seed += 1
 
             if learning_method == "qn" or learning_method == "bq":
-                loss = individual.replay()
+                loss = individual1.replay()
 
         if learning_method == "qn" or learning_method == "bq":
-            return average_score/self.num_trials, individual
+            return average_score/self.num_trials, individual1
 
         return average_score/self.num_trials
 
-    def calculate_fitness_negation(self, individual, render=False):
-        return -1*self.calculate_fitness(individual=individual, render=render)
+    def calculate_fitness_negation(self, individual, team_type, render=False):
+        #return -1*self.calculate_fitness(individual1=individual, team_type=team_type, render=True)#render)
+        return -1 * self.calculate_fitness(individual1=individual, team_type=team_type, render=render)
+

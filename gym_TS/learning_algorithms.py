@@ -10,6 +10,7 @@ from agents.BasicQAgent import BasicQAgent
 
 from agents.TinyAgent import TinyAgent
 from fitness_calculator import FitnessCalculator
+from functools import partial
 
 
 # Things to change:
@@ -161,49 +162,49 @@ def q_learning(calculator, num_episodes, random_seed, batch_size):
     return agent
 
 
-def rwg(seed_value, calculator, population_size):
+def rwg(seed_value, calculator, population_size, team_type):
     """
-    Finds a non-zero value of the fitness function by randomly guessing neural network weights
+    Finds a genome with non-zero fitness score by randomly guessing neural network weights. Exists as a helper for CMA
     """
     # RWG does not distinguish between populations and generations
     max_ninds = population_size
-
-    best_individual = None
-    max_score = -math.inf
+    full_genome = None
 
     # Neuroevolution loop
     for nind in range(max_ninds):
 
-        # Create individual
-        individual = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), seed=seed_value)
-        individual.load_weights()  # No parameters means random weights are generated
+        if team_type == "homogeneous":
+            # Create individual
+            individual = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), seed=seed_value)
+            individual.load_weights()  # No parameters means random weights are generated
+            full_genome = individual.get_weights()
+        elif team_type == "heterogeneous":
+            individual1 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), seed=seed_value)
+            individual2 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), seed=seed_value)
+            individual1.load_weights()  # No parameters means random weights are generated
+            individual2.load_weights()
+            full_genome = np.concatenate([individual1.get_weights(), individual2.get_weights()])
+        else:
+            raise RuntimeError("Did not use a valid team type")
 
         # Evaluate individual's fitness
-        score = calculator.calculate_fitness(individual, render=False)
+        score = calculator.calculate_fitness(full_genome, team_type=team_type, render=False)
         # print(f"{nind} Score: {score}")
         if score > 0.0:
             print(f"Found an individual with non-zero score after {nind} tries")
-            return individual
-
-        # Save the best individual
-        if score > max_score:
-            max_score = score
-            best_individual = individual
-            if nind != 0:
-                calculator.calculate_fitness(best_individual)
+            return full_genome
 
         seed_value += 1
 
-    print(f"Did not find an individual with non-zero score. Using first individual")
-    return best_individual
+    print("Did not find an genome with non-zero score. Using most recent.")
+    return full_genome
 
 
-def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name):
+def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name, team_type):
     options = {'seed': seed_value}
 
-    seed_individual = rwg(seed_value=seed_value, calculator=fitness_calculator, population_size=1000)
-    seed_weights = seed_individual.get_weights()
-    es = cma.CMAEvolutionStrategy(seed_weights, sigma, options)
+    seed_genome = rwg(seed_value=seed_value, calculator=fitness_calculator, population_size=1000, team_type=team_type)
+    es = cma.CMAEvolutionStrategy(seed_genome, sigma, options)
 
     # Send output to log file
     old_stdout = sys.stdout
@@ -211,7 +212,8 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name)
     log_file = open(log_file_name, "w")
     sys.stdout = log_file
 
-    es.optimize(fitness_calculator.calculate_fitness_negation)
+    partial_calculator = partial(fitness_calculator.calculate_fitness_negation, team_type=team_type)
+    es.optimize(partial_calculator)
 
     #while not es.stop():
     #    solutions = es.ask()
