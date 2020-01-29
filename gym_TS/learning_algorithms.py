@@ -214,7 +214,7 @@ def rwg(seed_value, calculator, population_size, team_type):
 def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name, team_type):
     options = {'seed': seed_value}
 
-    seed_genome = rwg(seed_value=seed_value, calculator=fitness_calculator, population_size=1000, team_type=team_type)
+    seed_genome = rwg(seed_value=seed_value, calculator=fitness_calculator, population_size=10000, team_type=team_type)
     es = cma.CMAEvolutionStrategy(seed_genome, sigma, options)
 
     # Send output to log file
