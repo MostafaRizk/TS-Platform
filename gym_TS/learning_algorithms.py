@@ -191,7 +191,11 @@ def rwg(seed_value, calculator, population_size, team_type):
         score = calculator.calculate_fitness(full_genome, team_type=team_type, render=False)
         # print(f"{nind} Score: {score}")
         if score > 0.0:
-            print(f"Found an individual with non-zero score after {nind} tries")
+            print(f"Found an individual with score {score} > 0 after {nind} tries")
+        if score > 1.0:
+            print(f"Found an individual with score {score} > 1 after {nind} tries")
+        if score >= 2.0:
+            print(f"Found an individual with score {score} >= 2 after {nind} tries")
             return full_genome
 
         seed_value += 1
@@ -203,7 +207,7 @@ def rwg(seed_value, calculator, population_size, team_type):
 def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name, team_type):
     options = {'seed': seed_value}
 
-    seed_genome = rwg(seed_value=seed_value, calculator=fitness_calculator, population_size=1000, team_type=team_type)
+    seed_genome = rwg(seed_value=seed_value, calculator=fitness_calculator, population_size=10000, team_type=team_type)
     es = cma.CMAEvolutionStrategy(seed_genome, sigma, options)
 
     # Send output to log file
