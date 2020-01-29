@@ -169,6 +169,8 @@ def rwg(seed_value, calculator, population_size, team_type):
     # RWG does not distinguish between populations and generations
     max_ninds = population_size
     full_genome = None
+    backup_genome = None
+    max_score = 0.0
 
     # Neuroevolution loop
     for nind in range(max_ninds):
@@ -190,24 +192,29 @@ def rwg(seed_value, calculator, population_size, team_type):
         # Evaluate individual's fitness
         score = calculator.calculate_fitness(full_genome, team_type=team_type, render=False)
         # print(f"{nind} Score: {score}")
-        if score > 0.0:
-            print(f"Found an individual with score {score} > 0 after {nind} tries")
-        if score > 1.0:
-            print(f"Found an individual with score {score} > 1 after {nind} tries")
-        if score >= 2.0:
-            print(f"Found an individual with score {score} >= 2 after {nind} tries")
+        if score >= 3.0:
+            print(f"Found an individual with score {score} >= 3 after {nind} tries")
             return full_genome
+        elif score > 0.0:
+            print(f"Found an individual with score {score} > 0 after {nind} tries")
+
+        if score > max_score:
+            max_score = score
+            backup_genome = full_genome
 
         seed_value += 1
 
-    print("Did not find an genome with non-zero score. Using most recent.")
-    return full_genome
+    print(f"Did not find a genome with score greater than 2. Using best one found, with score {max_score}")
+    if backup_genome is None:
+        return full_genome
+    else:
+        return backup_genome
 
 
 def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name, team_type):
     options = {'seed': seed_value}
 
-    seed_genome = rwg(seed_value=seed_value, calculator=fitness_calculator, population_size=10000, team_type=team_type)
+    seed_genome = rwg(seed_value=seed_value, calculator=fitness_calculator, population_size=1000, team_type=team_type)
     es = cma.CMAEvolutionStrategy(seed_genome, sigma, options)
 
     # Send output to log file

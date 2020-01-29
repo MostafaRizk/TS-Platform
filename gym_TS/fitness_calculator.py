@@ -1,5 +1,6 @@
 import gym
 import numpy as np
+import time
 
 from agents.TinyAgent import TinyAgent
 from gym.utils import seeding
@@ -87,7 +88,6 @@ class FitnessCalculator:
                 if render:
                     self.env.render()
 
-
                 robot_actions = []
 
                 if team_type == "homogeneous":
@@ -119,7 +119,7 @@ class FitnessCalculator:
                         individual1.remember(old_observations[i], robot_actions[i], reward, observations[i], done)
 
                 #time.sleep(1)
-                # print(f'Time: {t} || Score: {score}')
+                #print(f'Time: {t} || Score: {score}')
 
                 if done:
                     break

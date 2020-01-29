@@ -42,7 +42,8 @@ class TinyAgent:
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-        now = datetime.now()
-        timestamp = datetime.timestamp(now)
+        #now = datetime.now()
+        #timestamp = datetime.timestamp(now)
 
-        np.save(directory +"weights_"+ name + "_" + str(timestamp), weights)
+        #np.save(directory +"weights_"+ name + "_" + str(timestamp), weights)
+        np.save(directory + name, weights)

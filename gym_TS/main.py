@@ -1,6 +1,7 @@
 import sys
 import getopt
 import os
+import numpy as np
 
 from agents.DQNAgent import DQNAgent
 from agents.BasicQAgent import BasicQAgent
@@ -16,7 +17,8 @@ def main(argv):
         opts, args = getopt.getopt(argv, "",
                                    ["algorithm=", "team_type=", "simulation_length=", "trials=",
                                     "seed=", "num_robots=", "num_resources=", "sensor_range=", "slope_angle=",
-                                    "arena_length=", "arena_width=", "cache_start=", "slope_start=", "source_start=", "sigma="])
+                                    "arena_length=", "arena_width=", "cache_start=", "slope_start=", "source_start=",
+                                    "sigma=", "test_model="])
 
     except getopt.GetoptError:
         print("There was an error")
@@ -38,6 +40,7 @@ def main(argv):
     slope_start = None
     source_start = None
     sigma = None
+    test_model = None
 
     # Read in arguments
     for opt, arg in opts:
@@ -78,55 +81,98 @@ def main(argv):
             source_start = int(arg)
         if opt == "--sigma":
             sigma = float(arg)
+        if opt == "--test_model":
+            test_model = arg
 
-    # Prepare fitness function
-    fitness_calculator = FitnessCalculator(random_seed=random_seed, simulation_length=simulation_length,
-                                           num_trials=num_trials, num_robots=num_robots, num_resources=num_resources,
-                                           sensor_range=sensor_range, slope_angle=slope_angle,
-                                           arena_length=arena_length, arena_width=arena_width, cache_start=cache_start,
-                                           slope_start=slope_start, source_start=source_start)
+    # If this is a training run
+    if test_model is None:
 
-    model_name = f"CMA_{team_type}_{simulation_length}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{sigma}"
+        # Prepare fitness function
+        fitness_calculator = FitnessCalculator(random_seed=random_seed, simulation_length=simulation_length,
+                                               num_trials=num_trials, num_robots=num_robots,
+                                               num_resources=num_resources,
+                                               sensor_range=sensor_range, slope_angle=slope_angle,
+                                               arena_length=arena_length, arena_width=arena_width,
+                                               cache_start=cache_start,
+                                               slope_start=slope_start, source_start=source_start)
 
-    # Create results file if it doesn't exist
-    results_file_name = "results.csv"
+        model_name = f"CMA_{team_type}_{simulation_length}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{sigma}"
 
-    if os.path.exists(results_file_name):
-        pass
+        # Create results file if it doesn't exist
+        results_file_name = "results.csv"
+
+        if os.path.exists(results_file_name):
+            pass
+        else:
+            results_file = open(results_file_name, 'w')
+            results_file.write("Algorithm Name, Team Type, Simulation Length, Num Trials, Random Seed, Num Robots, Num Resources, Sensor Range, Slope Angle, Arena Length, Arena Width, Cache Start, Slope Start, Source Start, Sigma, Log File, Fitness\n")
+            results_file.close()
+
+        print(f"Evaluating {model_name}")
+
+        # Get best genome using CMA
+        best_genome = training_algorithm(fitness_calculator=fitness_calculator, seed_value=random_seed, sigma=sigma, model_name=model_name, results_file_name=results_file_name, team_type=team_type)
+
+        # Create individual using genome so that it can be saved
+        if team_type == "homogeneous":
+            best_individual = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
+                                        seed=random_seed)
+            best_individual.load_weights(best_genome)
+            best_individual.save_model(model_name)
+
+        # Split the genome and save both halves separately for heterogeneous setup
+        elif team_type == "heterogeneous":
+            best_individual_1 = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
+                                        seed=random_seed)
+            best_individual_2 = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
+                                        seed=random_seed)
+
+            # Split genome
+            mid = int(len(best_genome)/2)
+            best_individual_1.load_weights(best_genome[0:mid])
+            best_individual_2.load_weights(best_genome[mid:])
+
+            best_individual_1.save_model(model_name + "_controller1_")
+            best_individual_2.save_model(model_name + "_controller2_")
+
+    # If this is a testing run
     else:
-        results_file = open(results_file_name, 'w')
-        results_file.write("Algorithm Name, Team Type, Simulation Length, Num Trials, Random Seed, Num Robots, Num Resources, Sensor Range, Slope Angle, Arena Length, Arena Width, Cache Start, Slope Start, Source Start, Sigma, Log File, Fitness\n")
-        results_file.close()
+        model_name = test_model.split("_")
+        # weights_CMA_homogeneous_1000_10_10_2_3_1_20_8_4_1_3_7_0.05_1580256135.047521.npy
+        # CMA_homogeneous_1000_10_10_2_3_1_20_8_4_1_3_7_0.05.npy
+        # f"CMA_{team_type}_{simulation_length}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{sigma}"
 
-    print(f"Evaluating {model_name}")
+        #for i in range(len(model_name)):
+        #    print(f"{i} - {model_name[i]}")
 
-    # Get best genome using CMA
-    best_genome = training_algorithm(fitness_calculator=fitness_calculator, seed_value=random_seed, sigma=sigma, model_name=model_name, results_file_name=results_file_name, team_type=team_type)
+        # Prepare fitness function
+        fitness_calculator = FitnessCalculator(random_seed=int(model_name[5]), simulation_length=int(model_name[3]),
+                                               num_trials=1, num_robots=int(model_name[6]),
+                                               num_resources=int(model_name[7]),
+                                               sensor_range=int(model_name[8]), slope_angle=int(model_name[9]),
+                                               arena_length=int(model_name[10]), arena_width=int(model_name[11]),
+                                               cache_start=int(model_name[12]),
+                                               slope_start=int(model_name[13]), source_start=int(model_name[14]))
 
-    # Create individual using genome so that it can be saved
-    if team_type == "homogeneous":
-        best_individual = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
-                                    seed=random_seed)
-        best_individual.load_weights(best_genome)
-        best_individual.save_model(model_name)
+        team_type = model_name[2]
 
-    # Split the genome and save both halves separately for heterogeneous setup
-    elif team_type == "heterogeneous":
-        best_individual_1 = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
-                                    seed=random_seed)
-        best_individual_2 = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
-                                    seed=random_seed)
+        if team_type == "homogeneous":
+            full_genome = np.load(test_model)
+        elif team_type == "heterogeneous":
+            if model_name[16] != "controller1":
+                raise RuntimeError("Use controller 1's path")
 
-        # Split genome
-        mid = int(len(best_genome)/2)
-        best_individual_1.load_weights(best_genome[0:mid])
-        best_individual_2.load_weights(best_genome[mid:])
+            controller1 = np.load(test_model)
+            test_model2 = test_model.replace("controller1", "controller2")
+            controller2 = np.load(test_model2)
+            full_genome = np.concatenate([controller1, controller2])
 
-        best_individual_1.save_model(model_name + "controller1")
-        best_individual_2.save_model(model_name + "controller2")
+        fitness_calculator.calculate_fitness(full_genome, team_type=model_name[2], render=False)
+
 
 
 # To run, use:
-# python3 main.py --algorithm cma --team_type homogeneous --simulation_length 1000 --trials 5  --seed 1 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 20 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --sigma 0.05
+# python3 main.py --algorithm cma --team_type homogeneous --simulation_length 1000 --trials 5  --seed 100 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 20 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --sigma 0.05
+# python3 main.py --test_model /home/mriz9/Code/Gym/gym-TS/gym_TS/models/Tiny/weights_CMA_homogeneous_10_1_1_2_3_1_20_8_4_1_3_7_0.01_1579756925.405221.npy
 if __name__ == "__main__":
     main(sys.argv[1:])
