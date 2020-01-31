@@ -1,8 +1,8 @@
 #!/bin/env bash
-#SBATCH --job-name=CMA_prelim_short
+#SBATCH --job-name=30_CMA_prelim_short
 #SBATCH --time=72:00:00
 #SBATCH --array=1-20
-#SBATCH --output=CMA_prelim_short.out
+#SBATCH --output=30_CMA_prelim_short.out
 #SBATCH --open-mode=append
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
