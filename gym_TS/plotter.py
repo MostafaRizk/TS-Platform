@@ -27,7 +27,7 @@ def plot_mean_fitness(results_file):
     ax1.set_xticklabels(['0°', '20°'])
     ax1.set_xticks([1.5, 4.5])
     #plt.show()
-    plt.savefig("prelim.png")
+    plt.savefig("prelim_50.png")
 
 
-plot_mean_fitness("100_results.csv")
+plot_mean_fitness("50_results.csv")
