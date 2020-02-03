@@ -35,10 +35,13 @@ class TinyAgent:
     def act(self, observation):
         return self.net.activate(observation).argmax()
 
-    def save_model(self, name):
+    def save_model(self, name, sub_dir=None):
         weights = self.net.get_weights()
 
         directory = "models/Tiny/"
+        if sub_dir is not None:
+            directory += "/" + sub_dir + "/"
+
         if not os.path.exists(directory):
             os.makedirs(directory)
 

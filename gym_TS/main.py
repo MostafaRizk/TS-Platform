@@ -173,6 +173,6 @@ def main(argv):
 
 # To run, use:
 # python3 main.py --algorithm cma --team_type homogeneous --simulation_length 1000 --trials 5  --seed 100 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 20 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --sigma 0.05
-# python3 main.py --test_model /home/mriz9/Code/Gym/gym-TS/gym_TS/models/Tiny/weights_CMA_homogeneous_10_1_1_2_3_1_20_8_4_1_3_7_0.01_1579756925.405221.npy
+# python3 main.py --test_model /home/mriz9/Code/Gym/gym-TS/gym_TS/models/Tiny/10/CMA_homogeneous_1000_1_101_2_3_1_20_8_4_1_3_7_0.05.npy
 if __name__ == "__main__":
     main(sys.argv[1:])

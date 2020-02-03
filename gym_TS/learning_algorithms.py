@@ -224,11 +224,47 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
     sys.stdout = log_file
 
     partial_calculator = partial(fitness_calculator.calculate_fitness_negation, team_type=team_type)
-    es.optimize(partial_calculator)
+    #es.optimize(partial_calculator)
 
-    #while not es.stop():
-    #    solutions = es.ask()
-    #    es.tell(solutions, [fitness_calculator.calculate_fitness_negation(x) for x in solutions])
+    while not es.stop():
+        solutions = es.ask()
+        es.tell(solutions, [partial_calculator(x) for x in solutions])
+        iteration_number = es.result.iterations
+
+        if iteration_number % 50 == 0:
+            # Log results to results file
+            results = model_name.replace("_", ",")
+            results += f",{log_file_name}, {es.result[1]}\n"
+            intermediate_results_file_name = f"{iteration_number}_{results_file_name}"
+            results_file = open(intermediate_results_file_name, 'a')
+            results_file.write(results)
+            results_file.close()
+
+            # Log genome
+            if team_type == "homogeneous":
+                best_individual = TinyAgent(fitness_calculator.get_observation_size(),
+                                            fitness_calculator.get_action_size(),
+                                            seed=seed_value)
+                best_individual.load_weights(es.result[0])
+                best_individual.save_model(model_name, sub_dir=str(iteration_number))
+
+            # Split the genome and save both halves separately for heterogeneous setup
+            elif team_type == "heterogeneous":
+                best_individual_1 = TinyAgent(fitness_calculator.get_observation_size(),
+                                              fitness_calculator.get_action_size(),
+                                              seed=seed_value)
+                best_individual_2 = TinyAgent(fitness_calculator.get_observation_size(),
+                                              fitness_calculator.get_action_size(),
+                                              seed=seed_value)
+
+                # Split genome
+                mid = int(len(es.result[0]) / 2)
+                best_individual_1.load_weights(es.result[0][0:mid])
+                best_individual_2.load_weights(es.result[0][mid:])
+
+                best_individual_1.save_model(model_name + "_controller1_", sub_dir=str(iteration_number))
+                best_individual_2.save_model(model_name + "_controller2_", sub_dir=str(iteration_number))
+
     #    es.logger.add()  # write data to disc to be plotted
     #    es.disp()
 
