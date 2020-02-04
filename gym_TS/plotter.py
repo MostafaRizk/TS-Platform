@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-def plot_mean_fitness(results_file):
+def plot_mean_fitness(results_file, graph_file):
     # Read data
     data = pd.read_csv(results_file)
     trimmed_data = data[[" Team Type", " Slope Angle", " Fitness"]]
@@ -23,11 +23,12 @@ def plot_mean_fitness(results_file):
     ax1.set_title('Mean Fitness')
     ax1.set_ylim(0, 30)
     ax1.boxplot([results["0"]["homogeneous"], results["0"]["heterogeneous"]], positions=[1, 2], widths=0.3)
-    ax1.boxplot([results["20"]["homogeneous"], results["20"]["heterogeneous"]], positions=[4, 5], widths=0.3)
-    ax1.set_xticklabels(['0°', '20°'])
+    ax1.boxplot([results["40"]["homogeneous"], results["40"]["heterogeneous"]], positions=[4, 5], widths=0.3)
+    ax1.set_xticklabels(['0°', '40°'])
     ax1.set_xticks([1.5, 4.5])
     #plt.show()
-    plt.savefig("prelim_50.png")
+    plt.savefig(graph_file)
 
 
-plot_mean_fitness("50_results.csv")
+for i in range(20, 280, 20):
+    plot_mean_fitness(f"{i}_results.csv", f"prelim_{i}.png")

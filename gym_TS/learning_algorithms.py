@@ -162,7 +162,7 @@ def q_learning(calculator, num_episodes, random_seed, batch_size):
     return agent
 
 
-def rwg(seed_value, calculator, population_size, team_type):
+def rwg(seed_value, calculator, population_size, team_type, model_name):
     """
     Finds a genome with non-zero fitness score by randomly guessing neural network weights. Exists as a helper for CMA
     """
@@ -171,6 +171,12 @@ def rwg(seed_value, calculator, population_size, team_type):
     full_genome = None
     backup_genome = None
     max_score = 0.0
+
+    # Send output to log file
+    old_stdout = sys.stdout
+    log_file_name = model_name + ".log"
+    log_file = open(log_file_name, "a")
+    sys.stdout = log_file
 
     # Neuroevolution loop
     for nind in range(max_ninds):
@@ -205,6 +211,10 @@ def rwg(seed_value, calculator, population_size, team_type):
         seed_value += 1
 
     print(f"Did not find a genome with score greater than 2. Using best one found, with score {max_score}")
+
+    sys.stdout = old_stdout
+    log_file.close()
+
     if backup_genome is None:
         return full_genome
     else:
@@ -214,13 +224,13 @@ def rwg(seed_value, calculator, population_size, team_type):
 def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name, team_type):
     options = {'seed': seed_value}
 
-    seed_genome = rwg(seed_value=seed_value, calculator=fitness_calculator, population_size=10000, team_type=team_type)
+    seed_genome = rwg(seed_value=seed_value, calculator=fitness_calculator, population_size=5000, team_type=team_type, model_name=model_name)
     es = cma.CMAEvolutionStrategy(seed_genome, sigma, options)
 
     # Send output to log file
     old_stdout = sys.stdout
     log_file_name = model_name + ".log"
-    log_file = open(log_file_name, "w")
+    log_file = open(log_file_name, "a")
     sys.stdout = log_file
 
     partial_calculator = partial(fitness_calculator.calculate_fitness_negation, team_type=team_type)

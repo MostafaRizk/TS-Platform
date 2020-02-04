@@ -688,7 +688,12 @@ class TSMultiEnv(gym.Env):
         :param resource_id:
         :return:
         """
-        self.resource_positions[resource_id] = (self.resource_positions[resource_id][0], self.resource_positions[resource_id][1] - self.sliding_speed)
+
+        new_x = self.resource_positions[resource_id][0]
+        new_y = max(self.resource_positions[resource_id][1] - self.sliding_speed,
+                    self.cache_start)
+
+        self.resource_positions[resource_id] = (new_x, new_y)
 
     def spawn_resource(self):
         """

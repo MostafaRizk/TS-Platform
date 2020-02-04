@@ -93,6 +93,7 @@ class FitnessCalculator:
                 if team_type == "homogeneous":
                     # All agents act using same controller.
                     robot_actions = [individual1.act(observations[i]) for i in range(len(observations))]
+                    #robot_actions = [self.env.action_space.sample() for i in range(len(observations))]  # Random actions for testing
                 elif team_type == "heterogeneous":
                     for i in range(len(observations)):
                         if i % 2 == 0:
