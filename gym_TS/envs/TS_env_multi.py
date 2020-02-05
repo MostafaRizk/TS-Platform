@@ -168,6 +168,7 @@ class TSMultiEnv(gym.Env):
                 self.resource_map[position[1]][position[0]] = 0
 
         robot_collision_positions = copy.deepcopy(self.robot_positions)
+
         # The robots' new positions are updated
         for i in range(len(self.robot_positions)):
             for j in range(len(self.robot_positions)):

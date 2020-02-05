@@ -119,7 +119,7 @@ class FitnessCalculator:
                     for i in range(len(robot_actions)):
                         individual1.remember(old_observations[i], robot_actions[i], reward, observations[i], done)
 
-                #time.sleep(1)
+                #time.sleep(0.1)
                 #print(f'Time: {t} || Score: {score}')
 
                 if done:

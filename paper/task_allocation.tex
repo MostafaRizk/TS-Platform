@@ -120,6 +120,17 @@ Hypothesis: The larger the theta, the more likely the heterogeneous setup is to 
 
 \section{Summary of Results \label{results}}
 
+\subsection{Methods}
+
+\paragraph{}
+In the experimental setup there is an arena that is 8 tiles long and 4 tiles wide. The arena is a simplified version of the setup by Ferrante et al. The bottom row of tiles is the nest, the next 2 are the cache, the next 4 are the slope and the final row is the source. 3 resources spawn in the source and 2 agents spawn in the nest. In the task, the agents' goal is to transport as many resources as possible to the nest. The fitness of a team is how many resources they successfully return to the nest. Agents can move forward, backward, left and right and can pickup or drop a resource. A resource must be in the same tile as an agent to be picked up. Agents can sense all 8 adjacent tiles and the tile they occupy. They can detect whether the tile is blank, contains a resource, contains another agent or a "wall" i.e. a tile beyond the confines of the arena. They can also detect which of the 4 areas they are on and whether or not they're carrying a resource. Agents are controlled by a recurrent neural network with 41 inputs (9 tiles x 4 possible tile contents + 4 possible locations + 1 boolean bit indicating resource possession), 6 outputs and no hidden layers. 
+
+\paragraph{}
+Each time step, the agents make their observations and use the neural network to choose an action. If an agent moves, it moves one tile per time step. If an agent picks up a resource, that resource moves with it. If it drops a resource, the resource is placed in the tile the robot is currently in. If the resource is dropped on the slope, it slides down the slope at a rate 10 times smaller than the slope angle. That is, if the slope angle is 20, the resource moves 2 tiles per time step until it reaches the cache, at which point it comes to rest. Resources cannot slide beyond the cache, they stop just before reaching the nest. 
+
+\paragraph{}
+We compare homogeneous and heterogeneous performance for 5 different slope angles: 0$^{\circ}$, 10$^{\circ}$, 20$^{\circ}$, 30$^{\circ}$ and 40$^{\circ}$.. For each we perform 30 evolutionary runs of CMA-ES using random seeds 1-30, making a total of 300 runs (30 random seeds x 2 team compositions x 5 slope angles). Each run consists of several iterations of CMA-ES, where the genome being evaluated is a list of neural network weights for the agent controller (two controllers if it is a heterogeneous team). In an individual iteration, the genome's fitness is evaluated through 10 trials of the simulation, where the simulation is 1000 time steps long. Each run of CMA-ES has sigma value 0.05 and is seeded with an initial genome produced by a random weight guessing (RWG) algorithm. RWG randomly guesses genomes for 5000 tries, terminating prematurely if one of the genomes has a fitness greater than or equal to 3 (i.e. 3 more resources are retrieved by the team on average over all 10 trials). If no such genome is found in the 5000 tries, the best one found so far is used.
+
 
 
 \bibliographystyle{ACM-Reference-Format}  % do not change this line!

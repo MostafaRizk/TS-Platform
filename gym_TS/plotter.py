@@ -21,7 +21,7 @@ def plot_mean_fitness(results_file, graph_file):
     # Plot data
     fig1, ax1 = plt.subplots()
     ax1.set_title('Mean Fitness')
-    ax1.set_ylim(0, 30)
+    ax1.set_ylim(0, 60)
     ax1.boxplot([results["0"]["homogeneous"], results["0"]["heterogeneous"]], positions=[1, 2], widths=0.3)
     ax1.boxplot([results["40"]["homogeneous"], results["40"]["heterogeneous"]], positions=[4, 5], widths=0.3)
     ax1.set_xticklabels(['0°', '40°'])
@@ -30,5 +30,5 @@ def plot_mean_fitness(results_file, graph_file):
     plt.savefig(graph_file)
 
 
-for i in range(20, 280, 20):
+for i in range(20, 800, 20):
     plot_mean_fitness(f"{i}_results.csv", f"prelim_{i}.png")

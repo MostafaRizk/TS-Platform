@@ -10,6 +10,7 @@ from agents.TinyAgent import TinyAgent
 from fitness_calculator import FitnessCalculator
 
 from learning_algorithms import cma_es
+from learning_algorithms import rwg
 
 
 def main(argv):
@@ -170,9 +171,119 @@ def main(argv):
         fitness_calculator.calculate_fitness(full_genome, team_type=model_name[2], render=False)
 
 
+# Debugging Tools
+def time_fitness_function():
+    #team_type = "homogeneous"
+    team_type = "heterogeneous"
+
+    fitness_calculator = FitnessCalculator(random_seed=1, simulation_length=1000,
+                                           num_trials=1, num_robots=2,
+                                           num_resources=3,
+                                           sensor_range=1, slope_angle=40,
+                                           arena_length=8, arena_width=4,
+                                           cache_start=1,
+                                           slope_start=3, source_start=7)
+
+    full_genome = None
+
+    if team_type == "homogeneous":
+        individual = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), seed=1)
+        individual.load_weights()  # No parameters means random weights are generated
+        full_genome = individual.get_weights()
+    elif team_type == "heterogeneous":
+        individual1 = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), seed=1)
+        individual2 = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), seed=1)
+        individual1.load_weights()  # No parameters means random weights are generated
+        individual2.load_weights()
+        full_genome = np.concatenate([individual1.get_weights(), individual2.get_weights()])
+
+    import time
+
+    print("It is beginning")
+
+    avg_time_taken = 0
+    num_iterations = 30
+
+    for i in range(num_iterations):
+        start = time.time()
+        score = fitness_calculator.calculate_fitness_negation(full_genome, team_type=team_type, render=False)  # True)#
+        end = time.time()
+
+        time_taken = end - start
+        avg_time_taken += time_taken
+
+    avg_time_taken /= num_iterations
+
+    print(f"It took {avg_time_taken}")
+
+def time_rwg():
+    team_type = "homogeneous"
+    #team_type = "heterogeneous"
+
+    fitness_calculator = FitnessCalculator(random_seed=1, simulation_length=100,
+                                           num_trials=1, num_robots=2,
+                                           num_resources=3,
+                                           sensor_range=1, slope_angle=40,
+                                           arena_length=8, arena_width=4,
+                                           cache_start=1,
+                                           slope_start=3, source_start=7)
+
+    import time
+
+    print("It is beginning")
+
+    avg_time_taken = 0
+    num_iterations = 1
+
+    for i in range(num_iterations):
+        start = time.time()
+        seed_genome = rwg(seed_value=1, calculator=fitness_calculator, population_size=5000, team_type=team_type,
+                          model_name="debugging")
+        end = time.time()
+
+        time_taken = end - start
+        avg_time_taken += time_taken
+
+    avg_time_taken /= num_iterations
+
+    print(f"It took {avg_time_taken}")
+
+def time_cma():
+    team_type = "homogeneous"
+    #team_type = "heterogeneous"
+
+    fitness_calculator = FitnessCalculator(random_seed=1, simulation_length=100,
+                                           num_trials=1, num_robots=2,
+                                           num_resources=3,
+                                           sensor_range=1, slope_angle=40,
+                                           arena_length=8, arena_width=4,
+                                           cache_start=1,
+                                           slope_start=3, source_start=7)
+
+    import time
+
+    print("It is beginning")
+
+    avg_time_taken = 0
+    num_iterations = 1
+
+    for i in range(num_iterations):
+        start = time.time()
+        seed_genome = rwg(seed_value=1, calculator=fitness_calculator, population_size=5000, team_type=team_type,
+                          model_name="debugging")
+        end = time.time()
+
+        time_taken = end - start
+        avg_time_taken += time_taken
+
+    avg_time_taken /= num_iterations
+
+    print(f"It took {avg_time_taken}")
 
 # To run, use:
-# python3 main.py --algorithm cma --team_type homogeneous --simulation_length 1000 --trials 5  --seed 100 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 20 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --sigma 0.05
-# python3 main.py --test_model /home/mriz9/Code/Gym/gym-TS/gym_TS/models/Tiny/10/CMA_homogeneous_1000_1_101_2_3_1_20_8_4_1_3_7_0.05.npy
+# python3 main.py --algorithm cma --team_type homogeneous --simulation_length 1000 --trials 3 --seed 100 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 40 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --sigma 0.05
+# python3 main.py --test_model /home/mriz9/Documents/Results/AAMAS/3_PostGiuse/CMA_homogeneous_1000_10_18_2_3_1_0_8_4_1_3_7_0.05.log
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main(sys.argv[1:])#Uncomment for proper runs
+    #time_fitness_function()
+    #time_rwg()

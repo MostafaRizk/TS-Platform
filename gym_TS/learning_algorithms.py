@@ -172,11 +172,13 @@ def rwg(seed_value, calculator, population_size, team_type, model_name):
     backup_genome = None
     max_score = 0.0
 
+    ''''''
     # Send output to log file
     old_stdout = sys.stdout
     log_file_name = model_name + ".log"
     log_file = open(log_file_name, "a")
     sys.stdout = log_file
+
 
     # Neuroevolution loop
     for nind in range(max_ninds):
@@ -198,11 +200,15 @@ def rwg(seed_value, calculator, population_size, team_type, model_name):
         # Evaluate individual's fitness
         score = calculator.calculate_fitness(full_genome, team_type=team_type, render=False)
         # print(f"{nind} Score: {score}")
-        if score >= 3.0:
-            print(f"Found an individual with score {score} >= 3 after {nind} tries")
+        score_threshold = 1.0
+
+        if score >= score_threshold:
+            print(f"Found an individual with score {score} >= {score_threshold} after {nind} tries")
             return full_genome
         elif score > 0.0:
             print(f"Found an individual with score {score} > 0 after {nind} tries")
+        elif nind%10 == 0:
+            print(f"{nind}: Best score is {max_score}")
 
         if score > max_score:
             max_score = score
@@ -212,8 +218,10 @@ def rwg(seed_value, calculator, population_size, team_type, model_name):
 
     print(f"Did not find a genome with score greater than 2. Using best one found, with score {max_score}")
 
+    ''''''
     sys.stdout = old_stdout
     log_file.close()
+
 
     if backup_genome is None:
         return full_genome
@@ -222,16 +230,19 @@ def rwg(seed_value, calculator, population_size, team_type, model_name):
 
 
 def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name, team_type):
-    options = {'seed': seed_value}
+    options = {'seed': seed_value, 'maxiter': 300, 'popsize': 40}
 
-    seed_genome = rwg(seed_value=seed_value, calculator=fitness_calculator, population_size=5000, team_type=team_type, model_name=model_name)
+    seed_genome = rwg(seed_value=seed_value, calculator=fitness_calculator, population_size=2000, team_type=team_type, model_name=model_name)
+    #seed_genome = full_genome = np.load("/home/mriz9/Documents/Results/AAMAS/3_PostGiuse/Tiny/20/CMA_homogeneous_1000_10_1_2_3_1_0_8_4_1_3_7_0.05.npy")
     es = cma.CMAEvolutionStrategy(seed_genome, sigma, options)
 
+    ''''''
     # Send output to log file
     old_stdout = sys.stdout
     log_file_name = model_name + ".log"
     log_file = open(log_file_name, "a")
     sys.stdout = log_file
+
 
     partial_calculator = partial(fitness_calculator.calculate_fitness_negation, team_type=team_type)
     #es.optimize(partial_calculator)
@@ -285,8 +296,10 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
 
     print(f"Best score is {es.result[1]}")
 
+    ''''''
     sys.stdout = old_stdout
     log_file.close()
+
 
     # Append results to results file. Create file if it doesn't exist
     results = model_name.replace("_", ",")
