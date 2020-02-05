@@ -207,8 +207,8 @@ def rwg(seed_value, calculator, population_size, team_type, model_name):
             return full_genome
         elif score > 0.0:
             print(f"Found an individual with score {score} > 0 after {nind} tries")
-        elif nind%10 == 0:
-            print(f"{nind}: Best score is {max_score}")
+        #elif nind%10 == 0:
+        #    print(f"{nind}: Best score is {max_score}")
 
         if score > max_score:
             max_score = score
