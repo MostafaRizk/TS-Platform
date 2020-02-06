@@ -162,7 +162,7 @@ def q_learning(calculator, num_episodes, random_seed, batch_size):
     return agent
 
 
-def rwg(seed_value, calculator, population_size, team_type, model_name):
+def rwg(seed_value, calculator, population_size, team_type, target_fitness=1.0):
     """
     Finds a genome with non-zero fitness score by randomly guessing neural network weights. Exists as a helper for CMA
     """
@@ -170,15 +170,7 @@ def rwg(seed_value, calculator, population_size, team_type, model_name):
     max_ninds = population_size
     full_genome = None
     backup_genome = None
-    max_score = 0.0
-
-    ''''''
-    # Send output to log file
-    old_stdout = sys.stdout
-    log_file_name = model_name + ".log"
-    log_file = open(log_file_name, "a")
-    sys.stdout = log_file
-
+    max_fitness = 0.0
 
     # Neuroevolution loop
     for nind in range(max_ninds):
@@ -198,50 +190,77 @@ def rwg(seed_value, calculator, population_size, team_type, model_name):
             raise RuntimeError("Did not use a valid team type")
 
         # Evaluate individual's fitness
-        score = calculator.calculate_fitness(full_genome, team_type=team_type, render=False)
+        fitness = calculator.calculate_fitness(full_genome, team_type=team_type, render=False)
         # print(f"{nind} Score: {score}")
-        score_threshold = 1.0
 
-        if score >= score_threshold:
-            print(f"Found an individual with score {score} >= {score_threshold} after {nind} tries")
-            return full_genome
-        elif score > 0.0:
-            print(f"Found an individual with score {score} > 0 after {nind} tries")
+        if fitness >= target_fitness:
+            print(f"Found an individual with score {fitness} >= {target_fitness} after {nind} tries")
+            return full_genome, fitness
+        elif fitness > 0.0:
+            print(f"Found an individual with score {fitness} > 0 after {nind} tries")
         #elif nind%10 == 0:
-        #    print(f"{nind}: Best score is {max_score}")
+        #    print(f"{nind}: Best score is {max_fitness}")
 
-        if score > max_score:
-            max_score = score
+        if fitness > max_fitness:
+            max_fitness = fitness
             backup_genome = full_genome
 
         seed_value += 1
 
-    print(f"Did not find a genome with score greater than 2. Using best one found, with score {max_score}")
-
-    ''''''
-    sys.stdout = old_stdout
-    log_file.close()
+    print(f"Did not find a genome with score greater than 2. Using best one found, with score {max_fitness}")
 
 
     if backup_genome is None:
-        return full_genome
+        return full_genome, max_fitness
     else:
-        return backup_genome
+        return backup_genome, max_fitness
 
 
 def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name, team_type):
     options = {'seed': seed_value, 'maxiter': 300, 'popsize': 40}
 
-    seed_genome = rwg(seed_value=seed_value, calculator=fitness_calculator, population_size=2000, team_type=team_type, model_name=model_name)
-    #seed_genome = full_genome = np.load("/home/mriz9/Documents/Results/AAMAS/3_PostGiuse/Tiny/20/CMA_homogeneous_1000_10_1_2_3_1_0_8_4_1_3_7_0.05.npy")
+    #seed_genome = rwg(seed_value=seed_value, calculator=fitness_calculator, population_size=2000, team_type=team_type)
+    #f"bootstrap_{team_type}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{best_fitness}"
+    #f"CMA_{team_type}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{sigma}"
+
+
+    # Get available bootstrapped models and sort them
+    bootstrap_directory = "models/bootstrap/"
+    available_files = os.listdir(bootstrap_directory)
+    seed_file = None
+
+    # Make sure there are files
+    if available_files == []:
+       raise RuntimeError("No bootstrapped models available")
+
+    # Sort the files and generate a list of random indices to allow random selection of one of the models
+    available_files.sort()
+    rng = fitness_calculator.get_rng()
+    index_list = list(range(0, len(available_files)))
+    rng.shuffle(index_list)
+
+    # Choose a random model from those available
+    for i in range(len(index_list)):
+        parameter_list = available_files[i].split("_")
+
+        # Check that important experiment parameters are the same (team type, simulation length, num robots, num resources, sensor range, slope angle and arena measurements)
+        if parameter_list[1] == model_name.split("_")[1] and parameter_list[2] == model_name.split("_")[2] and parameter_list[6:15] == model_name.split("_")[6:15]:
+            seed_file = bootstrap_directory + available_files[i]
+            break
+
+    if seed_file is None:
+        raise RuntimeError("No bootstrap model matches this experiment's parameters")
+
+    seed_genome = np.load(seed_file)
     es = cma.CMAEvolutionStrategy(seed_genome, sigma, options)
 
-    ''''''
+    '''
     # Send output to log file
     old_stdout = sys.stdout
     log_file_name = model_name + ".log"
     log_file = open(log_file_name, "a")
     sys.stdout = log_file
+    '''
 
 
     partial_calculator = partial(fitness_calculator.calculate_fitness_negation, team_type=team_type)
@@ -296,9 +315,10 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
 
     print(f"Best score is {es.result[1]}")
 
-    ''''''
+    '''
     sys.stdout = old_stdout
     log_file.close()
+    '''
 
 
     # Append results to results file. Create file if it doesn't exist

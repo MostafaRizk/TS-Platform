@@ -11,6 +11,7 @@ from time import time
 import copy
 import os
 
+'''
 from collections import deque
 from keras.models import Sequential
 from keras.layers import Dense
@@ -21,6 +22,7 @@ from keras.callbacks import TensorBoard
 from keras import backend as K
 from keras.losses import mean_squared_error
 from keras.models import load_model
+'''
 
 from gym.utils import seeding
 
