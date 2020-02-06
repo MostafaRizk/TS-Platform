@@ -116,8 +116,6 @@ def main(argv):
 
         np.save(directory+model_name, best_genome)
 
-
-
     else:
         # If this is a training run
         if test_model is None:
@@ -146,7 +144,7 @@ def main(argv):
             print(f"Evaluating {model_name}")
 
             # Get best genome using CMA
-            best_genome = training_algorithm(fitness_calculator=fitness_calculator, seed_value=random_seed, sigma=sigma, model_name=model_name, results_file_name=results_file_name, team_type=team_type)
+            best_genome = training_algorithm(fitness_calculator=fitness_calculator, seed_value=random_seed, sigma=sigma, model_name=model_name, results_file_name=results_file_name, team_type=team_type, num_generations=num_generations)
 
             # Create individual using genome so that it can be saved
             if team_type == "homogeneous":

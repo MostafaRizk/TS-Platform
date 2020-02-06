@@ -215,8 +215,8 @@ def rwg(seed_value, calculator, population_size, team_type, target_fitness=1.0):
         return backup_genome, max_fitness
 
 
-def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name, team_type):
-    options = {'seed': seed_value, 'maxiter': 300, 'popsize': 40}
+def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name, team_type, num_generations):
+    options = {'seed': seed_value, 'maxiter': num_generations, 'popsize': 40}
 
     #seed_genome = rwg(seed_value=seed_value, calculator=fitness_calculator, population_size=2000, team_type=team_type)
     #f"bootstrap_{team_type}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{best_fitness}"
@@ -243,7 +243,7 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
         parameter_list = available_files[i].split("_")
 
         # Check that important experiment parameters are the same (team type, simulation length, num robots, num resources, sensor range, slope angle and arena measurements)
-        if parameter_list[1] == model_name.split("_")[1] and parameter_list[2] == model_name.split("_")[2] and parameter_list[6:15] == model_name.split("_")[6:15]:
+        if parameter_list[1] == model_name.split("_")[1] and parameter_list[2] == model_name.split("_")[2] and parameter_list[4] == model_name.split("_")[4] and parameter_list[6:15] == model_name.split("_")[6:15]:
             seed_file = bootstrap_directory + available_files[i]
             break
 
