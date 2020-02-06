@@ -207,8 +207,7 @@ def rwg(seed_value, calculator, population_size, team_type, target_fitness=1.0):
 
         seed_value += 1
 
-    print(f"Did not find a genome with score greater than 2. Using best one found, with score {max_fitness}")
-
+    print(f"Did not find a genome with score greater than {target_fitness}. Using best one found, with score {max_fitness}")
 
     if backup_genome is None:
         return full_genome, max_fitness
