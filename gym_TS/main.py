@@ -19,7 +19,7 @@ def main(argv):
                                    ["algorithm=", "team_type=", "generations=", "simulation_length=", "trials=",
                                     "seed=", "num_robots=", "num_resources=", "sensor_range=", "slope_angle=",
                                     "arena_length=", "arena_width=", "cache_start=", "slope_start=", "source_start=",
-                                    "sigma=", "test_model=", "target_fitness="])
+                                    "sigma=", "test_model=", "target_fitness=", "population="])
 
     except getopt.GetoptError:
         print("There was an error")
@@ -46,6 +46,7 @@ def main(argv):
     sigma = None
     test_model = None
     target_fitness = 1.0
+    population = None
 
     # Read in arguments
     for opt, arg in opts:
@@ -95,6 +96,8 @@ def main(argv):
             test_model = arg
         if opt == "--target_fitness":
             target_fitness = float(arg)
+        if opt == "--population":
+            population = int(arg)
 
     if bootstrap:
         fitness_calculator = FitnessCalculator(random_seed=random_seed, simulation_length=simulation_length,
@@ -129,7 +132,7 @@ def main(argv):
                                                    cache_start=cache_start,
                                                    slope_start=slope_start, source_start=source_start)
 
-            model_name = f"CMA_{team_type}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{sigma}"
+            model_name = f"CMA_{team_type}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{sigma}_{population}"
 
             # Create results file if it doesn't exist
             results_file_name = "results.csv"
@@ -138,13 +141,13 @@ def main(argv):
                 pass
             else:
                 results_file = open(results_file_name, 'w')
-                results_file.write("Algorithm Name, Team Type, Simulation Length, Num Trials, Random Seed, Num Robots, Num Resources, Sensor Range, Slope Angle, Arena Length, Arena Width, Cache Start, Slope Start, Source Start, Sigma, Log File, Fitness\n")
+                results_file.write("Algorithm Name, Team Type, Simulation Length, Num Trials, Random Seed, Num Robots, Num Resources, Sensor Range, Slope Angle, Arena Length, Arena Width, Cache Start, Slope Start, Source Start, Sigma, Population, Log File, Fitness\n")
                 results_file.close()
 
             print(f"Evaluating {model_name}")
 
             # Get best genome using CMA
-            best_genome = training_algorithm(fitness_calculator=fitness_calculator, seed_value=random_seed, sigma=sigma, model_name=model_name, results_file_name=results_file_name, team_type=team_type, num_generations=num_generations)
+            best_genome = training_algorithm(fitness_calculator=fitness_calculator, seed_value=random_seed, sigma=sigma, model_name=model_name, results_file_name=results_file_name, team_type=team_type, num_generations=num_generations, population_size=population)
 
             # Create individual using genome so that it can be saved
             if team_type == "homogeneous":
@@ -314,7 +317,7 @@ def time_cma():
 # To run, use:
 # python3 main.py --algorithm cma --team_type homogeneous --simulation_length 1000 --trials 3 --seed 100 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 40 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --sigma 0.05
 # python3 main.py --test_model /home/mriz9/Documents/Results/AAMAS/3_PostGiuse/CMA_homogeneous_1000_10_18_2_3_1_0_8_4_1_3_7_0.05.log
-# python3 main.py --algorithm bootstrap --team_type homogeneous --generations 1000 --simulation_length 1000 --trials 3 --seed 100 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 40 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --target_fitness 1.0
+# python3 main.py --algorithm bootstrap --team_type homogeneous --generations 1 --simulation_length 1000 --trials 1 --seed 100 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 40 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --target_fitness 1.0
 
 if __name__ == "__main__":
     main(sys.argv[1:])#Uncomment for proper runs
