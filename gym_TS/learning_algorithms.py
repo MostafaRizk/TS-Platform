@@ -253,13 +253,13 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
     seed_genome = np.load(seed_file)
     es = cma.CMAEvolutionStrategy(seed_genome, sigma, options)
 
-    '''
+    ''''''
     # Send output to log file
     old_stdout = sys.stdout
     log_file_name = model_name + ".log"
     log_file = open(log_file_name, "a")
     sys.stdout = log_file
-    '''
+
 
 
     partial_calculator = partial(fitness_calculator.calculate_fitness_negation, team_type=team_type)
@@ -314,10 +314,10 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
 
     print(f"Best score is {es.result[1]}")
 
-    '''
+    ''''''
     sys.stdout = old_stdout
     log_file.close()
-    '''
+
 
 
     # Append results to results file. Create file if it doesn't exist
