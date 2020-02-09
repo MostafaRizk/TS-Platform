@@ -1,8 +1,8 @@
 #!/bin/env bash
-#SBATCH --job-name=bootstrap
+#SBATCH --job-name=bootstrap_longarena
 #SBATCH --time=12:00:00
-#SBATCH --array=1-160
-#SBATCH --output=bootstrap.out
+#SBATCH --array=1-60
+#SBATCH --output=bootstrap_longarena.out
 #SBATCH --open-mode=append
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
@@ -12,6 +12,6 @@
 
 export OMP_NUM_THREADS=1
 module load singularity
-CMD=`head -n ${SLURM_ARRAY_TASK_ID} LIST_bootstrap | tail -1`
+CMD=`head -n ${SLURM_ARRAY_TASK_ID} LIST_bootstrap_long_arena | tail -1`
 singularity exec -B /home:/home -B /mnt/lustre:/mnt/lustre ~/no45/mriz9/gym-TS/gym_TS/gym-TS.img $CMD
 
