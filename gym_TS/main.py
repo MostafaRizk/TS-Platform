@@ -146,8 +146,7 @@ def main(argv):
                 pass
             else:
                 results_file = open(results_file_name, 'w')
-                results_file.write(
-                    "Algorithm Name, Team Type, Simulation Length, Num Generations, Num Trials, Random Seed, Num Robots, Num Resources, Sensor Range, Slope Angle, Arena Length, Arena Width, Cache Start, Slope Start, Source Start, Sigma, Population, Log File, Fitness\n")
+                results_file.write("Algorithm Name, Team Type, Simulation Length, Num Generations, Num Trials, Random Seed, Num Robots, Num Resources, Sensor Range, Slope Angle, Arena Length, Arena Width, Cache Start, Slope Start, Source Start, Sigma, Population, Log File, Seed Fitness, Evolved Fitness\n")
                 results_file.close()
 
             print(f"Evaluating {model_name}")

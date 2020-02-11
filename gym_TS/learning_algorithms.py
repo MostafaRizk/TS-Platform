@@ -249,6 +249,8 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
             break
     '''
 
+    seed_fitness = None
+
     # Choose model with the same random seed
     for i in range(len(index_list)):
         parameter_list = available_files[i].split("_")
@@ -256,6 +258,7 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
         # Check that important experiment parameters are the same (team type, simulation length, num robots, num resources, sensor range, slope angle and arena measurements)
         if parameter_list[1] == model_name.split("_")[1] and parameter_list[2] == model_name.split("_")[2] and parameter_list[4:15] == model_name.split("_")[4:15]:
             seed_file = bootstrap_directory + available_files[i]
+            seed_fitness = parameter_list[15].strip(".npy")
             break
 
     if seed_file is None:
@@ -264,13 +267,13 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
     seed_genome = np.load(seed_file)
     es = cma.CMAEvolutionStrategy(seed_genome, sigma, options)
 
-    '''
+    ''''''
     # Send output to log file
     old_stdout = sys.stdout
     log_file_name = model_name + ".log"
     log_file = open(log_file_name, "a")
     sys.stdout = log_file
-    '''
+
 
 
     partial_calculator = partial(fitness_calculator.calculate_fitness_negation, team_type=team_type)
@@ -284,9 +287,14 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
         if iteration_number % 20 == 0:
             # Log results to results file
             results = model_name.replace("_", ",")
-            results += f",{log_file_name}, {es.result[1]}\n"
+            results += f",{log_file_name}, {seed_fitness}, {es.result[1]}\n"
             intermediate_results_file_name = f"{iteration_number}_{results_file_name}"
-            results_file = open(intermediate_results_file_name, 'a')
+
+            if not os.path.exists(intermediate_results_file_name):
+                results_file = open(intermediate_results_file_name, 'a')
+                results_file.write("Algorithm Name, Team Type, Simulation Length, Num Generations, Num Trials, Random Seed, Num Robots, Num Resources, Sensor Range, Slope Angle, Arena Length, Arena Width, Cache Start, Slope Start, Source Start, Sigma, Population, Log File, Seed Fitness, Evolved Fitness\n")
+            else:
+                results_file = open(intermediate_results_file_name, 'a')
             results_file.write(results)
             results_file.close()
 
@@ -325,15 +333,15 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
 
     print(f"Best score is {es.result[1]}")
 
-    '''
+    ''''''
     sys.stdout = old_stdout
     log_file.close()
-    '''
+
 
 
     # Append results to results file. Create file if it doesn't exist
     results = model_name.replace("_", ",")
-    results += f",{log_file_name}, {es.result[1]}\n"
+    results += f",{log_file_name}, {seed_fitness}, {es.result[1]}\n"
     results_file = open(results_file_name, 'a')
     results_file.write(results)
     results_file.close()

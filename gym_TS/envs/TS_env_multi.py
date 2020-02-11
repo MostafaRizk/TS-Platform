@@ -157,6 +157,7 @@ class TSMultiEnv(gym.Env):
         for i in range(len(robot_actions)):
             if robot_actions[i] < 4:
                 self.behaviour_map[robot_actions[i]](i)
+                reward -= 1 # Negative reward for moving. Same as a battery
 
         # The robots' old positions are wiped out
         for position in old_robot_positions:
@@ -230,7 +231,8 @@ class TSMultiEnv(gym.Env):
             if self.get_area_from_position(self.robot_positions[i]) == "NEST" and self.has_resource[i] is not None:
                 self.delete_resource(self.has_resource[i])
                 self.has_resource[i] = None
-                reward += 1
+                #reward += 1
+                reward += (self.num_robots + 1)*self.arena_constraints["y_max"] # Reward for resource is greater than the cost for all robots to go up and down to retrieve it
                 self.spawn_resource()
 
         # Update the state with the new resource positions
