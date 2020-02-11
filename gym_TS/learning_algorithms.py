@@ -239,11 +239,22 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
     rng.shuffle(index_list)
 
     # Choose a random model from those available
+    '''
     for i in range(len(index_list)):
         parameter_list = available_files[i].split("_")
 
         # Check that important experiment parameters are the same (team type, simulation length, num robots, num resources, sensor range, slope angle and arena measurements)
         if parameter_list[1] == model_name.split("_")[1] and parameter_list[2] == model_name.split("_")[2] and parameter_list[4] == model_name.split("_")[4] and parameter_list[6:15] == model_name.split("_")[6:15]:
+            seed_file = bootstrap_directory + available_files[i]
+            break
+    '''
+
+    # Choose model with the same random seed
+    for i in range(len(index_list)):
+        parameter_list = available_files[i].split("_")
+
+        # Check that important experiment parameters are the same (team type, simulation length, num robots, num resources, sensor range, slope angle and arena measurements)
+        if parameter_list[1] == model_name.split("_")[1] and parameter_list[2] == model_name.split("_")[2] and parameter_list[4:15] == model_name.split("_")[4:15]:
             seed_file = bootstrap_directory + available_files[i]
             break
 
@@ -253,13 +264,13 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
     seed_genome = np.load(seed_file)
     es = cma.CMAEvolutionStrategy(seed_genome, sigma, options)
 
-    ''''''
+    '''
     # Send output to log file
     old_stdout = sys.stdout
     log_file_name = model_name + ".log"
     log_file = open(log_file_name, "a")
     sys.stdout = log_file
-
+    '''
 
 
     partial_calculator = partial(fitness_calculator.calculate_fitness_negation, team_type=team_type)
@@ -314,10 +325,10 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
 
     print(f"Best score is {es.result[1]}")
 
-    ''''''
+    '''
     sys.stdout = old_stdout
     log_file.close()
-
+    '''
 
 
     # Append results to results file. Create file if it doesn't exist

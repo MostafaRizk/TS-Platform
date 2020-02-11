@@ -88,6 +88,8 @@ class TSMultiEnv(gym.Env):
         self.robot_positions = [None for i in range(self.num_robots)]
         self.resource_positions = [None for i in range(self.default_num_resources)]
 
+        self.resource_carried_by = [[] for i in range(self.default_num_resources)]
+
         # Observation space
         #
         # The details are explained in self.generate_robot_observations()
@@ -391,6 +393,8 @@ class TSMultiEnv(gym.Env):
 
         self.resource_positions = [None for i in range(self.default_num_resources)]
 
+        self.resource_carried_by = [[] for i in range(self.default_num_resources)]
+
         try:
             self.resource_transforms = [rendering.Transform() for i in range(self.default_num_resources)]
         except:
@@ -681,6 +685,11 @@ class TSMultiEnv(gym.Env):
         :param robot_id: Index of the robot in self.robot_positions
         :return:
         """
+        resource_id = self.has_resource[robot_id]
+
+        if robot_id not in self.resource_carried_by[resource_id]:
+            self.resource_carried_by[resource_id] += [robot_id]
+
         self.has_resource[robot_id] = None
 
     def slide_resource(self, resource_id):
@@ -719,6 +728,7 @@ class TSMultiEnv(gym.Env):
                     self.resource_transforms += [rendering.Transform()]
                 except:
                     pass
+                self.resource_carried_by += [[]]
                 resource_placed = True
                 self.current_num_resources += 1
                 try:
@@ -747,6 +757,26 @@ class TSMultiEnv(gym.Env):
                     return False
 
         return True
+
+    def calculate_ferrante_specialisation(self):
+        """
+        Calculates task specialisation according to Ferrante et al's measure
+        :return:
+        """
+        resources_retrieved_by_many = 0
+        total_resources_retrieved = 0
+
+        for i in range(len(self.resource_positions)):
+            if self.resource_positions[i] == self.dumping_position:
+                total_resources_retrieved += 1
+
+                if len(self.resource_carried_by[i]) > 1:
+                    resources_retrieved_by_many += 1
+
+        if total_resources_retrieved != 0:
+            return resources_retrieved_by_many/total_resources_retrieved
+        else:
+            return 0.0
 
     def log_data(self, time_step):
         pass
