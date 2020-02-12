@@ -188,13 +188,14 @@ def main(argv):
             # CMA_homogeneous_1000_10_10_2_3_1_20_8_4_1_3_7_0.05.npy
             # f"CMA_{team_type}_{simulation_length}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{sigma}"
             # f"CMA_{team_type}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{sigma}_{population}"
+            # python3 main.py --test_model /home/mriz9/Documents/Results/AAMAS/6_Battery/Tiny/CMA_heterogeneous_1000_300_5_10_2_3_1_100_20_4_1_3_19_0.05_40_controller1_.npy
 
             # for i in range(len(model_name)):
             #    print(f"{i} - {model_name[i]}")
 
             # Prepare fitness function
             fitness_calculator = FitnessCalculator(random_seed=int(model_name[6]), simulation_length=int(model_name[3]),
-                                                   num_trials=1, num_robots=int(model_name[7]),
+                                                   num_trials=5, num_robots=int(model_name[7]),
                                                    num_resources=int(model_name[8]),
                                                    sensor_range=int(model_name[9]), slope_angle=int(model_name[10]),
                                                    arena_length=int(model_name[11]), arena_width=int(model_name[12]),
@@ -215,7 +216,7 @@ def main(argv):
                 full_genome = np.concatenate([controller1, controller2])
 
             specialisation = fitness_calculator.calculate_ferrante_specialisation(full_genome, team_type=model_name[2],
-                                                                                  render=False)
+                                                                                  render=True)
             # print(f"Specialisation is {specialisation}")
 
         # If this is a batch testing run
@@ -390,7 +391,7 @@ def time_cma():
 
 # To run, use:
 # python3 main.py --algorithm cma --team_type homogeneous --simulation_length 1000 --generations 20 --trials 5 --seed 4 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 40 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --sigma 0.05 --population 40
-# python3 main.py --test_model /home/mriz9/Documents/Results/AAMAS/5_ParameterTuning/Tiny/CMA_homogeneous_1000_300_5_1_2_3_1_40_8_4_1_3_7_0.1_40.npy
+# python3 main.py --test_model /home/mriz9/Documents/Results/AAMAS/6_Battery/Tiny/CMA_heterogeneous_1000_300_5_10_2_3_1_100_20_4_1_3_19_0.05_40_controller1_.npy
 # python3 main.py --algorithm bootstrap --team_type homogeneous --generations 1 --simulation_length 1000 --trials 1 --seed 100 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 40 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --target_fitness 1.0
 
 if __name__ == "__main__":

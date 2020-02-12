@@ -232,7 +232,8 @@ class TSMultiEnv(gym.Env):
                 self.delete_resource(self.has_resource[i])
                 self.has_resource[i] = None
                 #reward += 1
-                reward += (self.num_robots + 1)*self.arena_constraints["y_max"] # Reward for resource is greater than the cost for all robots to go up and down to retrieve it
+                #reward += (self.num_robots + 1)*self.arena_constraints["y_max"] # Reward for resource is greater than the cost for all robots to go up and down to retrieve it
+                reward += self.num_robots * 1000  # Even if all robots waste time the whole simulation, they will get a reward that makes up for it if they retrieve a resource
                 self.spawn_resource()
 
         # Update the state with the new resource positions
