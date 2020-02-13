@@ -154,10 +154,23 @@ class TSMultiEnv(gym.Env):
 
         # The robots act
         old_robot_positions = copy.deepcopy(self.robot_positions)
+
         for i in range(len(robot_actions)):
             if robot_actions[i] < 4:
                 self.behaviour_map[robot_actions[i]](i)
-                reward -= 1 # Negative reward for moving. Same as a battery
+
+                # More costly for robot to move up the slope than down
+                if self.get_area_from_position(self.robot_positions[i]) == "SLOPE":
+                    if self.action_name[robot_actions[i]] == "FORWARD":
+                        reward -= 10  # If robot is on slope and action is forward, -10
+                    elif self.action_name[robot_actions[i]] == "BACKWARD":
+                        reward -= 0.5  # If robot is on slope and action is backward, -0.5
+                    else:
+                        reward -= 1
+                else:
+                    reward -= 1  # Negative reward for moving. Same as having a battery
+
+                print(reward)
 
         # The robots' old positions are wiped out
         for position in old_robot_positions:
@@ -233,7 +246,7 @@ class TSMultiEnv(gym.Env):
                 self.has_resource[i] = None
                 #reward += 1
                 #reward += (self.num_robots + 1)*self.arena_constraints["y_max"] # Reward for resource is greater than the cost for all robots to go up and down to retrieve it
-                reward += self.num_robots * 1000  # Even if all robots waste time the whole simulation, they will get a reward that makes up for it if they retrieve a resource
+                reward += self.num_robots * 10000  # Even if all robots waste time the whole simulation, they will get a reward that makes up for it if they retrieve a resource
                 self.spawn_resource()
 
         # Update the state with the new resource positions

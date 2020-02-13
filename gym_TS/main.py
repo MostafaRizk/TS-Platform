@@ -391,7 +391,7 @@ def time_cma():
 
 # To run, use:
 # python3 main.py --algorithm cma --team_type homogeneous --simulation_length 1000 --generations 20 --trials 5 --seed 4 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 40 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --sigma 0.05 --population 40
-# python3 main.py --test_model /home/mriz9/Documents/Results/AAMAS/6_Battery/Tiny/CMA_heterogeneous_1000_300_5_10_2_3_1_100_20_4_1_3_19_0.05_40_controller1_.npy
+# python3 main.py --test_model /home/mriz9/Documents/Results/AAMAS/7_BatteryWithSeed/models/Tiny/CMA_heterogeneous_500_300_5_2_2_3_1_40_8_4_1_3_7_0.05_20_controller1_.npy
 # python3 main.py --algorithm bootstrap --team_type homogeneous --generations 1 --simulation_length 1000 --trials 1 --seed 100 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 40 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --target_fitness 1.0
 
 if __name__ == "__main__":
