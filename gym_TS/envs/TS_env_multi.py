@@ -57,6 +57,7 @@ class TSMultiEnv(gym.Env):
         self.resource_width = 0.6
         self.resource_height = 0.6
         self.sliding_speed = int(self.slope_angle / 10)
+        self.reward_for_resource = 10000
 
         # Other constants/variables
         self.num_robots = num_robots
@@ -162,13 +163,13 @@ class TSMultiEnv(gym.Env):
                 # More costly for robot to move up the slope than down
                 if self.get_area_from_position(self.robot_positions[i]) == "SLOPE":
                     if self.action_name[robot_actions[i]] == "FORWARD":
-                        reward -= 10  # If robot is on slope and action is forward, -10
+                        reward -= 13*self.reward_for_resource/self.slope_size
                     elif self.action_name[robot_actions[i]] == "BACKWARD":
-                        reward -= 0.5  # If robot is on slope and action is backward, -0.5
+                        reward -= 0.9*self.reward_for_resource/self.slope_size
                     else:
-                        reward -= 1
+                        reward -= 0.4*self.reward_for_resource
                 else:
-                    reward -= 1  # Negative reward for moving. Same as having a battery
+                    reward -= 0.4*self.reward_for_resource  # Negative reward for moving. Same as having a battery
 
                 print(reward)
 
@@ -244,9 +245,7 @@ class TSMultiEnv(gym.Env):
             if self.get_area_from_position(self.robot_positions[i]) == "NEST" and self.has_resource[i] is not None:
                 self.delete_resource(self.has_resource[i])
                 self.has_resource[i] = None
-                #reward += 1
-                #reward += (self.num_robots + 1)*self.arena_constraints["y_max"] # Reward for resource is greater than the cost for all robots to go up and down to retrieve it
-                reward += self.num_robots * 10000  # Even if all robots waste time the whole simulation, they will get a reward that makes up for it if they retrieve a resource
+                reward += self.reward_for_resource # Even if all robots waste time the whole simulation, they will get a reward that makes up for it if they retrieve a resource
                 self.spawn_resource()
 
         # Update the state with the new resource positions
@@ -790,6 +789,7 @@ class TSMultiEnv(gym.Env):
                     resources_retrieved_by_many += 1
 
         if total_resources_retrieved != 0:
+            #print(f"{resources_retrieved_by_many} / {total_resources_retrieved}")
             return resources_retrieved_by_many/total_resources_retrieved
         else:
             return 0.0

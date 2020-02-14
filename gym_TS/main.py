@@ -268,7 +268,9 @@ def main(argv):
                     fitness, specialisation = fitness_calculator.calculate_ferrante_specialisation(full_genome,
                                                                                           team_type=model_name[1],
                                                                                           render=False)
-                    print(f"Fitness is {fitness}. Specialisation is {specialisation}")
+                    if specialisation > 0.0:
+                        print(f"Fitness is {fitness}. Specialisation is {specialisation}")
+                        print(model_path)
                     results = filename.strip(".npy").replace("_", ",")
                     results += f", {fitness}, {specialisation}\n"
                     results_file = open(results_file_name, 'a')
@@ -391,8 +393,9 @@ def time_cma():
 
 # To run, use:
 # python3 main.py --algorithm cma --team_type homogeneous --simulation_length 1000 --generations 20 --trials 5 --seed 4 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 40 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --sigma 0.05 --population 40
-# python3 main.py --test_model /home/mriz9/Documents/Results/AAMAS/7_BatteryWithSeed/models/Tiny/CMA_heterogeneous_500_300_5_2_2_3_1_40_8_4_1_3_7_0.05_20_controller1_.npy
+# python3 main.py --test_model /home/mriz9/Documents/Results/AAMAS/8_SpeedCost/models/Tiny/CMA_heterogeneous_500_300_5_10_2_3_1_40_16_4_1_3_15_0.05_40_controller1_.npy
 # python3 main.py --algorithm bootstrap --team_type homogeneous --generations 1 --simulation_length 1000 --trials 1 --seed 100 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 40 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --target_fitness 1.0
+# python3 main.py --batch_test /home/mriz9/Documents/Results/AAMAS/8_SpeedCost/models/Tiny
 
 if __name__ == "__main__":
     main(sys.argv[1:])  # Uncomment for proper runs

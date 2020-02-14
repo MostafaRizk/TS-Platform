@@ -235,7 +235,7 @@ class FitnessCalculator:
         if learning_method == "qn" or learning_method == "bq":
             return average_score/self.num_trials, average_specialisation/self.num_trials, individual1
 
-        return average_score/self.num_trials, average_specialisation
+        return average_score/self.num_trials, average_specialisation/self.num_trials
 
     def calculate_fitness_negation(self, individual, team_type, render=False):
         #return -1*self.calculate_fitness(individual1=individual, team_type=team_type, render=True)#render)
