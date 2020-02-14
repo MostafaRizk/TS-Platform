@@ -171,7 +171,7 @@ class TSMultiEnv(gym.Env):
                 else:
                     reward -= 0.4*self.reward_for_resource  # Negative reward for moving. Same as having a battery
 
-                print(reward)
+                #print(reward)
 
         # The robots' old positions are wiped out
         for position in old_robot_positions:
