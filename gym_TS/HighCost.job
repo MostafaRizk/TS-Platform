@@ -1,6 +1,6 @@
 #!/bin/env bash
 #SBATCH --job-name=HighCost
-#SBATCH --time=48:00:00
+#SBATCH --time=8:00:00
 #SBATCH --array=1-100
 #SBATCH --output=HighCost.out
 #SBATCH --open-mode=append
