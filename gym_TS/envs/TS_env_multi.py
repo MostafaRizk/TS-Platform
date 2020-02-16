@@ -12,7 +12,7 @@ from gym.utils import seeding
 import numpy as np
 import copy
 
-#from gym.envs.classic_control import rendering
+from gym.envs.classic_control import rendering
 #from pyglet.window import NoSuchDisplayException
 
 #try:
@@ -171,7 +171,8 @@ class TSMultiEnv(gym.Env):
                 else:
                     reward -= 0.4*self.reward_for_resource  # Negative reward for moving. Same as having a battery
 
-                #print(reward)
+            else:
+                reward -= 0.4 * self.reward_for_resource
 
         # The robots' old positions are wiped out
         for position in old_robot_positions:
