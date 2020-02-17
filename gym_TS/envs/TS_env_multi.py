@@ -57,7 +57,8 @@ class TSMultiEnv(gym.Env):
         self.resource_width = 0.6
         self.resource_height = 0.6
         self.sliding_speed = int(self.slope_angle / 10)
-        self.reward_for_resource = 10000
+        self.base_cost = 1
+        self.reward_for_resource = 1000*self.base_cost
 
         # Other constants/variables
         self.num_robots = num_robots
@@ -163,16 +164,16 @@ class TSMultiEnv(gym.Env):
                 # More costly for robot to move up the slope than down
                 if self.get_area_from_position(self.robot_positions[i]) == "SLOPE":
                     if self.action_name[robot_actions[i]] == "FORWARD":
-                        reward -= 13*self.reward_for_resource/self.slope_size
+                        reward -= 3*self.base_cost
                     elif self.action_name[robot_actions[i]] == "BACKWARD":
-                        reward -= 0.9*self.reward_for_resource/self.slope_size
+                        reward -= self.base_cost/5
                     else:
-                        reward -= 0.4*self.reward_for_resource
+                        reward -= self.base_cost
                 else:
-                    reward -= 0.4*self.reward_for_resource  # Negative reward for moving. Same as having a battery
+                    reward -= self.base_cost  # Negative reward for moving. Same as having a battery
 
             else:
-                reward -= 0.4 * self.reward_for_resource
+                reward -= self.base_cost
 
         # The robots' old positions are wiped out
         for position in old_robot_positions:
