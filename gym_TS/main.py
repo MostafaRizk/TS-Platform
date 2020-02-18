@@ -268,10 +268,9 @@ def main(argv):
                     fitness, specialisation = fitness_calculator.calculate_ferrante_specialisation(full_genome,
                                                                                           team_type=model_name[1],
                                                                                           render=False)
-                    if specialisation > 0.0:
-                        print(f"Fitness is {fitness}. Specialisation is {specialisation}")
-                        print(model_path)
-
+                    #if specialisation > 0.0:
+                    print(f"Fitness is {fitness}. Specialisation is {specialisation}")
+                    #print(model_path)
                     results = filename.strip(".npy").replace("_", ",")
                     results += f", {fitness}, {specialisation}\n"
                     results_file = open(results_file_name, 'a')
