@@ -96,15 +96,24 @@ class TSMultiEnv(gym.Env):
         #
         # The details are explained in self.generate_robot_observations()
         self.tiles_in_sensing_range = (2*self.sensor_range + 1)**2  # Range=1 -> 9 tiles. Range=2 -> 25 tiles. Robot at the center.
-        self.observation_space = spaces.Discrete(self.tiles_in_sensing_range*4 + 5)  # Tiles are onehotencoded
+        self.observation_space = spaces.Discrete(self.tiles_in_sensing_range*4 + 4 + 1 + 2)  # Tiles*kinds of tile state + number of location states + object posession bit + 2 motivation variables
 
         # Action space
-        self.action_space = spaces.Discrete(6)  # 0- Forward, 1- Backward, 2- Left, 3- Right, 4- Pick up, 5- Drop
+        self.action_space = spaces.Discrete(6 + 4)  # 0- Forward, 1- Backward, 2- Left, 3- Right, 4- Pick up, 5- Drop,
+        # 6- Increase Motivation 1, 7- Decrease Motivation 1, 8- Increase Motivation 2, 9- Decrease Motivation 2
 
         # Step variables
         self.behaviour_map = [self.forward_step, self.backward_step, self.left_step, self.right_step]
-        self.action_name = ["FORWARD", "BACKWARD", "LEFT", "RIGHT", "PICKUP", "DROP"]
+        self.action_name = ["FORWARD", "BACKWARD", "LEFT", "RIGHT", "PICKUP", "DROP",
+                            "INC_MOTIVATION_1", "DEC_MOTIVATION_1", "INC_MOTIVATION_2", "DEC_MOTIVATION_2"]
         self.has_resource = [None for i in range(self.num_robots)]
+
+        # Internal state variables
+        self.motivation_1 = [0.0] * self.num_robots
+        self.motivation_2 = [0.0] * self.num_robots
+        self.motivation_min = 0.0
+        self.motivation_max = 1.0
+        self.motivation_increment = 0.05
 
         self.seed_value = None
 
@@ -174,6 +183,18 @@ class TSMultiEnv(gym.Env):
 
             else:
                 reward -= self.base_cost
+
+                if robot_actions[i] == 6:
+                    self.motivation_1[i] = min(self.motivation_max, self.motivation_1[i] + self.motivation_increment)
+                elif robot_actions[i] == 7:
+                    self.motivation_1[i] = max(self.motivation_min, self.motivation_1[i] - self.motivation_increment)
+                elif robot_actions[i] == 8:
+                    self.motivation_2[i] = min(self.motivation_max, self.motivation_2[i] + self.motivation_increment)
+                elif robot_actions[i] == 9:
+                    self.motivation_2[i] = max(self.motivation_min, self.motivation_2[i] - self.motivation_increment)
+
+            #if robot_actions[i] >= 6:
+            #    print(f"{i}- {self.motivation_1[i]} {self.motivation_2[i]}")
 
         # The robots' old positions are wiped out
         for position in old_robot_positions:
@@ -386,8 +407,15 @@ class TSMultiEnv(gym.Env):
             else:
                 readable_observation += ["Doesn't have"]
 
+            observation[obs_index + 5] = self.motivation_1[j]
+            observation[obs_index + 6] = self.motivation_2[j]
+
+            readable_observation += [f"Motivation 1 = {self.motivation_1[j]}"]
+            readable_observation += [f"Motivation 2 = {self.motivation_2[j]}"]
+
             observations += [np.array(observation)]
             readable_observations += [readable_observation]
+            #print(f"{j}- {readable_observation}")
 
         return observations
 
@@ -458,6 +486,8 @@ class TSMultiEnv(gym.Env):
         # Reset variables that were changed during runtime
         self.has_resource = [None for i in range(self.num_robots)]
         self.current_num_resources = self.default_num_resources
+        self.motivation_1 = [0.0] * self.num_robots
+        self.motivation_2 = [0.0] * self.num_robots
 
         #return np.array(self.state)
         return self.generate_robot_observations()
