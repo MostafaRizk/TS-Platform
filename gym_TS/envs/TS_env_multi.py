@@ -12,7 +12,7 @@ from gym.utils import seeding
 import numpy as np
 import copy
 
-#from gym.envs.classic_control import rendering
+from gym.envs.classic_control import rendering
 #from pyglet.window import NoSuchDisplayException
 
 #try:
@@ -242,12 +242,33 @@ class TSMultiEnv(gym.Env):
                     self.get_area_from_position(self.resource_positions[i]) == "SLOPE" and i not in self.has_resource:
                 self.slide_resource(i)
 
-        # If a robot has returned a resource to the nest a new one spawns (sometimes the robot is rewarded)
+        # If a robot has returned a resource to the nest the resource is deleted and the robot is rewarded
         for i in range(self.num_robots):
             if self.get_area_from_position(self.robot_positions[i]) == "NEST" and self.has_resource[i] is not None:
                 self.delete_resource(self.has_resource[i])
                 self.has_resource[i] = None
                 reward += self.reward_for_resource # Even if all robots waste time the whole simulation, they will get a reward that makes up for it if they retrieve a resource
+                #self.spawn_resource()
+
+        num_resources_at_source = 0
+
+        # Spawn a new resource any time the number of resources at the source decreases below the default threshold
+        for position in self.resource_positions:
+            try:
+                if self.get_area_from_position(position) == "SOURCE":
+                    num_resources_at_source += 1
+            except ValueError:
+                pass
+
+            # If there are more resources at the source than the default, there's no need to continue counting
+            if num_resources_at_source >= self.default_num_resources:
+                break
+
+        resource_deficit = self.default_num_resources - num_resources_at_source
+        #print(num_resources_at_source)
+
+        if resource_deficit > 0:
+            for i in range(resource_deficit):
                 self.spawn_resource()
 
         # Update the state with the new resource positions
@@ -255,16 +276,6 @@ class TSMultiEnv(gym.Env):
             if self.resource_positions[i] != self.dumping_position:
                 #self.state[self.resource_positions[i][1] + self.arena_constraints["y_max"]][self.resource_positions[i][0]] = i + 1
                 self.resource_map[self.resource_positions[i][1]][self.resource_positions[i][0]] = i + 1
-
-        # -1 reward at each time step to promote faster runtimes
-        #reward -= 1
-
-        # The task is done when all resources are removed from the environment
-        #
-        if self.current_num_resources == 0:
-            done = True
-        elif self.current_num_resources < 0:
-            raise ValueError("There should never be a negative number of resources")
 
         self.state = np.concatenate((self.robot_map, self.resource_map), axis=0)  # Fully observable environment
         observations = self.generate_robot_observations()
@@ -736,7 +747,7 @@ class TSMultiEnv(gym.Env):
 
         while not resource_placed:
             x, y = self.generate_resource_position()
-            if self.resource_map[y][x] == 0:
+            if self.resource_map[y][x] == 0 and (x, y) not in self.resource_positions:
                 self.resource_map[y][x] = self.latest_resource_id + 1
                 self.latest_resource_id += 1
                 self.resource_positions += [(x, y)]
@@ -770,7 +781,7 @@ class TSMultiEnv(gym.Env):
         """
         for y in range(int(self.source_size)):
             for x in range(self.arena_constraints["x_max"]):
-                if self.resource_map[int(self.source_start) + y][x] == 0:
+                if self.resource_map[int(self.source_start) + y][x] == 0 and (x, int(self.source_start) + y) not in self.resource_positions:
                     return False
 
         return True

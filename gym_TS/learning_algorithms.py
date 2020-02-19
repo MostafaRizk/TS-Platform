@@ -224,8 +224,8 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
 
 
     # Get available bootstrapped models and sort them
-    #bootstrap_directory = "models/bootstrap/"
-    bootstrap_directory = "models/bootstrap/Tiny/800/"
+    bootstrap_directory = "models/bootstrap/"
+    #bootstrap_directory = "models/bootstrap/Tiny/800/"
     available_files = os.listdir(bootstrap_directory)
     seed_file = None
 
