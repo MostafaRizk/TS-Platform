@@ -407,9 +407,9 @@ class TSMultiEnv(gym.Env):
         """
 
         # Make sure robots and resources will all fit in the environment
-        assert self.num_robots < self.arena_constraints[
+        assert self.num_robots <= self.arena_constraints[
             "x_max"] * self.nest_size, "Not enough room in the nest for all robots"
-        assert self.default_num_resources < self.arena_constraints[
+        assert self.default_num_resources <= self.arena_constraints[
             "x_max"] * self.source_size, "Not enough room in the source for all resources"
 
         try:
