@@ -1,6 +1,6 @@
 #!/bin/env bash
 #SBATCH --job-name=bootstrap_highcost
-#SBATCH --time=12:00:00
+#SBATCH --time=5:00:00
 #SBATCH --array=1-80
 #SBATCH --output=bootstrap_highcost.out
 #SBATCH --open-mode=append
