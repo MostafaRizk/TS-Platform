@@ -172,6 +172,9 @@ class TSMultiEnv(gym.Env):
                 else:
                     reward -= self.base_cost  # Negative reward for moving. Same as having a battery
 
+                #if self.has_resource[i] is not None:
+                #    reward -= self.base_cost
+
             else:
                 reward -= self.base_cost
 
@@ -208,7 +211,7 @@ class TSMultiEnv(gym.Env):
             # time
             for j in range(len(self.resource_positions)):
                 if self.robot_positions[i] == self.resource_positions[j]:
-                    if self.has_resource[i] is not None and self.has_resource != j:
+                    if self.has_resource[i] is not None and self.has_resource[i] != j:
                         robot_collision_positions[i] = old_robot_positions[i]
 
             #self.state[robot_collision_positions[i][1]][robot_collision_positions[i][0]] = i + 1
