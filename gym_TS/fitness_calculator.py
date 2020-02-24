@@ -264,6 +264,7 @@ class FitnessCalculator:
 
         if type == "generalist":
             individual1 = HardcodedGeneralistAgent()
+            individual2 = HardcodedGeneralistAgent()
         elif type == "specialist":
             individual1 = HardcodedDropperAgent()
             individual2 = HardcodedCollectorAgent()
@@ -283,15 +284,11 @@ class FitnessCalculator:
 
                 robot_actions = []
 
-                if type == "generalist":
-                    # All agents act using same controller.
-                    robot_actions = [individual1.act(observations[i]) for i in range(len(observations))]
-                elif type == "specialist":
-                    for i in range(len(observations)):
-                        if i % 2 == 0:
-                            robot_actions += [individual1.act(observations[i])]
-                        else:
-                            robot_actions += [individual2.act(observations[i])]
+                for i in range(len(observations)):
+                    if i % 2 == 0:
+                        robot_actions += [individual1.act(observations[i])]
+                    else:
+                        robot_actions += [individual2.act(observations[i])]
 
                 # The environment changes according to all their actions
                 old_observations = observations[:]

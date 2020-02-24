@@ -24,21 +24,30 @@ class HardcodedGeneralistAgent(HardcodedAgent):
 
             # If resource is on the current tile, pick it up
             if current_tile_contents == "RESOURCE":
-                return self.action_index["PICKUP"]
+                action = self.action_index["PICKUP"]
 
             # Otherwise, find a resource (while avoiding obstacles)
             else:
-                return self.find_resource()
+                action = self.find_resource()
 
         elif self.has_resource:
             # If on the nest drop the resource
             if self.current_zone == "NEST":
-                return self.action_index["DROP"]
+                action = self.action_index["DROP"]
 
             # Otherwise look for the nest (while avoiding obstacles
             else:
                 # Look for the nest
-                return self.action_index["BACKWARD"]
+                action = self.action_index["BACKWARD"]
+
+        if self.is_stuck():
+            if self.has_resource:
+                action = self.action_index["RIGHT"]
+            else:
+                action = self.action_index["LEFT"]
+
+        self.memory.append((observation, action))
+        return action
 
     def find_resource(self):
         """

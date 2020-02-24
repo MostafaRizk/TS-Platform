@@ -269,13 +269,13 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
     '''
     es = cma.CMAEvolutionStrategy(seed_genome, sigma, options)
 
-    '''
+    ''''''
     # Send output to log file
     old_stdout = sys.stdout
     log_file_name = model_name + ".log"
     log_file = open(log_file_name, "a")
     sys.stdout = log_file
-    '''
+
 
     partial_calculator = partial(fitness_calculator.calculate_fitness_negation, team_type=team_type)
     #es.optimize(partial_calculator)

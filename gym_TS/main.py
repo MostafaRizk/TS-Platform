@@ -294,7 +294,7 @@ def main(argv):
             fitness = 0
             specialisation = 0
 
-            fitness, specialisation = fitness_calculator.calculate_hardcoded_fitness(type=hardcoded_test, render=True)
+            fitness, specialisation = fitness_calculator.calculate_hardcoded_fitness(type=hardcoded_test, render=False)
 
             print(f"Fitness is {fitness} and specialisation is {specialisation}")
 

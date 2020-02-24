@@ -1,4 +1,6 @@
 import re
+from collections import deque
+import numpy as np
 
 class HardcodedAgent:
     def __init__(self):
@@ -10,7 +12,7 @@ class HardcodedAgent:
         self.sensor_map = []
         self.current_zone = None
         self.has_resource = None
-        # self.dequeue
+        self.memory = deque(maxlen=4)
 
     def act(self, observation):
         # Break down observations
@@ -19,6 +21,8 @@ class HardcodedAgent:
         self.current_zone = self.area_from_bits[re.sub('[ ,\[\]]', '', str(observation[
                                                                            -5:-1]))]  # Get 4-bit vector representing area, remove brackets and commas, use it as a key for the dictionary of areas
         self.has_resource = bool(observation[-1])
+
+        action = None
 
     def get_sensor_map(self, observation):
         unrefined_map = [[observation[0:4], observation[4:8], observation[8:12]],
@@ -37,3 +41,16 @@ class HardcodedAgent:
             refined_map += [refined_row]
 
         return refined_map
+
+    def is_stuck(self):
+        try:
+            old_mem = self.memory[0]
+        except IndexError:
+            return False
+
+        for mem in self.memory:
+            for i in range(len(mem)):
+                if not np.array_equal(old_mem[i], mem[i]):
+                    return False
+
+        return True
