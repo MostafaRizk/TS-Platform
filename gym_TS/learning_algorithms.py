@@ -170,7 +170,7 @@ def rwg(seed_value, calculator, population_size, team_type, target_fitness=1.0):
     max_ninds = population_size
     full_genome = None
     backup_genome = None
-    max_fitness = 0.0
+    max_fitness = -float('Inf')
 
     # Neuroevolution loop
     for nind in range(max_ninds):
@@ -199,6 +199,8 @@ def rwg(seed_value, calculator, population_size, team_type, target_fitness=1.0):
         elif fitness > 0.0:
             print(f"Found an individual with score {fitness} > 0 after {nind} tries")
         #elif nind%10 == 0:
+
+        #if nind%50 == 0:
         #    print(f"{nind}: Best score is {max_fitness}")
 
         if fitness > max_fitness:
@@ -269,12 +271,13 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
     '''
     es = cma.CMAEvolutionStrategy(seed_genome, sigma, options)
 
+    log_file_name = model_name + ".log"
     ''''''
     # Send output to log file
     old_stdout = sys.stdout
-    log_file_name = model_name + ".log"
     log_file = open(log_file_name, "a")
     sys.stdout = log_file
+
 
 
     partial_calculator = partial(fitness_calculator.calculate_fitness_negation, team_type=team_type)
@@ -347,5 +350,6 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
     results_file = open(results_file_name, 'a')
     results_file.write(results)
     results_file.close()
+
 
     return es.result[0]
