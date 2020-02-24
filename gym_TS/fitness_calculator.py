@@ -5,6 +5,10 @@ import time
 from agents.TinyAgent import TinyAgent
 from gym.utils import seeding
 
+from gym_TS.agents.HardcodedCollectorAgent import HardcodedCollectorAgent
+from gym_TS.agents.HardcodedDropperAgent import HardcodedDropperAgent
+from gym_TS.agents.HardcodedGeneralistAgent import HardcodedGeneralistAgent
+
 
 class FitnessCalculator:
     def __init__(self, random_seed, simulation_length, num_trials, num_robots, num_resources, sensor_range, slope_angle, arena_length, arena_width, cache_start, slope_start, source_start):
@@ -240,4 +244,70 @@ class FitnessCalculator:
     def calculate_fitness_negation(self, individual, team_type, render=False):
         #return -1*self.calculate_fitness(individual1=individual, team_type=team_type, render=True)#render)
         return -1 * self.calculate_fitness(individual1=individual, team_type=team_type, render=render)
+
+    def calculate_hardcoded_fitness(self, type, render=False):
+        """
+        Calculates fitness of a controller by running a simulation
+        :param individual1:
+        :param team_type Accepts "homogeneous" or "heterogeneous"
+        :param learning_method Accepts cma. Also accepts qn or bq but will only work for homogeneous teams
+        :param render:
+        :return:
+        """
+
+        #render = True
+        average_score = 0
+        average_specialisation = 0
+        temp_seed = self.random_seed
+        individual1 = None
+        individual2 = None
+
+        if type == "generalist":
+            individual1 = HardcodedGeneralistAgent()
+        elif type == "specialist":
+            individual1 = HardcodedDropperAgent()
+            individual2 = HardcodedCollectorAgent()
+        else:
+            raise RuntimeError("Hardcoding type must be either generalist or specialist")
+
+        for trial in range(self.num_trials):
+            self.env.seed(temp_seed)  # makes fitness deterministic
+            observations = self.env.reset()
+
+            score = 0
+            done = False
+
+            for t in range(self.simulation_length):
+                if render:
+                    self.env.render()
+
+                robot_actions = []
+
+                if type == "generalist":
+                    # All agents act using same controller.
+                    robot_actions = [individual1.act(observations[i]) for i in range(len(observations))]
+                elif type == "specialist":
+                    for i in range(len(observations)):
+                        if i % 2 == 0:
+                            robot_actions += [individual1.act(observations[i])]
+                        else:
+                            robot_actions += [individual2.act(observations[i])]
+
+                # The environment changes according to all their actions
+                old_observations = observations[:]
+                observations, reward, done, info = self.env.step(robot_actions, t)
+
+                score += reward
+
+                #time.sleep(0.1)
+                #print(f'Time: {t} || Score: {score}')
+
+                if done:
+                    break
+
+            average_score += score
+            average_specialisation += self.env.calculate_ferrante_specialisation()
+            temp_seed += 1
+
+        return average_score/self.num_trials, average_specialisation/self.num_trials
 

@@ -216,16 +216,16 @@ def rwg(seed_value, calculator, population_size, team_type, target_fitness=1.0):
 
 
 def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name, team_type, num_generations, population_size):
-    options = {'seed': seed_value, 'maxiter': num_generations, 'popsize': population_size, 'tolx': 1e-3, 'tolfunhist': 1e0}
+    options = {'seed': seed_value, 'maxiter': num_generations, 'popsize': population_size, 'tolx': 1e-3, 'tolfunhist': 2e3}
 
     #seed_genome = rwg(seed_value=seed_value, calculator=fitness_calculator, population_size=2000, team_type=team_type)
     #f"bootstrap_{team_type}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{best_fitness}"
     #f"CMA_{team_type}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{sigma}"
 
 
+    ''''''
     # Get available bootstrapped models and sort them
     bootstrap_directory = "models/bootstrap/"
-    #bootstrap_directory = "models/bootstrap/Tiny/800/"
     available_files = os.listdir(bootstrap_directory)
     seed_file = None
 
@@ -238,17 +238,6 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
     rng = fitness_calculator.get_rng()
     index_list = list(range(0, len(available_files)))
     rng.shuffle(index_list)
-
-    # Choose a random model from those available
-    '''
-    for i in range(len(index_list)):
-        parameter_list = available_files[i].split("_")
-
-        # Check that important experiment parameters are the same (team type, simulation length, num robots, num resources, sensor range, slope angle and arena measurements)
-        if parameter_list[1] == model_name.split("_")[1] and parameter_list[2] == model_name.split("_")[2] and parameter_list[4] == model_name.split("_")[4] and parameter_list[6:15] == model_name.split("_")[6:15]:
-            seed_file = bootstrap_directory + available_files[i]
-            break
-    '''
 
     seed_fitness = None
 
@@ -266,16 +255,27 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
         raise RuntimeError("No bootstrap model matches this experiment's parameters")
 
     seed_genome = np.load(seed_file)
+
+
+    #
+
+    '''
+    demo_agent = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), seed=seed_value)
+    num_weights = demo_agent.get_num_weights()
+    if team_type == "heterogeneous":
+        num_weights *= 2
+    #seed_genome = num_weights * [0]
+    seed_genome = rwg(seed_value=seed_value, calculator=fitness_calculator, population_size=1, team_type=team_type)[0]
+    '''
     es = cma.CMAEvolutionStrategy(seed_genome, sigma, options)
 
-    ''''''
+    '''
     # Send output to log file
     old_stdout = sys.stdout
     log_file_name = model_name + ".log"
     log_file = open(log_file_name, "a")
     sys.stdout = log_file
-
-
+    '''
 
     partial_calculator = partial(fitness_calculator.calculate_fitness_negation, team_type=team_type)
     #es.optimize(partial_calculator)
@@ -337,6 +337,7 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
     ''''''
     sys.stdout = old_stdout
     log_file.close()
+    
 
 
 

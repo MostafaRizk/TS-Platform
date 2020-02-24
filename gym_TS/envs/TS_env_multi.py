@@ -12,7 +12,7 @@ from gym.utils import seeding
 import numpy as np
 import copy
 
-#from gym.envs.classic_control import rendering
+from gym.envs.classic_control import rendering
 #from pyglet.window import NoSuchDisplayException
 
 #try:
@@ -96,7 +96,7 @@ class TSMultiEnv(gym.Env):
         #
         # The details are explained in self.generate_robot_observations()
         self.tiles_in_sensing_range = (2*self.sensor_range + 1)**2  # Range=1 -> 9 tiles. Range=2 -> 25 tiles. Robot at the center.
-        self.observation_space = spaces.Discrete(self.tiles_in_sensing_range*4 + 5)  # Tiles are onehotencoded
+        self.observation_space = spaces.Discrete(self.tiles_in_sensing_range*4 + 4 + 1)  # Tiles are onehotencoded. 4 bits for possible locations, 1 bit for object possession
 
         # Action space
         self.action_space = spaces.Discrete(6)  # 0- Forward, 1- Backward, 2- Left, 3- Right, 4- Pick up, 5- Drop
@@ -244,9 +244,9 @@ class TSMultiEnv(gym.Env):
 
         # If a robot has returned a resource to the nest the resource is deleted and the robot is rewarded
         for i in range(self.num_robots):
-            if self.get_area_from_position(self.robot_positions[i]) == "NEST" and self.has_resource[i] is not None:
-                self.delete_resource(self.has_resource[i])
-                self.has_resource[i] = None
+            if self.get_area_from_position(self.robot_positions[i]) == "NEST" and self.has_resource[i] is None and self.robot_positions[i] in self.resource_positions:
+                self.delete_resource(self.resource_positions.index(self.robot_positions[i]))
+                #self.has_resource[i] = None
                 reward += self.reward_for_resource # Even if all robots waste time the whole simulation, they will get a reward that makes up for it if they retrieve a resource
                 #self.spawn_resource()
 

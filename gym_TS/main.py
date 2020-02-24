@@ -19,7 +19,7 @@ def main(argv):
                                    ["algorithm=", "team_type=", "generations=", "simulation_length=", "trials=",
                                     "seed=", "num_robots=", "num_resources=", "sensor_range=", "slope_angle=",
                                     "arena_length=", "arena_width=", "cache_start=", "slope_start=", "source_start=",
-                                    "sigma=", "test_model=", "target_fitness=", "population=", "batch_test="])
+                                    "sigma=", "test_model=", "target_fitness=", "population=", "batch_test=", "hardcoded_test="])
 
     except getopt.GetoptError:
         print("There was an error")
@@ -48,6 +48,7 @@ def main(argv):
     target_fitness = 1.0
     population = None
     batch_path = None
+    hardcoded_test = None
 
     # Read in arguments
     for opt, arg in opts:
@@ -101,6 +102,8 @@ def main(argv):
             population = int(arg)
         if opt == "--batch_test":
             batch_path = arg
+        if opt == "--hardcoded_test":
+            hardcoded_test = arg
 
     if bootstrap:
         fitness_calculator = FitnessCalculator(random_seed=random_seed, simulation_length=simulation_length,
@@ -126,7 +129,7 @@ def main(argv):
 
     else:
         # If this is a training run
-        if test_model is None and batch_path is None:
+        if test_model is None and batch_path is None and hardcoded_test is None:
 
             # Prepare fitness function
             fitness_calculator = FitnessCalculator(random_seed=random_seed, simulation_length=simulation_length,
@@ -183,7 +186,7 @@ def main(argv):
                 best_individual_2.save_model(model_name + "_controller2_")
 
         # If this is a testing run
-        elif batch_path is None:
+        elif batch_path is None and hardcoded_test is None:
             model_name = test_model.split("_")
             # CMA_homogeneous_1000_10_10_2_3_1_20_8_4_1_3_7_0.05.npy
             # f"CMA_{team_type}_{simulation_length}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{sigma}"
@@ -279,6 +282,21 @@ def main(argv):
 
             results_file.close()
 
+        elif hardcoded_test is not None:
+            fitness_calculator = FitnessCalculator(random_seed=random_seed, simulation_length=simulation_length,
+                                                   num_trials=num_trials, num_robots=num_robots,
+                                                   num_resources=num_resources,
+                                                   sensor_range=sensor_range, slope_angle=slope_angle,
+                                                   arena_length=arena_length, arena_width=arena_width,
+                                                   cache_start=cache_start,
+                                                   slope_start=slope_start, source_start=source_start)
+
+            fitness = 0
+            specialisation = 0
+
+            fitness, specialisation = fitness_calculator.calculate_hardcoded_fitness(type=hardcoded_test, render=True)
+
+            print(f"Fitness is {fitness} and specialisation is {specialisation}")
 
 # Debugging Tools
 def time_fitness_function():
@@ -397,6 +415,7 @@ def time_cma():
 # python3 main.py --test_model /home/mriz9/Documents/Results/AAMAS/8_SpeedCost/models/Tiny/CMA_heterogeneous_500_300_5_10_2_3_1_40_16_4_1_3_15_0.05_40_controller1_.npy
 # python3 main.py --algorithm bootstrap --team_type homogeneous --generations 1 --simulation_length 1000 --trials 1 --seed 100 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 40 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --target_fitness 1.0
 # python3 main.py --batch_test /home/mriz9/Documents/Results/AAMAS/8_SpeedCost/models/Tiny
+# python3 main.py --hardcoded_test generalist --simulation_length 500 --trials 5 --seed 1 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 40 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7
 
 if __name__ == "__main__":
     main(sys.argv[1:])  # Uncomment for proper runs
