@@ -200,8 +200,8 @@ def rwg(seed_value, calculator, population_size, team_type, target_fitness=1.0):
             print(f"Found an individual with score {fitness} > 0 after {nind} tries")
         #elif nind%10 == 0:
 
-        if nind%50 == 0:
-            print(f"{nind}: Best score is {max_fitness}")
+        #if nind%50 == 0:
+        #    print(f"{nind}: Best score is {max_fitness}")
 
         if fitness > max_fitness:
             max_fitness = fitness
@@ -272,12 +272,12 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
     es = cma.CMAEvolutionStrategy(seed_genome, sigma, options)
 
     log_file_name = model_name + ".log"
-    '''
+    ''''''
     # Send output to log file
     old_stdout = sys.stdout
     log_file = open(log_file_name, "a")
     sys.stdout = log_file
-    '''
+
 
 
     partial_calculator = partial(fitness_calculator.calculate_fitness_negation, team_type=team_type)
@@ -337,10 +337,10 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
 
     print(f"Best score is {es.result[1]}")
 
-    '''
+    ''''''
     sys.stdout = old_stdout
     log_file.close()
-    '''
+
 
 
 
