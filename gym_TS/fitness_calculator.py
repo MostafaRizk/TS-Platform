@@ -268,6 +268,18 @@ class FitnessCalculator:
         elif type == "specialist":
             individual1 = HardcodedDropperAgent()
             individual2 = HardcodedCollectorAgent()
+        elif type == "mixed_dropper":
+            individual1 = HardcodedGeneralistAgent()
+            individual2 = HardcodedDropperAgent()
+        elif type == "mixed_collector":
+            individual1 = HardcodedGeneralistAgent()
+            individual2 = HardcodedCollectorAgent()
+        elif type == "double_dropper":
+            individual1 = HardcodedDropperAgent()
+            individual2 = HardcodedDropperAgent()
+        elif type == "double_collector":
+            individual1 = HardcodedCollectorAgent()
+            individual2 = HardcodedCollectorAgent()
         else:
             raise RuntimeError("Hardcoding type must be either generalist or specialist")
 
