@@ -196,10 +196,13 @@ def main(argv):
             # for i in range(len(model_name)):
             #    print(f"{i} - {model_name[i]}")
 
+            if num_resources is None:
+                num_resources = int(model_name[8])
+
             # Prepare fitness function
             fitness_calculator = FitnessCalculator(random_seed=int(model_name[6]), simulation_length=int(model_name[3]),
                                                    num_trials=5, num_robots=int(model_name[7]),
-                                                   num_resources=int(model_name[8]),
+                                                   num_resources=num_resources,
                                                    sensor_range=int(model_name[9]), slope_angle=int(model_name[10]),
                                                    arena_length=int(model_name[11]), arena_width=int(model_name[12]),
                                                    cache_start=int(model_name[13]),
@@ -218,9 +221,9 @@ def main(argv):
                 controller2 = np.load(test_model2)
                 full_genome = np.concatenate([controller1, controller2])
 
-            specialisation = fitness_calculator.calculate_ferrante_specialisation(full_genome, team_type=model_name[2],
+            fitness, specialisation = fitness_calculator.calculate_ferrante_specialisation(full_genome, team_type=model_name[2],
                                                                                   render=True)
-            # print(f"Specialisation is {specialisation}")
+            print(f"Fitness is {fitness} and specialisation is {specialisation}")
 
         # If this is a batch testing run
         elif batch_path is not None:
@@ -294,7 +297,7 @@ def main(argv):
             fitness = 0
             specialisation = 0
 
-            fitness, specialisation = fitness_calculator.calculate_hardcoded_fitness(type=hardcoded_test, render=False)
+            fitness, specialisation = fitness_calculator.calculate_hardcoded_fitness(type=hardcoded_test, render=True)
 
             print(f"Fitness is {fitness} and specialisation is {specialisation}")
 
