@@ -11,10 +11,16 @@ from gym_TS.agents.HardcodedGeneralistAgent import HardcodedGeneralistAgent
 
 
 class FitnessCalculator:
-    def __init__(self, random_seed, simulation_length, num_trials, num_robots, num_resources, sensor_range, slope_angle, arena_length, arena_width, cache_start, slope_start, source_start):
+    def __init__(self, random_seed, simulation_length, num_trials, num_robots, num_resources, sensor_range, slope_angle,
+                 arena_length, arena_width, cache_start, slope_start, source_start, upward_cost_factor, downward_cost_factor,
+                 carry_factor, resource_reward_factor):
+
         self.env = gym.make('gym_TS:TS-v1', num_robots=num_robots, num_resources=num_resources,
-                            sensor_range=sensor_range, slope_angle=slope_angle, arena_length=arena_length, arena_width=arena_width,
-                            cache_start=cache_start, slope_start=slope_start, source_start=source_start)
+                            sensor_range=sensor_range, slope_angle=slope_angle, arena_length=arena_length,
+                            arena_width=arena_width, cache_start=cache_start, slope_start=slope_start,
+                            source_start=source_start, upward_cost_factor=upward_cost_factor,
+                            downward_cost_factor=downward_cost_factor, carry_factor=carry_factor,
+                            resource_reward_factor=resource_reward_factor)
         # env = gym.wrappers.Monitor(env, 'video', force = True) # Uncomment to save video
 
         # Get size of input and output space and creates agent

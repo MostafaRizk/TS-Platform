@@ -28,7 +28,9 @@ class TSMultiEnv(gym.Env):
         'video.frames_per_second': 30
     }
 
-    def __init__(self, num_robots=4, num_resources=5, sensor_range=1, slope_angle=20, arena_length=12, arena_width=8, cache_start=1, slope_start=3, source_start=9):
+    def __init__(self, num_robots=4, num_resources=5, sensor_range=1, slope_angle=20, arena_length=12, arena_width=8,
+                 cache_start=1, slope_start=3, source_start=9, upward_cost_factor=3, downward_cost_factor=0.2,
+                 carry_factor=1, resource_reward_factor=1000):
         """
         Initialises constants and variables for robots, resources and environment
         :param
@@ -58,7 +60,10 @@ class TSMultiEnv(gym.Env):
         self.resource_height = 0.6
         self.sliding_speed = int(self.slope_angle / 10)
         self.base_cost = 1
-        self.reward_for_resource = 1000*self.base_cost
+        self.reward_for_resource = resource_reward_factor*self.base_cost
+        self.upward_cost_factor = upward_cost_factor
+        self.downward_cost_factor = downward_cost_factor
+        self.carry_factor = carry_factor
 
         # Other constants/variables
         self.num_robots = num_robots
@@ -158,23 +163,31 @@ class TSMultiEnv(gym.Env):
         old_robot_positions = copy.deepcopy(self.robot_positions)
 
         for i in range(len(robot_actions)):
+            cost_multiplier = 1
+
+            # If robot is carrying something, multiply the cost of moving
+            if self.has_resource[i] is not None:
+                cost_multiplier = self.carry_factor
+
             if robot_actions[i] < 4:
                 self.behaviour_map[robot_actions[i]](i)
 
                 # More costly for robot to move up the slope than down
                 if self.get_area_from_position(self.robot_positions[i]) == "SLOPE":
                     if self.action_name[robot_actions[i]] == "FORWARD":
-                        reward -= 3*self.base_cost
+                        reward -= self.upward_cost_factor *self.base_cost*cost_multiplier
+
                     elif self.action_name[robot_actions[i]] == "BACKWARD":
-                        reward -= self.base_cost/5
+                        reward -= self.base_cost*self.downward_cost_factor*cost_multiplier
+
                     else:
-                        reward -= self.base_cost
+                        reward -= self.base_cost*cost_multiplier
+
+                # Negative reward for moving when not on slope. Same as having a battery
                 else:
-                    reward -= self.base_cost  # Negative reward for moving. Same as having a battery
+                    reward -= self.base_cost*cost_multiplier
 
-                #if self.has_resource[i] is not None:
-                #    reward -= self.base_cost
-
+            # Negative reward for dropping/picking up but is not affected by resource weight
             else:
                 reward -= self.base_cost
 

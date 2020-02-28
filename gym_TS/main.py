@@ -11,15 +11,15 @@ from fitness_calculator import FitnessCalculator
 
 from learning_algorithms import cma_es
 from learning_algorithms import rwg
-
-
 def main(argv):
     try:
         opts, args = getopt.getopt(argv, "",
                                    ["algorithm=", "team_type=", "generations=", "simulation_length=", "trials=",
                                     "seed=", "num_robots=", "num_resources=", "sensor_range=", "slope_angle=",
                                     "arena_length=", "arena_width=", "cache_start=", "slope_start=", "source_start=",
-                                    "sigma=", "test_model=", "target_fitness=", "population=", "batch_test=", "hardcoded_test="])
+                                    "sigma=", "test_model=", "target_fitness=", "population=", "batch_test=",
+                                    "hardcoded_test=", "upward_cost_factor=", "downward_cost_factor=", "carry_factor=",
+                                    "resource_reward_factor="])
 
     except getopt.GetoptError:
         print("There was an error")
@@ -43,6 +43,10 @@ def main(argv):
     cache_start = None
     slope_start = None
     source_start = None
+    upward_cost_factor = None
+    downward_cost_factor = None
+    carry_factor = None
+    resource_reward_factor = None
     sigma = None
     test_model = None
     target_fitness = 1.0
@@ -92,6 +96,14 @@ def main(argv):
             slope_start = int(arg)
         if opt == "--source_start":
             source_start = int(arg)
+        if opt == "--upward_cost_factor":
+            upward_cost_factor = float(arg)
+        if opt == "--downward_cost_factor":
+            downward_cost_factor = float(arg)
+        if opt == "--carry_factor":
+            carry_factor = float(arg)
+        if opt == "--resource_reward_factor":
+            resource_reward_factor = float(arg)
         if opt == "--sigma":
             sigma = float(arg)
         if opt == "--test_model":
@@ -112,13 +124,16 @@ def main(argv):
                                                sensor_range=sensor_range, slope_angle=slope_angle,
                                                arena_length=arena_length, arena_width=arena_width,
                                                cache_start=cache_start,
-                                               slope_start=slope_start, source_start=source_start)
+                                               slope_start=slope_start, source_start=source_start,
+                                               upward_cost_factor=upward_cost_factor,
+                                               downward_cost_factor=downward_cost_factor, carry_factor=carry_factor,
+                                               resource_reward_factor=resource_reward_factor)
 
         best_genome, best_fitness = training_algorithm(seed_value=random_seed, calculator=fitness_calculator,
                                                        population_size=num_generations, team_type=team_type,
                                                        target_fitness=target_fitness)
 
-        model_name = f"bootstrap_{team_type}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{best_fitness}"
+        model_name = f"bootstrap_{team_type}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{upward_cost_factor}_{downward_cost_factor}_{carry_factor}_{resource_reward_factor}_{best_fitness}"
 
         directory = "models/bootstrap/"
 
@@ -138,9 +153,12 @@ def main(argv):
                                                    sensor_range=sensor_range, slope_angle=slope_angle,
                                                    arena_length=arena_length, arena_width=arena_width,
                                                    cache_start=cache_start,
-                                                   slope_start=slope_start, source_start=source_start)
+                                                   slope_start=slope_start, source_start=source_start,
+                                                   upward_cost_factor=upward_cost_factor,
+                                                   downward_cost_factor=downward_cost_factor, carry_factor=carry_factor,
+                                                   resource_reward_factor=resource_reward_factor)
 
-            model_name = f"CMA_{team_type}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{sigma}_{population}"
+            model_name = f"CMA_{team_type}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{upward_cost_factor}_{downward_cost_factor}_{carry_factor}_{resource_reward_factor}_{sigma}_{population}"
 
             # Create results file if it doesn't exist
             results_file_name = "results.csv"
@@ -149,7 +167,7 @@ def main(argv):
                 pass
             else:
                 results_file = open(results_file_name, 'w')
-                results_file.write("Algorithm Name, Team Type, Simulation Length, Num Generations, Num Trials, Random Seed, Num Robots, Num Resources, Sensor Range, Slope Angle, Arena Length, Arena Width, Cache Start, Slope Start, Source Start, Sigma, Population, Log File, Seed Fitness, Evolved Fitness\n")
+                results_file.write("Algorithm Name, Team Type, Simulation Length, Num Generations, Num Trials, Random Seed, Num Robots, Num Resources, Sensor Range, Slope Angle, Arena Length, Arena Width, Cache Start, Slope Start, Source Start, Upward cost factor, Downward cost factor, Carry Factor, Resource reward factor, Sigma, Population, Log File, Seed Fitness, Evolved Fitness\n")
                 results_file.close()
 
             print(f"Evaluating {model_name}")
@@ -206,7 +224,10 @@ def main(argv):
                                                    sensor_range=int(model_name[9]), slope_angle=int(model_name[10]),
                                                    arena_length=int(model_name[11]), arena_width=int(model_name[12]),
                                                    cache_start=int(model_name[13]),
-                                                   slope_start=int(model_name[14]), source_start=int(model_name[15]))
+                                                   slope_start=int(model_name[14]), source_start=int(model_name[15]),
+                                                   upward_cost_factor=upward_cost_factor,
+                                                   downward_cost_factor=downward_cost_factor, carry_factor=carry_factor,
+                                                   resource_reward_factor=resource_reward_factor)
 
             team_type = model_name[2]
 
@@ -255,7 +276,11 @@ def main(argv):
                                                            arena_width=int(model_name[11]),
                                                            cache_start=int(model_name[12]),
                                                            slope_start=int(model_name[13]),
-                                                           source_start=int(model_name[14]))
+                                                           source_start=int(model_name[14]),
+                                                           upward_cost_factor=upward_cost_factor,
+                                                           downward_cost_factor=downward_cost_factor,
+                                                           carry_factor=carry_factor,
+                                                           resource_reward_factor=resource_reward_factor)
 
                     team_type = model_name[1]
                     model_path = batch_path + "/" + filename
@@ -292,7 +317,10 @@ def main(argv):
                                                    sensor_range=sensor_range, slope_angle=slope_angle,
                                                    arena_length=arena_length, arena_width=arena_width,
                                                    cache_start=cache_start,
-                                                   slope_start=slope_start, source_start=source_start)
+                                                   slope_start=slope_start, source_start=source_start,
+                                                   upward_cost_factor=upward_cost_factor,
+                                                   downward_cost_factor=downward_cost_factor, carry_factor=carry_factor,
+                                                   resource_reward_factor=resource_reward_factor)
 
             fitness = 0
             specialisation = 0
@@ -301,122 +329,10 @@ def main(argv):
 
             print(f"Fitness is {fitness} and specialisation is {specialisation}")
 
-# Debugging Tools
-def time_fitness_function():
-    # team_type = "homogeneous"
-    team_type = "heterogeneous"
-
-    fitness_calculator = FitnessCalculator(random_seed=1, simulation_length=1000,
-                                           num_trials=1, num_robots=2,
-                                           num_resources=3,
-                                           sensor_range=1, slope_angle=40,
-                                           arena_length=8, arena_width=4,
-                                           cache_start=1,
-                                           slope_start=3, source_start=7)
-
-    full_genome = None
-
-    if team_type == "homogeneous":
-        individual = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), seed=1)
-        individual.load_weights()  # No parameters means random weights are generated
-        full_genome = individual.get_weights()
-    elif team_type == "heterogeneous":
-        individual1 = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), seed=1)
-        individual2 = TinyAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), seed=1)
-        individual1.load_weights()  # No parameters means random weights are generated
-        individual2.load_weights()
-        full_genome = np.concatenate([individual1.get_weights(), individual2.get_weights()])
-
-    import time
-
-    print("It is beginning")
-
-    avg_time_taken = 0
-    num_iterations = 30
-
-    for i in range(num_iterations):
-        start = time.time()
-        score = fitness_calculator.calculate_fitness_negation(full_genome, team_type=team_type, render=False)  # True)#
-        end = time.time()
-
-        time_taken = end - start
-        avg_time_taken += time_taken
-
-    avg_time_taken /= num_iterations
-
-    print(f"It took {avg_time_taken}")
-
-
-def time_rwg():
-    team_type = "homogeneous"
-    # team_type = "heterogeneous"
-
-    fitness_calculator = FitnessCalculator(random_seed=1, simulation_length=100,
-                                           num_trials=1, num_robots=2,
-                                           num_resources=3,
-                                           sensor_range=1, slope_angle=40,
-                                           arena_length=8, arena_width=4,
-                                           cache_start=1,
-                                           slope_start=3, source_start=7)
-
-    import time
-
-    print("It is beginning")
-
-    avg_time_taken = 0
-    num_iterations = 1
-
-    for i in range(num_iterations):
-        start = time.time()
-        seed_genome = rwg(seed_value=1, calculator=fitness_calculator, population_size=5000, team_type=team_type,
-                          model_name="debugging")
-        end = time.time()
-
-        time_taken = end - start
-        avg_time_taken += time_taken
-
-    avg_time_taken /= num_iterations
-
-    print(f"It took {avg_time_taken}")
-
-
-def time_cma():
-    team_type = "homogeneous"
-    # team_type = "heterogeneous"
-
-    fitness_calculator = FitnessCalculator(random_seed=1, simulation_length=100,
-                                           num_trials=1, num_robots=2,
-                                           num_resources=3,
-                                           sensor_range=1, slope_angle=40,
-                                           arena_length=8, arena_width=4,
-                                           cache_start=1,
-                                           slope_start=3, source_start=7)
-
-    import time
-
-    print("It is beginning")
-
-    avg_time_taken = 0
-    num_iterations = 1
-
-    for i in range(num_iterations):
-        start = time.time()
-        seed_genome = rwg(seed_value=1, calculator=fitness_calculator, population_size=5000, team_type=team_type,
-                          model_name="debugging")
-        end = time.time()
-
-        time_taken = end - start
-        avg_time_taken += time_taken
-
-    avg_time_taken /= num_iterations
-
-    print(f"It took {avg_time_taken}")
-
-
 # To run, use:
-# python3 main.py --algorithm cma --team_type homogeneous --simulation_length 1000 --generations 20 --trials 5 --seed 4 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 40 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --sigma 0.05 --population 40
+# python3 main.py --algorithm bootstrap --team_type homogeneous --generations 500 --simulation_length 500 --trials 5  --seed 1 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 40 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --upward_cost_factor 3 --downward_cost_factor 0.2 --carry_factor 10 --resource_reward_factor 1000 --target_fitness 100
+# python3 main.py --algorithm cma --team_type homogeneous --generations 5000 --simulation_length 500 --trials 5  --seed 1 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 40 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --upward_cost_factor 3 --downward_cost_factor 0.2 --carry_factor 10 --resource_reward_factor 1000 --sigma 0.2 --population 40
 # python3 main.py --test_model /home/mriz9/Documents/Results/AAMAS/8_SpeedCost/models/Tiny/CMA_heterogeneous_500_300_5_10_2_3_1_40_16_4_1_3_15_0.05_40_controller1_.npy
-# python3 main.py --algorithm bootstrap --team_type homogeneous --generations 1 --simulation_length 1000 --trials 1 --seed 100 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 40 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --target_fitness 1.0
 # python3 main.py --batch_test /home/mriz9/Documents/Results/AAMAS/8_SpeedCost/models/Tiny
 # python3 main.py --hardcoded_test generalist --simulation_length 500 --trials 5 --seed 1 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 40 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7
 
