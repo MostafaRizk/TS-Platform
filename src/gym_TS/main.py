@@ -11,6 +11,8 @@ from fitness_calculator import FitnessCalculator
 
 from learning_algorithms import cma_es
 from learning_algorithms import rwg
+
+
 def main(argv):
     try:
         opts, args = getopt.getopt(argv, "",
