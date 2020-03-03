@@ -2,6 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ac30a3b7-38c5-4d93-8cae-946ced62bf98" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/agents/TinyAgent.py" beforeDir="false" afterPath="$PROJECT_DIR$/agents/TinyAgent.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/envs/TS_env_multi.py" beforeDir="false" afterPath="$PROJECT_DIR$/envs/TS_env_multi.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fitness_calculator.py" beforeDir="false" afterPath="$PROJECT_DIR$/fitness_calculator.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/learning_algorithms.py" beforeDir="false" afterPath="$PROJECT_DIR$/learning_algorithms.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -20,8 +23,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/fitness_calculator.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-288">
-              <caret line="49" selection-start-line="49" selection-end-line="49" />
+            <state relative-caret-position="486">
+              <caret line="74" column="44" lean-forward="true" selection-start-line="74" selection-start-column="44" selection-end-line="74" selection-end-column="44" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
                 <element signature="e#6351#10579#0" />
@@ -30,11 +33,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/envs/TS_env_multi.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="148">
-              <caret line="139" selection-start-line="139" selection-end-line="139" />
+            <state relative-caret-position="495">
+              <caret line="98" lean-forward="true" selection-start-line="98" selection-end-line="98" />
             </state>
           </provider>
         </entry>
@@ -51,8 +54,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="577">
-              <caret line="180" selection-start-line="180" selection-end-line="180" />
+            <state relative-caret-position="315">
+              <caret line="151" column="44" selection-start-line="151" selection-start-column="44" selection-end-line="151" selection-end-column="44" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -60,11 +63,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/learning_algorithms.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="267">
-              <caret line="75" column="4" lean-forward="true" selection-start-line="75" selection-start-column="4" selection-end-line="75" selection-end-column="4" />
+            <state relative-caret-position="258">
+              <caret line="72" column="11" selection-start-line="72" selection-start-column="11" selection-end-line="72" selection-end-column="11" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
                 <element signature="e#6292#8546#0" />
@@ -76,8 +79,11 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/agents/TinyAgent.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state>
-              <caret column="9" selection-start-column="9" selection-end-column="9" />
+            <state relative-caret-position="183">
+              <caret line="14" column="8" selection-start-line="14" selection-start-column="8" selection-end-line="14" selection-end-column="8" />
+              <folding>
+                <element signature="e#0#14#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -92,11 +98,12 @@
       <list>
         <option value="$PROJECT_DIR$/agents/DQNAgent.py" />
         <option value="$PROJECT_DIR$/envs/TS_env_simplified.py" />
-        <option value="$PROJECT_DIR$/agents/TinyAgent.py" />
-        <option value="$PROJECT_DIR$/fitness_calculator.py" />
         <option value="$PROJECT_DIR$/TS_NE.py" />
         <option value="$PROJECT_DIR$/main.py" />
+        <option value="$PROJECT_DIR$/fitness_calculator.py" />
+        <option value="$PROJECT_DIR$/agents/TinyAgent.py" />
         <option value="$PROJECT_DIR$/learning_algorithms.py" />
+        <option value="$PROJECT_DIR$/envs/TS_env_multi.py" />
       </list>
     </option>
   </component>
@@ -132,6 +139,19 @@
               <item name="gym_TS" type="b2602c69:ProjectViewProjectNode" />
               <item name="gym_TS" type="462c0819:PsiDirectoryNode" />
               <item name="envs" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="gym_TS" type="b2602c69:ProjectViewProjectNode" />
+              <item name="gym_TS" type="462c0819:PsiDirectoryNode" />
+              <item name="envs" type="462c0819:PsiDirectoryNode" />
+              <item name="TS_env_multi.py" type="8704e2dd:PyFileNode" />
+            </path>
+            <path>
+              <item name="gym_TS" type="b2602c69:ProjectViewProjectNode" />
+              <item name="gym_TS" type="462c0819:PsiDirectoryNode" />
+              <item name="envs" type="462c0819:PsiDirectoryNode" />
+              <item name="TS_env_multi.py" type="8704e2dd:PyFileNode" />
+              <item name="TSMultiEnv" type="dd8bbb05:PyElementNode" />
             </path>
           </expand>
           <select />
@@ -204,24 +224,24 @@
       <workItem from="1574309198232" duration="731000" />
       <workItem from="1574910557924" duration="53000" />
       <workItem from="1575951088666" duration="719000" />
-      <workItem from="1583198269964" duration="1687000" />
+      <workItem from="1583198269964" duration="3819000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="6344000" />
+    <option name="totallyTimeSpent" value="8476000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="2560" height="1440" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.26568705" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.26568705" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
-      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.32962137" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.32919955" />
-      <window_info active="true" anchor="bottom" id="Debug" order="3" visible="true" weight="0.37861916" />
+      <window_info anchor="bottom" id="Debug" order="3" visible="true" weight="0.37861916" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
@@ -264,12 +284,17 @@
           <line>148</line>
           <option name="timeStamp" value="4" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/fitness_calculator.py</url>
+          <line>61</line>
+          <option name="timeStamp" value="5" />
+        </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/gym_TS$Pipenv_.coverage" NAME="Pipenv  Coverage Results" MODIFIED="1574135575500" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
-    <SUITE FILE_PATH="coverage/gym_TS$TS_NE.coverage" NAME="Debug run Coverage Results" MODIFIED="1583201085546" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/gym_TS$TS_NE.coverage" NAME="Debug run Coverage Results" MODIFIED="1583202104759" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/TS_test.py" />
@@ -282,24 +307,6 @@
     <entry file="file://$PROJECT_DIR$/agents/GEAgent.py">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
-    <entry file="file://$PROJECT_DIR$/agents/TinyAgent.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret column="9" selection-start-column="9" selection-end-column="9" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/fitness_calculator.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-288">
-          <caret line="49" selection-start-line="49" selection-end-line="49" />
-          <folding>
-            <element signature="e#0#10#0" expanded="true" />
-            <element signature="e#6351#10579#0" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file:///usr/local/Cellar/python/3.7.4/Frameworks/Python.framework/Versions/3.7/lib/python3.7/tokenize.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="18">
@@ -307,31 +314,70 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/envs/TS_env_multi.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="148">
-          <caret line="139" selection-start-line="139" selection-end-line="139" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="577">
-          <caret line="180" selection-start-line="180" selection-end-line="180" />
+        <state relative-caret-position="315">
+          <caret line="151" column="44" selection-start-line="151" selection-start-column="44" selection-end-line="151" selection-end-column="44" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/agents/TinyAgent.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="183">
+          <caret line="14" column="8" selection-start-line="14" selection-start-column="8" selection-end-line="14" selection-end-column="8" />
+          <folding>
+            <element signature="e#0#14#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/fitness_calculator.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="486">
+          <caret line="74" column="44" lean-forward="true" selection-start-line="74" selection-start-column="44" selection-end-line="74" selection-end-column="44" />
+          <folding>
+            <element signature="e#0#10#0" expanded="true" />
+            <element signature="e#6351#10579#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/learning_algorithms.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="267">
-          <caret line="75" column="4" lean-forward="true" selection-start-line="75" selection-start-column="4" selection-end-line="75" selection-end-column="4" />
+        <state relative-caret-position="258">
+          <caret line="72" column="11" selection-start-line="72" selection-start-column="11" selection-end-line="72" selection-end-column="11" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
             <element signature="e#6292#8546#0" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="uml://Python/envs.TS_env_multi.TSMultiEnv">
+      <provider selected="true" editor-type-id="UmlEditorProvider">
+        <state>
+          <ID>Python</ID>
+          <OriginalElement>envs.TS_env_multi.TSMultiEnv</OriginalElement>
+          <nodes>
+            <node x="" y="">gym.core.Env</node>
+            <node x="" y="">object</node>
+            <node x="" y="">envs.TS_env_multi.TSMultiEnv</node>
+          </nodes>
+          <notes />
+          <edges />
+          <settings layout="Hierarchic Group" zoom="1.0" x="155.0" y="93.5" />
+          <SelectedNodes />
+          <Categories />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/envs/TS_env_multi.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="495">
+          <caret line="98" lean-forward="true" selection-start-line="98" selection-end-line="98" />
         </state>
       </provider>
     </entry>
