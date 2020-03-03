@@ -2,13 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ac30a3b7-38c5-4d93-8cae-946ced62bf98" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/../Pipfile.lock" beforeDir="false" afterPath="$PROJECT_DIR$/../Pipfile.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/gym_TS.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gym_TS.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/learning_algorithms.py" beforeDir="false" afterPath="$PROJECT_DIR$/learning_algorithms.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -69,15 +63,10 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/learning_algorithms.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="457">
-              <caret line="249" column="80" lean-forward="true" selection-start-line="249" selection-start-column="80" selection-end-line="249" selection-end-column="80" />
+            <state relative-caret-position="267">
+              <caret line="75" column="4" lean-forward="true" selection-start-line="75" selection-start-column="4" selection-end-line="75" selection-end-column="4" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
-                <element signature="e#277#296#0" />
-                <element signature="e#537#4761#0" />
-                <element signature="e#537#559#0" />
-                <element signature="e#4962#5070#0" />
-                <element signature="e#5144#6204#0" />
                 <element signature="e#6292#8546#0" />
               </folding>
             </state>
@@ -215,12 +204,12 @@
       <workItem from="1574309198232" duration="731000" />
       <workItem from="1574910557924" duration="53000" />
       <workItem from="1575951088666" duration="719000" />
-      <workItem from="1583198269964" duration="1339000" />
+      <workItem from="1583198269964" duration="1687000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="5996000" />
+    <option name="totallyTimeSpent" value="6344000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="2560" height="1440" extended-state="6" />
@@ -337,15 +326,10 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/learning_algorithms.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="457">
-          <caret line="249" column="80" lean-forward="true" selection-start-line="249" selection-start-column="80" selection-end-line="249" selection-end-column="80" />
+        <state relative-caret-position="267">
+          <caret line="75" column="4" lean-forward="true" selection-start-line="75" selection-start-column="4" selection-end-line="75" selection-end-column="4" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
-            <element signature="e#277#296#0" />
-            <element signature="e#537#4761#0" />
-            <element signature="e#537#559#0" />
-            <element signature="e#4962#5070#0" />
-            <element signature="e#5144#6204#0" />
             <element signature="e#6292#8546#0" />
           </folding>
         </state>
