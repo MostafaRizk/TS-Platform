@@ -15,10 +15,10 @@ class TinyAgent:
     def __init__(self, observation_size, action_size, seed=None,):
         # Hidden layers are arbitrarily added
         self.hidden = []
-        self.net_struct = [observation_size, *self.hidden, action_size]
+        self.net_structure = [observation_size, *self.hidden, action_size]
 
         # Network setup is straightforward (defaults: `act_fn=np.tanh, init_weights=None`)
-        self.net = tinynet.RNN(self.net_struct, act_fn=linear_activation)
+        self.net = tinynet.RNN(self.net_structure, act_fn=linear_activation)
         self.np_random, seed = seeding.np_random(seed)
 
     def get_weights(self):
@@ -27,8 +27,10 @@ class TinyAgent:
     def get_num_weights(self):
         return self.net.nweights
 
-    def load_weights(self, weights=[]):
-        if weights == []:
+    def load_weights(self, weights=None):
+        if weights is None:
+            weights = []
+        if not weights:
             weights = self.np_random.randn(self.net.nweights)
         self.net.set_weights(weights)
 

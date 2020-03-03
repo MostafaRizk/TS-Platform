@@ -131,10 +131,8 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
     log_file = open(log_file_name, "a")
     sys.stdout = log_file
 
-
-
     partial_calculator = partial(fitness_calculator.calculate_fitness_negation, team_type=team_type)
-    #es.optimize(partial_calculator)
+    # es.optimize(partial_calculator)
 
     while not es.stop():
         solutions = es.ask()

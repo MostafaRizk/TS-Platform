@@ -11,6 +11,7 @@ from gym_TS.agents.HardcodedGeneralistAgent import HardcodedGeneralistAgent
 
 
 class FitnessCalculator:
+
     def __init__(self, random_seed, simulation_length, num_trials, num_robots, num_resources, sensor_range, slope_angle,
                  arena_length, arena_width, cache_start, slope_start, source_start, upward_cost_factor, downward_cost_factor,
                  carry_factor, resource_reward_factor):
@@ -67,7 +68,7 @@ class FitnessCalculator:
         else:
             full_genome = individual1.get_weights()
 
-        individual2 = None
+        individual_2 = None
 
         for trial in range(self.num_trials):
             if team_type == "homogeneous":
@@ -81,7 +82,7 @@ class FitnessCalculator:
                 temp_individual.load_weights(full_genome[0:mid])
                 individual1 = temp_individual
                 temp_individual.load_weights(full_genome[mid:])
-                individual2 = temp_individual
+                individual_2 = temp_individual
 
             self.env.seed(temp_seed)  # makes fitness deterministic
             observations = self.env.reset()
@@ -109,7 +110,7 @@ class FitnessCalculator:
                         if i % 2 == 0:
                             robot_actions += [individual1.act(observations[i])]
                         else:
-                            robot_actions += [individual2.act(observations[i])]
+                            robot_actions += [individual_2.act(observations[i])]
 
                 # The environment changes according to all their actions
                 old_observations = observations[:]

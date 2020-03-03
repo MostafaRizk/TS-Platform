@@ -89,13 +89,13 @@ class TSMultiEnv(gym.Env):
         try:
             self.robot_transforms = [rendering.Transform() for i in range(self.num_robots)]
             self.resource_transforms = [rendering.Transform() for i in range(self.default_num_resources)]
+
         except:
             pass
 
-        self.robot_positions = [None for i in range(self.num_robots)]
-        self.resource_positions = [None for i in range(self.default_num_resources)]
-
-        self.resource_carried_by = [[] for i in range(self.default_num_resources)]
+        self.robot_positions = [None]*self.num_robots
+        self.resource_positions = [None]*self.default_num_resources
+        self.resource_carried_by = [[]]*self.default_num_resources
 
         # Observation space
         #
