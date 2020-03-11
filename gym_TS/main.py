@@ -225,16 +225,16 @@ def main(argv):
                                                    arena_length=int(model_name[11]), arena_width=int(model_name[12]),
                                                    cache_start=int(model_name[13]),
                                                    slope_start=int(model_name[14]), source_start=int(model_name[15]),
-                                                   upward_cost_factor=upward_cost_factor,
-                                                   downward_cost_factor=downward_cost_factor, carry_factor=carry_factor,
-                                                   resource_reward_factor=resource_reward_factor)
+                                                   upward_cost_factor=float(model_name[16]),
+                                                   downward_cost_factor=float(model_name[17]), carry_factor=float(model_name[18]),
+                                                   resource_reward_factor=float(model_name[19]))
 
             team_type = model_name[2]
 
             if team_type == "homogeneous":
                 full_genome = np.load(test_model)
             elif team_type == "heterogeneous":
-                if model_name[18] != "controller1":
+                if model_name[22] != "controller1":
                     raise RuntimeError("Use controller 1's path")
 
                 controller1 = np.load(test_model)
@@ -243,7 +243,7 @@ def main(argv):
                 full_genome = np.concatenate([controller1, controller2])
 
             fitness, specialisation = fitness_calculator.calculate_ferrante_specialisation(full_genome, team_type=model_name[2],
-                                                                                  render=True)
+                                                                                  render=False)
             print(f"Fitness is {fitness} and specialisation is {specialisation}")
 
         # If this is a batch testing run
@@ -277,10 +277,10 @@ def main(argv):
                                                            cache_start=int(model_name[12]),
                                                            slope_start=int(model_name[13]),
                                                            source_start=int(model_name[14]),
-                                                           upward_cost_factor=upward_cost_factor,
-                                                           downward_cost_factor=downward_cost_factor,
-                                                           carry_factor=carry_factor,
-                                                           resource_reward_factor=resource_reward_factor)
+                                                           upward_cost_factor=float(model_name[15]),
+                                                           downward_cost_factor=float(model_name[16]),
+                                                           carry_factor=float(model_name[17]),
+                                                           resource_reward_factor=float(model_name[18]))
 
                     team_type = model_name[1]
                     model_path = batch_path + "/" + filename
