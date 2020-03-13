@@ -35,18 +35,6 @@ class TinyAgent:
     def act(self, observation):
         return self.net.activate(observation).argmax()
 
-    def save_model(self, name, sub_dir=None):
+    def save_model(self, name):
         weights = self.net.get_weights()
-
-        directory = "models/Tiny/"
-        if sub_dir is not None:
-            directory += "/" + sub_dir + "/"
-
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-
-        #now = datetime.now()
-        #timestamp = datetime.timestamp(now)
-
-        #np.save(directory +"weights_"+ name + "_" + str(timestamp), weights)
-        np.save(directory + name, weights)
+        np.save(name, weights)

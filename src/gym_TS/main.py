@@ -132,14 +132,9 @@ def main(argv):
                                                        population_size=num_generations, team_type=team_type,
                                                        target_fitness=target_fitness)
 
-        model_name = f"bootstrap_{team_type}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{upward_cost_factor}_{downward_cost_factor}_{carry_factor}_{resource_reward_factor}_{best_fitness}"
+        model_name = f"bootstrap_{team_type}_{simulation_length}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{upward_cost_factor}_{downward_cost_factor}_{carry_factor}_{resource_reward_factor}"
 
-        directory = "models/bootstrap/"
-
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-
-        np.save(directory + model_name, best_genome)
+        np.save(model_name, best_genome)
 
     else:
         # If this is a training run
