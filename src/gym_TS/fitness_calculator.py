@@ -2,27 +2,37 @@ import gym
 import numpy as np
 import time
 
-from agents.TinyAgent import TinyAgent
+from src.gym_TS.agents.TinyAgent import TinyAgent
 from gym.utils import seeding
+from src.gym_TS.envs.gymless_env import GymlessEnv
 
-from gym_TS.agents.HardcodedCollectorAgent import HardcodedCollectorAgent
-from gym_TS.agents.HardcodedDropperAgent import HardcodedDropperAgent
-from gym_TS.agents.HardcodedGeneralistAgent import HardcodedGeneralistAgent
+from src.gym_TS.agents.HardcodedCollectorAgent import HardcodedCollectorAgent
+from src.gym_TS.agents.HardcodedDropperAgent import HardcodedDropperAgent
+from src.gym_TS.agents.HardcodedGeneralistAgent import HardcodedGeneralistAgent
 
 
 class FitnessCalculator:
 
     def __init__(self, random_seed, simulation_length, num_trials, num_robots, num_resources, sensor_range, slope_angle,
                  arena_length, arena_width, cache_start, slope_start, source_start, upward_cost_factor, downward_cost_factor,
-                 carry_factor, resource_reward_factor):
+                 carry_factor, resource_reward_factor, using_gym=False):
 
-        self.env = gym.make('gym_TS:TS-v1', num_robots=num_robots, num_resources=num_resources,
-                            sensor_range=sensor_range, slope_angle=slope_angle, arena_length=arena_length,
-                            arena_width=arena_width, cache_start=cache_start, slope_start=slope_start,
-                            source_start=source_start, upward_cost_factor=upward_cost_factor,
-                            downward_cost_factor=downward_cost_factor, carry_factor=carry_factor,
-                            resource_reward_factor=resource_reward_factor)
-        # env = gym.wrappers.Monitor(env, 'video', force = True) # Uncomment to save video
+        if using_gym:
+            self.env = gym.make('src.gym_TS:TS-v1', num_robots=num_robots, num_resources=num_resources,
+                                sensor_range=sensor_range, slope_angle=slope_angle, arena_length=arena_length,
+                                arena_width=arena_width, cache_start=cache_start, slope_start=slope_start,
+                                source_start=source_start, upward_cost_factor=upward_cost_factor,
+                                downward_cost_factor=downward_cost_factor, carry_factor=carry_factor,
+                                resource_reward_factor=resource_reward_factor)
+            # env = gym.wrappers.Monitor(env, 'video', force = True) # Uncomment to save video
+
+        else:
+            self.env = GymlessEnv(num_robots=num_robots, num_resources=num_resources,
+                                sensor_range=sensor_range, slope_angle=slope_angle, arena_length=arena_length,
+                                arena_width=arena_width, cache_start=cache_start, slope_start=slope_start,
+                                source_start=source_start, upward_cost_factor=upward_cost_factor,
+                                downward_cost_factor=downward_cost_factor, carry_factor=carry_factor,
+                                resource_reward_factor=resource_reward_factor)
 
         # Get size of input and output space and creates agent
         self.observation_size = self.env.get_observation_size()
@@ -32,8 +42,9 @@ class FitnessCalculator:
         self.random_seed = random_seed
         self.np_random, self.random_seed = seeding.np_random(self.random_seed)
 
-        # Action space uses a separate random number generator so need to set its seed separately
-        self.env.action_space.np_random.seed(self.random_seed)
+        if using_gym:
+            # Action space uses a separate random number generator so need to set its seed separately
+            self.env.action_space.np_random.seed(self.random_seed)
 
         self.simulation_length = simulation_length
 

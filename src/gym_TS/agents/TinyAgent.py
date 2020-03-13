@@ -29,8 +29,6 @@ class TinyAgent:
 
     def load_weights(self, weights=None):
         if weights is None:
-            weights = []
-        if not weights:
             weights = self.np_random.randn(self.net.nweights)
         self.net.set_weights(weights)
 
