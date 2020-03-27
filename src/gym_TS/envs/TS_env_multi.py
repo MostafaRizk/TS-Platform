@@ -158,6 +158,8 @@ class TSMultiEnv(gym.Env):
         done = False
 
         reward = 0.0
+        reward_1 = 0.0
+        reward_2 = 0.0
 
         # The robots act
         old_robot_positions = copy.deepcopy(self.robot_positions)
@@ -261,9 +263,18 @@ class TSMultiEnv(gym.Env):
         # If a robot has returned a resource to the nest the resource is deleted and the robot is rewarded
         for i in range(self.num_robots):
             if self.get_area_from_position(self.robot_positions[i]) == "NEST" and self.has_resource[i] is None and self.robot_positions[i] in self.resource_positions:
-                self.delete_resource(self.resource_positions.index(self.robot_positions[i]))
                 #self.has_resource[i] = None
+                resource_id = self.resource_positions.index(self.robot_positions[i]) # Find the resource with the same position as the current robot and get that resource's id
                 reward += self.reward_for_resource # Even if all robots waste time the whole simulation, they will get a reward that makes up for it if they retrieve a resource
+
+                for carrier_id in self.resource_carried_by[resource_id]:
+                    if carrier_id % 2 == 0:
+                        reward_1 += reward / len(self.resource_carried_by)
+
+                    elif carrier_id % 2 == 1:
+                        reward_2 += reward / len(self.resource_carried_by)
+
+                self.delete_resource(resource_id)
                 #self.spawn_resource()
 
         num_resources_at_source = 0
@@ -297,7 +308,7 @@ class TSMultiEnv(gym.Env):
         observations = self.generate_robot_observations()
 
         #return self.state, reward, done, {}
-        return observations, reward, done, {}
+        return observations, reward, done, {"reward_1": reward_1, "reward_2": reward_2}
 
     def generate_arena(self):
         """
