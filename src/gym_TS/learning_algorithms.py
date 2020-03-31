@@ -132,7 +132,7 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
             else:
                 results_file = open(intermediate_results_file_name, 'a')
 
-             results_file.write(results)
+            results_file.write(results)
             results_file.close()
 
             # Log genome

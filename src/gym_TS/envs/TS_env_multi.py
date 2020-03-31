@@ -146,6 +146,9 @@ class TSMultiEnv(gym.Env):
 
         :return A 4-tuple containing: a list containing each robot's observation, the reward at this time step,
         a boolean indicating if the simulation is done, any additional information
+
+        IMPORTANT: Function assumes that, if controllers are different, odd numbered robots use one controller type and
+        even numbered controllers use another controller type
         """
 
         # Returns an error if the number of actions is incorrect

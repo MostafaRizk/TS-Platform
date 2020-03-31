@@ -59,11 +59,12 @@ class FitnessCalculator:
     def get_rng(self):
         return self.np_random
 
-    def calculate_fitness(self, individual1, team_type, learning_method="cma", render=False):
+    def calculate_fitness(self, individual1, team_type, selection_level, learning_method="cma", render=False):
         """
         Calculates fitness of a controller by running a simulation
         :param individual1:
         :param team_type Accepts "homogeneous" or "heterogeneous"
+        :param selection_level Accepts "individual" or "team"
         :param learning_method Accepts cma. Also accepts qn or bq but will only work for homogeneous teams
         :param render:
         :return:
@@ -74,6 +75,10 @@ class FitnessCalculator:
         temp_seed = self.random_seed
         full_genome = None
 
+        # For use with individual level selection
+        average_score_1 = 0
+        average_score_2 = 0
+
         if not isinstance(individual1, TinyAgent):
             full_genome = individual1
         else:
@@ -82,11 +87,13 @@ class FitnessCalculator:
         individual_2 = None
 
         for trial in range(self.num_trials):
+
             if team_type == "homogeneous":
                 if learning_method == "cma":
                     temp_individual = TinyAgent(self.observation_size, self.action_size, temp_seed)
                     temp_individual.load_weights(full_genome)
                     individual1 = temp_individual
+
             elif team_type == "heterogeneous":
                 mid = int(len(full_genome) / 2)
                 temp_individual = TinyAgent(self.observation_size, self.action_size, temp_seed)
@@ -98,13 +105,11 @@ class FitnessCalculator:
             self.env.seed(temp_seed)  # makes fitness deterministic
             observations = self.env.reset()
 
-            if learning_method == "qn" or learning_method == "bq":
-                for i in range(len(observations)):
-                    observations[i] = np.array(observations[i])
-                    observations[i] = np.reshape(observations[i], [1, self.get_observation_size()])
-
             score = 0
-            done = False
+
+            # For use with individual selection
+            score_1 = 0
+            score_2 = 0
 
             for t in range(self.simulation_length):
                 if render:
@@ -116,6 +121,7 @@ class FitnessCalculator:
                     # All agents act using same controller.
                     robot_actions = [individual1.act(observations[i]) for i in range(len(observations))]
                     #robot_actions = [self.env.action_space.sample() for i in range(len(observations))]  # Random actions for testing
+
                 elif team_type == "heterogeneous":
                     for i in range(len(observations)):
                         if i % 2 == 0:
@@ -124,22 +130,14 @@ class FitnessCalculator:
                             robot_actions += [individual_2.act(observations[i])]
 
                 # The environment changes according to all their actions
-                old_observations = observations[:]
                 observations, reward, done, info = self.env.step(robot_actions, t)
 
-                #if reward == 1:
-                #    print(f"Agent got a reward at timestep {t}")
-
-                if learning_method == "qn" or learning_method == "bq":
-                    for i in range(len(observations)):
-                        observations[i] = np.array(observations[i])
-                        observations[i] = np.reshape(observations[i], [1, self.get_observation_size()])
-
+                # Team selection
                 score += reward
 
-                if learning_method == "qn" or learning_method == "bq":
-                    for i in range(len(robot_actions)):
-                        individual1.remember(old_observations[i], robot_actions[i], reward, observations[i], done)
+                # Individual selection
+                score_1 += info["reward_1"]
+                score_2 += info["reward_2"]
 
                 #time.sleep(0.1)
                 #print(f'Time: {t} || Score: {score}')
@@ -147,16 +145,20 @@ class FitnessCalculator:
                 if done:
                     break
 
+            # Team selection
             average_score += score
+
+            #Individual selection
+            average_score_1 += score_1
+            average_score_2 += score_2
+
             temp_seed += 1
 
-            if learning_method == "qn" or learning_method == "bq":
-                loss = individual1.replay()
+        if selection_level == "team":
+            return average_score/self.num_trials
 
-        if learning_method == "qn" or learning_method == "bq":
-            return average_score/self.num_trials, individual1
-
-        return average_score/self.num_trials
+        elif selection_level == "individual":
+            return average_score_1/self.num_trials, average_score_2/self.num_trials
 
     def calculate_ferrante_specialisation(self, individual1, team_type, learning_method="cma", render=False):
         """
