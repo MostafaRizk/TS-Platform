@@ -67,7 +67,22 @@ def rwg(seed_value, calculator, population_size, team_type, target_fitness=1.0):
         return backup_genome, max_fitness
 
 
-def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name, team_type, num_generations, population_size):
+def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name, team_type, selection_level, num_generations, population_size):
+    """
+    Evolves a model or pair of models to accomplish the task
+
+    :param fitness_calculator:
+    :param seed_value:
+    :param sigma:
+    :param model_name:
+    :param results_file_name:
+    :param team_type:
+    :param selection_level:
+    :param num_generations:
+    :param population_size:
+    :return:
+    """
+
     options = {'seed': seed_value, 'maxiter': num_generations, 'popsize': population_size, 'tolx': 1e-3, 'tolfunhist': 2e2}
 
     model_params = model_name.split("_")
@@ -114,7 +129,7 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
 
     while not es.stop():
         solutions = es.ask()
-        es.tell(solutions, [partial_calculator(x) for x in solutions])
+        es.tell(solutions, fitness(solutions))
         iteration_number = es.result.iterations
 
         if iteration_number % LOG_EVERY == 0:
@@ -160,13 +175,7 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
                 best_individual_1.save_model(model_name + "_controller1_", sub_dir=str(iteration_number))
                 best_individual_2.save_model(model_name + "_controller2_", sub_dir=str(iteration_number))
 
-    #    es.logger.add()  # write data to disc to be plotted
         es.disp()
-
-    #es.result_pretty()
-    # cma.savefig("Some_figure.png")
-    #cma.plot()
-    #es.logger.save_to(model_name)
 
     print(f"Best score is {es.result[1]}")
 
@@ -174,15 +183,11 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
     sys.stdout = old_stdout
     log_file.close()
 
-
-
-
     # Append results to results file. Create file if it doesn't exist
     results = model_name.replace("_", ",")
     results += f",{log_file_name}, {seed_fitness}, {es.result[1]}\n"
     results_file = open(results_file_name, 'a')
     results_file.write(results)
     results_file.close()
-
 
     return es.result[0]

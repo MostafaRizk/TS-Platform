@@ -160,15 +160,14 @@ class TSMultiEnv(gym.Env):
 
         done = False
 
-        reward = 0.0
-        reward_1 = 0.0
-        reward_2 = 0.0
+        rewards = [0.0, 0.0]
 
         # The robots act
         old_robot_positions = copy.deepcopy(self.robot_positions)
 
         for i in range(len(robot_actions)):
             cost_multiplier = 1
+            team_id = i % 2
 
             # If robot is carrying something, multiply the cost of moving
             if self.has_resource[i] is not None:
@@ -180,21 +179,21 @@ class TSMultiEnv(gym.Env):
                 # More costly for robot to move up the slope than down
                 if self.get_area_from_position(self.robot_positions[i]) == "SLOPE":
                     if self.action_name[robot_actions[i]] == "FORWARD":
-                        reward -= self.upward_cost_factor *self.base_cost*cost_multiplier
+                        rewards[team_id] -= self.upward_cost_factor *self.base_cost*cost_multiplier
 
                     elif self.action_name[robot_actions[i]] == "BACKWARD":
-                        reward -= self.base_cost*self.downward_cost_factor*cost_multiplier
+                        rewards[team_id] -= self.base_cost*self.downward_cost_factor*cost_multiplier
 
                     else:
-                        reward -= self.base_cost*cost_multiplier
+                        rewards[team_id] -= self.base_cost*cost_multiplier
 
                 # Negative reward for moving when not on slope. Same as having a battery
                 else:
-                    reward -= self.base_cost*cost_multiplier
+                    rewards[team_id] -= self.base_cost*cost_multiplier
 
             # Negative reward for dropping/picking up but is not affected by resource weight
             else:
-                reward -= self.base_cost
+                rewards[team_id] -= self.base_cost
 
         # The robots' old positions are wiped out
         for position in old_robot_positions:
@@ -268,14 +267,10 @@ class TSMultiEnv(gym.Env):
             if self.get_area_from_position(self.robot_positions[i]) == "NEST" and self.has_resource[i] is None and self.robot_positions[i] in self.resource_positions:
                 #self.has_resource[i] = None
                 resource_id = self.resource_positions.index(self.robot_positions[i]) # Find the resource with the same position as the current robot and get that resource's id
-                reward += self.reward_for_resource # Even if all robots waste time the whole simulation, they will get a reward that makes up for it if they retrieve a resource
 
-                for carrier_id in self.resource_carried_by[resource_id]:
-                    if carrier_id % 2 == 0:
-                        reward_1 += reward / len(self.resource_carried_by)
-
-                    elif carrier_id % 2 == 1:
-                        reward_2 += reward / len(self.resource_carried_by)
+                # Reward all robots if a resource is retrieved
+                rewards[0] += self.reward_for_resource
+                rewards[1] += self.reward_for_resource
 
                 self.delete_resource(resource_id)
                 #self.spawn_resource()
@@ -310,8 +305,10 @@ class TSMultiEnv(gym.Env):
         self.state = np.concatenate((self.robot_map, self.resource_map), axis=0)  # Fully observable environment
         observations = self.generate_robot_observations()
 
+        # Update reward to include costs
+
         #return self.state, reward, done, {}
-        return observations, reward, done, {"reward_1": reward_1, "reward_2": reward_2}
+        return observations, sum(rewards), done, {"reward_1": rewards[0], "reward_2": rewards[1]}
 
     def generate_arena(self):
         """
