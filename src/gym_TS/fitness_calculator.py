@@ -76,17 +76,24 @@ class FitnessCalculator:
         #render = True
         average_score = 0
         temp_seed = self.random_seed
-        full_genome = None
+        full_genome_1 = None
+        full_genome_2 = None
 
         # For use with individual level selection
         average_score_1 = 0
         average_score_2 = 0
 
-        # Load weights of individual_1 into full_genome
+        # Load weights of individual_1 into full_genome_1
         if not isinstance(individual_1, TinyAgent):
-            full_genome = individual_1
+            full_genome_1 = individual_1
         else:
-            full_genome = individual_1.get_weights()
+            full_genome_1 = individual_1.get_weights()
+
+        # Load weights of individual_1 into full_genome_2
+        if not isinstance(individual_2, TinyAgent):
+            full_genome_2 = individual_2
+        else:
+            full_genome_2 = individual_2.get_weights()
 
         for trial in range(self.num_trials):
 
@@ -95,7 +102,7 @@ class FitnessCalculator:
                     raise RuntimeWarning("Second individual is not used. In the Hom-Team setup, the first individual is used twice.")
 
                 temp_individual = TinyAgent(self.observation_size, self.action_size, temp_seed)
-                temp_individual.load_weights(full_genome)
+                temp_individual.load_weights(full_genome_1)
                 individual_1 = temp_individual
                 individual_2 = temp_individual
 
@@ -103,15 +110,25 @@ class FitnessCalculator:
                 if individual_2 is not None:
                     raise RuntimeWarning("Second individual is not used. In the Het-Team setup, the first individual contains both of the required genomes.")
 
-                mid = int(len(full_genome) / 2)
+                mid = int(len(full_genome_1) / 2)
                 temp_individual = TinyAgent(self.observation_size, self.action_size, temp_seed)
-                temp_individual.load_weights(full_genome[0:mid])
+                temp_individual.load_weights(full_genome_1[0:mid])
                 individual_1 = temp_individual
-                temp_individual.load_weights(full_genome[mid:])
+                temp_individual.load_weights(full_genome_1[mid:])
                 individual_2 = temp_individual
 
             elif team_type == "heterogeneous" and selection_level == "individual":
+                # Load first individual
+                temp_individual = TinyAgent(self.observation_size, self.action_size, temp_seed)
+                temp_individual.load_weights(full_genome_1)
+                individual_1 = temp_individual
 
+                # Load second individual
+                temp_individual.load_weights(full_genome_2)
+                individual_2 = temp_individual
+
+            elif team_type == "homogeneous" and selection_level == "individual":
+                raise RuntimeError("The Hom-Ind setup has not been implemented yet")
 
             self.env.seed(temp_seed)  # makes fitness deterministic
             observations = self.env.reset()
@@ -128,17 +145,11 @@ class FitnessCalculator:
 
                 robot_actions = []
 
-                if team_type == "homogeneous":
-                    # All agents act using same controller.
-                    robot_actions = [individual_1.act(observations[i]) for i in range(len(observations))]
-                    #robot_actions = [self.env.action_space.sample() for i in range(len(observations))]  # Random actions for testing
-
-                elif team_type == "heterogeneous":
-                    for i in range(len(observations)):
-                        if i % 2 == 0:
-                            robot_actions += [individual_1.act(observations[i])]
-                        else:
-                            robot_actions += [individual_2.act(observations[i])]
+                for i in range(len(observations)):
+                    if i % 2 == 0:
+                        robot_actions += [individual_1.act(observations[i])]
+                    else:
+                        robot_actions += [individual_2.act(observations[i])]
 
                 # The environment changes according to all their actions
                 observations, reward, done, info = self.env.step(robot_actions, t)
@@ -185,12 +196,12 @@ class FitnessCalculator:
         average_score = 0
         average_specialisation = 0
         temp_seed = self.random_seed
-        full_genome = None
+        full_genome_1 = None
 
         if not isinstance(individual_1, TinyAgent):
-            full_genome = individual_1
+            full_genome_1 = individual_1
         else:
-            full_genome = individual_1.get_weights()
+            full_genome_1 = individual_1.get_weights()
 
         individual_2 = None
 
@@ -198,14 +209,14 @@ class FitnessCalculator:
             if team_type == "homogeneous":
                 if learning_method == "cma":
                     temp_individual = TinyAgent(self.observation_size, self.action_size, temp_seed)
-                    temp_individual.load_weights(full_genome)
+                    temp_individual.load_weights(full_genome_1)
                     individual_1 = temp_individual
             elif team_type == "heterogeneous":
-                mid = int(len(full_genome) / 2)
+                mid = int(len(full_genome_1) / 2)
                 temp_individual = TinyAgent(self.observation_size, self.action_size, temp_seed)
-                temp_individual.load_weights(full_genome[0:mid])
+                temp_individual.load_weights(full_genome_1[0:mid])
                 individual_1 = temp_individual
-                temp_individual.load_weights(full_genome[mid:])
+                temp_individual.load_weights(full_genome_1[mid:])
                 individual_2 = temp_individual
 
             self.env.seed(temp_seed)  # makes fitness deterministic
