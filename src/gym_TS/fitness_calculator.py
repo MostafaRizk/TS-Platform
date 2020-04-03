@@ -59,10 +59,33 @@ class FitnessCalculator:
     def get_rng(self):
         return self.np_random
 
-    def caclulate_fitness_of_population(self, population):
-        pass
+    def caclulate_fitness_of_population(self, population, team_type, selection_level, learning_method="cma", render=False):
+        """
+        Calculates fitness of entire population
 
-    def calculate_fitness(self, team_type, selection_level, individual_1, individual_2=None, learning_method="cma", render=False):
+        :param population:
+        :param team_type:
+        :param selection_level:
+        :param learning_method:
+        :param render:
+        :return: List of fitnesses, one for each member of the population
+        """
+        fitnesses = []
+
+        for i in range(0, len(population), 2):
+            individual_1 = population[i]
+            individual_2 = population[i+1]
+
+            if selection_level == "team":
+                fitnesses += [self.calculate_fitness(team_type, selection_level, learning_method, individual_1, None, render)]
+                fitnesses += [self.calculate_fitness(team_type, selection_level, learning_method, individual_2, None, render)]
+
+            else:
+                fitnesses += [self.calculate_fitness(team_type, selection_level, learning_method, individual_1, individual_2,render)]
+
+        return fitnesses
+
+    def calculate_fitness(self, team_type, selection_level, learning_method, individual_1, individual_2=None, render=False):
         """
         Calculates fitness of a controller by running a simulation
         :param individual_1:
