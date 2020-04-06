@@ -12,7 +12,7 @@ from functools import partial
 
 LOG_EVERY = 20
 
-def rwg(seed_value, calculator, population_size, team_type, target_fitness=1.0):
+def rwg(seed_value, calculator, population_size, team_type, selection_level, target_fitness=1.0):
     """
     Finds a genome with non-zero fitness score by randomly guessing neural network weights. Exists as a helper for CMA
     """
@@ -128,8 +128,8 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
     # es.optimize(partial_calculator)
 
     while not es.stop():
-        solutions = es.ask()
-        es.tell(solutions, fitness(solutions))
+        population = es.ask()
+        es.tell(population, fitness_calculator.caclulate_fitness_of_population(population, team_type, selection_level))
         iteration_number = es.result.iterations
 
         if iteration_number % LOG_EVERY == 0:
@@ -151,7 +151,7 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
             results_file.close()
 
             # Log genome
-            if team_type == "homogeneous":
+            if team_type == "homogeneous" or (team_type == "heterogeneous" and selection_level == "individual"):
                 best_individual = TinyAgent(fitness_calculator.get_observation_size(),
                                             fitness_calculator.get_action_size(),
                                             seed=seed_value)
@@ -159,7 +159,7 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
                 best_individual.save_model(model_name, sub_dir=str(iteration_number))
 
             # Split the genome and save both halves separately for heterogeneous setup
-            elif team_type == "heterogeneous":
+            elif team_type == "heterogeneous" and selection_level == "team":
                 best_individual_1 = TinyAgent(fitness_calculator.get_observation_size(),
                                               fitness_calculator.get_action_size(),
                                               seed=seed_value)
