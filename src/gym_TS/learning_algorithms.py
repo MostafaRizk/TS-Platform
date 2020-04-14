@@ -12,35 +12,74 @@ from functools import partial
 
 LOG_EVERY = 20
 
-def rwg(seed_value, calculator, population_size, team_type, selection_level, target_fitness=1.0):
+def create_population(seed_value, calculator, num_teams, team_type, selection_level):
+    population = []
+
+    if team_type == "homogeneous" and selection_level == "team":
+        for i in range(num_teams):
+            dummy_individual = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), seed=seed_value)
+            dummy_individual.load_weights()  # No parameters means random weights are generated
+            genome = dummy_individual.get_weights()
+            population += [genome]
+
+    elif team_type == "heterogeneous" and selection_level == "team":
+        for i in range(num_teams):
+            dummy_individual_1 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), seed=seed_value)
+            dummy_individual_2 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), seed=seed_value)
+            dummy_individual_1.load_weights()  # No parameters means random weights are generated
+            dummy_individual_2.load_weights()
+            genome = np.concatenate([dummy_individual_1.get_weights(), dummy_individual_2.get_weights()])
+            population += [genome]
+
+    elif team_type == "heterogeneous" and selection_level == "individual":
+        for i in range(num_teams*2):
+            dummy_individual_1 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(),
+                                           seed=seed_value)
+            dummy_individual_2 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(),
+                                           seed=seed_value)
+            dummy_individual_1.load_weights()  # No parameters means random weights are generated
+            dummy_individual_2.load_weights()
+            genome_1 = dummy_individual_1.get_weights()
+            genome_2 = dummy_individual_2.get_weights()
+            population += [genome_1, genome_2]
+
+    elif team_type == "homogeneous" and selection_level == "individual":
+        for i in range(num_teams*2):
+            dummy_individual_1 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(),
+                                           seed=seed_value)
+            dummy_individual_1.load_weights()  # No parameters means random weights are generated
+            genome_1 = dummy_individual_1.get_weights()
+            genome_2 = dummy_individual_1.get_weights()  # Second genome is a copy of the first
+            population += [genome_1, genome_2]
+    else:
+        raise RuntimeError("Invalid team type and/or selection level")
+
+    return population
+
+def rwg(seed_value, calculator, num_teams, team_type, selection_level, target_fitness=1000):
     """
     Finds a genome with non-zero fitness score by randomly guessing neural network weights. Exists as a helper for CMA
     """
-    # RWG does not distinguish between populations and generations
-    max_ninds = population_size
-    full_genome = None
-    backup_genome = None
+
     max_fitness = -float('Inf')
 
-    # Neuroevolution loop
-    for nind in range(max_ninds):
+    population = create_population(seed_value=seed_value, calculator=calculator, num_teams=num_teams,
+                                   team_type=team_type, selection_level=selection_level)
+    fitnesses = calculator.calculate_fitness_of_population(population, team_type, selection_level)
 
-        if team_type == "homogeneous":
-            # Create individual
-            individual = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), seed=seed_value)
-            individual.load_weights()  # No parameters means random weights are generated
-            full_genome = individual.get_weights()
-        elif team_type == "heterogeneous":
-            individual1 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), seed=seed_value)
-            individual2 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), seed=seed_value)
-            individual1.load_weights()  # No parameters means random weights are generated
-            individual2.load_weights()
-            full_genome = np.concatenate([individual1.get_weights(), individual2.get_weights()])
-        else:
-            raise RuntimeError("Did not use a valid team type")
+    best_fitness, best_fitness_index = max([(value, index) for index,value in enumerate(fitnesses)])
+    best_genome = population[best_fitness_index]
+
+    return best_genome, best_fitness
+
+
+    '''
+    # Neuroevolution loop
+    for nind in range(len(population)):
 
         # Evaluate individual's fitness
         fitness = calculator.calculate_fitness(full_genome, team_type=team_type, render=False)
+        fitnesses = calculator.calculate_fitness(team_type, selection_level, individual_1, individual_2, render=False)
         # print(f"{nind} Score: {score}")
 
         if fitness >= target_fitness:
@@ -60,14 +99,10 @@ def rwg(seed_value, calculator, population_size, team_type, selection_level, tar
         seed_value += 1
 
     print(f"Did not find a genome with score greater than {target_fitness}. Using best one found, with score {max_fitness}")
-
-    if backup_genome is None:
-        return full_genome, max_fitness
-    else:
-        return backup_genome, max_fitness
+    '''
 
 
-def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name, team_type, selection_level, num_generations, population_size):
+def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name, team_type, selection_level, num_generations, num_teams):
     """
     Evolves a model or pair of models to accomplish the task
 

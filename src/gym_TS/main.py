@@ -13,10 +13,10 @@ from src.gym_TS.learning_algorithms import rwg
 def main(argv):
     try:
         opts, args = getopt.getopt(argv, "",
-                                   ["algorithm=", "team_type=", "generations=", "simulation_length=", "trials=",
+                                   ["algorithm=", "team_type=", "selection_level=", "generations=", "simulation_length=", "trials=",
                                     "seed=", "num_robots=", "num_resources=", "sensor_range=", "slope_angle=",
                                     "arena_length=", "arena_width=", "cache_start=", "slope_start=", "source_start=",
-                                    "sigma=", "test_model=", "target_fitness=", "population=", "batch_test=",
+                                    "sigma=", "test_model=", "target_fitness=", "num_teams=", "batch_test=",
                                     "hardcoded_test=", "upward_cost_factor=", "downward_cost_factor=", "carry_factor=",
                                     "resource_reward_factor="])
 
@@ -28,6 +28,7 @@ def main(argv):
 
     training_algorithm = None
     team_type = None
+    selection_level = None
     simulation_length = None
     num_generations = None
     num_trials = None
@@ -49,7 +50,7 @@ def main(argv):
     sigma = None
     test_model = None
     target_fitness = 1.0
-    population = None
+    num_teams = None
     batch_path = None
     hardcoded_test = None
 
@@ -69,6 +70,11 @@ def main(argv):
                 team_type = arg
             else:
                 print("Team type is misspelled or unsupported. Use \"homogeneous\" or \"heterogeneous\"")
+        if opt == "--selection_level":
+            if arg == "team" or arg == "individual":
+                selection_level = arg
+            else:
+                print("Selection level is misspelled or unsupported. Use \"team\" or \"individual\"")
         if opt == "--generations":
             num_generations = int(arg)
         if opt == "--simulation_length":
@@ -109,8 +115,8 @@ def main(argv):
             test_model = arg
         if opt == "--target_fitness":
             target_fitness = float(arg)
-        if opt == "--population":
-            population = int(arg)
+        if opt == "--num_teams":
+            num_teams = int(arg)
         if opt == "--batch_test":
             batch_path = arg
         if opt == "--hardcoded_test":
@@ -129,10 +135,10 @@ def main(argv):
                                                resource_reward_factor=resource_reward_factor)
 
         best_genome, best_fitness = training_algorithm(seed_value=random_seed, calculator=fitness_calculator,
-                                                       population_size=num_generations, team_type=team_type,
-                                                       target_fitness=target_fitness)
+                                                       num_teams=num_generations, team_type=team_type,
+                                                       selection_level=selection_level, target_fitness=target_fitness)
 
-        model_name = f"bootstrap_{team_type}_{simulation_length}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{upward_cost_factor}_{downward_cost_factor}_{carry_factor}_{resource_reward_factor}"
+        model_name = f"bootstrap_{team_type}_{selection_level}_{simulation_length}_{num_teams}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{upward_cost_factor}_{downward_cost_factor}_{carry_factor}_{resource_reward_factor}"
 
         np.save(model_name, best_genome)
 
@@ -152,7 +158,7 @@ def main(argv):
                                                    downward_cost_factor=downward_cost_factor, carry_factor=carry_factor,
                                                    resource_reward_factor=resource_reward_factor)
 
-            model_name = f"CMA_{team_type}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{upward_cost_factor}_{downward_cost_factor}_{carry_factor}_{resource_reward_factor}_{sigma}_{population}"
+            model_name = f"CMA_{team_type}_{selection_level}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{upward_cost_factor}_{downward_cost_factor}_{carry_factor}_{resource_reward_factor}_{sigma}_{population}"
 
             # Create results file if it doesn't exist
             results_file_name = "results.csv"
@@ -161,7 +167,7 @@ def main(argv):
                 pass
             else:
                 results_file = open(results_file_name, 'w')
-                results_file.write("Algorithm Name, Team Type, Simulation Length, Num Generations, Num Trials, Random Seed, Num Robots, Num Resources, Sensor Range, Slope Angle, Arena Length, Arena Width, Cache Start, Slope Start, Source Start, Upward cost factor, Downward cost factor, Carry Factor, Resource reward factor, Sigma, Population, Log File, Seed Fitness, Evolved Fitness\n")
+                results_file.write("Algorithm Name, Team Type, Selection Level, Simulation Length, Num Generations, Num Trials, Random Seed, Num Robots, Num Resources, Sensor Range, Slope Angle, Arena Length, Arena Width, Cache Start, Slope Start, Source Start, Upward cost factor, Downward cost factor, Carry Factor, Resource reward factor, Sigma, Population, Log File, Seed Fitness, Evolved Fitness\n")
                 results_file.close()
 
             print(f"Evaluating {model_name}")

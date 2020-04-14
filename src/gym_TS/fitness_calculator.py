@@ -59,7 +59,7 @@ class FitnessCalculator:
     def get_rng(self):
         return self.np_random
 
-    def caclulate_fitness_of_population(self, population, team_type, selection_level, learning_method="cma", render=False):
+    def caclulate_fitness_of_population(self, population, team_type, selection_level, render=False):
         """
         Calculates fitness of entire population
 
@@ -72,23 +72,43 @@ class FitnessCalculator:
         """
         fitnesses = []
 
-        for i in range(0, len(population), 2):
-            individual_1 = population[i]
-            individual_2 = population[i+1]
+        if team_type == "homogeneous" and selection_level == "team":
+            for genome in population:
+                individual_1 = genome
+                individual_2 = genome
+                fitness_1, fitness_2 = self.calculate_fitness(team_type, selection_level, individual_1, individual_2, render)
+                team_fitness = fitness_1 + fitness_2
+                fitnesses += [team_fitness]
 
-            if selection_level == "team":
-                fitnesses += [self.calculate_fitness(team_type, selection_level, learning_method, individual_1, None, render)]
-                fitnesses += [self.calculate_fitness(team_type, selection_level, learning_method, individual_2, None, render)]
+        elif team_type == "heterogeneous" and selection_level == "team":
+            for genome in population:
+                mid = int(len(genome) / 2)
+                individual_1 = genome[0:mid]
+                individual_2 = genome[mid:]
+                fitness_1, fitness_2 = self.calculate_fitness(team_type, selection_level, individual_1,
+                                                              individual_2, render)
+                team_fitness = fitness_1 + fitness_2
+                fitnesses += [team_fitness]
 
-            else:
-                fitnesses += [self.calculate_fitness(team_type, selection_level, learning_method, individual_1, individual_2,render)]
+        elif (team_type == "heterogeneous" and selection_level == "individual") or \
+            (team_type == "homogeneous" and selection_level == "individual"):
+            for i in range(0, len(population), 2):
+                individual_1 = population[i]
+                individual_2 = population[i+1]
+
+                fitnesses += [self.calculate_fitness(team_type, selection_level, individual_1,
+                                                              individual_2, render)]
+
+        else:
+            raise RuntimeError("Invalid team type and/or selection level")
 
         return fitnesses
 
-    def calculate_fitness(self, team_type, selection_level, learning_method, individual_1, individual_2=None, render=False):
+    def calculate_fitness(self, team_type, selection_level, individual_1, individual_2, render=False):
         """
         Calculates fitness of a controller by running a simulation
-        :param individual_1:
+        :param individual_1: Genome (NN weights)
+        :param individual_2: Genome (NN weights)
         :param team_type Accepts "homogeneous" or "heterogeneous"
         :param selection_level Accepts "individual" or "team"
         :param learning_method Accepts cma. Also accepts qn or bq but will only work for homogeneous teams
@@ -99,60 +119,20 @@ class FitnessCalculator:
         #render = True
         average_score = 0
         temp_seed = self.random_seed
-        full_genome_1 = None
-        full_genome_2 = None
+
+        # Load genomes into TinyAgent objects (i.e. neural networks)
+        temp_individual_1 = TinyAgent(self.observation_size, self.action_size, temp_seed)
+        temp_individual_2 = TinyAgent(self.observation_size, self.action_size, temp_seed)
+        temp_individual_1.load_weights(individual_1)
+        temp_individual_2.load_weights(individual_2)
+        individual_1 = temp_individual_1
+        individual_2 = temp_individual_2
 
         # For use with individual level selection
         average_score_1 = 0
         average_score_2 = 0
 
-        # Load weights of individual_1 into full_genome_1
-        if not isinstance(individual_1, TinyAgent):
-            full_genome_1 = individual_1
-        else:
-            full_genome_1 = individual_1.get_weights()
-
-        # Load weights of individual_1 into full_genome_2
-        if not isinstance(individual_2, TinyAgent):
-            full_genome_2 = individual_2
-        else:
-            full_genome_2 = individual_2.get_weights()
-
         for trial in range(self.num_trials):
-
-            if team_type == "homogeneous" and selection_level == "team":
-                if individual_2 is not None:
-                    raise RuntimeWarning("Second individual is not used. In the Hom-Team setup, the first individual is used twice.")
-
-                temp_individual = TinyAgent(self.observation_size, self.action_size, temp_seed)
-                temp_individual.load_weights(full_genome_1)
-                individual_1 = temp_individual
-                individual_2 = temp_individual
-
-            elif team_type == "heterogeneous" and selection_level == "team":
-                if individual_2 is not None:
-                    raise RuntimeWarning("Second individual is not used. In the Het-Team setup, the first individual contains both of the required genomes.")
-
-                mid = int(len(full_genome_1) / 2)
-                temp_individual = TinyAgent(self.observation_size, self.action_size, temp_seed)
-                temp_individual.load_weights(full_genome_1[0:mid])
-                individual_1 = temp_individual
-                temp_individual.load_weights(full_genome_1[mid:])
-                individual_2 = temp_individual
-
-            elif team_type == "heterogeneous" and selection_level == "individual":
-                # Load first individual
-                temp_individual = TinyAgent(self.observation_size, self.action_size, temp_seed)
-                temp_individual.load_weights(full_genome_1)
-                individual_1 = temp_individual
-
-                # Load second individual
-                temp_individual.load_weights(full_genome_2)
-                individual_2 = temp_individual
-
-            elif team_type == "homogeneous" and selection_level == "individual":
-                raise RuntimeError("The Hom-Ind setup has not been implemented yet")
-
             self.env.seed(temp_seed)  # makes fitness deterministic
             observations = self.env.reset()
 
@@ -199,11 +179,7 @@ class FitnessCalculator:
 
             temp_seed += 1
 
-        if selection_level == "team":
-            return average_score/self.num_trials
-
-        elif selection_level == "individual":
-            return average_score_1/self.num_trials, average_score_2/self.num_trials
+        return average_score_1/self.num_trials, average_score_2/self.num_trials
 
     def calculate_ferrante_specialisation(self, individual_1, team_type, learning_method="cma", render=False):
         """
