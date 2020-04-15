@@ -59,7 +59,7 @@ class FitnessCalculator:
     def get_rng(self):
         return self.np_random
 
-    def caclulate_fitness_of_population(self, population, team_type, selection_level, render=False):
+    def calculate_fitness_of_population(self, population, team_type, selection_level, render=False):
         """
         Calculates fitness of entire population
 

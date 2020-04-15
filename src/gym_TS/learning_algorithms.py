@@ -12,6 +12,7 @@ from functools import partial
 
 LOG_EVERY = 20
 
+
 def create_population(seed_value, calculator, num_teams, team_type, selection_level):
     population = []
 
@@ -55,6 +56,7 @@ def create_population(seed_value, calculator, num_teams, team_type, selection_le
         raise RuntimeError("Invalid team type and/or selection level")
 
     return population
+
 
 def rwg(seed_value, calculator, num_teams, team_type, selection_level, target_fitness=1000):
     """
@@ -118,28 +120,33 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
     :return:
     """
 
-    options = {'seed': seed_value, 'maxiter': num_generations, 'popsize': population_size, 'tolx': 1e-3, 'tolfunhist': 2e2}
+    pop_size = num_teams
+
+    if team_type == "heterogeneous" and selection_level == "individual":
+        pop_size = num_teams * 2
+
+    options = {'seed': seed_value, 'maxiter': num_generations, 'popsize': pop_size, 'tolx': 1e-3, 'tolfunhist': 2e2, 'ftarget': 'inf'}
 
     model_params = model_name.split("_")
 
-    simulation_length = model_params[2]
-    num_trials = model_params[4]
-    random_seed = model_params[5]
-    num_robots = model_params[6]
-    num_resources = model_params[7]
-    sensor_range = model_params[8]
-    slope_angle = model_params[9]
-    arena_length = model_params[10]
-    arena_width = model_params[11]
-    cache_start = model_params[12]
-    slope_start = model_params[13]
-    source_start = model_params[14]
-    upward_cost_factor = model_params[15]
-    downward_cost_factor = model_params[16]
-    carry_factor = model_params[17]
-    resource_reward_factor = model_params[18]
+    simulation_length = model_params[3]
+    num_trials = model_params[5]
+    random_seed = model_params[6]
+    num_robots = model_params[7]
+    num_resources = model_params[8]
+    sensor_range = model_params[9]
+    slope_angle = model_params[10]
+    arena_length = model_params[11]
+    arena_width = model_params[12]
+    cache_start = model_params[13]
+    slope_start = model_params[14]
+    source_start = model_params[15]
+    upward_cost_factor = model_params[16]
+    downward_cost_factor = model_params[17]
+    carry_factor = model_params[18]
+    resource_reward_factor = model_params[19]
 
-    seed_file = f"bootstrap_{team_type}_{simulation_length}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{upward_cost_factor}_{downward_cost_factor}_{carry_factor}_{resource_reward_factor}.npy"
+    seed_file = f"bootstrap_{team_type}_{selection_level}_{simulation_length}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{upward_cost_factor}_{downward_cost_factor}_{carry_factor}_{resource_reward_factor}.npy"
     seed_genome = None
     # f"CMA_{team_type}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{upward_cost_factor}_{downward_cost_factor}_{carry_factor}_{resource_reward_factor}_{sigma}_{population}"
 
@@ -159,11 +166,18 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
     log_file = open(log_file_name, "a")
     sys.stdout = log_file
 
-    partial_calculator = partial(fitness_calculator.calculate_fitness_negation, team_type=team_type)
+    #partial_calculator = partial(fitness_calculator.calculate_fitness_negation, team_type=team_type)
     # es.optimize(partial_calculator)
 
     while not es.stop():
         population = es.ask()
+
+        if team_type == "homogeneous" and selection_level == "individual":
+            new_population = []
+            for ind in population:
+                new_population += [ind, ind]
+            population = new_population
+
         es.tell(population, fitness_calculator.caclulate_fitness_of_population(population, team_type, selection_level))
         iteration_number = es.result.iterations
 
@@ -175,7 +189,7 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
 
             if not os.path.exists(intermediate_results_file_name):
                 results_file = open(intermediate_results_file_name, 'a')
-                results_file.write("Algorithm Name, Team Type, Simulation Length, Num Generations, Num Trials, "
+                results_file.write("Algorithm Name, Team Type, Selection Level, Simulation Length, Num Generations, Num Trials, "
                                    "Random Seed, Num Robots, Num Resources, Sensor Range, Slope Angle, Arena Length, "
                                    "Arena Width, Cache Start, Slope Start, Source Start, Sigma, Population, Log File, "
                                    "Seed Fitness, Evolved Fitness\n")
@@ -186,15 +200,8 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
             results_file.close()
 
             # Log genome
-            if team_type == "homogeneous" or (team_type == "heterogeneous" and selection_level == "individual"):
-                best_individual = TinyAgent(fitness_calculator.get_observation_size(),
-                                            fitness_calculator.get_action_size(),
-                                            seed=seed_value)
-                best_individual.load_weights(es.result[0])
-                best_individual.save_model(model_name, sub_dir=str(iteration_number))
-
             # Split the genome and save both halves separately for heterogeneous setup
-            elif team_type == "heterogeneous" and selection_level == "team":
+            if team_type == "heterogeneous" and selection_level == "team":
                 best_individual_1 = TinyAgent(fitness_calculator.get_observation_size(),
                                               fitness_calculator.get_action_size(),
                                               seed=seed_value)
@@ -209,6 +216,13 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
 
                 best_individual_1.save_model(model_name + "_controller1_", sub_dir=str(iteration_number))
                 best_individual_2.save_model(model_name + "_controller2_", sub_dir=str(iteration_number))
+
+            else:
+                best_individual = TinyAgent(fitness_calculator.get_observation_size(),
+                                            fitness_calculator.get_action_size(),
+                                            seed=seed_value)
+                best_individual.load_weights(es.result[0])
+                best_individual.save_model(model_name, sub_dir=str(iteration_number))
 
         es.disp()
 
