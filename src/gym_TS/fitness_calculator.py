@@ -15,7 +15,7 @@ class FitnessCalculator:
 
     def __init__(self, random_seed, simulation_length, num_trials, num_robots, num_resources, sensor_range, slope_angle,
                  arena_length, arena_width, cache_start, slope_start, source_start, upward_cost_factor, downward_cost_factor,
-                 carry_factor, resource_reward_factor, using_gym=False):
+                 carry_factor, resource_reward_factor, using_gym=True):
 
         if using_gym:
             self.env = gym.make('src.gym_TS:TS-v1', num_robots=num_robots, num_resources=num_resources,
@@ -95,9 +95,10 @@ class FitnessCalculator:
             for i in range(0, len(population), 2):
                 individual_1 = population[i]
                 individual_2 = population[i+1]
+                fitness_1, fitness_2 = self.calculate_fitness(team_type, selection_level, individual_1,
+                                                              individual_2, render)
 
-                fitnesses += [self.calculate_fitness(team_type, selection_level, individual_1,
-                                                              individual_2, render)]
+                fitnesses += [fitness_1, fitness_2]
 
         else:
             raise RuntimeError("Invalid team type and/or selection level")

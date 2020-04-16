@@ -138,7 +138,7 @@ def main(argv):
                                                        num_teams=num_generations, team_type=team_type,
                                                        selection_level=selection_level, target_fitness=target_fitness)
 
-        model_name = f"bootstrap_{team_type}_{selection_level}_{simulation_length}_{num_teams}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{upward_cost_factor}_{downward_cost_factor}_{carry_factor}_{resource_reward_factor}"
+        model_name = f"bootstrap_{team_type}_{selection_level}_{simulation_length}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{upward_cost_factor}_{downward_cost_factor}_{carry_factor}_{resource_reward_factor}"
 
         np.save(model_name, best_genome)
 
@@ -158,7 +158,7 @@ def main(argv):
                                                    downward_cost_factor=downward_cost_factor, carry_factor=carry_factor,
                                                    resource_reward_factor=resource_reward_factor)
 
-            model_name = f"CMA_{team_type}_{selection_level}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{upward_cost_factor}_{downward_cost_factor}_{carry_factor}_{resource_reward_factor}_{sigma}_{population}"
+            model_name = f"CMA_{team_type}_{selection_level}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{upward_cost_factor}_{downward_cost_factor}_{carry_factor}_{resource_reward_factor}_{sigma}_{num_teams}"
 
             # Create results file if it doesn't exist
             results_file_name = "results.csv"
@@ -175,7 +175,7 @@ def main(argv):
             # Get best genome using CMA
             best_genome = training_algorithm(fitness_calculator=fitness_calculator, seed_value=random_seed, sigma=sigma,
                                              model_name=model_name, results_file_name=results_file_name,
-                                             team_type=team_type, num_generations=num_generations,
+                                             team_type=team_type, selection_level=selection_level, num_generations=num_generations,
                                              num_teams=num_teams)
 
             if team_type == "heterogeneous" and selection_level == "team":

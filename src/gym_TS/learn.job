@@ -1,8 +1,8 @@
 #!/bin/env bash
-#SBATCH --job-name=HighCost
+#SBATCH --job-name=learn
 #SBATCH --time=72:00:00
 #SBATCH --array=1-100
-#SBATCH --output=HighCost.out
+#SBATCH --output=learn.out
 #SBATCH --open-mode=append
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1

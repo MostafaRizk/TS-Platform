@@ -125,7 +125,7 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
     if team_type == "heterogeneous" and selection_level == "individual":
         pop_size = num_teams * 2
 
-    options = {'seed': seed_value, 'maxiter': num_generations, 'popsize': pop_size, 'tolx': 1e-3, 'tolfunhist': 2e2, 'ftarget': 'inf'}
+    options = {'seed': seed_value, 'maxiter': num_generations, 'popsize': pop_size, 'tolx': 1e-3, 'tolfunhist': 2e2} #, 'ftarget': 'inf'}
 
     model_params = model_name.split("_")
 
@@ -155,7 +155,7 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
     except:
         raise RuntimeError("No bootstrap model matches this experiment's parameters")
 
-    seed_fitness = fitness_calculator.calculate_fitness(seed_genome, team_type)
+    seed_fitness = None #fitness_calculator.calculate_fitness(seed_genome, team_type)
 
     es = cma.CMAEvolutionStrategy(seed_genome, sigma, options)
 
@@ -166,9 +166,6 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
     log_file = open(log_file_name, "a")
     sys.stdout = log_file
 
-    #partial_calculator = partial(fitness_calculator.calculate_fitness_negation, team_type=team_type)
-    # es.optimize(partial_calculator)
-
     while not es.stop():
         population = es.ask()
 
@@ -178,13 +175,17 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
                 new_population += [ind, ind]
             population = new_population
 
-        es.tell(population, fitness_calculator.caclulate_fitness_of_population(population, team_type, selection_level))
+        fitnesses = fitness_calculator.calculate_fitness_of_population(population, team_type, selection_level)
+        es.tell(population, [-f for f in fitnesses])
         iteration_number = es.result.iterations
+
+        if iteration_number == 0:
+            seed_fitness = -es.result[1]
 
         if iteration_number % LOG_EVERY == 0:
             # Log results to results file
             results = model_name.replace("_", ",")
-            results += f",{log_file_name}, {seed_fitness}, {es.result[1]}\n"
+            results += f",{log_file_name}, {seed_fitness}, {-es.result[1]}\n"
             intermediate_results_file_name = f"{iteration_number}_{results_file_name}"
 
             if not os.path.exists(intermediate_results_file_name):
@@ -226,7 +227,7 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
 
         es.disp()
 
-    print(f"Best score is {es.result[1]}")
+    print(f"Best score is {-es.result[1]}")
 
     ''''''
     sys.stdout = old_stdout
@@ -234,7 +235,7 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
 
     # Append results to results file. Create file if it doesn't exist
     results = model_name.replace("_", ",")
-    results += f",{log_file_name}, {seed_fitness}, {es.result[1]}\n"
+    results += f",{log_file_name}, {seed_fitness}, {-es.result[1]}\n"
     results_file = open(results_file_name, 'a')
     results_file.write(results)
     results_file.close()
