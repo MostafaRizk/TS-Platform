@@ -32,7 +32,7 @@
 
 \begin{document}
 
-\title{Emergence of Task Specialisation in Homogeneous versus Heterogeneous Teams}  
+\title{Effective Evolution of Task Specialisation in Multi-Robot Teams}  
 
  \author{Mostafa Rizk}
  \affiliation{%
@@ -116,22 +116,62 @@ Foraging is a common task in the robotics domain that involves transporting reso
 
 \section{Introduction}
 
-Hypothesis: The larger the theta, the more likely the heterogeneous setup is to outperform the homogeneous setup
-
-\section{Summary of Results \label{results}}
-
-\subsection{Methods}
+\paragraph{}
+As we automate more industries it will become more commonplace to have teams of robots cooperating on task. Programming these robots can be tedious and difficult. Evolution provides us with a way of generating neural network controllers for multiple robots cooperating to achieve a shared goal, but it remains challenging to produce robot teams that exhibit specialisation i.e. different members of the team perform different sub-tasks. In other words, it is still not fully understood what is the best way to perform task partitioning and task allocation when evolving a multi-robot team.
 
 \paragraph{}
-In the experimental setup there is an arena that is 8 tiles long and 4 tiles wide. The arena is a simplified version of the setup by Ferrante et al. The bottom row of tiles is the nest, the next 2 are the cache, the next 4 are the slope and the final row is the source. 3 resources spawn in the source and 2 agents spawn in the nest. In the task, the agents' goal is to transport as many resources as possible to the nest. The fitness of a team is how many resources they successfully return to the nest. Agents can move forward, backward, left and right and can pickup or drop a resource. A resource must be in the same tile as an agent to be picked up. Agents can sense all 8 adjacent tiles and the tile they occupy. They can detect whether the tile is blank, contains a resource, contains another agent or a "wall" i.e. a tile beyond the confines of the arena. They can also detect which of the 4 areas they are on and whether or not they're carrying a resource. Agents are controlled by a recurrent neural network with 41 inputs (9 tiles x 4 possible tile contents + 4 possible locations + 1 boolean bit indicating resource possession), 6 outputs and no hidden layers. 
+In previous works, researchers have evolved teams that are either homogeneous (all robots have the same controller) or heterogeneous (different sub-groups have different controllers). In addition to this distinction, in the evolutionary process, selection is either performed at the individual level or team level. At the individual level, each robot in the team is assessed independently whereas at the team level, they are assessed together. This is illustrated by Waibel et al. in [Waibel et al. 2009]. However, in that work, Waibel et al looked at tasks that did not benefit from specialisation. In this study we compare these 4 setups but consider a foraging task where the team has higher performance if they perform it in a specialised way.
+
+
+\section{Experimental Setup \label{setup}}
+
+\subsection{Simulation}
+
+\paragraph{}
+We use an experimental setup inspired by the work of Ferrante et al. [Ferrante 2015]. Ferrante et al proposed a task where a team of robots forage for resources placed at the top of a slope. The setup is intended as an analogue for leafcutter ants retrieving leaves from the top of a tree, where there is a time cost associated with climbing to where the leaves are. Leafcutter ants however, have evolved to leverage gravity, with the ants partitioning the task and some of them climbing up, cutting leaves and dropping them in a cache at the base of the tree and some of them, which can be thought of as generalists, collecting leaves from the cache and returning them to the nest and some of them occasionally cutting the leaves and transporting them back themselves. Specialist teams of ants turn out to be more efficient because they do not lose time repeatedly climbing up and down the tree. Similarly, robot teams that evolve to use specialisation retrieve more resources in the same amount of time as their generalist counterparts. In this task, there is evolutionary pressure for robot teams to develop a specialist strategy and Ferrante et al show that it is possible for such specialisation to emerge through artificial evolution much as it did in natural evolution. We use a simplified version of Ferrante et al's setup that uses simple agents rather than a physicall accurate robotics simulation as the focus of this study is the evolutionary conditions required for specialisation to emerge, not necessarily the evolution of real world-ready robot controllers. The simplified simulations allow for more thorough study of evolutionary conditions without the additional complications of realistic physics, sensor noise and high computational cost.
+
+\paragraph{}
+The arena is 8 tiles long and 4 tiles wide. The bottom row of tiles is the nest, where robots initially spawn and where they must return resources. The next 2 rows are the cache, where resources that have been dropped come to rest after sliding down the slope. The next 4 rows are the slope, which resources slide down when dropped. The final row is the source, where resources spawn at the beginning of the simulation and where new resources spawn when older ones have been removed. Initially 3 resources spawn in the source and 2 robots spawn in the nest. The robots' goal is to transport as many resources as possible to the nest. In the implementation by Ferrante et al, the fitness of the team of robots is how many resources they retrieved. In that implementation, robots take longer to travel up the slope than to travel down and resources slide down faster than robots. This is difficult to replicate without a realistic physics engine and in a discrete environment. To achieve a similar effect, we introduce a cost for expending energy, much like a battery. Traveling up the slope has a higher cost than traveling down. This is an accurate reflection of real robots which would expend more power going up a slope and also produces evolutionary pressure for the robots to specialise. 
+
+\paragraph{}
+Robots can move forward, backward, left and right and can pickup or drop a resource. A resource must be in the same tile as a robot to be picked up. Robots can sense all 8 adjacent tiles and the tile they occupy. They can detect whether the tile is blank, contains a resource, contains another agent or a "wall" i.e. a tile beyond the confines of the arena. They can also detect which of the 4 areas they are on and whether or not they're carrying a resource. Robots are controlled by a recurrent neural network with 41 inputs (9 tiles x 4 possible tile contents + 4 possible locations + 1 boolean bit indicating resource possession), 6 outputs and no hidden layers. 
 
 \paragraph{}
 Each time step, the agents make their observations and use the neural network to choose an action. If an agent moves, it moves one tile per time step. If an agent picks up a resource, that resource moves with it. If it drops a resource, the resource is placed in the tile the robot is currently in. If the resource is dropped on the slope, it slides down the slope at a rate 10 times smaller than the slope angle. That is, if the slope angle is 20, the resource moves 2 tiles per time step until it reaches the cache, at which point it comes to rest. Resources cannot slide beyond the cache, they stop just before reaching the nest. 
 
+\subsection{Evolutionary Configurations}
+
 \paragraph{}
 We compare homogeneous and heterogeneous performance for 5 different slope angles: 0$^{\circ}$, 10$^{\circ}$, 20$^{\circ}$, 30$^{\circ}$ and 40$^{\circ}$.. For each we perform 30 evolutionary runs of CMA-ES using random seeds 1-30, making a total of 300 runs (30 random seeds x 2 team compositions x 5 slope angles). Each run consists of several iterations of CMA-ES, where the genome being evaluated is a list of neural network weights for the agent controller (two controllers if it is a heterogeneous team). In an individual iteration, the genome's fitness is evaluated through 10 trials of the simulation, where the simulation is 1000 time steps long. Each run of CMA-ES has sigma value 0.05 and is seeded with an initial genome produced by a random weight guessing (RWG) algorithm. RWG randomly guesses genomes for 5000 tries, terminating prematurely if one of the genomes has a fitness greater than or equal to 3 (i.e. 3 more resources are retrieved by the team on average over all 10 trials). If no such genome is found in the 5000 tries, the best one found so far is used.
 
+\paragraph{}
+We use CMA-ES as the evolutionary algorithm to find a solution. Before CMA-ES is run, RWG is run to find a genome with fitness slightly above the minimum and it is used as a seed for CMA-ES. This initial random search helps avoid CMA-ES getting stuck in a flat fitness landscape.
 
+\paragraph{}
+RWG is run for 500 generations or until a genome with fitness > 100 is found, and the fittest genome is returned as a seed for CMA-ES. A genome is a vector of weights to be loaded into one or more neural networks. The length of the genome varies depending on which of the four below configurations is being used. 
+
+\paragraph{}
+In CMA-ES, a population of 40 individuals is generated and the algorithm is run for 5000 generations. Each individual is a genome. The fitness of an individual is calculated by doing 5 runs of the simulated environment, each lasting for 500 time steps. A neural network is created and it loads the W-weight vector. At each time step, the observations of each agent are independently fed to the neural network which in turn provides the action to be taken. The actions are input to the environment and used to generate the state at the next time step. At each time step, 
+
+\subsubsection{Homogeneous Team with Team Selection}
+
+\paragraph{}
+A genome is the weights for one individual. There are 40 teams. 40 genomes are created. All robots on a team get the same genome. All members of the team share the reward and cost. A fitness value is returned for the whole team. 40 fitness values are returned for the whole generation. The genome used by the best performing team is selected.
+
+\subsubsection{Heterogeneous Team with Team Selection}
+
+\paragraph{}
+A genome is the weights for two individuals. There are 40 teams. 40 genomes are created. Half of the team get the first half of the genome (the weights for one neural network) and half of the team get the second half of the genome. All members of the team share the reward and cost. A fitness value is returned for the whole team. 40 fitness values are returned for the whole generation. The genome used by the best performing team is selected.
+
+\subsubsection{Heterogeneous Team with Individual Selection}
+
+\paragraph{}
+A genome is the weights for one individual. There are 40 teams. 80 genomes are created since a team needs two genomes. For every two genomes, half the robots on the team get the first genome and half the robots on the team get the second. Team members are evaluated separately. They share the reward but bear costs separately. A fitness value is returned for each team meber. 80 fitness values are returned for the whole generation. The genome used by the best performing individual on any team is selected. 
+
+\subsubsection{Homogeneous Team with Individual Selection}
+
+\paragraph{}
+A genome is the weights for one individual. There are 40 teams. 80 genomes are created where every second genome is a duplicate of the previous genome i.e. genome 2 is a copy of genome 1, genome 4 is a copy of genome 3 etc. For every 2 (identical) genomes, half the robots on a team get the first and the other half get the second. All members of the team share the reward but bear the costs separately. A fitness value is returned for each individual. 80 fitness values are returned for the whole generation. The genome used by the best performing individual is selected.
 
 \bibliographystyle{ACM-Reference-Format}  % do not change this line!
 \balance  % do not change this line -- unless you manually balance your last page
