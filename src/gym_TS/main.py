@@ -21,7 +21,7 @@ def main(argv):
                                     "resource_reward_factor="])
 
     except getopt.GetoptError:
-        print("There was an error")
+        print("There was an error with the given arguments")
         sys.exit(2)
 
     bootstrap = False

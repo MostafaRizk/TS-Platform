@@ -4,7 +4,7 @@ import time
 
 from src.gym_TS.agents.TinyAgent import TinyAgent
 from gym.utils import seeding
-from src.gym_TS.envs.gymless_env import GymlessEnv
+from src.gym_TS.envs.slope_env_gymless import SlopeEnvGymless
 
 from src.gym_TS.agents.HardcodedCollectorAgent import HardcodedCollectorAgent
 from src.gym_TS.agents.HardcodedDropperAgent import HardcodedDropperAgent
@@ -15,7 +15,7 @@ class FitnessCalculator:
 
     def __init__(self, random_seed, simulation_length, num_trials, num_robots, num_resources, sensor_range, slope_angle,
                  arena_length, arena_width, cache_start, slope_start, source_start, upward_cost_factor, downward_cost_factor,
-                 carry_factor, resource_reward_factor, using_gym=True):
+                 carry_factor, resource_reward_factor, using_gym=False):
 
         if using_gym:
             self.env = gym.make('src.gym_TS:TS-v1', num_robots=num_robots, num_resources=num_resources,
@@ -27,7 +27,7 @@ class FitnessCalculator:
             # env = gym.wrappers.Monitor(env, 'video', force = True) # Uncomment to save video
 
         else:
-            self.env = GymlessEnv(num_robots=num_robots, num_resources=num_resources,
+            self.env = SlopeEnvGymless(num_robots=num_robots, num_resources=num_resources,
                                 sensor_range=sensor_range, slope_angle=slope_angle, arena_length=arena_length,
                                 arena_width=arena_width, cache_start=cache_start, slope_start=slope_start,
                                 source_start=source_start, upward_cost_factor=upward_cost_factor,
