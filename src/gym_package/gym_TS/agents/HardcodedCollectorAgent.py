@@ -1,7 +1,7 @@
 import re
 import math
 
-from src.gym_TS.agents.HardcodedAgent import HardcodedAgent
+from gym_package.gym_TS.agents.HardcodedAgent import HardcodedAgent
 
 
 class HardcodedCollectorAgent(HardcodedAgent):

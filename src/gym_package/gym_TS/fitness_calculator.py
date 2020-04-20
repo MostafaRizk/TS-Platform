@@ -2,13 +2,13 @@ import gym
 import numpy as np
 import time
 
-from gym_TS.agents.TinyAgent import TinyAgent
+from gym_package.gym_TS.agents.TinyAgent import TinyAgent
 from gym.utils import seeding
-from gym_TS.envs.slope_env_gymless import SlopeEnvGymless
+from gym_package.gym_TS.envs.slope_env_gymless import SlopeEnvGymless
 
-from gym_TS.agents.HardcodedCollectorAgent import HardcodedCollectorAgent
-from gym_TS.agents.HardcodedDropperAgent import HardcodedDropperAgent
-from gym_TS.agents.HardcodedGeneralistAgent import HardcodedGeneralistAgent
+from gym_package.gym_TS.agents.HardcodedCollectorAgent import HardcodedCollectorAgent
+from gym_package.gym_TS.agents.HardcodedDropperAgent import HardcodedDropperAgent
+from gym_package.gym_TS.agents.HardcodedGeneralistAgent import HardcodedGeneralistAgent
 
 
 class FitnessCalculator:
@@ -18,7 +18,7 @@ class FitnessCalculator:
                  carry_factor, resource_reward_factor, using_gym=False):
 
         if using_gym:
-            self.env = gym.make('src.gym_TS:TS-v1', num_robots=num_robots, num_resources=num_resources,
+            self.env = gym.make('gym_package.gym_TS:TS-v1', num_robots=num_robots, num_resources=num_resources,
                                 sensor_range=sensor_range, slope_angle=slope_angle, arena_length=arena_length,
                                 arena_width=arena_width, cache_start=cache_start, slope_start=slope_start,
                                 source_start=source_start, upward_cost_factor=upward_cost_factor,
