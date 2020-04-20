@@ -5,8 +5,8 @@ import cma
 import sys
 import os
 
-from src.gym_TS.agents.TinyAgent import TinyAgent
-from src.gym_TS.fitness_calculator import FitnessCalculator
+from gym_TS.agents.TinyAgent import TinyAgent
+from gym_TS.fitness_calculator import FitnessCalculator
 from functools import partial
 
 

@@ -3,11 +3,11 @@ import getopt
 import os
 import numpy as np
 
-from src.gym_TS.agents.TinyAgent import TinyAgent
-from src.gym_TS.fitness_calculator import FitnessCalculator
+from gym_TS.agents.TinyAgent import TinyAgent
+from gym_TS.fitness_calculator import FitnessCalculator
 
-from src.gym_TS.learning_algorithms import cma_es
-from src.gym_TS.learning_algorithms import rwg
+from gym_TS.learning_algorithms import cma_es
+from gym_TS.learning_algorithms import rwg
 
 
 def main(argv):
