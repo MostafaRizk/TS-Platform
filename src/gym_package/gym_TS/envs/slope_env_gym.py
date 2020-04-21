@@ -7,7 +7,11 @@ import gym
 from gym import spaces
 from gym.utils import seeding
 
-from gym.envs.classic_control import rendering
+try:
+    from gym.envs.classic_control import rendering
+
+except:
+    pass
 
 
 class SlopeEnvGym(SlopeEnvParent, gym.Env):
