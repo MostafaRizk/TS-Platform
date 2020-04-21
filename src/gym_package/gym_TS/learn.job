@@ -11,7 +11,7 @@
 #SBATCH --mail-user=mostafa.rizk@monash.edu
 
 export OMP_NUM_THREADS=1
-module load singularity
+source /home/mriz9/om18/actual_code/TS-Platform/src/env/bin/activate
 CMD=`head -n ${SLURM_ARRAY_TASK_ID} LIST_learn | tail -1`
-singularity exec -B /home:/home -B /mnt/lustre:/mnt/lustre ~/om18/gym-TS/gym_TS/gym-TS.img $CMD
+$CMD
 
