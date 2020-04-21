@@ -155,7 +155,7 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
     except:
         raise RuntimeError("No bootstrap model matches this experiment's parameters")
 
-    seed_fitness = None #fitness_calculator.calculate_fitness(seed_genome, team_type)
+    seed_fitness = None #fitness_calculator.calculate_fitness(team_type, selection_level, individual_1, individual_2, render=False)
 
     es = cma.CMAEvolutionStrategy(seed_genome, sigma, options)
 
@@ -186,7 +186,7 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
             # Log results to results file
             results = model_name.replace("_", ",")
             results += f",{log_file_name}, {seed_fitness}, {-es.result[1]}\n"
-            intermediate_results_file_name = f"{iteration_number}_{results_file_name}"
+            intermediate_results_file_name = f"results_{iteration_number}.csv"
 
             if not os.path.exists(intermediate_results_file_name):
                 results_file = open(intermediate_results_file_name, 'a')
@@ -215,15 +215,15 @@ def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name,
                 best_individual_1.load_weights(es.result[0][0:mid])
                 best_individual_2.load_weights(es.result[0][mid:])
 
-                best_individual_1.save_model(model_name + "_controller1_", sub_dir=str(iteration_number))
-                best_individual_2.save_model(model_name + "_controller2_", sub_dir=str(iteration_number))
+                best_individual_1.save_model(model_name + "_controller1_" + str(iteration_number) + "_")
+                best_individual_2.save_model(model_name + "_controller2_" + str(iteration_number) + "_")
 
             else:
                 best_individual = TinyAgent(fitness_calculator.get_observation_size(),
                                             fitness_calculator.get_action_size(),
                                             seed=seed_value)
                 best_individual.load_weights(es.result[0])
-                best_individual.save_model(model_name, sub_dir=str(iteration_number))
+                best_individual.save_model(model_name + "_" + str(iteration_number))
 
         es.disp()
 
