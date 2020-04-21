@@ -1,7 +1,7 @@
 import re
 import math
 
-from gym_package.gym_TS.agents.HardcodedAgent import HardcodedAgent
+from gym_TS.agents.HardcodedAgent import HardcodedAgent
 
 
 class HardcodedGeneralistAgent(HardcodedAgent):

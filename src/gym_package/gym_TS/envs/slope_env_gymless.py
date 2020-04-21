@@ -1,4 +1,4 @@
-from gym_package.gym_TS.envs.slope_env_parent import SlopeEnvParent
+from gym_TS.envs.slope_env_parent import SlopeEnvParent
 
 import numpy as np
 import copy

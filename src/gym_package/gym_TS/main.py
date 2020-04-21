@@ -3,9 +3,9 @@ import getopt
 import os
 import numpy as np
 
-from gym_package.gym_TS.agents import TinyAgent
-from gym_package.gym_TS.fitness_calculator import FitnessCalculator
-from gym_package.gym_TS.learning_algorithms import cma_es, rwg
+from gym_TS.agents import TinyAgent
+from gym_TS.fitness_calculator import FitnessCalculator
+from gym_TS.learning_algorithms import cma_es, rwg
 
 
 def main(argv):
