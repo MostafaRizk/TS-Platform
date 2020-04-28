@@ -20,12 +20,12 @@ class SlopeEnvGym(SlopeEnvParent, gym.Env):
         'video.frames_per_second': 30
     }
 
-    def __init__(self, num_robots=4, num_resources=5, sensor_range=1, slope_angle=20, arena_length=12, arena_width=8,
-                 cache_start=1, slope_start=3, source_start=9, upward_cost_factor=3, downward_cost_factor=0.2,
-                 carry_factor=1, resource_reward_factor=1000):
-        SlopeEnvParent.__init__(self, num_robots=4, num_resources=5, sensor_range=1, slope_angle=20, arena_length=12, arena_width=8,
-                 cache_start=1, slope_start=3, source_start=9, upward_cost_factor=3, downward_cost_factor=0.2,
-                 carry_factor=1, resource_reward_factor=1000)
+    def __init__(self, num_robots=2, num_resources=3, sensor_range=1, slope_angle=40, arena_length=8, arena_width=4,
+                 cache_start=1, slope_start=3, source_start=7, upward_cost_factor=3, downward_cost_factor=0.2,
+                 carry_factor=2, resource_reward_factor=1000):
+        SlopeEnvParent.__init__(self, num_robots=num_robots, num_resources=num_resources, sensor_range=sensor_range, slope_angle=slope_angle, arena_length=arena_length, arena_width=arena_width,
+                 cache_start=cache_start, slope_start=slope_start, source_start=source_start, upward_cost_factor=upward_cost_factor, downward_cost_factor=downward_cost_factor,
+                 carry_factor=carry_factor, resource_reward_factor=resource_reward_factor)
 
         try:
             self.robot_transforms = [rendering.Transform() for i in range(self.num_robots)]

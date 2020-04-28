@@ -18,7 +18,7 @@ class FitnessCalculator:
                  carry_factor, resource_reward_factor, using_gym=False):
 
         if using_gym:
-            self.env = gym.make('gym_package.gym_TS:TS-v1', num_robots=num_robots, num_resources=num_resources,
+            self.env = gym.make('gym_TS:TS-v1', num_robots=num_robots, num_resources=num_resources,
                                 sensor_range=sensor_range, slope_angle=slope_angle, arena_length=arena_length,
                                 arena_width=arena_width, cache_start=cache_start, slope_start=slope_start,
                                 source_start=source_start, upward_cost_factor=upward_cost_factor,
