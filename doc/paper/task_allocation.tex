@@ -125,11 +125,31 @@ We provide results suggesting how to most effectively evolve a team that achieve
 
 \section{Introduction}
 
-\paragraph{}
-As we automate more industries it will become more commonplace to have teams of robots cooperating on task. Programming these robots can be tedious and difficult. Evolution provides us with a way of generating neural network controllers for multiple robots cooperating to achieve a shared goal, but it remains challenging to produce robot teams that exhibit specialisation i.e. different members of the team perform different sub-tasks. In other words, it is still not fully understood what is the best way to perform task partitioning and task allocation when evolving a multi-robot team.
+As we automate more industries it will become more commonplace to have teams of robots cooperating on task. 
+Programming these robots can be tedious and difficult. 
+Evolution provides us with a way of generating neural network controllers for multiple robots cooperating to achieve a shared goal, but it remains challenging to produce robot teams that exhibit specialisation i.e. different members of the team perform different sub-tasks. 
+In other words, it is still not fully understood what is the best way to perform task partitioning and task allocation when evolving a multi-robot team.
 
-\paragraph{}
-In previous works, researchers have evolved teams that are either homogeneous (all robots have the same controller) or heterogeneous (different sub-groups have different controllers). In addition to this distinction, in the evolutionary process, selection is either performed at the individual level or team level. At the individual level, each robot in the team is assessed independently whereas at the team level, they are assessed together. This is illustrated by Waibel et al. in [Waibel et al. 2009]. However, in that work, Waibel et al looked at tasks that did not benefit from specialisation. In this study we compare these 4 setups but consider a foraging task where the team has higher performance if they perform it in a specialised way.
+
+In previous works, researchers have evolved teams that are either homogeneous (all robots have the same controller) or heterogeneous (different sub-groups have different controllers). 
+In addition to this distinction, in the evolutionary process, selection is either performed at the individual level or team level. 
+At the individual level, each robot in the team is assessed independently whereas at the team level, they are assessed together. 
+This is illustrated by Waibel et al. in [Waibel et al. 2009]. 
+However, in that work, Waibel et al looked at tasks that did not benefit from specialisation. 
+In this study we compare these four setups but consider a foraging task where the team has higher performance if they perform it in a specialised way.
+
+
+\section{A foraging task with stag-hunt like properties \label{setup}}
+
+\todo{Describe the payoffs, the arena, etc... use a bit of mathematics, figures}
+
+You have a team of $n$ robots. They are placed in an rectangular arena  with $l$ tiles and $w$ tiles. Each episode is composed of a number of finite time-steps $t=0, .... t_{max}$.
+You pay a cost....
+
+\subsection{Rewarding individuals}
+
+\subsection{Rewarding teams}
+
 
 
 \section{Experimental Setup \label{setup}}
@@ -137,7 +157,15 @@ In previous works, researchers have evolved teams that are either homogeneous (a
 \subsection{Simulation}
 
 \paragraph{}
-We use an experimental setup inspired by the work of Ferrante et al. [Ferrante 2015]. Ferrante et al proposed a task where a team of robots forage for resources placed at the top of a slope. The setup is intended as an analogue for leafcutter ants retrieving leaves from the top of a tree, where there is a time cost associated with climbing to where the leaves are. Leafcutter ants however, have evolved to leverage gravity, with the ants partitioning the task and some of them climbing up, cutting leaves and dropping them in a cache at the base of the tree and some of them, which can be thought of as generalists, collecting leaves from the cache and returning them to the nest and some of them occasionally cutting the leaves and transporting them back themselves. Specialist teams of ants turn out to be more efficient because they do not lose time repeatedly climbing up and down the tree. Similarly, robot teams that evolve to use specialisation retrieve more resources in the same amount of time as their generalist counterparts. In this task, there is evolutionary pressure for robot teams to develop a specialist strategy and Ferrante et al show that it is possible for such specialisation to emerge through artificial evolution much as it did in natural evolution. We use a simplified version of Ferrante et al's setup that uses simple agents rather than a physicall accurate robotics simulation as the focus of this study is the evolutionary conditions required for specialisation to emerge, not necessarily the evolution of real world-ready robot controllers. The simplified simulations allow for more thorough study of evolutionary conditions without the additional complications of realistic physics, sensor noise and high computational cost.
+We use an experimental setup inspired by the work of Ferrante et al. [Ferrante 2015]. 
+Ferrante et al proposed a task where a team of robots forage for resources placed at the top of a slope. 
+The setup is intended as an analogue for leafcutter ants retrieving leaves from the top of a tree, where there is a time cost associated with climbing to where the leaves are.
+ Leafcutter ants however, have evolved to leverage gravity, with the ants partitioning the task and some of them climbing up, cutting leaves and dropping them in a cache at the base of the tree and some of them, which can be thought of as generalists, collecting leaves from the cache and returning them to the nest and some of them occasionally cutting the leaves and transporting them back themselves. 
+ Specialist teams of ants turn out to be more efficient because they do not lose time repeatedly climbing up and down the tree. 
+ Similarly, robot teams that evolve to use specialisation retrieve more resources in the same amount of time as their generalist counterparts. 
+ In this task, there is evolutionary pressure for robot teams to develop a specialist strategy and Ferrante et al show that it is possible for such specialisation to emerge through artificial evolution much as it did in natural evolution. 
+ We use a simplified version of Ferrante et al's setup that uses simple agents rather than a physically accurate robotics simulation as the focus of this study is the evolutionary conditions required for specialisation to emerge, not necessarily the evolution of real world-ready robot controllers. 
+ The simplified simulations allow for more thorough study of evolutionary conditions without the additional complications of realistic physics, sensor noise and high computational cost.
 
 \paragraph{}
 The arena is 8 tiles long and 4 tiles wide. The bottom row of tiles is the nest, where robots initially spawn and where they must return resources. The next 2 rows are the cache, where resources that have been dropped come to rest after sliding down the slope. The next 4 rows are the slope, which resources slide down when dropped. The final row is the source, where resources spawn at the beginning of the simulation and where new resources spawn when older ones have been removed. Initially 3 resources spawn in the source and 2 robots spawn in the nest. The robots' goal is to transport as many resources as possible to the nest. In the implementation by Ferrante et al, the fitness of the team of robots is how many resources they retrieved. In that implementation, robots take longer to travel up the slope than to travel down and resources slide down faster than robots. This is difficult to replicate without a realistic physics engine and in a discrete environment. To achieve a similar effect, we introduce a cost for expending energy, much like a battery. Traveling up the slope has a higher cost than traveling down. This is an accurate reflection of real robots which would expend more power going up a slope and also produces evolutionary pressure for the robots to specialise. 
