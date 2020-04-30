@@ -165,7 +165,7 @@ class FitnessCalculator:
                 score_1 += info["reward_1"]
                 score_2 += info["reward_2"]
 
-                #time.sleep(0.1)
+                time.sleep(0.1)
                 #print(f'Time: {t} || Score: {score}')
 
                 if done:
