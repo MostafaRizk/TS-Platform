@@ -3,34 +3,30 @@ import getopt
 import os
 import numpy as np
 
-from agents.DQNAgent import DQNAgent
-from agents.BasicQAgent import BasicQAgent
-
-from agents.TinyAgent import TinyAgent
-from fitness_calculator import FitnessCalculator
-
-from learning_algorithms import cma_es
-from learning_algorithms import rwg
+from gym_TS.agents.TinyAgent import TinyAgent
+from gym_TS.fitness_calculator import FitnessCalculator
+from gym_TS.learning_algorithms import cma_es, rwg
 
 
 def main(argv):
     try:
         opts, args = getopt.getopt(argv, "",
-                                   ["algorithm=", "team_type=", "generations=", "simulation_length=", "trials=",
+                                   ["algorithm=", "team_type=", "selection_level=", "generations=", "simulation_length=", "trials=",
                                     "seed=", "num_robots=", "num_resources=", "sensor_range=", "slope_angle=",
                                     "arena_length=", "arena_width=", "cache_start=", "slope_start=", "source_start=",
-                                    "sigma=", "test_model=", "target_fitness=", "population=", "batch_test=",
+                                    "sigma=", "test_model=", "target_fitness=", "num_teams=", "batch_test=",
                                     "hardcoded_test=", "upward_cost_factor=", "downward_cost_factor=", "carry_factor=",
                                     "resource_reward_factor="])
 
     except getopt.GetoptError:
-        print("There was an error")
+        print("There was an error with the given arguments")
         sys.exit(2)
 
     bootstrap = False
 
     training_algorithm = None
     team_type = None
+    selection_level = None
     simulation_length = None
     num_generations = None
     num_trials = None
@@ -52,7 +48,7 @@ def main(argv):
     sigma = None
     test_model = None
     target_fitness = 1.0
-    population = None
+    num_teams = None
     batch_path = None
     hardcoded_test = None
 
@@ -72,6 +68,11 @@ def main(argv):
                 team_type = arg
             else:
                 print("Team type is misspelled or unsupported. Use \"homogeneous\" or \"heterogeneous\"")
+        if opt == "--selection_level":
+            if arg == "team" or arg == "individual":
+                selection_level = arg
+            else:
+                print("Selection level is misspelled or unsupported. Use \"team\" or \"individual\"")
         if opt == "--generations":
             num_generations = int(arg)
         if opt == "--simulation_length":
@@ -112,8 +113,8 @@ def main(argv):
             test_model = arg
         if opt == "--target_fitness":
             target_fitness = float(arg)
-        if opt == "--population":
-            population = int(arg)
+        if opt == "--num_teams":
+            num_teams = int(arg)
         if opt == "--batch_test":
             batch_path = arg
         if opt == "--hardcoded_test":
@@ -132,17 +133,12 @@ def main(argv):
                                                resource_reward_factor=resource_reward_factor)
 
         best_genome, best_fitness = training_algorithm(seed_value=random_seed, calculator=fitness_calculator,
-                                                       population_size=num_generations, team_type=team_type,
-                                                       target_fitness=target_fitness)
+                                                       num_teams=num_generations, team_type=team_type,
+                                                       selection_level=selection_level, target_fitness=target_fitness)
 
-        model_name = f"bootstrap_{team_type}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{upward_cost_factor}_{downward_cost_factor}_{carry_factor}_{resource_reward_factor}_{best_fitness}"
+        model_name = f"bootstrap_{team_type}_{selection_level}_{simulation_length}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{upward_cost_factor}_{downward_cost_factor}_{carry_factor}_{resource_reward_factor}"
 
-        directory = "models/bootstrap/"
-
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-
-        np.save(directory + model_name, best_genome)
+        np.save(model_name, best_genome)
 
     else:
         # If this is a training run
@@ -160,7 +156,7 @@ def main(argv):
                                                    downward_cost_factor=downward_cost_factor, carry_factor=carry_factor,
                                                    resource_reward_factor=resource_reward_factor)
 
-            model_name = f"CMA_{team_type}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{upward_cost_factor}_{downward_cost_factor}_{carry_factor}_{resource_reward_factor}_{sigma}_{population}"
+            model_name = f"CMA_{team_type}_{selection_level}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{upward_cost_factor}_{downward_cost_factor}_{carry_factor}_{resource_reward_factor}_{sigma}_{num_teams}"
 
             # Create results file if it doesn't exist
             results_file_name = "results.csv"
@@ -169,7 +165,7 @@ def main(argv):
                 pass
             else:
                 results_file = open(results_file_name, 'w')
-                results_file.write("Algorithm Name, Team Type, Simulation Length, Num Generations, Num Trials, Random Seed, Num Robots, Num Resources, Sensor Range, Slope Angle, Arena Length, Arena Width, Cache Start, Slope Start, Source Start, Upward cost factor, Downward cost factor, Carry Factor, Resource reward factor, Sigma, Population, Log File, Seed Fitness, Evolved Fitness\n")
+                results_file.write("Algorithm Name, Team Type, Selection Level, Simulation Length, Num Generations, Num Trials, Random Seed, Num Robots, Num Resources, Sensor Range, Slope Angle, Arena Length, Arena Width, Cache Start, Slope Start, Source Start, Upward cost factor, Downward cost factor, Carry Factor, Resource reward factor, Sigma, Population, Log File, Seed Fitness, Evolved Fitness\n")
                 results_file.close()
 
             print(f"Evaluating {model_name}")
@@ -177,19 +173,10 @@ def main(argv):
             # Get best genome using CMA
             best_genome = training_algorithm(fitness_calculator=fitness_calculator, seed_value=random_seed, sigma=sigma,
                                              model_name=model_name, results_file_name=results_file_name,
-                                             team_type=team_type, num_generations=num_generations,
-                                             population_size=population)
+                                             team_type=team_type, selection_level=selection_level, num_generations=num_generations,
+                                             num_teams=num_teams)
 
-            # Create individual using genome so that it can be saved
-            if team_type == "homogeneous":
-                best_individual = TinyAgent(fitness_calculator.get_observation_size(),
-                                            fitness_calculator.get_action_size(),
-                                            seed=random_seed)
-                best_individual.load_weights(best_genome)
-                best_individual.save_model(model_name)
-
-            # Split the genome and save both halves separately for heterogeneous setup
-            elif team_type == "heterogeneous":
+            if team_type == "heterogeneous" and selection_level == "team":
                 best_individual_1 = TinyAgent(fitness_calculator.get_observation_size(),
                                               fitness_calculator.get_action_size(),
                                               seed=random_seed)
@@ -205,6 +192,13 @@ def main(argv):
                 best_individual_1.save_model(model_name + "_controller1_")
                 best_individual_2.save_model(model_name + "_controller2_")
 
+            else:
+                best_individual = TinyAgent(fitness_calculator.get_observation_size(),
+                                            fitness_calculator.get_action_size(),
+                                            seed=random_seed)
+                best_individual.load_weights(best_genome)
+                best_individual.save_model(model_name)
+
         # If this is a testing run
         elif batch_path is None and hardcoded_test is None:
             model_name = test_model.split("_")
@@ -212,12 +206,13 @@ def main(argv):
             # f"CMA_{team_type}_{simulation_length}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{sigma}"
             # f"CMA_{team_type}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{sigma}_{population}"
             # python3 main.py --test_model /home/mriz9/Documents/Results/AAMAS/6_Battery/Tiny/CMA_heterogeneous_1000_300_5_10_2_3_1_100_20_4_1_3_19_0.05_40_controller1_.npy
+            # CMA_heterogeneous_individual_500_5000_5_7_2_3_1_40_8_4_1_3_7_3.0_0.2_2.0_1000.0_0.2_40.npy
 
             # for i in range(len(model_name)):
             #    print(f"{i} - {model_name[i]}")
 
             if num_resources is None:
-                num_resources = int(model_name[8])
+                num_resources = int(model_name[9])
 
             # Prepare fitness function
             fitness_calculator = FitnessCalculator(random_seed=int(model_name[6]), simulation_length=int(model_name[3]),
@@ -227,26 +222,39 @@ def main(argv):
                                                    arena_length=int(model_name[11]), arena_width=int(model_name[12]),
                                                    cache_start=int(model_name[13]),
                                                    slope_start=int(model_name[14]), source_start=int(model_name[15]),
-                                                   upward_cost_factor=upward_cost_factor,
-                                                   downward_cost_factor=downward_cost_factor, carry_factor=carry_factor,
-                                                   resource_reward_factor=resource_reward_factor)
+                                                   upward_cost_factor=float(model_name[16]),
+                                                   downward_cost_factor=float(model_name[17]), carry_factor=float(model_name[18]),
+                                                   resource_reward_factor=float(model_name[19]),
+                                                   using_gym=True)
 
-            team_type = model_name[2]
+            team_type = model_name[1]
+            selection_level = model_name[2]
 
-            if team_type == "homogeneous":
-                full_genome = np.load(test_model)
-            elif team_type == "heterogeneous":
-                if model_name[18] != "controller1":
+            individual_1 = None
+            individual_2 = None
+
+            if team_type == "heterogeneous" and selection_level == "team":
+                if model_name[22] != "controller1":
                     raise RuntimeError("Use controller 1's path")
 
-                controller1 = np.load(test_model)
+                individual_1 = np.load(test_model)
                 test_model2 = test_model.replace("controller1", "controller2")
-                controller2 = np.load(test_model2)
-                full_genome = np.concatenate([controller1, controller2])
+                individual_2 = np.load(test_model2)
 
-            fitness, specialisation = fitness_calculator.calculate_ferrante_specialisation(full_genome, team_type=model_name[2],
-                                                                                  render=True)
-            print(f"Fitness is {fitness} and specialisation is {specialisation}")
+            elif team_type == "homogeneous" and selection_level == "team" or \
+                    team_type == "heterogeneous" and selection_level == "individual" or \
+                    team_type == "homogeneous" and selection_level == "individual":
+                individual_1 = np.load(test_model)
+                individual_2 = np.load(test_model)
+
+            else:
+                raise RuntimeError("Invalid team type and/or selection level")
+
+
+            #fitness, specialisation = fitness_calculator.calculate_ferrante_specialisation(full_genome, team_type=model_name[2],render=False)
+            #print(f"Fitness is {fitness} and specialisation is {specialisation}")
+            fitness_1, fitness_2 = fitness_calculator.calculate_fitness(team_type=model_name[1], selection_level=model_name[2], individual_1=individual_1, individual_2=individual_2, render=True)
+            print(f"Fitness 1 is {fitness_1} and Fitness 2 is {fitness_2}")
 
         # If this is a batch testing run
         elif batch_path is not None:
@@ -259,7 +267,7 @@ def main(argv):
                 pass
             else:
                 results_file = open(results_file_name, 'w')
-                results_file.write("Algorithm Name, Team Type, Simulation Length, Num Generations, Num Trials, Random Seed, Num Robots, Num Resources, Sensor Range, Slope Angle, Arena Length, Arena Width, Cache Start, Slope Start, Source Start, Sigma, Population, Fitness, Specialisation\n")
+                results_file.write("Algorithm Name, Team Type, Selection Level, Simulation Length, Num Generations, Num Trials, Random Seed, Num Robots, Num Resources, Sensor Range, Slope Angle, Arena Length, Arena Width, Cache Start, Slope Start, Source Start, Sigma, Population, Fitness, Specialisation\n")
 
             for filename in os.listdir(batch_path):
 
@@ -268,21 +276,21 @@ def main(argv):
                     # f"CMA_{team_type}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{sigma}_{population}"
 
                     # Prepare fitness function
-                    fitness_calculator = FitnessCalculator(random_seed=int(model_name[5]),
-                                                           simulation_length=int(model_name[2]),
-                                                           num_trials=int(model_name[4]), num_robots=int(model_name[6]),
-                                                           num_resources=int(model_name[7]),
-                                                           sensor_range=int(model_name[8]),
-                                                           slope_angle=int(model_name[9]),
-                                                           arena_length=int(model_name[10]),
-                                                           arena_width=int(model_name[11]),
-                                                           cache_start=int(model_name[12]),
-                                                           slope_start=int(model_name[13]),
-                                                           source_start=int(model_name[14]),
-                                                           upward_cost_factor=upward_cost_factor,
-                                                           downward_cost_factor=downward_cost_factor,
-                                                           carry_factor=carry_factor,
-                                                           resource_reward_factor=resource_reward_factor)
+                    fitness_calculator = FitnessCalculator(random_seed=int(model_name[6]),
+                                                           simulation_length=int(model_name[3]),
+                                                           num_trials=int(model_name[5]), num_robots=int(model_name[7]),
+                                                           num_resources=int(model_name[8]),
+                                                           sensor_range=int(model_name[9]),
+                                                           slope_angle=int(model_name[10]),
+                                                           arena_length=int(model_name[11]),
+                                                           arena_width=int(model_name[12]),
+                                                           cache_start=int(model_name[13]),
+                                                           slope_start=int(model_name[14]),
+                                                           source_start=int(model_name[15]),
+                                                           upward_cost_factor=float(model_name[16]),
+                                                           downward_cost_factor=float(model_name[17]),
+                                                           carry_factor=float(model_name[18]),
+                                                           resource_reward_factor=float(model_name[19]))
 
                     team_type = model_name[1]
                     model_path = batch_path + "/" + filename
@@ -290,7 +298,7 @@ def main(argv):
                     if team_type == "homogeneous":
                         full_genome = np.load(model_path)
                     elif team_type == "heterogeneous":
-                        if model_name[17] != "controller1":
+                        if model_name[22] != "controller1":
                             continue
 
                         controller1 = np.load(model_path)

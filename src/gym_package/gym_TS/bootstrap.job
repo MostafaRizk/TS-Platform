@@ -1,8 +1,8 @@
 #!/bin/env bash
-#SBATCH --job-name=1_bootstrap
+#SBATCH --job-name=bootstrap
 #SBATCH --time=12:00:00
-#SBATCH --array=1-110
-#SBATCH --output=1_bootstrap.out
+#SBATCH --array=1-60
+#SBATCH --output=bootstrap.out
 #SBATCH --open-mode=append
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
@@ -11,7 +11,7 @@
 #SBATCH --mail-user=mostafa.rizk@monash.edu
 
 export OMP_NUM_THREADS=1
-module load singularity
+source /home/mriz9/om18/actual_code/TS-Platform/src/env/bin/activate
 CMD=`head -n ${SLURM_ARRAY_TASK_ID} LIST_bootstrap | tail -1`
-singularity exec -B /home:/home -B /mnt/lustre:/mnt/lustre ~/no45/mriz9/gym-TS/gym_TS/gym-TS.img $CMD
+$CMD
 

@@ -1,12 +1,12 @@
-/gym_TS/.idea
+/gym-TS/gym_TS/.idea
 /.idea/misc.xml
-/gym_TS/__pycache__/__init__.cpython-37.pyc
-/gym_TS/agents/__pycache__
-/gym_TS/envs/__pycache__/__init__.cpython-37.pyc
-/gym_TS/envs/__pycache__/TS_env_multi.cpython-37.pyc
-/gym_TS/envs/__pycache__/TS_env_simplified.cpython-37.pyc
-/gym_TS/envs/__pycache__/TS_env.cpython-37.pyc
-/gym_TS/models
+/gym-TS/gym_TS/__pycache__/__init__.cpython-37.pyc
+/gym-TS/gym_TS/agents/__pycache__
+/gym-TS/gym_TS/envs/__pycache__/__init__.cpython-37.pyc
+/gym-TS/gym_TS/envs/__pycache__/TS_env_multi.cpython-37.pyc
+/gym-TS/gym_TS/envs/__pycache__/TS_env_simplified.cpython-37.pyc
+/gym-TS/gym_TS/envs/__pycache__/TS_env.cpython-37.pyc
+/gym-TS/gym_TS/models
 
 
 # Created by https://www.gitignore.io/api/latex,python,pycharm
