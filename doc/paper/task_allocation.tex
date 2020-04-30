@@ -3,6 +3,7 @@
 
 \usepackage{booktabs}
 \usepackage{amsmath}
+\usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
 
 %% do not change the following lines
 \setcopyright{ifaamas}  % do not change this line!
@@ -72,7 +73,15 @@
 
 \begin{abstract}  % put your abstract here!
 
-Foraging is a common task in the robotics domain that involves transporting resources from one location to another. It has analogues to many real world applications such as mining, space exploration and hazardous waste removal. Using a distributed multi-robot team is advantageous as the team is scalable and robust, but designing controllers is difficult. This is especially true when the team divides the task into different sub-tasks and sub-groups need to specialise. Evolutionary algorithms are a promising tool for controller design, however little work has been done evolving controllers for teams performing task specialisation. This paper examines a foraging scenario requiring task specialisation and explores the difference in performance of a heterogeneous and homogeneous team. In the heterogeneous setup, the sub-groups have different controllers and evolution uses individual selection. In the homogeneous setup, the sub-groups have the same controllers but perform different tasks depending on environmental cues, and evolution uses team selection. We provide results suggesting how to most effectively evolve a team that achieves high performance in this variant of the foraging problem that requires specialisation.
+Foraging is a common task in robotics, involving transporting resources from one location to another. 
+It has many real-world applications, including mining, space exploration, hazardous waste removal among others. 
+Using a distributed multi-robot team is advantageous as the team is scalable and robust, but designing controllers for multiple robots is challenging, particularly when the team divides the task into different sub-tasks requiring team members to specialise. 
+Evolutionary algorithms have been previously used for controller design, with two different approaches -- homogenous teams or heterogenous individual robots. \todo{This sentence needs work}
+One sentence pros and cons for both approaches.
+This paper examines a foraging scenario requiring task specialisation and explores the difference in performance between heterogeneous and homogeneous teams. 
+In the heterogeneous setup, sub-groups have different controllers and evolution uses individual selection. 
+In the homogeneous setup,  sub-groups have the same controllers but perform different tasks depending on environmental cues, and evolution uses team selection. 
+We provide results suggesting how to most effectively evolve a team that achieves high performance in this variant of the foraging problem that requires specialisation.
 
 \end{abstract}
 
