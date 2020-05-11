@@ -73,15 +73,7 @@
 
 \begin{abstract}  % put your abstract here!
 
-Foraging is a common task in robotics, involving transporting resources from one location to another. 
-It has many real-world applications, including mining, space exploration, hazardous waste removal among others. 
-Using a distributed multi-robot team is advantageous as the team is scalable and robust, but designing controllers for multiple robots is challenging, particularly when the team divides the task into different sub-tasks requiring team members to specialise. 
-Evolutionary algorithms have been previously used for controller design, with two different approaches -- homogenous teams or heterogenous individual robots. \todo{This sentence needs work}
-One sentence pros and cons for both approaches.
-This paper examines a foraging scenario requiring task specialisation and explores the difference in performance between heterogeneous and homogeneous teams. 
-In the heterogeneous setup, sub-groups have different controllers and evolution uses individual selection. 
-In the homogeneous setup,  sub-groups have the same controllers but perform different tasks depending on environmental cues, and evolution uses team selection. 
-We provide results suggesting how to most effectively evolve a team that achieves high performance in this variant of the foraging problem that requires specialisation.
+TODO
 
 \end{abstract}
 
@@ -125,90 +117,123 @@ We provide results suggesting how to most effectively evolve a team that achieve
 
 \section{Introduction}
 
-As we automate more industries it will become more commonplace to have teams of robots cooperating on task. 
-Programming these robots can be tedious and difficult. 
-Evolution provides us with a way of generating neural network controllers for multiple robots cooperating to achieve a shared goal, but it remains challenging to produce robot teams that exhibit specialisation i.e. different members of the team perform different sub-tasks. 
-In other words, it is still not fully understood what is the best way to perform task partitioning and task allocation when evolving a multi-robot team.
+Aim is to evolve a multi-agent team that solves a task in a partitioned way. 
+Also to understand the qualities of the fitness landscape in such a task for each of four evolutionary configurations. 
 
+\section{Background}
 
-In previous works, researchers have evolved teams that are either homogeneous (all robots have the same controller) or heterogeneous (different sub-groups have different controllers). 
-In addition to this distinction, in the evolutionary process, selection is either performed at the individual level or team level. 
-At the individual level, each robot in the team is assessed independently whereas at the team level, they are assessed together. 
-This is illustrated by Waibel et al. in [Waibel et al. 2009]. 
-However, in that work, Waibel et al looked at tasks that did not benefit from specialisation. 
-In this study we compare these four setups but consider a foraging task where the team has higher performance if they perform it in a specialised way.
+Khamis et al review multi-robot task allocation. Evolution is one approach. Less manual programming. In theory, don’t need to analyse each new task.
+Pini et al manually programmed agents that alternate between generalist and specialist strategy.
+Ferrante evolved specialisation 
+Waibel et al studied 4 evolutionary configurations
 
+\section{Experimental Methods}
 
-\section{A foraging task with stag-hunt like properties \label{setup}}
+\subsection{A foraging task with stag-hunt like properties}
 
 \todo{Describe the payoffs, the arena, etc... use a bit of mathematics, figures}
 
 You have a team of $n$ robots. They are placed in an rectangular arena  with $l$ tiles and $w$ tiles. Each episode is composed of a number of finite time-steps $t=0, .... t_{max}$.
 You pay a cost....
 
-\subsection{Rewarding individuals}
+Use a foraging task as testbed for evolution of specialisation.
+Task modeled off Atta Leafcutter ant, as in Ferrante et al and Pini et al.
+Ants retrieve leaves from tree and take them to nest. 
+Sometimes ants partition the task. Some ants are droppers who cut leaves and let them fall, other ants are collectors who collect from the base of the tree to the nest.
+This specialisation is advantageous because gravity transports leaves faster than ants can.
+Ants are able to transport more leaves in the same time-span while consuming less energy.
+We model this similarly to Ferrante et al, with a slope.
+Like ants, robots/agents transport resources from source to nest. Source is top of slope. Nest is bottom.
+Agent teams can use generalist strategy, each acts individually, going up and down the slope to retrieve resources.
+Agent teams can use specialist strategy, where part of the team drops things from the top of the slope and part collects resources that accumulate at the base of the slope, called the cache.
+Much like real robots and ants, there is a cost to moving (depleting battery or energy reserves) and it is compounded when going up the slope (simulates gravity). 
+Much like the ants, a specialist strategy would conserve energy/cost and resources slide down faster than they can be carried. Preliminary analysis with hardcoded agents verifies that specialist teams gain higher overall reward than generalist teams.
+This can be considered a stag hunt game since an agent only benefits from adopting a specialist strategy if its team member also adopts a specialist strategy. 
 
-\subsection{Rewarding teams}
+\subsection{Simulation Environment}
+
+L x W tiles with source, slope, cache, nest.
+We use L=8 and W=4.
+Nest=1, Cache=2, Slope=4, Source=1
+Resources appear in source and replenish when removed. Always at least 3. 2 agents.
+Resources disappear at nest.
+3D physics is computationally expensive. Use simplified version to expedite experiments as focus of research is on evolutionary process and team dynamics rather than robotic element.
+Resources slide on slope with speed of 4 tiles/time step.
+Robots travel at 1 tile per time step.
 
 
+\subsection{Rewards and Costs}
 
-\section{Experimental Setup \label{setup}}
+To simulate battery, agents pay costs for moving.
+Up cost 3 down cost 0.2 carry factor 2 reward factor 1000. Base cost is 1.
+If not carrying: Movement cost is -1, up slope is -3, down slope is -0.2
+If carrying: Movement cost is -2, up slope is -6, down slope is -0.4
+Both agents get +1000 if either retrieves a resource. Reward is shared but cost is individual.
+Example: Agent 1 incurs -200 retrieving resource. Agent 2 incurs -100 wandering around cache. Agent 1 score= 1000 - 200. Agent 2 score = 1000 - 100.
+Team selection: team score = agent 1 score + agent 2 score = 800 + 900 = 1700
+Individual selection: agent 1 score = 800, agent 2 score = 900. 
+In team selection, team is compared to other teams. In individual selection, highest scoring individual is selected. 
 
-\subsection{Simulation}
+\subsection{Observations and Actions}
 
-\paragraph{}
-We use an experimental setup inspired by the work of Ferrante et al. [Ferrante 2015]. 
-Ferrante et al proposed a task where a team of robots forage for resources placed at the top of a slope. 
-The setup is intended as an analogue for leafcutter ants retrieving leaves from the top of a tree, where there is a time cost associated with climbing to where the leaves are.
- Leafcutter ants however, have evolved to leverage gravity, with the ants partitioning the task and some of them climbing up, cutting leaves and dropping them in a cache at the base of the tree and some of them, which can be thought of as generalists, collecting leaves from the cache and returning them to the nest and some of them occasionally cutting the leaves and transporting them back themselves. 
- Specialist teams of ants turn out to be more efficient because they do not lose time repeatedly climbing up and down the tree. 
- Similarly, robot teams that evolve to use specialisation retrieve more resources in the same amount of time as their generalist counterparts. 
- In this task, there is evolutionary pressure for robot teams to develop a specialist strategy and Ferrante et al show that it is possible for such specialisation to emerge through artificial evolution much as it did in natural evolution. 
- We use a simplified version of Ferrante et al's setup that uses simple agents rather than a physically accurate robotics simulation as the focus of this study is the evolutionary conditions required for specialisation to emerge, not necessarily the evolution of real world-ready robot controllers. 
- The simplified simulations allow for more thorough study of evolutionary conditions without the additional complications of realistic physics, sensor noise and high computational cost.
+Agents can sense and act. Use recurrent neural network.
+Agents have sensing range. 0 means just current tile. 1 means square that extends 1 tile in each direction (9 tiles total including current tile). 2 means square extending 2 tiles (25 tiles). We use sensing range 1 to reduce computation.
+For each tile, agent observes a onehotencoded 4-bit vector. 
+Blank= 1000, Agent = 0100, Resource = 0010, Wall = 0001
+Tiles read from top left to bottom right. In this case, 4x9 bits so far
+Next is 4-bit vector for current area
+Nest = 1000, Cache = 0100, Slope = 0010, Source = 0001
+Next is 1-bit for resource possession. Has resource = 1. Doesn’t have resource = 0
+Total bits in observation are 9x4 + 4 + 1= 41 bits
+6 possible actions:
+Forward = 0, Backward = 1, Left = 2, Right = 3, Pick-up = 4, Drop = 5
+Recurrent neural network has 41 inputs, 1 bias input and 6 recurrent inputs (one for each of the 6 outputs). There is no hidden layer, just a 6-neuron output layer. This makes for a total of (41+1+6)x6 = 288 weights. The output layer uses a linear activation function.
 
-\paragraph{}
-The arena is 8 tiles long and 4 tiles wide. The bottom row of tiles is the nest, where robots initially spawn and where they must return resources. The next 2 rows are the cache, where resources that have been dropped come to rest after sliding down the slope. The next 4 rows are the slope, which resources slide down when dropped. The final row is the source, where resources spawn at the beginning of the simulation and where new resources spawn when older ones have been removed. Initially 3 resources spawn in the source and 2 robots spawn in the nest. The robots' goal is to transport as many resources as possible to the nest. In the implementation by Ferrante et al, the fitness of the team of robots is how many resources they retrieved. In that implementation, robots take longer to travel up the slope than to travel down and resources slide down faster than robots. This is difficult to replicate without a realistic physics engine and in a discrete environment. To achieve a similar effect, we introduce a cost for expending energy, much like a battery. Traveling up the slope has a higher cost than traveling down. This is an accurate reflection of real robots which would expend more power going up a slope and also produces evolutionary pressure for the robots to specialise. 
+\subsection{Evolutionary Algorithm}
 
-\paragraph{}
-Robots can move forward, backward, left and right and can pickup or drop a resource. A resource must be in the same tile as a robot to be picked up. Robots can sense all 8 adjacent tiles and the tile they occupy. They can detect whether the tile is blank, contains a resource, contains another agent or a "wall" i.e. a tile beyond the confines of the arena. They can also detect which of the 4 areas they are on and whether or not they're carrying a resource. Robots are controlled by a recurrent neural network with 41 inputs (9 tiles x 4 possible tile contents + 4 possible locations + 1 boolean bit indicating resource possession), 6 outputs and no hidden layers. 
+Use CMA-ES algorithm. Traditional GA maintains a population of solutions. CMA-ES maintains a probability distribution with a mean and sigma. Sample any number of individuals from this distribution. Fitness of those individuals is used to update the mean and sigma, while keeping track of the best solution so far. CMA parameters set according to CMA-ES defaults enumerated here. Change the following:
+Maxiter = 5000 generations, pop size = 40 (80 for Het-Ind and Hom-Ind), tolx = 1e-3, tolfunhist = 2e2
+Population size is different because number of teams is held constant (40 teams). 
+If team level selection, genome contains all team members. When algorithm selects genome, it selects whole team.
+If individual level selection, genome contains one individual. When algorithm selects genome, it selects one member of a team. There are two agents on each team. There are two genomes per team thus 80 genomes in the population.
+If x changes by less than tolx, the algorithm terminates. This ensures that the algorithm stops if the genomes aren’t being changed by much. 
+The history variable stores the best fitness at a generation. The difference between the minimum and maximum values in the history is calculated. If the difference is less than tolfunhist, the algorithm terminates. Essentially: if the best fitness varies by less than 2000 over 9 generations, the algorithm terminates. 
+We bootstrap evolution using random weight guessing. 
+Running evolution on its own we find that the algorithm suffers from flat fitness landscape.
+Bootstrapping allows us to start evolution from a genome that is slightly better than random behaviour to bypass the flat fitness issue.
+In RWG, we do 10,000 runs of the environment with different seeds with 5 trials for each seed. Agent and resource positions are randomised in each trial.
+The best genome found at the end of rwg is returned and used as the mean for CMA-ES.
 
-\paragraph{}
-Each time step, the agents make their observations and use the neural network to choose an action. If an agent moves, it moves one tile per time step. If an agent picks up a resource, that resource moves with it. If it drops a resource, the resource is placed in the tile the robot is currently in. If the resource is dropped on the slope, it slides down the slope at a rate 10 times smaller than the slope angle. That is, if the slope angle is 20, the resource moves 2 tiles per time step until it reaches the cache, at which point it comes to rest. Resources cannot slide beyond the cache, they stop just before reaching the nest. 
+\subsection{Team Composition}
 
-\subsection{Evolutionary Configurations}
+4 different combinations of team composition/level of selection
+Het-Team, Hom-Team, Het-Ind, Hom-Ind.
+Het-Team= Different controllers. Assess together. Genome contains two sets of weights (288x2)
+Hom-Team= Same controller twice. Assess together. Genome contains one set of weights (288). Put controller on both agents.
+Het-Ind= Different controllers. Assess separately. Genome contains one set of weights (288). Put odd controller on one agent and even controller on the other.
+Hom-Ind= Same controller. Assess individually. Genome contains one set of weights (288). Create a copy of the genome. One agent gets the original. Other agent gets the copy. 
+Previous study suggests Het-Ind and Hom-Team are most commonly used.
+Hom-Team and Hom-Ind perform equally well usually. Het-Ind is sometimes on par but often worse. Het-Team performs poorly across the board.
+However, this assumes task that doesn’t benefit from specialisation. 
+We believe that for a task that benefits from specialisation, Het-Team will perform as well as homogeneous counterparts (if not better), with Het-Ind being the poor performer.
+Intuition is that if 2 codependent roles (dropper and collector), they must be assessed together. If they are assessed separately, good teams are repeatedly split up and ultimately generalist solutions will be more successful in this evolutionary environment.
+Also suspect that Hom-Ind will achieve similar results to Hom-Team. May be slower because double population?
 
-\paragraph{}
-We compare homogeneous and heterogeneous performance for 5 different slope angles: 0$^{\circ}$, 10$^{\circ}$, 20$^{\circ}$, 30$^{\circ}$ and 40$^{\circ}$.. For each we perform 30 evolutionary runs of CMA-ES using random seeds 1-30, making a total of 300 runs (30 random seeds x 2 team compositions x 5 slope angles). Each run consists of several iterations of CMA-ES, where the genome being evaluated is a list of neural network weights for the agent controller (two controllers if it is a heterogeneous team). In an individual iteration, the genome's fitness is evaluated through 10 trials of the simulation, where the simulation is 1000 time steps long. Each run of CMA-ES has sigma value 0.05 and is seeded with an initial genome produced by a random weight guessing (RWG) algorithm. RWG randomly guesses genomes for 5000 tries, terminating prematurely if one of the genomes has a fitness greater than or equal to 3 (i.e. 3 more resources are retrieved by the team on average over all 10 trials). If no such genome is found in the 5000 tries, the best one found so far is used.
+\section{Experiments}
 
-\paragraph{}
-We use CMA-ES as the evolutionary algorithm to find a solution. Before CMA-ES is run, RWG is run to find a genome with fitness slightly above the minimum and it is used as a seed for CMA-ES. This initial random search helps avoid CMA-ES getting stuck in a flat fitness landscape.
+We run bootstrapping and evolution for 50 seeds for each of the four configurations. A total of 200 experiments. 
+We sample the generated genomes and their logged fitnesses throughout the process and then use flacco to model the fitness landscape based on this data.\\
 
-\paragraph{}
-RWG is run for 500 generations or until a genome with fitness > 100 is found, and the fittest genome is returned as a seed for CMA-ES. A genome is a vector of weights to be loaded into one or more neural networks. The length of the genome varies depending on which of the four below configurations is being used. 
+[Fitness landscape for each configuration]
 
-\paragraph{}
-In CMA-ES, a population of 40 individuals is generated and the algorithm is run for 5000 generations. Each individual is a genome. The fitness of an individual is calculated by doing 5 runs of the simulated environment, each lasting for 500 time steps. A neural network is created and it loads the W-weight vector. At each time step, the observations of each agent are independently fed to the neural network which in turn provides the action to be taken. The actions are input to the environment and used to generate the state at the next time step. At each time step, 
+\section{Discussion}
 
-\subsubsection{Homogeneous Team with Team Selection}
+[insert brilliant groundbreaking discoveries here]
 
-\paragraph{}
-A genome is the weights for one individual. There are 40 teams. 40 genomes are created. All robots on a team get the same genome. All members of the team share the reward and cost. A fitness value is returned for the whole team. 40 fitness values are returned for the whole generation. The genome used by the best performing team is selected.
+\section{Conclusion}
 
-\subsubsection{Heterogeneous Team with Team Selection}
+[insert poignant reflection on groundbreaking discoveries here]
 
-\paragraph{}
-A genome is the weights for two individuals. There are 40 teams. 40 genomes are created. Half of the team get the first half of the genome (the weights for one neural network) and half of the team get the second half of the genome. All members of the team share the reward and cost. A fitness value is returned for the whole team. 40 fitness values are returned for the whole generation. The genome used by the best performing team is selected.
-
-\subsubsection{Heterogeneous Team with Individual Selection}
-
-\paragraph{}
-A genome is the weights for one individual. There are 40 teams. 80 genomes are created since a team needs two genomes. For every two genomes, half the robots on the team get the first genome and half the robots on the team get the second. Team members are evaluated separately. They share the reward but bear costs separately. A fitness value is returned for each team meber. 80 fitness values are returned for the whole generation. The genome used by the best performing individual on any team is selected. 
-
-\subsubsection{Homogeneous Team with Individual Selection}
-
-\paragraph{}
-A genome is the weights for one individual. There are 40 teams. 80 genomes are created where every second genome is a duplicate of the previous genome i.e. genome 2 is a copy of genome 1, genome 4 is a copy of genome 3 etc. For every 2 (identical) genomes, half the robots on a team get the first and the other half get the second. All members of the team share the reward but bear the costs separately. A fitness value is returned for each individual. 80 fitness values are returned for the whole generation. The genome used by the best performing individual is selected.
 
 \bibliographystyle{ACM-Reference-Format}  % do not change this line!
 \balance  % do not change this line -- unless you manually balance your last page

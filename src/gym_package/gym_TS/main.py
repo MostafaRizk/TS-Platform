@@ -336,7 +336,7 @@ def main(argv):
                                                    slope_start=slope_start, source_start=source_start,
                                                    upward_cost_factor=upward_cost_factor,
                                                    downward_cost_factor=downward_cost_factor, carry_factor=carry_factor,
-                                                   resource_reward_factor=resource_reward_factor, using_gym=True)
+                                                   resource_reward_factor=resource_reward_factor, using_gym=False)
 
             fitness = 0
             specialisation = 0
