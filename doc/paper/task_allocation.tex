@@ -124,42 +124,54 @@ Also to understand the qualities of the fitness landscape in such a task for eac
 
 Khamis et al review multi-robot task allocation. Evolution is one approach. Less manual programming. In theory, don’t need to analyse each new task.
 Pini et al manually programmed agents that alternate between generalist and specialist strategy.
-Ferrante evolved specialisation 
+Ferrante et al \citep{ferrante:PLOS_CB:2015} evolved specialisation 
 Waibel et al studied 4 evolutionary configurations
 
 \section{Experimental Methods}
 
-\subsection{A foraging task with stag-hunt like properties}
+\subsection{A Foraging Task with Stag-Hunt Properties}
 
-\todo{Describe the payoffs, the arena, etc... use a bit of mathematics, figures}
+\todo{Merge with next 2 sections}
 
-You have a team of $n$ robots. They are placed in an rectangular arena  with $l$ tiles and $w$ tiles. Each episode is composed of a number of finite time-steps $t=0, .... t_{max}$.
-You pay a cost....
+We use a foraging task as the testbed for the evolution of specialisation.
+The task is modelled off the foraging behaviour of the Atta Leafcutter ant, as in Ferrante et al and Pini et al.
+In nature, the ants cut leaves from a tree and take them to their nest. 
+Sometimes the ants partition the task. 
+When they do so, some ants are droppers, who cut leaves and let them fall, while other ants are collectors who collect fallen leaves from the base of the tree and take them to the nest.
+This partitioned approach is advantageous because gravity transports leaves faster than ants can.
+Rather than every ant climbing up the tree, cutting a leaf and bringing it to the nest, when they partition the ants are able to transport more leaves in the same time-span while consuming less energy.
+We model this scenario similarly to Ferrante et al, with a slope in place of the tree trunk.
+Much like the ants, agents transport resources from the source to the nest.
+An agent on a team can use a generalist strategy where it acts individually, going up and down the slope to retrieve resources.
+An agent can also use a specialist strategy. 
+As a specialist it can either be a dropper, going up the slope once and dropping things from the nest, or it can be a collector and gather the resources that accumulate at the base of the slope, called the cache.
+Much like real robots that deplete their battery and ants that deplete their energy stores, there is a cost to moving and it is compounded when going up the slope. 
+Teams that use complementary specialist strategies pay a smaller energy cost as well as time cost, since resources slide down faster than they can be carried. 
+Preliminary analysis with hand-coded agents verifies that specialist teams gain higher overall reward than generalist teams.\\
 
-Use a foraging task as testbed for evolution of specialisation.
-Task modeled off Atta Leafcutter ant, as in Ferrante et al and Pini et al.
-Ants retrieve leaves from tree and take them to nest. 
-Sometimes ants partition the task. Some ants are droppers who cut leaves and let them fall, other ants are collectors who collect from the base of the tree to the nest.
-This specialisation is advantageous because gravity transports leaves faster than ants can.
-Ants are able to transport more leaves in the same time-span while consuming less energy.
-We model this similarly to Ferrante et al, with a slope.
-Like ants, robots/agents transport resources from source to nest. Source is top of slope. Nest is bottom.
-Agent teams can use generalist strategy, each acts individually, going up and down the slope to retrieve resources.
-Agent teams can use specialist strategy, where part of the team drops things from the top of the slope and part collects resources that accumulate at the base of the slope, called the cache.
-Much like real robots and ants, there is a cost to moving (depleting battery or energy reserves) and it is compounded when going up the slope (simulates gravity). 
-Much like the ants, a specialist strategy would conserve energy/cost and resources slide down faster than they can be carried. Preliminary analysis with hardcoded agents verifies that specialist teams gain higher overall reward than generalist teams.
-This can be considered a stag hunt game since an agent only benefits from adopting a specialist strategy if its team member also adopts a specialist strategy. 
+This can be modelled as a stag hunt game.
+In a stag hunt game with two agents, each agent can adopt either a generalist or a specialist strategy. 
+If both adopt the generalist strategy it is a stable equilibrium but has lower payoff than if both adopt a specialist strategy.
+However, if one agent adopts a specialist strategy while the other is generalist, it has lower payoff than if it too was a generalist.
+This is a slightly more complex variant of the stag hunt game since the agents must not simply be specialists, but the right ratio of droppers and collectors. 
+More formally, you have a team of $n$ agents. 
+They are placed in a rectangular arena that is $l$ tiles long and $w$ tiles wide. 
+The arena is divided into four sections $l= l_{nest} + l_{cache} + l_{slope} + l_{source}$.
+Each episode is composed of a number of finite time-steps $t=0, .... t_{max}$. 
+There is a base cost to moving $c$ paid by the agent for moving in any direction.
+The base cost is multiplied by different factors for moving up the slope ($f_{up}$) down the slope ($f_{down}$) and moving while carrying a resource ($f_{res}$). 
+An agent moving one tile up the slope at time step $t=0$ while carrying a resource, for example, pays a cost of $C_{0} = f_{up} \cdot f_{res} \cdot c$ .
+Each resource retrieved provides all team members a reward of $R$.
 
 \subsection{Simulation Environment}
 
-L x W tiles with source, slope, cache, nest.
-We use L=8 and W=4.
-Nest=1, Cache=2, Slope=4, Source=1
-Resources appear in source and replenish when removed. Always at least 3. 2 agents.
-Resources disappear at nest.
-3D physics is computationally expensive. Use simplified version to expedite experiments as focus of research is on evolutionary process and team dynamics rather than robotic element.
-Resources slide on slope with speed of 4 tiles/time step.
-Robots travel at 1 tile per time step.
+In our implementation, we use $w=4$ and $l=8$ with $l_{nest}=1$, $l_{cache}=2$, $l_{slope}=4$ and  $l_{source}=1$.
+Resources appear on the source and replenish when removed. 
+There are always at least 3 resources on the source and $n=2$ agents.
+Resources disappear when dropped on the nest.
+Since 3D physics is computationally expensive we use a 2D environment to expedite our experiments as the focus of our research is on the evolutionary process and team dynamics rather than the robotic element.
+Resources slide on slope with speed of 4 tiles per time step.
+Agents travel at 1 tile per time step.
 
 
 \subsection{Rewards and Costs}
@@ -168,75 +180,149 @@ To simulate battery, agents pay costs for moving.
 Up cost 3 down cost 0.2 carry factor 2 reward factor 1000. Base cost is 1.
 If not carrying: Movement cost is -1, up slope is -3, down slope is -0.2
 If carrying: Movement cost is -2, up slope is -6, down slope is -0.4
-Both agents get +1000 if either retrieves a resource. Reward is shared but cost is individual.
-Example: Agent 1 incurs -200 retrieving resource. Agent 2 incurs -100 wandering around cache. Agent 1 score= 1000 - 200. Agent 2 score = 1000 - 100.
+Both agents get +1000 if either retrieves a resource. 
+Reward is shared but cost is individual.
+Example: Agent 1 incurs -200 retrieving resource. 
+Agent 2 incurs -100 wandering around cache. Agent 1 score= 1000 - 200. 
+Agent 2 score = 1000 - 100.
 Team selection: team score = agent 1 score + agent 2 score = 800 + 900 = 1700
 Individual selection: agent 1 score = 800, agent 2 score = 900. 
-In team selection, team is compared to other teams. In individual selection, highest scoring individual is selected. 
+In team selection, team is compared to other teams. 
+In individual selection, highest scoring individual is selected. 
 
 \subsection{Observations and Actions}
 
-Agents can sense and act. Use recurrent neural network.
-Agents have sensing range. 0 means just current tile. 1 means square that extends 1 tile in each direction (9 tiles total including current tile). 2 means square extending 2 tiles (25 tiles). We use sensing range 1 to reduce computation.
-For each tile, agent observes a onehotencoded 4-bit vector. 
-Blank= 1000, Agent = 0100, Resource = 0010, Wall = 0001
-Tiles read from top left to bottom right. In this case, 4x9 bits so far
-Next is 4-bit vector for current area
-Nest = 1000, Cache = 0100, Slope = 0010, Source = 0001
-Next is 1-bit for resource possession. Has resource = 1. Doesn’t have resource = 0
-Total bits in observation are 9x4 + 4 + 1= 41 bits
-6 possible actions:
-Forward = 0, Backward = 1, Left = 2, Right = 3, Pick-up = 4, Drop = 5
-Recurrent neural network has 41 inputs, 1 bias input and 6 recurrent inputs (one for each of the 6 outputs). There is no hidden layer, just a 6-neuron output layer. This makes for a total of (41+1+6)x6 = 288 weights. The output layer uses a linear activation function.
+Agents have a sensing range that indicates how many tiles around them they can observe. 
+A sensing range of 0 means an agent can just observe the current tile it is on. 
+A range of 1 means it can observe a square centred  on its location that extends 1 tile in each direction (9 tiles total including current tile). 
+A range of 2 means it can observe a square extending 2 tiles in each direction (25 tiles total). 
+And so on.
+We assume our agent represents a robot with only local sensing capabilities and use a sensing range of 1, which has the added benefit of reducing computation.
+For each tile in its sensing range, an agent observes a onehotencoded 4-bit vector. 
+The values it reads denote the following: Blank= 1000, Agent = 0100, Resource = 0010, Wall = 0001.
+Tiles are read row by row from top left to bottom right. 
+The next part of an agent's observation is a 4-bit vector denoting which part of the arena it is on, similar to a real robot with a ground sensor that can detect the unique colour of each area.
+The values of this vector can be as follows: Nest = 1000, Cache = 0100, Slope = 0010, Source = 0001
+The final part of an agent's observation is 1-bit for resource possession. 
+The values can be as follows: Has resource = 1, Doesn’t have resource = 0
+The total length of the observation vector is 9x4 + 4 + 1= 41 bits.\\
+
+An agent can perform 6 possible actions, represented by the following values: Forward = 0, Backward = 1, Left = 2, Right = 3, Pick-up = 4, Drop = 5.
+We use a recurrent neural network to choose actions based on the observed state.
+Since many of the positions in the environment will produce the same observation, a recurrent neural network gives the agent to have a simple form of memory, preventing it from getting "stuck" in infinite state transition loops.
+The network has 41 inputs, 1 bias input and 6 recurrent inputs (one for each of the 6 outputs). 
+There is no hidden layer, just a 6-neuron output layer. 
+This makes for a total of (41+1+6)x6 = 288 weights. 
+The output layer uses a linear activation function.
 
 \subsection{Evolutionary Algorithm}
 
-Use CMA-ES algorithm. Traditional GA maintains a population of solutions. CMA-ES maintains a probability distribution with a mean and sigma. Sample any number of individuals from this distribution. Fitness of those individuals is used to update the mean and sigma, while keeping track of the best solution so far. CMA parameters set according to CMA-ES defaults enumerated here. Change the following:
+We use the CMA-ES (CMA) algorithm. 
+While a traditional GA maintains a population of solutions, CMA-ES maintains a probability distribution with a mean and sigma, sampling any number of individuals from that distribution. 
+The fitness of those individuals is used to update the mean and sigma, while keeping track of the best solution so far. 
+CMA parameters are set according to the default values in this implementation, however we change the following:
 Maxiter = 5000 generations, pop size = 40 (80 for Het-Ind and Hom-Ind), tolx = 1e-3, tolfunhist = 2e2
-Population size is different because number of teams is held constant (40 teams). 
-If team level selection, genome contains all team members. When algorithm selects genome, it selects whole team.
-If individual level selection, genome contains one individual. When algorithm selects genome, it selects one member of a team. There are two agents on each team. There are two genomes per team thus 80 genomes in the population.
-If x changes by less than tolx, the algorithm terminates. This ensures that the algorithm stops if the genomes aren’t being changed by much. 
-The history variable stores the best fitness at a generation. The difference between the minimum and maximum values in the history is calculated. If the difference is less than tolfunhist, the algorithm terminates. Essentially: if the best fitness varies by less than 2000 over 9 generations, the algorithm terminates. 
-We bootstrap evolution using random weight guessing. 
-Running evolution on its own we find that the algorithm suffers from flat fitness landscape.
+Population size is different because the number of teams is held constant (40 teams). 
+If we're using team level selection, the genome contains all team members. 
+When the algorithm selects a genome, in this case, it is selecting an entire team.
+If we're using individual level selection, the genome contains a single individual. 
+When the algorithm selects a genome in this case, it is selecting a single member of the team. 
+When using individual selection with teams of two agents, there are two genomes per team thus 80 genomes in the population.
+Tolx is a termination criterion that terminates the algorithm's current run if the mean, x, changes by less than tolx. 
+This ensures that the algorithm stops if the genomes aren’t being changed by much. 
+Tolfunhist is a termination criterion that terminates the algorithm's run if the best fitnesses over several generations haven't changed by much. 
+A history variable in the code stores the best fitness at a generation. 
+The difference between the minimum and maximum values in the history is calculated. 
+If the difference is less than tolfunhist, the algorithm terminates. 
+Essentially, if the best fitness varies by less than 2000 over 9 generations, the algorithm terminates.\\
+ 
+We bootstrap evolution using the random weight guessing algorithm. 
+Running evolution on its own we find that the algorithm suffers from a flat fitness landscape.
 Bootstrapping allows us to start evolution from a genome that is slightly better than random behaviour to bypass the flat fitness issue.
-In RWG, we do 10,000 runs of the environment with different seeds with 5 trials for each seed. Agent and resource positions are randomised in each trial.
-The best genome found at the end of rwg is returned and used as the mean for CMA-ES.
+In RWG, we do 10,000 runs of the environment with different seeds with 5 trials for each seed. 
+Agent and resource positions are randomised in each trial.
+The best genome found at the end of RWG is returned and used as the mean for CMA-ES.
 
-\subsection{Team Composition}
+\subsection{Team Composition and Level of Selection}
 
-4 different combinations of team composition/level of selection
-Het-Team, Hom-Team, Het-Ind, Hom-Ind.
-Het-Team= Different controllers. Assess together. Genome contains two sets of weights (288x2)
-Hom-Team= Same controller twice. Assess together. Genome contains one set of weights (288). Put controller on both agents.
-Het-Ind= Different controllers. Assess separately. Genome contains one set of weights (288). Put odd controller on one agent and even controller on the other.
-Hom-Ind= Same controller. Assess individually. Genome contains one set of weights (288). Create a copy of the genome. One agent gets the original. Other agent gets the copy. 
-Previous study suggests Het-Ind and Hom-Team are most commonly used.
-Hom-Team and Hom-Ind perform equally well usually. Het-Ind is sometimes on par but often worse. Het-Team performs poorly across the board.
-However, this assumes task that doesn’t benefit from specialisation. 
-We believe that for a task that benefits from specialisation, Het-Team will perform as well as homogeneous counterparts (if not better), with Het-Ind being the poor performer.
-Intuition is that if 2 codependent roles (dropper and collector), they must be assessed together. If they are assessed separately, good teams are repeatedly split up and ultimately generalist solutions will be more successful in this evolutionary environment.
-Also suspect that Hom-Ind will achieve similar results to Hom-Team. May be slower because double population?
+During the evolutionary process, it is possible to have four different combinations of team composition and level of selection that impact evolution.
+A team can be either homogeneous, with all agents having the same genome, or it can be heterogeneous, with agents having different genomes.
+In our case, a heterogeneous team has two different genomes, with half the team having one genome and the other half of the team having the other.
+During evolution, team selection can be used, where an entire team of agents can be selected based on the collective fitness of all agents on the team.
+Individual selection can also be used, where each agent on the team has its fitness considered separately.
+In the latter case, an individual agent with a high reward and low cost can be selected while its team-mates are discarded. 
+The four combinations are thus: heterogeneous team with team selection (Het-Team), homogeneous team with team selection (Hom-Team), heterogeneous team with individual selection (Het-Ind) and homogeneous team with individual selection (Hom-Ind).\\
+
+\subsubsection{Heterogeneous Team with Team Selection}
+
+A genome is the weights for two neural networks (288 x 2 weights).
+Half of the team loads the first half of the genome while half of the team loads the second half. 
+There are 40 teams so 40 genomes are created. 
+All members of the team share the reward and cost and a fitness value is returned for the whole team. 
+40 fitness values are returned for the whole generation. 
+The genome used by the best performing team is selected.\\
+
+\subsubsection{Homogeneous Team with Team Selection}
+
+A genome is the weights for one neural network (288 weights) and all agents on a team load that genome into their neural network.
+There are 40 teams so 40 genomes are created. 
+All members of the team share the reward and cost and a fitness value is returned for the team.
+40 fitness values are returned for the whole generation. 
+The genome used by the best performing team is selected.\\
+
+\subsubsection{Heterogeneous Team with Individual Selection}
+
+A genome is the weights for one neural network (288 weights).
+Each agent on the team receives its own genome.
+There are 40 teams with two members per team so 80 genomes are created.  
+For every two genomes, half the robots on the team get the first genome and half the robots on the team get the second. 
+Team members are evaluated separately. 
+They share the reward but bear costs separately. 
+A fitness value is returned for each team member so 80 fitness values are returned for the whole generation. 
+The genome used by the best performing individual on any team is selected. \\
+
+\subsubsection{Homogeneous Team with Individual Selection}
+
+A genome is the weights for one individual (288 weights). 
+There are 40 teams with two agents per team so 80 genomes are created where every second genome is a duplicate of the previous genome i.e. genome 2 is a copy of genome 1, genome 4 is a copy of genome 3 etc. 
+For every 2 (identical) genomes, half the robots on a team get the first and the other half get the second. 
+All members of the team share the reward but bear the costs separately. 
+A fitness value is returned for each individual so 80 fitness values are returned for the whole generation. 
+The genome used by the best performing individual is selected.\\. 
+
+A previous study by Waibel et al suggests that Het-Ind and Hom-Team are the most commonly used configurations.
+The study also finds that Hom-Team and Hom-Ind perform equally well, usually, and Het-Ind is sometimes on par but often worse. 
+Het-Team performs poorly across the board.
+However, this study assumed a task that doesn’t benefit from specialisation. 
+We believe that for a task that benefits from specialisation, Het-Team will perform as well as its homogeneous counterparts, if not better, with Het-Ind being the poor performer.
+The intuition is that if there are 2 codependent roles on a team (dropper and collector), they must be assessed together. 
+If they are assessed separately, as they would be in Het-Ind, a collector with high reward but low cost (because it never went up the slope) might be selected without its dropper team-mate and will not perform as well when paired with another agent (which is likely to also be a collector).
+Good teams will be repeatedly split up and ultimately generalist solutions will be more successful in such an evolutionary environment.
+Whereas a Het-Team configuration means that a dropper and collector that work well together will be selected together.
+This is the opposite of Waibel et al's study because in a task that doesn't require specialisation, a Het-Ind setup allows multiple genomes to be compared side by side.
+That is, two different generalist strategies are compared in parallel during the same experiment.
+A Het-Team configuration though, was shown to perform poorly because agents with good strategies are often assessed alongside team-mates with bad strategies, so their entire team is discarded by evolution.
+In a task that doesn't require specialisation, team-mates are a hindrance whereas in a task that does require specialisation, they are an asset.
+We also suspect that Hom-Ind will achieve similar results to Hom-Team.
 
 \section{Experiments}
 
 We run bootstrapping and evolution for 50 seeds for each of the four configurations. A total of 200 experiments. 
 We sample the generated genomes and their logged fitnesses throughout the process and then use flacco to model the fitness landscape based on this data.\\
 
-[Fitness landscape for each configuration]
+[Visualisation of fitness landscape for each configuration]
 
 \section{Discussion}
 
-[insert brilliant groundbreaking discoveries here]
+TODO
 
 \section{Conclusion}
 
-[insert poignant reflection on groundbreaking discoveries here]
+TODO
 
 
 \bibliographystyle{ACM-Reference-Format}  % do not change this line!
 \balance  % do not change this line -- unless you manually balance your last page
-\bibliography{references,et}  % put name of your .bib file here
+\bibliography{references.bib}  % put name of your .bib file here
 
 \end{document}
