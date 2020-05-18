@@ -18,8 +18,7 @@ class HardcodedAgent:
         # Break down observations
         self.sensor_map = self.get_sensor_map(observation)
 
-        self.current_zone = self.area_from_bits[re.sub('[ ,\[\]]', '', str(observation[
-                                                                           -5:-1]))]  # Get 4-bit vector representing area, remove brackets and commas, use it as a key for the dictionary of areas
+        self.current_zone = self.area_from_bits[re.sub('[ ,\[\]]', '', str(observation[-5:-1]))]  # Get 4-bit vector representing area, remove brackets and commas, use it as a key for the dictionary of areas
         self.has_resource = bool(observation[-1])
 
         action = None
@@ -35,8 +34,7 @@ class HardcodedAgent:
             refined_row = []
 
             for x in range(len(unrefined_map[y])):
-                refined_row += [self.obstacle_from_bits[
-                    re.sub('[ ,\[\]]', '', str(unrefined_map[y][x]))]]
+                refined_row += [self.obstacle_from_bits[re.sub('[ ,\[\]]', '', str(unrefined_map[y][x]))]]
 
             refined_map += [refined_row]
 

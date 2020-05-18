@@ -1,5 +1,5 @@
 \documentclass[12pt]{article}  % do not change this line!
-
+\author{Mostafa Rizk, Julian Garcia, Aldeida Aleti, Giuseppe Cuccu}
 \usepackage{booktabs}
 \usepackage{amsmath}
 \usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
@@ -23,7 +23,7 @@ Also to understand the qualities of the fitness landscape in such a task for eac
 Khamis et al review multi-robot task allocation. Evolution is one approach. Less manual programming. In theory, don’t need to analyse each new task.
 Pini et al manually programmed agents that alternate between generalist and specialist strategy.
 Ferrante et al \cite{ferrante:PLOS_CB:2015} evolved specialisation 
-Waibel et al studied 4 evolutionary configurations 
+Waibel et al studied 4 evolutionary configurations \cite{waibel:Transactions:2009}
 
 \section{Experimental Methods}
 
@@ -75,13 +75,10 @@ We then take the summation of this calculation for all agents over all time step
 The reward and cost for an agent $i$ at time step $t$ can be computed as shown here:\\
 \\
 $
-R_{ti} = \left\{
-        \begin{array}{ll}
-            R & \quad if any agent retrieved a resource at time t \\
-            0 & \quad otherwise
-        \end{array}
-    \right.
-$
+R_{ti} = R \cdot r_{t}
+$\\
+\\
+where $r_t$ is the total number of resources retrieved by all agents at time $t$
 \\
 \\
 \\
@@ -230,14 +227,45 @@ We also suspect that Hom-Ind will achieve similar results to Hom-Team.
 
 \section{Experiments}
 
+\subsection{Evolving Specialisation}
+We attempt to evolve specialisation but it doesn't happen.
+Using hardcoded agent controllers, we observe the following rewards:\\
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{hardcoded_fitness.png}
+	\caption{Fitness of Hardcoded Strategies}
+	\label{fig:hardcoded}
+\end{figure}
+
+\begin{center}
+\begin{tabular}{ |c|c|c|c| } 
+ \hline
+  & Generalist & Dropper & Collector  \\ 
+ \hline
+ \hline
+ Generalist & 54,035 + 54,045  & 13,829 + 14,146 & 2232 + 2700 \\ 
+ \hline
+ Dropper &  & -448 + -392 & 78,958 + 78,740 \\ 
+ \hline
+ Collector &  &  & -500 + -500 \\ 
+ \hline
+ \end{tabular}
+\end{center}
+
+\subsection{Analysing the Fitness Landscape}
 We run bootstrapping and evolution for 50 seeds for each of the four configurations. A total of 200 experiments. 
 We sample the generated genomes and their logged fitnesses throughout the process and then use flacco to model the fitness landscape based on this data.\\
 
 [Visualisation of fitness landscape for each configuration]
 
+\subsection{Modified Evolution}
+
+We modify the evolutionary algorithm based on the results of the landscape.
+
 \section{Discussion}
 
-\subsection{Modelling Foraging as a Stag Hunt}
+\subsection{Modelling Foraging as a Stag Hunt Game}
 
 The foraging scenario we use here can be modelled as a stag hunt game.
 In a stag hunt game with two agents, each agent can adopt either a generalist or a specialist strategy. 
