@@ -46,7 +46,7 @@ Teams that use complementary specialist strategies pay a smaller energy cost as 
 Preliminary analysis with hand-coded agents verifies that specialist teams gain higher overall reward than generalist teams.\\
 
 More formally, you have a team of $n_{agents}$ agents. 
-They are placed in a rectangular arena that is $l$ tiles long and $w$ tiles wide. 
+They are placed in a rectangular arena that is $l$ tiles long and $w$ tiles wide, illustrated in Figure \ref{fig:arena}. 
 The arena is divided into four sections $l= l_{nest} + l_{cache} + l_{slope} + l_{source}$.
 Each episode is composed of a number of finite time-steps $t=0, .... T$. 
 Since 3D physics is computationally expensive we use a 2D environment to expedite our experiments as the focus of our research is on the evolutionary process and team dynamics rather than the robotic element.
@@ -109,6 +109,13 @@ Team selection: team score = agent 1 score + agent 2 score = 800 + 900 = 1700
 Individual selection: agent 1 score = 800, agent 2 score = 900. 
 In team selection, team is compared to other teams. 
 In individual selection, highest scoring individual is selected. 
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{arena.jpg}
+	\caption{Arena Layout}
+	\label{fig:arena}
+\end{figure}
 
 \subsection{Observations and Actions}
 
@@ -229,7 +236,7 @@ We also suspect that Hom-Ind will achieve similar results to Hom-Team.
 
 \subsection{Evolving Specialisation}
 We attempt to evolve specialisation but it doesn't happen.
-Using hardcoded agent controllers, we observe the following rewards:\\
+Using hardcoded agent controllers, we observe the rewards illustrated in Figure \ref{fig:hardcoded}. \\
 
 \begin{figure}
 	\centering
@@ -238,20 +245,7 @@ Using hardcoded agent controllers, we observe the following rewards:\\
 	\label{fig:hardcoded}
 \end{figure}
 
-\begin{center}
-\begin{tabular}{ |c|c|c|c| } 
- \hline
-  & Generalist & Dropper & Collector  \\ 
- \hline
- \hline
- Generalist & 54,035 + 54,045  & 13,829 + 14,146 & 2232 + 2700 \\ 
- \hline
- Dropper &  & -448 + -392 & 78,958 + 78,740 \\ 
- \hline
- Collector &  &  & -500 + -500 \\ 
- \hline
- \end{tabular}
-\end{center}
+
 
 \subsection{Analysing the Fitness Landscape}
 We run bootstrapping and evolution for 50 seeds for each of the four configurations. A total of 200 experiments. 
@@ -271,7 +265,26 @@ The foraging scenario we use here can be modelled as a stag hunt game.
 In a stag hunt game with two agents, each agent can adopt either a generalist or a specialist strategy. 
 If both adopt the generalist strategy it is a stable equilibrium but has lower payoff than if both adopt a specialist strategy.
 However, if one agent adopts a specialist strategy while the other is generalist, it has lower payoff than if it too was a generalist.
-This is a slightly more complex variant of the stag hunt game since the agents must not simply be specialists, but the right ratio of droppers and collectors. 
+This is a slightly more complex variant of the stag hunt game since the agents must not simply be specialists, but the right ratio of droppers and collectors. This is illustrated in Table \ref{tab:payoffs}\\
+
+\begin{table}
+\begin{center}
+\begin{tabular}{ |c|c|c|c| } 
+ \hline
+  & Generalist & Dropper & Collector  \\ 
+ \hline
+ \hline
+ Generalist & 54,035 + 54,045  & 13,829 + 14,146 & 2232 + 2700 \\ 
+ \hline
+ Dropper &  & -448 + -392 & 78,958 + 78,740 \\ 
+ \hline
+ Collector &  &  & -500 + -500 \\ 
+ \hline
+ \end{tabular}
+\caption{\label{tab:payoffs}Payoffs of Strategies}
+\end{center}
+\end{table}
+
 
 \section{Conclusion}
 

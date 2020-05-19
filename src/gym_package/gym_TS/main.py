@@ -341,9 +341,23 @@ def main(argv):
             fitness = 0
             specialisation = 0
 
+            # Create results file if it doesn't exist
+            results_file_name = "hardcoded_results.csv"
+            results_file = None
+
+            if os.path.exists(results_file_name):
+                results_file = open(results_file_name, 'a')
+            else:
+                results_file = open(results_file_name, 'w')
+                results_file.write("Strategy,Individual 1 Score,Individual 2 Score,Seed\n")
+
             fitness_1, fitness_2, specialisation = fitness_calculator.calculate_hardcoded_fitness(type=hardcoded_test, render=True)
 
-            print(f"Fitness 1 is {fitness_1}, Fitness 2 is {fitness_2}, Team Fitness is {fitness_1+fitness_2} and specialisation is {specialisation}")
+            results_file.write(f"{hardcoded_test},{fitness_1},{fitness_2},{random_seed}\n")
+
+            results_file.close()
+
+            #print(f"Fitness 1 is {fitness_1}, Fitness 2 is {fitness_2}, Team Fitness is {fitness_1+fitness_2} and specialisation is {specialisation}")
 
 # To run, use:
 # python3 main.py --algorithm bootstrap --team_type homogeneous --generations 500 --simulation_length 500 --trials 5  --seed 1 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 40 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --upward_cost_factor 3 --downward_cost_factor 0.2 --carry_factor 10 --resource_reward_factor 1000 --target_fitness 100

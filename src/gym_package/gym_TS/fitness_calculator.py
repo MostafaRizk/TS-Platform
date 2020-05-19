@@ -282,22 +282,22 @@ class FitnessCalculator:
         individual_1 = None
         individual_2 = None
 
-        if type == "generalist":
+        if type == "Generalist-Generalist":
             individual_1 = HardcodedGeneralistAgent()
             individual_2 = HardcodedGeneralistAgent()
-        elif type == "specialist":
+        elif type == "Dropper-Collector":
             individual_1 = HardcodedDropperAgent()
             individual_2 = HardcodedCollectorAgent()
-        elif type == "mixed_dropper":
+        elif type == "Generalist-Dropper":
             individual_1 = HardcodedGeneralistAgent()
             individual_2 = HardcodedDropperAgent()
-        elif type == "mixed_collector":
+        elif type == "Generalist-Collector":
             individual_1 = HardcodedGeneralistAgent()
             individual_2 = HardcodedCollectorAgent()
-        elif type == "double_dropper":
+        elif type == "Dropper-Dropper":
             individual_1 = HardcodedDropperAgent()
             individual_2 = HardcodedDropperAgent()
-        elif type == "double_collector":
+        elif type == "Collector-Collector":
             individual_1 = HardcodedCollectorAgent()
             individual_2 = HardcodedCollectorAgent()
         else:
