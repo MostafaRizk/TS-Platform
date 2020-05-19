@@ -357,6 +357,8 @@ def main(argv):
 
             results_file.close()
 
+            print(f"Seed {random_seed}: {hardcoded_test}")
+
             #print(f"Fitness 1 is {fitness_1}, Fitness 2 is {fitness_2}, Team Fitness is {fitness_1+fitness_2} and specialisation is {specialisation}")
 
 # To run, use:
