@@ -285,46 +285,54 @@ TODO
 \subsection{Parameters}
 
 \begin{center}
-\begin{tabular}{ |c|c|c| } 
+\begin{tabular}{ |c|c| } 
  \hline
- Parameter & Value  & Reason Chosen\\ 
+ Parameter & Value  \\ 
  \hline
  \hline
- $n_{agents}$ & 2  &\\ 
+ $l$ & 8  \\ 
  \hline
- $n_{resources}$ & 3 & \\ 
+ $w$ & 4  \\ 
  \hline
- $l$ & 8 & \\ 
+ $n_{agents}$ & 2  \\ 
  \hline
- $w$ & 4  &\\ 
+ $n_{resources}$ & 3  \\ 
  \hline
- $l_{nest}$ & 1  &\\ 
+ $l_{nest}$ & 1  \\ 
  \hline
- $l_{cache}$ & 2 & \\ 
+ $l_{cache}$ & 2  \\ 
  \hline
- $l_{slope}$ & 4  &\\ 
+ $l_{slope}$ & 4  \\ 
  \hline
- $l_{source}$ & 1 & \\ 
+ $l_{source}$ & 1  \\ 
  \hline
- $s_{agent}$ & 1  &\\ 
+ $s_{agent}$ & 1  \\ 
  \hline
- $s_{resource}$ & 4  &\\ 
+ $s_{resource}$ & 4  \\ 
  \hline
- $c$ & 1  &\\ 
+ $c$ & 1  \\ 
  \hline
- $f_{up}$ & 3  &\\ 
+ $f_{up}$ & 3  \\ 
  \hline
- $f_{down}$ & 0.2  &\\ 
+ $f_{down}$ & 0.2  \\ 
  \hline
- $f_{carry}$ & 2  &\\ 
+ $f_{carry}$ & 2  \\ 
  \hline
- $R$ & 1000 & \\ 
+ $R$ & 1000  \\ 
  \hline
- $T$ & 500 & \\ 
+ $T$ & 500  \\ 
  \hline
  
 \end{tabular}
 \end{center}
+
+\subsubsection{Selecting Parameter Values}
+
+$l$- If the arena is too short, resources sliding down the slope do not provide a significant time advantage over an agent carrying them. If the arena is too long, random agents produced at the beginning of evolution are less likely to travel up the slope long enough to pick up a resource and then travel down the slope long enough to return the resource. Longer simulations would be necessary, increasing overall computation time. \\
+
+$n_{agents}$- This number must be even so that on heterogeneous teams, there is an equal number of agents having each of the two genomes. Preliminary experiments were done that showed that a larger number of agents (given the chosen arena width) results in deadlocks that prevent the agents from moving for several time-steps or the entire simulation.\\
+
+$n_{resources}$- \\
 
 \subsection{Hardcoded Strategies}
 \todo{Pseudocode for hardcoded strategies}
