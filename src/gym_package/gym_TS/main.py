@@ -264,8 +264,8 @@ def main(argv):
 
                 if filename.endswith(".npy") and filename.startswith("CMA"):
                     model_name = filename.split("_")
-                    #if len(model_name) == 23 and model_name[22] != "controller1" and model_name[22] != "controller2":
-                    #    continue
+                    if len(model_name) == 23 and model_name[22] != "controller1" and model_name[22] != "controller2":
+                        continue
                     # CMA_homogeneous_team_500_5000_5_30_2_3_1_40_8_4_1_3_7_3.0_0.2_2.0_1000.0_0.2_40.npy
                     # f"CMA_{team_type}_{selection_level}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{upward_cost_factor}_{downward_cost_factor}_{carry_factor}_{resource_reward_factor}_{sigma}_{num_teams}"
 

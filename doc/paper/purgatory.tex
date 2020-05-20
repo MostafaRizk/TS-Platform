@@ -41,6 +41,39 @@
 
 \section{Stuff}
 
+\subsubsection{Heterogeneous Team with Team Selection}
+
+A genome is the weights for two neural networks (288 x 2 weights).
+Half of the team loads the first half of the genome while half of the team loads the second half. 
+There are 40 teams so 40 genomes are created. 
+All members of the team share the reward and cost and a fitness value is returned for the whole team. 
+40 fitness values are returned for the whole generation. 
+The genome used by the best performing team is selected.\\
+
+\subsubsection{Homogeneous Team with Individual Selection}
+
+A genome is the weights for one individual (288 weights). 
+There are 40 teams with two agents per team so 80 genomes are created where every second genome is a duplicate of the previous genome i.e. genome 2 is a copy of genome 1, genome 4 is a copy of genome 3 etc. 
+For every 2 (identical) genomes, half the robots on a team get the first and the other half get the second. 
+All members of the team share the reward but bear the costs separately. 
+A fitness value is returned for each individual so 80 fitness values are returned for the whole generation. 
+The genome used by the best performing individual is selected.\\. 
+
+A previous study by Waibel et al suggests that Het-Ind and Hom-Team are the most commonly used configurations.
+The study also finds that Hom-Team and Hom-Ind perform equally well, usually, and Het-Ind is sometimes on par but often worse. 
+Het-Team performs poorly across the board.
+However, this study assumed a task that doesn’t benefit from specialisation. 
+We believe that for a task that benefits from specialisation, Het-Team will perform as well as its homogeneous counterparts, if not better, with Het-Ind being the poor performer.
+The intuition is that if there are 2 codependent roles on a team (dropper and collector), they must be assessed together. 
+If they are assessed separately, as they would be in Het-Ind, a collector with high reward but low cost (because it never went up the slope) might be selected without its dropper team-mate and will not perform as well when paired with another agent (which is likely to also be a collector).
+Good teams will be repeatedly split up and ultimately generalist solutions will be more successful in such an evolutionary environment.
+Whereas a Het-Team configuration means that a dropper and collector that work well together will be selected together.
+This is the opposite of Waibel et al's study because in a task that doesn't require specialisation, a Het-Ind setup allows multiple genomes to be compared side by side.
+That is, two different generalist strategies are compared in parallel during the same experiment.
+A Het-Team configuration though, was shown to perform poorly because agents with good strategies are often assessed alongside team-mates with bad strategies, so their entire team is discarded by evolution.
+In a task that doesn't require specialisation, team-mates are a hindrance whereas in a task that does require specialisation, they are an asset.
+We also suspect that Hom-Ind will achieve similar results to Hom-Team.
+
 \bibliographystyle{plain}
 \bibliography{references.bib}
 
