@@ -181,6 +181,7 @@ def plot_evolution_specialisation(results_file, graph_file):
     #plt.show()
     plt.savefig(graph_file)
 
+def create_
 #plot_hardcoded_fitness("hardcoded_results.csv", "hardcoded_fitness.png")
 #plot_evolution_fitness("results_specialisation.csv", "evolution_fitness.png")
-plot_evolution_specialisation("results_specialisation.csv", "evolution_specialisation.png")
+#plot_evolution_specialisation("results_specialisation.csv", "evolution_specialisation.png")

@@ -17,27 +17,27 @@ def create_population(seed_value, calculator, num_teams, team_type, selection_le
     population = []
 
     if team_type == "homogeneous" and selection_level == "team":
+        dummy_individual = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), seed=seed_value)
         for i in range(num_teams):
-            dummy_individual = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), seed=seed_value)
             dummy_individual.load_weights()  # No parameters means random weights are generated
             genome = dummy_individual.get_weights()
             population += [genome]
 
     elif team_type == "heterogeneous" and selection_level == "team":
+        dummy_individual_1 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), seed=seed_value)
+        dummy_individual_2 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), seed=seed_value)
         for i in range(num_teams):
-            dummy_individual_1 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), seed=seed_value)
-            dummy_individual_2 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), seed=seed_value)
             dummy_individual_1.load_weights()  # No parameters means random weights are generated
             dummy_individual_2.load_weights()
             genome = np.concatenate([dummy_individual_1.get_weights(), dummy_individual_2.get_weights()])
             population += [genome]
 
     elif team_type == "heterogeneous" and selection_level == "individual":
+        dummy_individual_1 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(),
+                                       seed=seed_value)
+        dummy_individual_2 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(),
+                                       seed=seed_value)
         for i in range(num_teams*2):
-            dummy_individual_1 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(),
-                                           seed=seed_value)
-            dummy_individual_2 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(),
-                                           seed=seed_value)
             dummy_individual_1.load_weights()  # No parameters means random weights are generated
             dummy_individual_2.load_weights()
             genome_1 = dummy_individual_1.get_weights()
@@ -45,9 +45,9 @@ def create_population(seed_value, calculator, num_teams, team_type, selection_le
             population += [genome_1, genome_2]
 
     elif team_type == "homogeneous" and selection_level == "individual":
+        dummy_individual_1 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(),
+                                       seed=seed_value)
         for i in range(num_teams*2):
-            dummy_individual_1 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(),
-                                           seed=seed_value)
             dummy_individual_1.load_weights()  # No parameters means random weights are generated
             genome_1 = dummy_individual_1.get_weights()
             genome_2 = dummy_individual_1.get_weights()  # Second genome is a copy of the first
@@ -68,6 +68,15 @@ def rwg(seed_value, calculator, num_teams, team_type, selection_level, target_fi
     population = create_population(seed_value=seed_value, calculator=calculator, num_teams=num_teams,
                                    team_type=team_type, selection_level=selection_level)
     fitnesses = calculator.calculate_fitness_of_population(population, team_type, selection_level)
+
+    file_name = f"landscape_analysis_{team_type}_{selection_level}_{seed_value}.csv"
+    flacco_file = open(file_name, "w")
+
+    for i in range(len(population)):
+        genome_str = str(population[i].tolist()).strip("[]") + "," + str(fitnesses[i]) + "\n"
+        flacco_file.write(genome_str)
+
+    flacco_file.close()
 
     best_fitness, best_fitness_index = max([(value, index) for index,value in enumerate(fitnesses)])
     best_genome = population[best_fitness_index]
