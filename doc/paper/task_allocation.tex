@@ -1,6 +1,7 @@
 \documentclass[12pt]{article}  % do not change this line!
 \author{Mostafa Rizk, Julian Garcia, Aldeida Aleti, Giuseppe Cuccu}
 \usepackage{booktabs}
+\usepackage{natbib}
 \usepackage{amsmath}
 \usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
 
@@ -15,42 +16,71 @@
 
 \section{Introduction}
 
-Aim is to evolve a multi-agent team that solves a task in a partitioned way. 
-Also to understand the qualities of the fitness landscape in such a task for each of four evolutionary configurations. 
+\begin{itemize}
+    \item Multirobot foraging is important.
+    \item Multirobot foraging is challenging.
+    \item Aim is to evolve a multi-agent team that solves a task in a partitioned way -- if this leads to more efficieny or resilience.
+    \item Also to understand the qualities of the fitness landscape in such a task for each of four evolutionary configurations. 
+    \item We use neuroevolution.
+    \item Rewarding teams vs Rewarding individuals \cite{Lon_Holvoet:2017}. 
+\end{itemize}
+
+
 
 \section{Background}
+\begin{itemize}
+    \item Khamis et al. \cite{khamis:2015} review multi-robot task allocation. Evolution is one approach. 
+    \item Less manual programming. In theory, don’t need to analyse each new task.
+    \item Pini et al manually programmed agents that alternate between generalist and specialist strategy.
+    \item Ferrante et al \cite{ferrante:PLOS_CB:2015} evolved specialisation 
+    \item Waibel et al studied 4 evolutionary configurations \cite{waibel:Transactions:2009}
+\end{itemize}
 
-Khamis et al review multi-robot task allocation. Evolution is one approach. Less manual programming. In theory, don’t need to analyse each new task.
-Pini et al manually programmed agents that alternate between generalist and specialist strategy.
-Ferrante et al \cite{ferrante:PLOS_CB:2015} evolved specialisation 
-Waibel et al studied 4 evolutionary configurations \cite{waibel:Transactions:2009}
+
+
 
 \section{Experimental Methods}
 
 \subsection{The Foraging Task}
 
 We use a foraging task as the testbed for the evolution of specialisation.
-The task is modelled off the foraging behaviour of the Atta Leafcutter ant, as in Ferrante et al \cite{ferrante:PLOS_CB:2015} and Pini et al \cite{pini:Swarm_Intelligence:2011; pini:ICSI:2012}.
+This task is inspired by the foraging behaviour of the Atta Leafcutter ant \cite{pini:Swarm_Intelligence:2011, pini:ICSI:2012, ferrante:PLOS_CB:2015}.
+
+
 In nature, the ants cut leaves from a tree and take them to their nest. 
 Sometimes the ants partition the task. 
 When they do so, some ants are droppers, who cut leaves and let them fall, while other ants are collectors who collect fallen leaves from the base of the tree and take them to the nest.
 This partitioned approach is advantageous because gravity transports leaves faster than ants can.
 Rather than every ant climbing up the tree, cutting a leaf and bringing it to the nest, when they partition the ants are able to transport more leaves in the same time-span while consuming less energy.
-We model this scenario similarly to Ferrante et al \cite{ferrante:PLOS_CB:2015}, with a slope in place of the tree trunk.
-Much like the ants, agents transport resources from the source to the nest.
-An agent on a team can use a generalist strategy where it acts individually, going up and down the slope to retrieve resources.
-An agent can also use a specialist strategy. 
-As a specialist it can either be a dropper, going up the slope once and dropping things from the nest, or it can be a collector and gather the resources that accumulate at the base of the slope, called the cache.
-Much like real robots that deplete their battery and ants that deplete their energy stores, there is a cost to moving and it is compounded when going up the slope. 
-Teams that use complementary specialist strategies pay a smaller energy cost as well as time cost, since resources slide down faster than they can be carried. 
-Preliminary analysis with hand-coded agents verifies that specialist teams gain higher overall reward than generalist teams.\\
 
-More formally, you have a team of $n_{agents}$ agents. 
-They are placed in a rectangular arena that is $l$ tiles long and $w$ tiles wide, illustrated in Figure \ref{fig:arena}. 
+
+
+
+
+We model this scenario similarly to Ferrante et al \cite{ferrante:PLOS_CB:2015}, with a slope in place of the tree trunk.
+Much like the ants, agents transport resources from the source to the nest -- See Figure~\ref{fig:arena}.
+Agents can be generalists, going up and down the slope to retrieve resources; or specialists, composed of droppers and collectors acting together and using gravity to save energy.
+There is an energy cost to moving, compounded when going up the slope. 
+Therefore, specialists, who move less use less energy
+
+. 
+%Preliminary analysis with hand-coded agents verifies that specialist teams gain higher overall reward than generalist teams.\\
+
+To study this task we use a two-dimensional environment with discrete time.  
+More formally, you have a team of $N$ agents, placed in a rectangular arena of dimensions $l \times w$, for length and width. 
+
+
+
+
 The arena is divided into four sections $l= l_{nest} + l_{cache} + l_{slope} + l_{source}$.
+
+
 Each episode is composed of a number of finite time-steps $t=0, .... T$. 
-Since 3D physics is computationally expensive we use a 2D environment to expedite our experiments as the focus of our research is on the evolutionary process and team dynamics rather than the robotic element.
-We also use a discrete scenario, as opposed to a continuous one for further simplicity.
+
+
+%Since 3D physics is computationally expensive we use a 2D environment to expedite our experiments as the focus of our research is on the evolutionary process and team dynamics rather than the robotic element.
+
+
 To simulate the presence of gravity, resources move when on the slope, at a speed greater than the agents are capable of.
 The high sliding speed creates evolutionary pressure for the team to specialise.
 Agents travel at speed $s_{agent}$ and resources slide when placed on the slope with a speed of $s_{resource}$ 
@@ -60,16 +90,40 @@ There is a base cost to moving $c$ paid by the agent for moving in any direction
 The base cost is multiplied by different factors for moving up the slope ($f_{up}$) down the slope ($f_{down}$) and moving while carrying a resource ($f_{carry}$). 
 An agent moving sideways on the slope pays the same cost as one moving on a non-slope area in any direction.
 An agent moving one tile up the slope at time step $t=0$ while carrying a resource, for example, pays a cost of $C_{0} = f_{up} \cdot f_{carry} \cdot c$ .
-There are $n_{resources}$ resources at the source, initially.
-Every time a resource is removed from the source, another one appears at the source so there are always at least $n_{resources}$.
+There are $M$ resources at the source, initially.
+Every time a resource is removed from the source, another one appears at the source so there are always at least $M$.
 Each resource retrieved provides all team members a reward of $R$.
-The values we chose for these parameters can be found in the appendix\\
+The values we chose for these parameters can be found in the appendix.\\
 
 Fitness can be calculated for the team or for an individual depending on the level of selection.
+
+A team is represented by a vector $\Theta = (\theta_1, \dots, \theta_N)$. In an episode, times.
+
+$$R(\Theta) - C(\Theta)$$
+
+$$R(\Theta) - c(\theta_i)$$
+
+
+$c(\theta_i) = \sum_{i=0}^{t} c^{t}_{i}$
+
+$C(\Theta) = \sum_{i=1}^{N} c(\theta_i) $
+
+\begin{equation}
+  F = \sum_{t=1}^{T} \sum_{i}^{N} (R_{ti} - C_{ti})  
+  \label{eq:fitness_team}
+\end{equation}
+
+\todo{First define rewards, no need for time perhaps?}
+\todo{Then define costs}
+
+
 When calculating fitness for a team of agents, the fitness function is as follows:\\ 
-\\
-$F = \sum_{t=1}^{T} \sum_{i}^{n_{agents}} (R_{ti} - C_{ti}) $\\
-\\
+
+
+
+
+
+
 That is, for each agent, at each time step, we calculate the reward it received at that time step (whether from retrieving a resource itself or from another agent retrieving a resource) and we subtract the cost it individually paid at that time step. 
 We then take the summation of this calculation for all agents over all time steps in the simulation.
 The reward and cost for an agent $i$ at time step $t$ can be computed as shown here:\\
@@ -294,9 +348,9 @@ TODO
  \hline
  $w$ & 4  \\ 
  \hline
- $n_{agents}$ & 2  \\ 
+ $N$ & 2  \\ 
  \hline
- $n_{resources}$ & 3  \\ 
+ $M$ & 3  \\ 
  \hline
  $l_{nest}$ & 1  \\ 
  \hline
@@ -330,9 +384,9 @@ TODO
 
 $l$- If the arena is too short, resources sliding down the slope do not provide a significant time advantage over an agent carrying them. If the arena is too long, random agents produced at the beginning of evolution are less likely to travel up the slope long enough to pick up a resource and then travel down the slope long enough to return the resource. Longer simulations would be necessary, increasing overall computation time. \\
 
-$n_{agents}$- This number must be even so that on heterogeneous teams, there is an equal number of agents having each of the two genomes. Preliminary experiments were done that showed that a larger number of agents (given the chosen arena width) results in deadlocks that prevent the agents from moving for several time-steps or the entire simulation.\\
+$N$- This number must be even so that on heterogeneous teams, there is an equal number of agents having each of the two genomes. Preliminary experiments were done that showed that a larger number of agents (given the chosen arena width) results in deadlocks that prevent the agents from moving for several time-steps or the entire simulation.\\
 
-$n_{resources}$- \\
+$M$- \\
 
 \subsection{Hardcoded Strategies}
 \todo{Pseudocode for hardcoded strategies}
