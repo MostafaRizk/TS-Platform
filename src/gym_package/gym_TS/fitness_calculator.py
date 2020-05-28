@@ -80,6 +80,12 @@ class FitnessCalculator:
                 team_fitness = fitness_1 + fitness_2
                 fitnesses += [team_fitness]
 
+                file_name = f"landscape_analysis_{team_type}_{selection_level}_{self.random_seed}.csv"
+                flacco_file = open(file_name, "a")
+                genome_str = str(genome.tolist()).strip("[]") + "," + str(team_fitness) + "\n"
+                flacco_file.write(genome_str)
+                flacco_file.close()
+
         elif team_type == "heterogeneous" and selection_level == "team":
             for genome in population:
                 mid = int(len(genome) / 2)
@@ -90,6 +96,12 @@ class FitnessCalculator:
                 team_fitness = fitness_1 + fitness_2
                 fitnesses += [team_fitness]
 
+                file_name = f"landscape_analysis_{team_type}_{selection_level}_{self.random_seed}.csv"
+                flacco_file = open(file_name, "a")
+                genome_str = str(genome.tolist()).strip("[]") + "," + str(team_fitness) + "\n"
+                flacco_file.write(genome_str)
+                flacco_file.close()
+
         elif (team_type == "heterogeneous" and selection_level == "individual") or \
             (team_type == "homogeneous" and selection_level == "individual"):
             for i in range(0, len(population), 2):
@@ -99,6 +111,14 @@ class FitnessCalculator:
                                                               individual_2, render)
 
                 fitnesses += [fitness_1, fitness_2]
+
+                file_name = f"landscape_analysis_{team_type}_{selection_level}_{self.random_seed}.csv"
+                flacco_file = open(file_name, "a")
+                genome_str_1 = str(individual_1.tolist()).strip("[]") + "," + str(fitness_1) + "\n"
+                genome_str_2 = str(individual_2.tolist()).strip("[]") + "," + str(fitness_2) + "\n"
+                flacco_file.write(genome_str_1)
+                flacco_file.write(genome_str_2)
+                flacco_file.close()
 
         else:
             raise RuntimeError("Invalid team type and/or selection level")
@@ -165,7 +185,7 @@ class FitnessCalculator:
                 score_1 += info["reward_1"]
                 score_2 += info["reward_2"]
 
-                time.sleep(0.1)
+                #time.sleep(0.1)
                 #print(f'Time: {t} || Score: {score}')
 
                 if done:

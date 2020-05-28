@@ -67,16 +67,12 @@ def rwg(seed_value, calculator, num_teams, team_type, selection_level, target_fi
 
     population = create_population(seed_value=seed_value, calculator=calculator, num_teams=num_teams,
                                    team_type=team_type, selection_level=selection_level)
-    fitnesses = calculator.calculate_fitness_of_population(population, team_type, selection_level)
 
     file_name = f"landscape_analysis_{team_type}_{selection_level}_{seed_value}.csv"
     flacco_file = open(file_name, "w")
-
-    for i in range(len(population)):
-        genome_str = str(population[i].tolist()).strip("[]") + "," + str(fitnesses[i]) + "\n"
-        flacco_file.write(genome_str)
-
     flacco_file.close()
+
+    fitnesses = calculator.calculate_fitness_of_population(population, team_type, selection_level)
 
     best_fitness, best_fitness_index = max([(value, index) for index,value in enumerate(fitnesses)])
     best_genome = population[best_fitness_index]
