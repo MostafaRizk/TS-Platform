@@ -206,26 +206,26 @@ def main(argv):
             # f"CMA_{team_type}_{selection_level}_{simulation_length}_{num_generations}_{num_trials}_{random_seed}_{num_robots}_{num_resources}_{sensor_range}_{slope_angle}_{arena_length}_{arena_width}_{cache_start}_{slope_start}_{source_start}_{upward_cost_factor}_{downward_cost_factor}_{carry_factor}_{resource_reward_factor}_{sigma}_{num_teams}"
 
             # Prepare fitness function
-            fitness_calculator = FitnessCalculator(random_seed=int(model_name[6]), simulation_length=int(model_name[3]),
-                                                   num_trials=5, num_robots=int(model_name[7]),
-                                                   num_resources=int(model_name[8]),
-                                                   sensor_range=int(model_name[9]), slope_angle=int(model_name[10]),
-                                                   arena_length=int(model_name[11]), arena_width=int(model_name[12]),
-                                                   cache_start=int(model_name[13]),
-                                                   slope_start=int(model_name[14]), source_start=int(model_name[15]),
-                                                   upward_cost_factor=float(model_name[16]),
-                                                   downward_cost_factor=float(model_name[17]), carry_factor=float(model_name[18]),
-                                                   resource_reward_factor=float(model_name[19]),
+            fitness_calculator = FitnessCalculator(random_seed=int(model_name[7]), simulation_length=int(model_name[4]),
+                                                   num_trials=5, num_robots=int(model_name[8]),
+                                                   num_resources=int(model_name[9]),
+                                                   sensor_range=int(model_name[10]), slope_angle=int(model_name[11]),
+                                                   arena_length=int(model_name[12]), arena_width=int(model_name[13]),
+                                                   cache_start=int(model_name[14]),
+                                                   slope_start=int(model_name[15]), source_start=int(model_name[16]),
+                                                   upward_cost_factor=float(model_name[17]),
+                                                   downward_cost_factor=float(model_name[18]), carry_factor=float(model_name[19]),
+                                                   resource_reward_factor=float(model_name[20]),
                                                    using_gym=True)
 
-            team_type = model_name[1]
-            selection_level = model_name[2]
+            team_type = model_name[2]
+            selection_level = model_name[3]
 
             individual_1 = None
             individual_2 = None
 
             if team_type == "heterogeneous" and selection_level == "team":
-                if model_name[22] != "controller1":
+                if model_name[23] != "controller1":
                     raise RuntimeError("Use controller 1's path")
 
                 individual_1 = np.load(test_model)
@@ -244,7 +244,7 @@ def main(argv):
 
             #fitness, specialisation = fitness_calculator.calculate_ferrante_specialisation(full_genome, team_type=model_name[2],render=False)
             #print(f"Fitness is {fitness} and specialisation is {specialisation}")
-            fitness_1, fitness_2 = fitness_calculator.calculate_fitness(team_type=model_name[1], selection_level=model_name[2], individual_1=individual_1, individual_2=individual_2, render=True)
+            fitness_1, fitness_2 = fitness_calculator.calculate_fitness(team_type=model_name[2], selection_level=model_name[3], individual_1=individual_1, individual_2=individual_2, render=True)
             print(f"Fitness 1 is {fitness_1} and Fitness 2 is {fitness_2}")
 
         # If this is a batch testing run
@@ -315,7 +315,7 @@ def main(argv):
 
                     fitness_1, fitness_2, specialisation = fitness_calculator.calculate_ferrante_specialisation(team_type=model_name[1], selection_level=model_name[2], individual_1=individual_1, individual_2=individual_2, render=False)
 
-                    if specialisation > 0.7:
+                    if specialisation >= 0.0:
                         print(f"Fitnesses are {fitness_1} and {fitness_2}. Specialisation is {specialisation}")
                         print(filename)
 
