@@ -80,35 +80,6 @@ def rwg(seed_value, calculator, num_teams, team_type, selection_level, target_fi
     return best_genome, best_fitness
 
 
-    '''
-    # Neuroevolution loop
-    for nind in range(len(population)):
-
-        # Evaluate individual's fitness
-        fitness = calculator.calculate_fitness(full_genome, team_type=team_type, render=False)
-        fitnesses = calculator.calculate_fitness(team_type, selection_level, individual_1, individual_2, render=False)
-        # print(f"{nind} Score: {score}")
-
-        if fitness >= target_fitness:
-            print(f"Found an individual with score {fitness} >= {target_fitness} after {nind} tries")
-            return full_genome, fitness
-        elif fitness > 0.0:
-            print(f"Found an individual with score {fitness} > 0 after {nind} tries")
-        #elif nind%10 == 0:
-
-        #if nind%50 == 0:
-        #    print(f"{nind}: Best score is {max_fitness}")
-
-        if fitness > max_fitness:
-            max_fitness = fitness
-            backup_genome = full_genome
-
-        seed_value += 1
-
-    print(f"Did not find a genome with score greater than {target_fitness}. Using best one found, with score {max_fitness}")
-    '''
-
-
 def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name, team_type, selection_level, num_generations, num_teams):
     """
     Evolves a model or pair of models to accomplish the task
