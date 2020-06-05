@@ -1,3 +1,5 @@
+import os
+
 import gym
 import numpy as np
 import time
@@ -125,7 +127,7 @@ class FitnessCalculator:
 
         return fitnesses
 
-    def calculate_fitness(self, team_type, selection_level, individual_1, individual_2, render=False):
+    def calculate_fitness(self, individual_1, individual_2, render=False, time_delay=0):
         """
         Calculates fitness of a controller by running a simulation
         :param individual_1: Genome (NN weights)
@@ -137,9 +139,9 @@ class FitnessCalculator:
         :return:
         """
 
-        #render = True
         average_score = 0
         temp_seed = self.random_seed
+        file_reader = None
 
         # Load genomes into TinyAgent objects (i.e. neural networks)
         temp_individual_1 = TinyAgent(self.observation_size, self.action_size, temp_seed)
@@ -185,8 +187,9 @@ class FitnessCalculator:
                 score_1 += info["reward_1"]
                 score_2 += info["reward_2"]
 
-                #time.sleep(0.1)
-                #print(f'Time: {t} || Score: {score}')
+                if time_delay > 0:
+                    time.sleep(time_delay)
+                    #print(f'Time: {t} || Score: {score}')
 
                 if done:
                     break
@@ -368,4 +371,104 @@ class FitnessCalculator:
             temp_seed += 1
 
         return average_score_1 / self.num_trials, average_score_2 / self.num_trials, average_specialisation / self.num_trials
+
+    def calculate_fitness_with_logging(self, individual_1, individual_2, render=False, time_delay=0, log_movement=False):
+        """
+        Calculates fitness of a controller by running a simulation
+        :param individual_1: Genome (NN weights)
+        :param individual_2: Genome (NN weights)
+        :param team_type Accepts "homogeneous" or "heterogeneous"
+        :param selection_level Accepts "individual" or "team"
+        :param learning_method Accepts cma. Also accepts qn or bq but will only work for homogeneous teams
+        :param render:
+        :return:
+        """
+
+        average_score = 0
+        temp_seed = self.random_seed
+        file_reader = None
+
+        # Load genomes into TinyAgent objects (i.e. neural networks)
+        temp_individual_1 = TinyAgent(self.observation_size, self.action_size, temp_seed)
+        temp_individual_2 = TinyAgent(self.observation_size, self.action_size, temp_seed)
+        temp_individual_1.load_weights(individual_1)
+        temp_individual_2.load_weights(individual_2)
+        individual_1 = temp_individual_1
+        individual_2 = temp_individual_2
+
+        # For use with individual level selection
+        average_score_1 = 0
+        average_score_2 = 0
+
+        # Open logging file and write first line
+        action_file = "action_taken.csv"
+
+        if not os.path.exists(action_file):
+            file_reader = open(action_file, "w+")
+            header_line = ','.join(f"t={t}" for t in range(self.simulation_length)) + "\n"
+            file_reader.write(header_line)
+        else:
+            file_reader = open(action_file, "a")
+
+        for trial in range(self.num_trials):
+            self.env.seed(temp_seed)  # makes fitness deterministic
+            observations = self.env.reset()
+
+            score = 0
+
+            # For use with individual selection
+            score_1 = 0
+            score_2 = 0
+
+            # Agent action lists
+            agent_1_action_list = []
+            agent_2_action_list = []
+
+            for t in range(self.simulation_length):
+                if render:
+                    self.env.render()
+
+                robot_actions = []
+
+                for i in range(len(observations)):
+                    if i % 2 == 0:
+                        robot_actions += [individual_1.act(observations[i])]
+                        agent_1_action_list += [robot_actions[-1]]
+                    else:
+                        robot_actions += [individual_2.act(observations[i])]
+                        agent_2_action_list += [robot_actions[-1]]
+
+                # The environment changes according to all their actions
+                observations, reward, done, info = self.env.step(robot_actions, t)
+
+                # Team selection
+                score += reward
+
+                # Individual selection
+                score_1 += info["reward_1"]
+                score_2 += info["reward_2"]
+
+                if time_delay > 0:
+                    time.sleep(time_delay)
+                    #print(f'Time: {t} || Score: {score}')
+
+                if done:
+                    break
+
+            # Team selection
+            average_score += score
+
+            #Individual selection
+            average_score_1 += score_1
+            average_score_2 += score_2
+
+            temp_seed += 1
+
+            agent_1_action_string = ','.join(str(action) for action in agent_1_action_list) + '\n'
+            agent_2_action_string = ','.join(str(action) for action in agent_2_action_list) + '\n'
+            file_reader.write(agent_1_action_string)
+            file_reader.write(agent_2_action_string)
+
+        file_reader.close()
+        return average_score_1/self.num_trials, average_score_2/self.num_trials
 
