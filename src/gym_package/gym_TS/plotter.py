@@ -235,5 +235,4 @@ def plot_distribution(results_file, graph_file):
 #plot_evolution_fitness("results_specialisation.csv", "evolution_fitness.png")
 #plot_evolution_specialisation("results_specialisation.csv", "evolution_specialisation.png")
 
-#plot_distribution("landscape_analysis_homogeneous_team_1.csv", "distribution.png")
-plot_distribution("flacco_lhs_homogeneous_team_untransformed.csv", "distribution_untransformed.png")
+plot_distribution("flacco_gaussian_proper_homogeneous_team.csv", "distribution_gaussian_proper.png")
