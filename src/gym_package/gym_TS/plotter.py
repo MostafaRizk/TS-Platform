@@ -182,57 +182,6 @@ def plot_evolution_specialisation(results_file, graph_file):
     plt.savefig(graph_file)
 
 
-def plot_distribution(results_file, graph_file):
-    """
-    Plot distribution of random points from the fitness landscape as violin plots
-    """
-    # Read data
-    #data = pd.read_csv(results_file)
-    f = open(results_file, "r")
-    data = f.read().strip().split("\n")
-    f.close()
-
-
-    # Format data
-    results = {  # "Homogeneous-Individual": {"Individual 1": [], "Individual 2": []},
-        "Homogeneous-Team": [],
-    }
-
-    data_points = 0
-
-    for row in data:
-        results["Homogeneous-Team"] += [float(row.split(",")[-1])]
-
-    # Plot data
-    fig1, ax1 = plt.subplots(figsize=(12, 4))
-    ax1.set_title('Distribution of Landscape')
-    ax1.set_ylim(-2000, 2000)
-    ax1.set_ylabel('Fitness')
-    ax1.set_xlabel('Evolutionary Configuration')
-
-    positions = [0]
-    # configs = ["Homogeneous-Individual", "Homogeneous-Team", "Heterogeneous-Individual", "Heterogeneous-Team"]
-    # configs = ["Homogeneous-Team", "Heterogeneous-Individual"]
-    configs = ["Homogeneous-Team"]
-
-    for i in range(len(configs)):
-        config = configs[i]
-        ax1.violinplot(results[config], positions=[positions[i]], widths=0.3)
-
-    ax1.set_xticklabels([x for x in configs])
-    ax1.set_xticks([x for x in positions])
-
-    #hB, = ax1.plot([1, 1], 'r-')
-    #hB.set_visible(False)
-
-    #plt.show()
-    plt.savefig(graph_file)
-
-
-
-
 #plot_hardcoded_fitness("hardcoded_results.csv", "hardcoded_fitness.png")
 #plot_evolution_fitness("results_specialisation.csv", "evolution_fitness.png")
 #plot_evolution_specialisation("results_specialisation.csv", "evolution_specialisation.png")
-
-plot_distribution("flacco_gaussian_proper_homogeneous_team.csv", "distribution_gaussian_proper.png")
