@@ -8,23 +8,24 @@ from scipy.stats import multivariate_normal
 
 from gym_TS.agents.TinyAgent import TinyAgent
 
+import pandas as pd
 
-def generate_genomes(team_type, selection_level, distribution):
+
+def generate_genomes(team_type, selection_level, distribution, num_samples):
     num_dimensions = 288
-    num_samples = 500
-    seed=1
+    seed = 1
     sampled_points = None
 
     # Sample using scipy's multivariate normal distribution implementation
     if distribution == "normal":
-        mean_array = np.full((1, num_dimensions), 1)
-        random_variable = multivariate_normal(mean=mean_array, cov=np.identity(num_dimensions))
+        mean_array = [0]*num_dimensions
+        random_variable = multivariate_normal(mean=mean_array, cov=np.identity(num_dimensions)*3)
         sampled_points = random_variable.rvs(num_samples, seed)
 
     # Sample using numpy's uniform distribution implementation
     if distribution == "uniform":
-        min_array = np.full((1, num_dimensions), -3)
-        max_array = np.full((1, num_dimensions), 3)
+        min_array = np.full((1, num_dimensions), -10)
+        max_array = np.full((1, num_dimensions), 10)
         random_state = np.random.RandomState(seed)
         sampled_points = random_state.uniform(min_array, max_array, (num_samples, num_dimensions))
 
@@ -58,7 +59,7 @@ def generate_genomes(team_type, selection_level, distribution):
         fitness_1, fitness_2 = fitness_calculator.calculate_fitness(individual_1=individual, individual_2=individual, render=False)
         team_fitness = fitness_1 + fitness_2
 
-        genome_str = str(individual.tolist()).strip("[]") + "," + str(team_fitness) + "\n"
+        genome_str = str(individual.tolist()).strip("[]") + "," + str(fitness_1) + "," + str(fitness_2) + "," + str(team_fitness) + "\n"
         f.write(genome_str)
 
     f.close()
@@ -74,7 +75,7 @@ def analyse_motion(team_type, selection_level, visualise, distribution):
         render = True
         time_delay = 0.1
 
-    f = open(f"flacco_{distribution}_{team_type}_{selection_level}.csv", "r")
+    f = open(f"genomes_{distribution}_{team_type}_{selection_level}.csv", "r")
     data = f.read().strip().split("\n")
     f.close()
 
@@ -92,7 +93,7 @@ def analyse_motion(team_type, selection_level, visualise, distribution):
                                            using_gym=using_gym)
 
     for row in data[0:30]:
-        genome = np.array([float(element) for element in row.split(",")[0:-1]])
+        genome = np.array([float(element) for element in row.split(",")[0:-3]])
         fitness_1, fitness_2 = fitness_calculator.calculate_fitness_with_logging(individual_1=genome, individual_2=genome, render=render, time_delay=time_delay)
         team_fitness = fitness_1 + fitness_2
         print(team_fitness)
@@ -175,11 +176,16 @@ def plot_action_distribution(genome_file, graph_file):
     # For all genomes
     for row in data:
         # Get genome
-        genome = np.array([float(element) for element in row.split(",")[0:-1]])
+        genome = np.array([float(element) for element in row.split(",")[0:-3]])
 
         # Test genome on observation
-        network = TinyAgent(observation_length, action_length, seed)
-        network.load_weights(genome)
+        try:
+            network = TinyAgent(observation_length, action_length, seed)
+            network.load_weights(genome)
+        except:
+            genome = np.array([float(element) for element in row.split(",")])
+            network = TinyAgent(observation_length, action_length, seed)
+            network.load_weights(genome)
 
         for observation in observation_sequence:
             action = network.act(observation)
@@ -213,7 +219,7 @@ def plot_weight_distribution(genome_file, graph_file):
     np_data = []
 
     for row in data:
-        genome = np.array([float(element) for element in row.split(",")[0:-1]])
+        genome = np.array([float(element) for element in row.split(",")[0:-3]])
         np_data += [genome]
 
     y = np.transpose(np.array(np_data))
@@ -224,6 +230,93 @@ def plot_weight_distribution(genome_file, graph_file):
     plt.savefig(graph_file)
 
 
-generate_genomes(team_type="homogeneous", selection_level="team", distribution="normal")
+def get_best_genomes(results_folder, results_file, team_type, selection_level, cutoff_score):
+    """
+    Load the genomes from a particular results folder that performed better than a certain cutoff score.
+    Information on genome performance is based on a results file.
+    """
+    #Load contents of results file
+    data = pd.read_csv(results_file)
+
+    f = open(f"best_genomes_{team_type}_{selection_level}_{cutoff_score}.csv", "w")
+
+    for index, row in data.iterrows():
+        if row[" Team Type"] == team_type and row[" Selection Level"] == selection_level and float(row[" Evolved Fitness"]) > cutoff_score:
+            filename = results_folder + row[" Log File"].strip(".log") + ".npy"
+            individual = np.load(filename)
+            genome_str = str(individual.tolist()).strip("[]") + "\n"
+            f.write(genome_str)
+
+    f.close()
+
+
+def plot_weight_histogram(genome_file, graph_file):
+    num_dimensions = 288
+
+    # Get samples
+    f = open(genome_file, "r")
+    data = f.read().strip().split("\n")
+    f.close()
+
+    # Plot data
+    fig1, ax1 = plt.subplots(figsize=(12, 4))
+    ax1.set_title('Distribution of Neural Network Weights')
+    # ax1.set_ylim(-1000, 1000)
+    ax1.set_ylabel('Number of Weights')
+    ax1.set_xlabel('Weight Magnitude')
+
+    weights = {}
+    min_weight = float("inf")
+    max_weight = float("-inf")
+
+    # For every weight in every genome
+    for row in data:
+        for element in row.split(",")[0:-3]:
+            element_value = int(float(element))
+
+            if element_value < min_weight:
+                min_weight = element_value
+
+            if element_value > max_weight:
+                max_weight = element_value
+
+            key = str(element_value)
+
+            if key in weights:
+                weights[key] += 1
+            else:
+                weights[key] = 1
+
+    int_keys = [int(key) for key in weights.keys()]
+    int_keys = sorted(int_keys)
+    positions = [x for x in range(len(int_keys))]
+    ax1.set_xticklabels([x for x in int_keys])
+    ax1.set_xticks([x for x in positions])
+
+    for i in range(len(int_keys)):
+        key = int_keys[i]
+        ax1.bar(positions[i], weights[str(key)])
+
+    # plt.show()
+    plt.savefig(graph_file)
+
+
+distribution = "normal"
+team_type = "homogeneous"
+selection_level = "team"
+num_samples = 10000
+generate_genomes(team_type, selection_level, distribution, num_samples)
+#plot_fitness_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"fitness_distribution_{distribution}_{team_type}_{selection_level}.png")
+#plot_weight_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"weight_distribution_{distribution}_{team_type}_{selection_level}.png")
+#plot_weight_histogram(f"genomes_{distribution}_{team_type}_{selection_level}.csv",f"weight_histogram_{distribution}_{team_type}_{selection_level}.png")
+#plot_action_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"action_distribution_{distribution}_{team_type}_{selection_level}.png")
+
+#get_best_genomes("/Users/mostafa/Documents/Code/PhD/Results/Paper1/3_FixedTimeLag-e31c5b28867eeeb488fc051cbc4e3b09ce8beb31/", "results_sorted.csv", "homogeneous", "team", 0.0)
+#plot_weight_histogram("best_genomes_homogeneous_team_0.0.csv", "best_genomes_homogeneous_team_0.0.png")
+#plot_action_distribution("best_genomes_homogeneous_team_0.0.csv", "action_distribution_best_homogeneous_team_0.0.png")
+
+#get_best_genomes("/Users/mostafa/Documents/Code/PhD/Results/Paper1/3_FixedTimeLag-e31c5b28867eeeb488fc051cbc4e3b09ce8beb31/", "results_sorted.csv", "heterogeneous", "individual", 0.0)
+#plot_weight_histogram("best_genomes_heterogeneous_individual_0.0.csv", "best_genomes_heterogeneous_individual_0.0.png")
+#plot_action_distribution("best_genomes_heterogeneous_individual_0.0.csv", "action_distribution_best_heterogeneous_individual_0.0.png")
 
 

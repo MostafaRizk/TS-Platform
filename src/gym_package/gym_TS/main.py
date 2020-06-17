@@ -244,7 +244,7 @@ def main(argv):
 
             #fitness, specialisation = fitness_calculator.calculate_ferrante_specialisation(full_genome, team_type=model_name[2],render=False)
             #print(f"Fitness is {fitness} and specialisation is {specialisation}")
-            fitness_1, fitness_2 = fitness_calculator.calculate_fitness(team_type=model_name[2], selection_level=model_name[3], individual_1=individual_1, individual_2=individual_2, render=True)
+            fitness_1, fitness_2 = fitness_calculator.calculate_fitness(individual_1=individual_1, individual_2=individual_2, render=True)
             print(f"Fitness 1 is {fitness_1} and Fitness 2 is {fitness_2}")
 
         # If this is a batch testing run
@@ -313,7 +313,7 @@ def main(argv):
                     else:
                         raise RuntimeError("Invalid team type and/or selection level")
 
-                    fitness_1, fitness_2, specialisation = fitness_calculator.calculate_ferrante_specialisation(team_type=model_name[1], selection_level=model_name[2], individual_1=individual_1, individual_2=individual_2, render=False)
+                    fitness_1, fitness_2, specialisation = fitness_calculator.calculate_ferrante_specialisation(individual_1=individual_1, individual_2=individual_2, render=False)
 
                     if specialisation >= 0.0:
                         print(f"Fitnesses are {fitness_1} and {fitness_2}. Specialisation is {specialisation}")

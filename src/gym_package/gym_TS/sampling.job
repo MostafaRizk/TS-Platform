@@ -1,0 +1,17 @@
+#!/bin/env bash
+#SBATCH --job-name=sampling
+#SBATCH --time=24:00:00
+#SBATCH --array=1
+#SBATCH --output=sampling.out
+#SBATCH --open-mode=append
+#SBATCH --ntasks=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=1
+#SBATCH --mail-type=FAIL,BEGIN,END
+#SBATCH --mail-user=mostafa.rizk@monash.edu
+
+export OMP_NUM_THREADS=1
+source /home/mriz9/om18/actual_code/TS-Platform/src/env/bin/activate
+CMD=`head -n ${SLURM_ARRAY_TASK_ID} LIST_sampling | tail -1`
+$CMD
+
