@@ -7,8 +7,10 @@ from gym.utils import seeding
 
 
 def linear_activation(x):
-    y = x
-    return y
+    return x
+
+def sigmoid_activation(x):
+    return 1 / (1 + np.exp(-x))
 
 
 class TinyAgent:
@@ -18,7 +20,8 @@ class TinyAgent:
         self.net_structure = [observation_size, *self.hidden, action_size]
 
         # Network setup is straightforward (defaults: `act_fn=np.tanh, init_weights=None`)
-        self.net = tinynet.RNN(self.net_structure, act_fn=linear_activation)
+        #self.net = tinynet.RNN(self.net_structure, act_fn=linear_activation)
+        self.net = tinynet.RNN(self.net_structure, act_fn=sigmoid_activation)
         self.np_random, seed = seeding.np_random(seed)
 
     def get_weights(self):

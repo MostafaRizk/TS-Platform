@@ -143,19 +143,19 @@ class FitnessCalculator:
         temp_seed = self.random_seed
         file_reader = None
 
-        # Load genomes into TinyAgent objects (i.e. neural networks)
-        temp_individual_1 = TinyAgent(self.observation_size, self.action_size, temp_seed)
-        temp_individual_2 = TinyAgent(self.observation_size, self.action_size, temp_seed)
-        temp_individual_1.load_weights(individual_1)
-        temp_individual_2.load_weights(individual_2)
-        individual_1 = temp_individual_1
-        individual_2 = temp_individual_2
-
         # For use with individual level selection
         average_score_1 = 0
         average_score_2 = 0
 
         for trial in range(self.num_trials):
+            # Load genomes into TinyAgent objects (i.e. neural networks)
+            temp_individual_1 = TinyAgent(self.observation_size, self.action_size, temp_seed)
+            temp_individual_2 = TinyAgent(self.observation_size, self.action_size, temp_seed)
+            temp_individual_1.load_weights(individual_1)
+            temp_individual_2.load_weights(individual_2)
+            individual_1 = temp_individual_1
+            individual_2 = temp_individual_2
+
             self.env.seed(temp_seed)  # makes fitness deterministic
             observations = self.env.reset()
 

@@ -413,7 +413,7 @@ def plot_action_progression(genome_file, graph_file):
     action_at_time = [action_list[:] for x in range(action_length)]
 
     # For all genomes
-    for row in data:
+    for row in data[0:100]:
         # Get genome
         genome = np.array([float(element) for element in row.split(",")[0:-3]])
 
@@ -427,6 +427,10 @@ def plot_action_progression(genome_file, graph_file):
             network.load_weights(genome)
 
         for i in range(len(observation_sequence)):
+            #if i % 500 == 0 and i != 0:
+            #    network = TinyAgent(observation_length, action_length, seed)
+            #    network.load_weights(genome)
+
             observation = observation_sequence[i]
             action = network.act(observation)
 
@@ -462,11 +466,11 @@ distribution = "normal"
 team_type = "homogeneous"
 selection_level = "team"
 num_samples = 10000
-#generate_genomes(team_type, selection_level, distribution, num_samples)
-#plot_fitness_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"fitness_distribution_{distribution}_{team_type}_{selection_level}.png")
+generate_genomes(team_type, selection_level, distribution, num_samples)
+plot_fitness_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"fitness_distribution_{distribution}_{team_type}_{selection_level}.png")
 #plot_weight_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"weight_distribution_{distribution}_{team_type}_{selection_level}.png")
-#plot_weight_histogram(f"genomes_{distribution}_{team_type}_{selection_level}.csv",f"weight_histogram_{distribution}_{team_type}_{selection_level}.png")
-#plot_action_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"action_distribution_{distribution}_{team_type}_{selection_level}.png")
+plot_weight_histogram(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"weight_histogram_{distribution}_{team_type}_{selection_level}.png")
+plot_action_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"action_distribution_{distribution}_{team_type}_{selection_level}.png")
 #analyse_motion(team_type, selection_level, False, distribution)
 #plot_activation_progression(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"activation_distribution_{distribution}_{team_type}_{selection_level}.png")
 plot_action_progression(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"action_progression_{distribution}_{team_type}_{selection_level}.png")
