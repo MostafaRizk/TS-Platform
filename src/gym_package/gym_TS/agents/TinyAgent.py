@@ -35,6 +35,9 @@ class TinyAgent:
     def act(self, observation):
         return self.net.activate(observation).argmax()
 
+    def get_all_activations(self, observation):
+        return self.net.activate(observation)
+
     def save_model(self, name):
         weights = self.net.get_weights()
         np.save(name, weights)

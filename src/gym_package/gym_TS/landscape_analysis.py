@@ -123,7 +123,7 @@ def plot_fitness_distribution(results_file, graph_file):
     # Plot data
     fig1, ax1 = plt.subplots(figsize=(12, 4))
     ax1.set_title('Distribution of Landscape')
-    ax1.set_ylim(-2000, 2000)
+    ax1.set_ylim(-4000, 4000)
     ax1.set_ylabel('Fitness')
     ax1.set_xlabel('Evolutionary Configuration')
 
@@ -301,15 +301,175 @@ def plot_weight_histogram(genome_file, graph_file):
     plt.savefig(graph_file)
 
 
+def plot_activation_progression(genome_file, graph_file):
+    """
+    Plot distribution of activation values for each of the 6 outputs as violin plots
+    """
+    num_dimensions = 288
+    num_observations = 500*5
+    num_networks = 500
+    seed = 1
+
+    observation_length = 41
+    action_length = 6
+
+    # Get samples
+    f = open(genome_file, "r")
+    data = f.read().strip().split("\n")
+    f.close()
+
+    # Sample num_observations observations uniformly
+    min_array = np.full((1, observation_length), 0)
+    max_array = np.full((1, observation_length), 2)
+    random_state = np.random.RandomState(seed)
+    # sampled_points = random_state.uniform(min_array, max_array, (num_samples, num_dimensions))
+    observation_sequence = []
+
+    for i in range(num_observations):
+        new_observation = random_state.randint(min_array, max_array)
+        observation_sequence += [new_observation]
+
+    activations = [[], [], [], [], [], []]
+
+    # For all genomes
+    for row in data[0:1]:
+        # Get genome
+        genome = np.array([float(element) for element in row.split(",")[0:-3]])
+
+        # Test genome on observation
+        try:
+            network = TinyAgent(observation_length, action_length, seed)
+            network.load_weights(genome)
+        except:
+            genome = np.array([float(element) for element in row.split(",")])
+            network = TinyAgent(observation_length, action_length, seed)
+            network.load_weights(genome)
+
+        for observation in observation_sequence:
+            network_outputs = network.get_all_activations(observation)
+
+            for i in range(action_length):
+                activations[i] += [network_outputs[i]]
+
+    # Plot data
+    fig1, ax1 = plt.subplots(figsize=(12, 4))
+
+    positions = [0, 1, 2, 3, 4, 5]
+
+    #for i in range(len(positions)):
+    #    ax1.violinplot(activations[i], positions=[positions[i]], widths=0.3)
+
+    timesteps = np.array( [x for x in range(num_observations)] )
+    #ax1.errorbar(timesteps, activations)
+    ax1.errorbar(timesteps, [abs(x) for x in activations[0]])
+    ax1.errorbar(timesteps, [abs(x) for x in activations[1]])
+    ax1.errorbar(timesteps, [abs(x) for x in activations[2]])
+    ax1.errorbar(timesteps, [abs(x) for x in activations[3]])
+    #ax1.plot(timesteps, [abs(x) for x in activations[4]])
+    #ax1.plot(timesteps, [abs(x) for x in activations[5]])
+
+    #for i in range(len(timesteps)):
+        #print(f"{timesteps[i]}: {activations[0][i]} / {activations[1][i]} / {activations[2][i]} / {activations[3][i]} / {activations[4][i]} / {activations[5][i]} ==> {np.array([activations[x][i] for x in range(6)]).argmax()}")
+
+
+    #ax1.set_xticklabels([x for x in positions])
+    #ax1.set_xticks([x for x in positions])
+
+    ax1.set_title('Activation Value Over Time')
+    ax1.set_ylabel('Activation Value')
+    ax1.set_xlabel('Number of Observations')
+    plt.savefig(graph_file)
+
+
+def plot_action_progression(genome_file, graph_file):
+    """
+    Plot distribution of activation values for each of the 6 outputs as violin plots
+    """
+    num_dimensions = 288
+    num_observations = 500*5
+    num_networks = 500
+    seed = 1
+
+    observation_length = 41
+    action_length = 6
+
+    # Get samples
+    f = open(genome_file, "r")
+    data = f.read().strip().split("\n")
+    f.close()
+
+    # Sample num_observations observations uniformly
+    min_array = np.full((1, observation_length), 0)
+    max_array = np.full((1, observation_length), 2)
+    random_state = np.random.RandomState(seed)
+    # sampled_points = random_state.uniform(min_array, max_array, (num_samples, num_dimensions))
+    observation_sequence = []
+
+    for i in range(num_observations):
+        new_observation = random_state.randint(min_array, max_array)
+        observation_sequence += [new_observation]
+
+    action_list = [0] * num_observations
+    action_at_time = [action_list[:] for x in range(action_length)]
+
+    # For all genomes
+    for row in data:
+        # Get genome
+        genome = np.array([float(element) for element in row.split(",")[0:-3]])
+
+        # Test genome on observation
+        try:
+            network = TinyAgent(observation_length, action_length, seed)
+            network.load_weights(genome)
+        except:
+            genome = np.array([float(element) for element in row.split(",")])
+            network = TinyAgent(observation_length, action_length, seed)
+            network.load_weights(genome)
+
+        for i in range(len(observation_sequence)):
+            observation = observation_sequence[i]
+            action = network.act(observation)
+
+            action_at_time[action][i] += 1
+
+    # Plot data
+    fig, (ax1, ax2, ax3, ax4, ax5, ax6) = plt.subplots(6, 1, sharex=True, figsize=(12, 8))
+    x_axis = [x for x in range(num_observations)]
+
+    ''''''
+    ax1.bar(x_axis, action_at_time[0])
+    ax2.bar(x_axis, action_at_time[1])
+    ax3.bar(x_axis, action_at_time[2])
+    ax4.bar(x_axis, action_at_time[3])
+    ax5.bar(x_axis, action_at_time[4])
+    ax6.bar(x_axis, action_at_time[5])
+    
+    ax1.set_title('Frequency of Action Selection Over Time')
+
+    ax1.set_ylabel('0')
+    ax2.set_ylabel('1')
+    ax3.set_ylabel('2')
+    ax4.set_ylabel('3')
+    ax5.set_ylabel('4')
+    ax6.set_ylabel('5')
+
+    ax6.set_xlabel('Observation Step')
+
+    plt.savefig(graph_file)
+
+
 distribution = "normal"
 team_type = "homogeneous"
 selection_level = "team"
 num_samples = 10000
-generate_genomes(team_type, selection_level, distribution, num_samples)
+#generate_genomes(team_type, selection_level, distribution, num_samples)
 #plot_fitness_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"fitness_distribution_{distribution}_{team_type}_{selection_level}.png")
 #plot_weight_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"weight_distribution_{distribution}_{team_type}_{selection_level}.png")
 #plot_weight_histogram(f"genomes_{distribution}_{team_type}_{selection_level}.csv",f"weight_histogram_{distribution}_{team_type}_{selection_level}.png")
 #plot_action_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"action_distribution_{distribution}_{team_type}_{selection_level}.png")
+#analyse_motion(team_type, selection_level, False, distribution)
+#plot_activation_progression(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"activation_distribution_{distribution}_{team_type}_{selection_level}.png")
+plot_action_progression(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"action_progression_{distribution}_{team_type}_{selection_level}.png")
 
 #get_best_genomes("/Users/mostafa/Documents/Code/PhD/Results/Paper1/3_FixedTimeLag-e31c5b28867eeeb488fc051cbc4e3b09ce8beb31/", "results_sorted.csv", "homogeneous", "team", 0.0)
 #plot_weight_histogram("best_genomes_homogeneous_team_0.0.csv", "best_genomes_homogeneous_team_0.0.png")
