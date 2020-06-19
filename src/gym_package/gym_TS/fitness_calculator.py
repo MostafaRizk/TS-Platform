@@ -3,6 +3,7 @@ import os
 import gym
 import numpy as np
 import time
+from copy import deepcopy
 
 from gym_TS.agents.TinyAgent import TinyAgent
 from gym.utils import seeding
@@ -142,6 +143,8 @@ class FitnessCalculator:
         average_score = 0
         temp_seed = self.random_seed
         file_reader = None
+        weights_1 = deepcopy(individual_1)
+        weights_2 = deepcopy(individual_2)
 
         # For use with individual level selection
         average_score_1 = 0
@@ -151,8 +154,8 @@ class FitnessCalculator:
             # Load genomes into TinyAgent objects (i.e. neural networks)
             temp_individual_1 = TinyAgent(self.observation_size, self.action_size, temp_seed)
             temp_individual_2 = TinyAgent(self.observation_size, self.action_size, temp_seed)
-            temp_individual_1.load_weights(individual_1)
-            temp_individual_2.load_weights(individual_2)
+            temp_individual_1.load_weights(weights_1)
+            temp_individual_2.load_weights(weights_2)
             individual_1 = temp_individual_1
             individual_2 = temp_individual_2
 

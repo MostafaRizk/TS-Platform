@@ -465,7 +465,7 @@ def plot_action_progression(genome_file, graph_file):
 distribution = "normal"
 team_type = "homogeneous"
 selection_level = "team"
-num_samples = 10000
+num_samples = 5
 generate_genomes(team_type, selection_level, distribution, num_samples)
 plot_fitness_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"fitness_distribution_{distribution}_{team_type}_{selection_level}.png")
 #plot_weight_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"weight_distribution_{distribution}_{team_type}_{selection_level}.png")
