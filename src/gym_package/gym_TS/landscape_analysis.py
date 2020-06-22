@@ -11,16 +11,18 @@ from gym_TS.agents.TinyAgent import TinyAgent
 import pandas as pd
 
 
-def generate_genomes(team_type, selection_level, distribution, num_samples):
+def generate_genomes(team_type, selection_level, distribution, num_samples, start_sample):
     num_dimensions = 288
     seed = 1
     sampled_points = None
+    num_samples += start_sample-1  # e.g. 10,000 samples starting from 10,001 means taking 20,000 samples and ignoring the first 10,000
 
     # Sample using scipy's multivariate normal distribution implementation
     if distribution == "normal":
         mean_array = [0]*num_dimensions
         random_variable = multivariate_normal(mean=mean_array, cov=np.identity(num_dimensions)*3)
         sampled_points = random_variable.rvs(num_samples, seed)
+        sampled_points = sampled_points[start_sample:]
 
     # Sample using numpy's uniform distribution implementation
     if distribution == "uniform":
@@ -53,7 +55,7 @@ def generate_genomes(team_type, selection_level, distribution, num_samples):
     #python3 main.py --algorithm bootstrap --team_type homogeneous --selection_level team --generations 10000 --simulation_length 500 --trials 5  --seed 1 --num_robots 2 --num_resources 3 --sensor_range 1 --slope_angle 40 --arena_length 8 --arena_width 4 --cache_start 1 --slope_start 3 --source_start 7 --upward_cost_factor 3 --downward_cost_factor 0.2 --carry_factor 2 --resource_reward_factor 1000 --target_fitness 100
 
     ''''''
-    f = open(f"genomes_{distribution}_{team_type}_{selection_level}.csv", "w")
+    f = open(f"genomes_{distribution}_{team_type}_{selection_level}_{start_sample}.csv", "w")
 
     for individual in sampled_points:
         fitness_1, fitness_2 = fitness_calculator.calculate_fitness(individual_1=individual, individual_2=individual, render=False)
@@ -65,7 +67,7 @@ def generate_genomes(team_type, selection_level, distribution, num_samples):
     f.close()
 
 
-def analyse_motion(team_type, selection_level, visualise, distribution):
+def analyse_motion(results_file, visualise):
     using_gym = False
     render = False
     time_delay = 0
@@ -75,7 +77,7 @@ def analyse_motion(team_type, selection_level, visualise, distribution):
         render = True
         time_delay = 0.1
 
-    f = open(f"genomes_{distribution}_{team_type}_{selection_level}.csv", "r")
+    f = open(results_file, "r")
     data = f.read().strip().split("\n")
     f.close()
 
@@ -465,15 +467,16 @@ def plot_action_progression(genome_file, graph_file):
 distribution = "normal"
 team_type = "homogeneous"
 selection_level = "team"
-num_samples = 10000
-generate_genomes(team_type, selection_level, distribution, num_samples)
-plot_fitness_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"fitness_distribution_{distribution}_{team_type}_{selection_level}.png")
+num_samples = 20000
+start_sample = 10001
+generate_genomes(team_type, selection_level, distribution, num_samples, start_sample)
+#plot_fitness_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"fitness_distribution_{distribution}_{team_type}_{selection_level}.png")
 #plot_weight_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"weight_distribution_{distribution}_{team_type}_{selection_level}.png")
-plot_weight_histogram(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"weight_histogram_{distribution}_{team_type}_{selection_level}.png")
-plot_action_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"action_distribution_{distribution}_{team_type}_{selection_level}.png")
-#analyse_motion(team_type, selection_level, False, distribution)
+#plot_weight_histogram(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"weight_histogram_{distribution}_{team_type}_{selection_level}.png")
+#plot_action_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"action_distribution_{distribution}_{team_type}_{selection_level}.png")
+#analyse_motion(f"genomes_{distribution}_{team_type}_{selection_level}.csv", True)
 #plot_activation_progression(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"activation_distribution_{distribution}_{team_type}_{selection_level}.png")
-plot_action_progression(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"action_progression_{distribution}_{team_type}_{selection_level}.png")
+#plot_action_progression(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"action_progression_{distribution}_{team_type}_{selection_level}.png")
 
 #get_best_genomes("/Users/mostafa/Documents/Code/PhD/Results/Paper1/3_FixedTimeLag-e31c5b28867eeeb488fc051cbc4e3b09ce8beb31/", "results_sorted.csv", "homogeneous", "team", 0.0)
 #plot_weight_histogram("best_genomes_homogeneous_team_0.0.csv", "best_genomes_homogeneous_team_0.0.png")
