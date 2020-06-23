@@ -94,8 +94,8 @@ def analyse_motion(results_file, visualise):
                                            resource_reward_factor=1000.0,
                                            using_gym=using_gym)
 
-    for row in data[0:30]:
-        genome = np.array([float(element) for element in row.split(",")[0:-3]])
+    for row in data:
+        genome = np.array([float(element) for element in row.split(",")])
         fitness_1, fitness_2 = fitness_calculator.calculate_fitness_with_logging(individual_1=genome, individual_2=genome, render=render, time_delay=time_delay)
         team_fitness = fitness_1 + fitness_2
         print(team_fitness)
@@ -238,7 +238,7 @@ def get_best_genomes(results_folder, results_file, team_type, selection_level, c
     Information on genome performance is based on a results file.
     """
     #Load contents of results file
-    data = pd.read_csv(results_file)
+    data = pd.read_csv(results_folder+"/"+results_file)
 
     f = open(f"best_genomes_{team_type}_{selection_level}_{cutoff_score}.csv", "w")
 
@@ -469,21 +469,15 @@ team_type = "homogeneous"
 selection_level = "team"
 num_samples = 20000
 start_sample = 10001
-generate_genomes(team_type, selection_level, distribution, num_samples, start_sample)
+#generate_genomes(team_type, selection_level, distribution, num_samples, start_sample)
 #plot_fitness_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"fitness_distribution_{distribution}_{team_type}_{selection_level}.png")
 #plot_weight_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"weight_distribution_{distribution}_{team_type}_{selection_level}.png")
 #plot_weight_histogram(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"weight_histogram_{distribution}_{team_type}_{selection_level}.png")
 #plot_action_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"action_distribution_{distribution}_{team_type}_{selection_level}.png")
-#analyse_motion(f"genomes_{distribution}_{team_type}_{selection_level}.csv", True)
+#analyse_motion(f"genomes_{distribution}_{team_type}_{selection_level}_sorted.csv", True)
 #plot_activation_progression(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"activation_distribution_{distribution}_{team_type}_{selection_level}.png")
 #plot_action_progression(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"action_progression_{distribution}_{team_type}_{selection_level}.png")
 
 #get_best_genomes("/Users/mostafa/Documents/Code/PhD/Results/Paper1/3_FixedTimeLag-e31c5b28867eeeb488fc051cbc4e3b09ce8beb31/", "results_sorted.csv", "homogeneous", "team", 0.0)
-#plot_weight_histogram("best_genomes_homogeneous_team_0.0.csv", "best_genomes_homogeneous_team_0.0.png")
-#plot_action_distribution("best_genomes_homogeneous_team_0.0.csv", "action_distribution_best_homogeneous_team_0.0.png")
-
-#get_best_genomes("/Users/mostafa/Documents/Code/PhD/Results/Paper1/3_FixedTimeLag-e31c5b28867eeeb488fc051cbc4e3b09ce8beb31/", "results_sorted.csv", "heterogeneous", "individual", 0.0)
-#plot_weight_histogram("best_genomes_heterogeneous_individual_0.0.csv", "best_genomes_heterogeneous_individual_0.0.png")
-#plot_action_distribution("best_genomes_heterogeneous_individual_0.0.csv", "action_distribution_best_heterogeneous_individual_0.0.png")
-
+analyse_motion("best_genomes_homogeneous_team_0.0.csv", True)
 

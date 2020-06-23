@@ -79,7 +79,7 @@ class FitnessCalculator:
             for genome in population:
                 individual_1 = genome
                 individual_2 = genome
-                fitness_1, fitness_2 = self.calculate_fitness(team_type, selection_level, individual_1, individual_2, render)
+                fitness_1, fitness_2 = self.calculate_fitness(individual_1, individual_2, render)
                 team_fitness = fitness_1 + fitness_2
                 fitnesses += [team_fitness]
 
@@ -94,7 +94,7 @@ class FitnessCalculator:
                 mid = int(len(genome) / 2)
                 individual_1 = genome[0:mid]
                 individual_2 = genome[mid:]
-                fitness_1, fitness_2 = self.calculate_fitness(team_type, selection_level, individual_1,
+                fitness_1, fitness_2 = self.calculate_fitness(individual_1,
                                                               individual_2, render)
                 team_fitness = fitness_1 + fitness_2
                 fitnesses += [team_fitness]
@@ -110,7 +110,7 @@ class FitnessCalculator:
             for i in range(0, len(population), 2):
                 individual_1 = population[i]
                 individual_2 = population[i+1]
-                fitness_1, fitness_2 = self.calculate_fitness(team_type, selection_level, individual_1,
+                fitness_1, fitness_2 = self.calculate_fitness(individual_1,
                                                               individual_2, render)
 
                 fitnesses += [fitness_1, fitness_2]
@@ -453,7 +453,7 @@ class FitnessCalculator:
 
                 if time_delay > 0:
                     time.sleep(time_delay)
-                    #print(f'Time: {t} || Score: {score}')
+                    print(f'Time: {t} || Actions: {robot_actions} Scores: {info["reward_1"]} {info["reward_2"]}')
 
                 if done:
                     break
