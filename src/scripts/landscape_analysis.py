@@ -95,7 +95,7 @@ def analyse_motion(results_file, visualise):
                                            using_gym=using_gym)
 
     for row in data:
-        genome = np.array([float(element) for element in row.split(",")])
+        genome = np.array([float(element) for element in row.split(",")[0:-3]])
         fitness_1, fitness_2 = fitness_calculator.calculate_fitness_with_logging(individual_1=genome, individual_2=genome, render=render, time_delay=time_delay)
         team_fitness = fitness_1 + fitness_2
         print(team_fitness)
@@ -467,17 +467,17 @@ def plot_action_progression(genome_file, graph_file):
 distribution = "normal"
 team_type = "homogeneous"
 selection_level = "team"
-num_samples = 20000
-start_sample = 10001
+num_samples = 60000
+start_sample = 50001
 #generate_genomes(team_type, selection_level, distribution, num_samples, start_sample)
 #plot_fitness_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"fitness_distribution_{distribution}_{team_type}_{selection_level}.png")
 #plot_weight_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"weight_distribution_{distribution}_{team_type}_{selection_level}.png")
 #plot_weight_histogram(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"weight_histogram_{distribution}_{team_type}_{selection_level}.png")
 #plot_action_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"action_distribution_{distribution}_{team_type}_{selection_level}.png")
-#analyse_motion(f"genomes_{distribution}_{team_type}_{selection_level}_sorted.csv", True)
+analyse_motion(f"genomes_{distribution}_{team_type}_{selection_level}_50001_sorted.csv", True)
 #plot_activation_progression(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"activation_distribution_{distribution}_{team_type}_{selection_level}.png")
 #plot_action_progression(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"action_progression_{distribution}_{team_type}_{selection_level}.png")
 
 #get_best_genomes("/Users/mostafa/Documents/Code/PhD/Results/Paper1/3_FixedTimeLag-e31c5b28867eeeb488fc051cbc4e3b09ce8beb31/", "results_sorted.csv", "homogeneous", "team", 0.0)
-analyse_motion("best_genomes_homogeneous_team_0.0.csv", True)
+#analyse_motion("best_genomes_homogeneous_team_0.0.csv", True)
 

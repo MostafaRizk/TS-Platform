@@ -1,17 +1,13 @@
 import os
 
-import gym
 import numpy as np
 import time
 from copy import deepcopy
 
-from gym_TS.agents.TinyAgent import TinyAgent
-from gym.utils import seeding
-from gym_TS.envs.slope_env_gymless import SlopeEnvGymless
+from agents import TinyAgent
+from envs import slope
 
-from gym_TS.agents.HardcodedCollectorAgent import HardcodedCollectorAgent
-from gym_TS.agents.HardcodedDropperAgent import HardcodedDropperAgent
-from gym_TS.agents.HardcodedGeneralistAgent import HardcodedGeneralistAgent
+from agents import HardcodedCollectorAgent, HardcodedDropperAgent, HardcodedGeneralistAgent
 
 
 class FitnessCalculator:
