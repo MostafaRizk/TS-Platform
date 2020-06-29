@@ -7,10 +7,12 @@ verify_ssl = true
 
 [packages]
 numpy = "*"
-gym = "*"
 matplotlib = "*"
 cma = "*"
 tinynet = "*"
+scipy = "*"
+pandas = "*"
+pyDOE = "*"
 
 [requires]
 python_version = "3.7"

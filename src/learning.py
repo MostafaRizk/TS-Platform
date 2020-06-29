@@ -5,7 +5,7 @@ import cma
 import sys
 import os
 
-from gym_TS.agents.TinyAgent import TinyAgent
+from agents import TinyAgent
 from gym_TS.fitness_calculator import FitnessCalculator
 from functools import partial
 

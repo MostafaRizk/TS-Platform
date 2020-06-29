@@ -8,8 +8,15 @@ Note: In the code and documentation, the term 'robot' is used to refer to the ag
 import numpy as np
 import copy
 
+# Put this in a try/except because cluster throws error otherwise
+try:
+    from helpers import rendering
 
-class SlopeEnvParent:
+except:
+    pass
+
+
+class SlopeEnv:
     def __init__(self, num_robots=2, num_resources=3, sensor_range=1, slope_angle=40, arena_length=8, arena_width=4,
                  cache_start=1, slope_start=3, source_start=7, upward_cost_factor=3, downward_cost_factor=0.2,
                  carry_factor=2, resource_reward_factor=1000):
@@ -79,15 +86,21 @@ class SlopeEnvParent:
 
         self.seed_value = None
 
+        try:
+            self.robot_transforms = [rendering.Transform() for i in range(self.num_robots)]
+            self.resource_transforms = [rendering.Transform() for i in range(self.default_num_resources)]
+
+        except:
+            pass
+
         # Observation space
         # The details are explained in self.generate_robot_observations()
-        self.tiles_in_sensing_range = (
-                                                  2 * self.sensor_range + 1) ** 2  # Range=1 -> 9 tiles. Range=2 -> 25 tiles. Robot at the center.
+        self.tiles_in_sensing_range = (2 * self.sensor_range + 1) ** 2  # Range=1 -> 9 tiles. Range=2 -> 25 tiles. Robot at the center.
         # self.observation_space = spaces.Discrete(self.tiles_in_sensing_range*4 + 4 + 1)  # Tiles are onehotencoded. 4 bits for possible locations, 1 bit for object possession
         self.observation_space_size = self.tiles_in_sensing_range * 4 + 4 + 1
 
         # Action space
-        # self.action_space = spaces.Discrete(6)  # 0- Forward, 1- Backward, 2- Left, 3- Right, 4- Pick up, 5- Drop
+        # 0- Forward, 1- Backward, 2- Left, 3- Right, 4- Pick up, 5- Drop
         self.action_space_size = 6
 
     def seed(self, seed=None):
@@ -424,7 +437,13 @@ class SlopeEnvParent:
 
         self.resource_carried_by = [[] for i in range(self.default_num_resources)]
 
+        try:
+            self.resource_transforms = [rendering.Transform() for i in range(self.default_num_resources)]
+        except:
+            pass
+
         self.latest_resource_id = self.default_num_resources - 1
+
 
         # Creates empty state
         self.robot_map = self.generate_arena()  # Empty robot map
@@ -465,7 +484,7 @@ class SlopeEnvParent:
         self.has_resource = [None for i in range(self.num_robots)]
         self.current_num_resources = self.default_num_resources
 
-        # return np.array(self.state)
+        #return np.array(self.state)
         return self.generate_robot_observations()
 
     def get_observation_size(self):
@@ -475,16 +494,153 @@ class SlopeEnvParent:
         return self.action_space_size
 
     def draw_arena_segment(self, top, bottom, rgb_tuple):
-        pass
+        """
+                Helper function that creates the geometry for a segment of the arena. Intended to be used by the viewer
+
+                :param top:
+                :param bottom:
+                :param rgb_tuple:
+                :return: A FilledPolygon object that can be added to the viewer using add_geom
+        """
+
+        l, r, t, b = self.arena_constraints["x_min"] * self.scale, \
+                     self.arena_constraints["x_max"] * self.scale, \
+                     top * self.scale, \
+                     bottom * self.scale
+        arena_segment = rendering.FilledPolygon([(l, b), (l, t), (r, t), (r, b)])
+        arena_segment.add_attr(
+            rendering.Transform(
+                translation=(
+                    0, 0)))
+        arena_transform = rendering.Transform()
+        arena_segment.add_attr(arena_transform)
+        arena_segment.set_color(rgb_tuple[0], rgb_tuple[1], rgb_tuple[2])
+        return arena_segment
 
     def draw_grid(self):
-        pass
+        """
+                Helper function that creates the geometry of gridlines to be used by the viewer
+
+                :return: List of grid lines (PolyLine objects) each to be added to the viewer as a geometry object with add_geom
+        """
+
+        grid_lines = []
+
+        # Draw vertical lines
+        verticals_list = np.linspace(self.arena_constraints["x_min"] * self.scale,
+                                     self.arena_constraints["x_max"] * self.scale, self.arena_constraints["x_max"] + 1)
+
+        for tick in verticals_list:
+            xs = np.array([tick for i in range(self.arena_constraints["y_max"] + 1)])
+            ys = np.linspace(self.arena_constraints["y_min"] * self.scale,
+                             self.arena_constraints["y_max"] * self.scale, self.arena_constraints["y_max"] + 1)
+            xys = list(zip(xs, ys))
+
+            line = rendering.make_polyline(xys)
+            grid_lines += [line]
+
+        # Draw horizontal lines
+        horizontals_list = np.linspace(self.arena_constraints["y_min"] * self.scale,
+                                       self.arena_constraints["y_max"] * self.scale,
+                                       self.arena_constraints["y_max"] + 1)
+
+        for tick in horizontals_list:
+            xs = np.linspace(self.arena_constraints["x_min"] * self.scale,
+                             self.arena_constraints["x_max"] * self.scale, self.arena_constraints["x_max"] + 1)
+            ys = np.array([tick for i in range(self.arena_constraints["x_max"] + 1)])
+            xys = list(zip(xs, ys))
+
+            line = rendering.make_polyline(xys)
+            grid_lines += [line]
+
+        return grid_lines
 
     def render(self, mode='human'):
-        pass
+        """
+                Renders the environment, placing all robots and resources in appropriate positions
+                :param mode:
+                :return:
+        """
+
+        screen_width = self.arena_constraints["x_max"] * self.scale
+        screen_height = self.arena_constraints["y_max"] * self.scale
+
+        if self.viewer is None:
+            self.viewer = rendering.Viewer(screen_width, screen_height)
+
+            # Draw nest
+            nest = self.draw_arena_segment(self.nest_size, self.nest_start, self.nest_colour)
+            self.viewer.add_geom(nest)
+
+            # Draw cache
+            cache = self.draw_arena_segment(self.cache_start + self.cache_size,
+                                            self.cache_start, self.cache_colour)
+            self.viewer.add_geom(cache)
+
+            # Draw slope
+            slope = self.draw_arena_segment(self.slope_start + self.slope_size,
+                                            self.slope_start, self.slope_colour)
+            self.viewer.add_geom(slope)
+
+            # Draw slope
+            source = self.draw_arena_segment(self.source_start + self.source_size,
+                                             self.source_start, self.source_colour)
+            self.viewer.add_geom(source)
+
+            # Draw grid
+            grid_lines = self.draw_grid()
+            for line in grid_lines:
+                self.viewer.add_geom(line)
+
+            # Draw robot(s)
+            for i in range(self.num_robots):
+                robot = rendering.make_circle(self.robot_width / 2 * self.scale)
+                robot.set_color(self.robot_colour[0], self.robot_colour[1], self.robot_colour[2])
+                robot.add_attr(
+                    rendering.Transform(
+                        translation=(
+                            0,
+                            0)))
+                robot.add_attr(self.robot_transforms[i])
+                self.viewer.add_geom(robot)
+
+            # Draw resource(s)
+            for i in range(self.default_num_resources):
+                resource = rendering.make_circle(self.resource_width / 2 * self.scale)
+                resource.set_color(self.resource_colour[0], self.resource_colour[1], self.resource_colour[2])
+                resource.add_attr(
+                    rendering.Transform(
+                        translation=(
+                            0,
+                            0)))
+                resource.add_attr(self.resource_transforms[i])
+                self.viewer.add_geom(resource)
+
+        # Set position of robot(s)
+        for i in range(self.num_robots):
+            self.robot_transforms[i].set_translation(
+                (self.robot_positions[i][0] - self.arena_constraints["x_min"] + 0.5) * self.scale,
+                (self.robot_positions[i][1] - self.arena_constraints["y_min"] + 0.5) * self.scale)
+
+        # Set position of resource(s)
+        for i in range(len(self.resource_positions)):
+            self.resource_transforms[i].set_translation(
+                (self.resource_positions[i][0] - self.arena_constraints["x_min"] + 0.5) * self.scale,
+                (self.resource_positions[i][1] - self.arena_constraints["y_min"] + 0.5) * self.scale)
+
+        return self.viewer.render(return_rgb_array=mode == 'rgb_array')
 
     def add_resource_to_rendering(self, resource_id):
-        pass
+        resource = rendering.make_circle(self.resource_width / 2 * self.scale)
+        resource.set_color(self.resource_colour[0], self.resource_colour[1], self.resource_colour[2])
+        resource.add_attr(
+            rendering.Transform(
+                translation=(
+                    0,
+                    0)))
+        resource.add_attr(self.resource_transforms[resource_id])
+        if self.viewer is not None:
+            self.viewer.add_geom(resource)
 
     def get_area_from_position(self, position):
         """
@@ -593,8 +749,8 @@ class SlopeEnvParent:
 
     def spawn_resource(self):
         """
-                Spawn a new resource in the source area if it is possible to do so
-                :return: x,y coordinate of new resource if successful. None otherwise
+        Spawn a new resource in the source area if it is possible to do so
+        :return: x,y coordinate of new resource if successful. None otherwise
         """
         # Places all resources
         resource_placed = False
@@ -610,9 +766,17 @@ class SlopeEnvParent:
                 self.latest_resource_id += 1
                 self.resource_positions += [(x, y)]
                 # self.resource_positions[self.latest_resource_id] = (x, y)
+                try:
+                    self.resource_transforms += [rendering.Transform()]
+                except:
+                    pass
                 self.resource_carried_by += [[]]
                 resource_placed = True
                 self.current_num_resources += 1
+                try:
+                    self.add_resource_to_rendering(self.latest_resource_id)
+                except:
+                    pass
                 return x, y
 
     def delete_resource(self, resource_id):

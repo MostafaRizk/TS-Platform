@@ -1,32 +1,21 @@
 import os
-
 import numpy as np
 import time
 from copy import deepcopy
-
-from agents import TinyAgent
-from envs import slope
-
-from agents import HardcodedCollectorAgent, HardcodedDropperAgent, HardcodedGeneralistAgent
+from agents.TinyAgent import TinyAgent
+from envs.slope import SlopeEnv
+from agents.HardcodedCollectorAgent import HardcodedCollectorAgent
+from agents.HardcodedDropperAgent import HardcodedDropperAgent
+from agents.HardcodedGeneralistAgent import HardcodedGeneralistAgent
 
 
 class FitnessCalculator:
 
     def __init__(self, random_seed, simulation_length, num_trials, num_robots, num_resources, sensor_range, slope_angle,
                  arena_length, arena_width, cache_start, slope_start, source_start, upward_cost_factor, downward_cost_factor,
-                 carry_factor, resource_reward_factor, using_gym=False):
+                 carry_factor, resource_reward_factor):
 
-        if using_gym:
-            self.env = gym.make('gym_TS:TS-v1', num_robots=num_robots, num_resources=num_resources,
-                                sensor_range=sensor_range, slope_angle=slope_angle, arena_length=arena_length,
-                                arena_width=arena_width, cache_start=cache_start, slope_start=slope_start,
-                                source_start=source_start, upward_cost_factor=upward_cost_factor,
-                                downward_cost_factor=downward_cost_factor, carry_factor=carry_factor,
-                                resource_reward_factor=resource_reward_factor)
-            # env = gym.wrappers.Monitor(env, 'video', force = True) # Uncomment to save video
-
-        else:
-            self.env = SlopeEnvGymless(num_robots=num_robots, num_resources=num_resources,
+        self.env = SlopeEnv(num_robots=num_robots, num_resources=num_resources,
                                 sensor_range=sensor_range, slope_angle=slope_angle, arena_length=arena_length,
                                 arena_width=arena_width, cache_start=cache_start, slope_start=slope_start,
                                 source_start=source_start, upward_cost_factor=upward_cost_factor,
@@ -39,11 +28,7 @@ class FitnessCalculator:
 
         # Seeding values
         self.random_seed = random_seed
-        self.np_random, self.random_seed = seeding.np_random(self.random_seed)
-
-        if using_gym:
-            # Action space uses a separate random number generator so need to set its seed separately
-            self.env.action_space.np_random.seed(self.random_seed)
+        self.np_random = np.random.RandomState(self.random_seed)
 
         self.simulation_length = simulation_length
 
