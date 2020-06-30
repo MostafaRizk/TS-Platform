@@ -6,9 +6,6 @@ import sys
 import os
 
 from agents import TinyAgent
-from gym_TS.fitness_calculator import FitnessCalculator
-from functools import partial
-
 
 LOG_EVERY = 20
 
@@ -58,12 +55,10 @@ def create_population(seed_value, calculator, num_teams, team_type, selection_le
     return population
 
 
-def rwg(seed_value, calculator, num_teams, team_type, selection_level, target_fitness=1000):
+def rwg(seed_value, calculator, num_teams, team_type, selection_level):
     """
     Finds a genome with non-zero fitness score by randomly guessing neural network weights. Exists as a helper for CMA
     """
-
-    max_fitness = -float('Inf')
 
     population = create_population(seed_value=seed_value, calculator=calculator, num_teams=num_teams,
                                    team_type=team_type, selection_level=selection_level)

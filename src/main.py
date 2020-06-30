@@ -370,5 +370,3 @@ def main(argv):
 
 if __name__ == "__main__":
     main(sys.argv[1:])  # Uncomment for proper runs
-    # time_fitness_function()
-    # time_rwg()

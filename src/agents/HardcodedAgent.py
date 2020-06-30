@@ -1,8 +1,10 @@
 import re
 from collections import deque
 import numpy as np
+from agents.Agent import Agent
 
-class HardcodedAgent:
+
+class HardcodedAgent(Agent):
     def __init__(self):
         self.action_index = {"FORWARD": 0, "BACKWARD": 1, "LEFT": 2, "RIGHT": 3, "PICKUP": 4, "DROP": 5}
         self.area_from_bits = {"1000": "NEST", "0100": "CACHE", "0010": "SLOPE", "0001": "SOURCE"}
@@ -18,7 +20,8 @@ class HardcodedAgent:
         # Break down observations
         self.sensor_map = self.get_sensor_map(observation)
 
-        self.current_zone = self.area_from_bits[re.sub('[ ,\[\]]', '', str(observation[-5:-1]))]  # Get 4-bit vector representing area, remove brackets and commas, use it as a key for the dictionary of areas
+        self.current_zone = self.area_from_bits[re.sub('[ ,\[\]]', '', str(observation[
+                                                                           -5:-1]))]  # Get 4-bit vector representing area, remove brackets and commas, use it as a key for the dictionary of areas
         self.has_resource = bool(observation[-1])
 
         action = None

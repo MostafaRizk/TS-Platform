@@ -1,38 +1,32 @@
+import json
 import os
 import numpy as np
 import time
-from copy import deepcopy
-from agents.TinyAgent import TinyAgent
 from envs.slope import SlopeEnv
-from agents.HardcodedCollectorAgent import HardcodedCollectorAgent
-from agents.HardcodedDropperAgent import HardcodedDropperAgent
-from agents.HardcodedGeneralistAgent import HardcodedGeneralistAgent
 
 
 class FitnessCalculator:
 
-    def __init__(self, random_seed, simulation_length, num_trials, num_robots, num_resources, sensor_range, slope_angle,
-                 arena_length, arena_width, cache_start, slope_start, source_start, upward_cost_factor, downward_cost_factor,
-                 carry_factor, resource_reward_factor):
+    def __init__(self, parameter_filename):
 
-        self.env = SlopeEnv(num_robots=num_robots, num_resources=num_resources,
-                                sensor_range=sensor_range, slope_angle=slope_angle, arena_length=arena_length,
-                                arena_width=arena_width, cache_start=cache_start, slope_start=slope_start,
-                                source_start=source_start, upward_cost_factor=upward_cost_factor,
-                                downward_cost_factor=downward_cost_factor, carry_factor=carry_factor,
-                                resource_reward_factor=resource_reward_factor)
+        if parameter_filename is None:
+            raise RuntimeError("No parameter file specified for the fitness function")
 
-        # Get size of input and output space and creates agent
+        parameter_dictionary = json.loads(open(parameter_filename).read())
+
+        self.env = SlopeEnv(parameter_filename)
+
+        # Get size of input and output space (for use in agent creation)
         self.observation_size = self.env.get_observation_size()
         self.action_size = self.env.get_action_size()
 
         # Seeding values
-        self.random_seed = random_seed
+        self.random_seed = parameter_dictionary['general']['seed']
         self.np_random = np.random.RandomState(self.random_seed)
 
-        self.simulation_length = simulation_length
+        self.simulation_length = parameter_dictionary['environment']['simulation_length']
 
-        self.num_trials = num_trials
+        self.num_simulation_runs = parameter_dictionary['environment']['num_simulation_runs']
 
     def get_observation_size(self):
         return self.observation_size
@@ -87,10 +81,10 @@ class FitnessCalculator:
                 flacco_file.close()
 
         elif (team_type == "heterogeneous" and selection_level == "individual") or \
-            (team_type == "homogeneous" and selection_level == "individual"):
+                (team_type == "homogeneous" and selection_level == "individual"):
             for i in range(0, len(population), 2):
                 individual_1 = population[i]
-                individual_2 = population[i+1]
+                individual_2 = population[i + 1]
                 fitness_1, fitness_2 = self.calculate_fitness(individual_1,
                                                               individual_2, render)
 
@@ -109,305 +103,55 @@ class FitnessCalculator:
 
         return fitnesses
 
-    def calculate_fitness(self, individual_1, individual_2, render=False, time_delay=0):
+    def calculate_fitness(self, agent_type_1, agent_type_2, render=False, time_delay=0, measure_specialisation=False,
+                          logging=False, logfilename=None):
         """
-        Calculates fitness of a controller by running a simulation
-        :param individual_1: Genome (NN weights)
-        :param individual_2: Genome (NN weights)
-        :param team_type Accepts "homogeneous" or "heterogeneous"
-        :param selection_level Accepts "individual" or "team"
-        :param learning_method Accepts cma. Also accepts qn or bq but will only work for homogeneous teams
-        :param render:
-        :return:
-        """
+        Calculates the fitness of a team of agents (composed of two different types of agent). Fitness is calculated
+        by running the simulation for t time steps (as specified in the parameter file) with each agent acting every
+        time step based on its observations. The simulation is reset at the end and repeated a certain number of
+        times (according to the parameter file) each with a different temporary seed. The average is taken over all
+        runs of the simulation.
 
-        average_score = 0
+        @param agent_type_1: The first Agent object
+        @param agent_type_2: The second Agent object
+        @param render: Boolean indicating whether or not simulations will be visualised
+        @param time_delay: Integer indicating how many seconds delay (for smoother visualisation)
+        @param measure_specialisation: Boolean indicating whether or not specialisation is being measured
+        @param logging: Boolean indicating whether or not actions will be logged
+        @param logfilename: String name of the file where actions will be logged
+        @return: Dictionary containing 'fitness_1' (agent1 fitness), 'fitness_2' (agent 2 fitness) and 'specialisation'
+        (a measure of the degree of specialisation observed)
+        """
+        # Initialise major variables
         temp_seed = self.random_seed
         file_reader = None
-        weights_1 = deepcopy(individual_1)
-        weights_2 = deepcopy(individual_2)
-
-        # For use with individual level selection
-        average_score_1 = 0
-        average_score_2 = 0
-
-        for trial in range(self.num_trials):
-            # Load genomes into TinyAgent objects (i.e. neural networks)
-            temp_individual_1 = TinyAgent(self.observation_size, self.action_size, temp_seed)
-            temp_individual_2 = TinyAgent(self.observation_size, self.action_size, temp_seed)
-            temp_individual_1.load_weights(weights_1)
-            temp_individual_2.load_weights(weights_2)
-            individual_1 = temp_individual_1
-            individual_2 = temp_individual_2
-
-            self.env.seed(temp_seed)  # makes fitness deterministic
-            observations = self.env.reset()
-
-            score = 0
-
-            # For use with individual selection
-            score_1 = 0
-            score_2 = 0
-
-            for t in range(self.simulation_length):
-                if render:
-                    self.env.render()
-
-                robot_actions = []
-
-                for i in range(len(observations)):
-                    if i % 2 == 0:
-                        robot_actions += [individual_1.act(observations[i])]
-                    else:
-                        robot_actions += [individual_2.act(observations[i])]
-
-                # The environment changes according to all their actions
-                observations, reward, done, info = self.env.step(robot_actions, t)
-
-                # Team selection
-                score += reward
-
-                # Individual selection
-                score_1 += info["reward_1"]
-                score_2 += info["reward_2"]
-
-                if time_delay > 0:
-                    time.sleep(time_delay)
-                    #print(f'Time: {t} || Score: {score}')
-
-                if done:
-                    break
-
-            # Team selection
-            average_score += score
-
-            #Individual selection
-            average_score_1 += score_1
-            average_score_2 += score_2
-
-            temp_seed += 1
-
-        return average_score_1/self.num_trials, average_score_2/self.num_trials
-
-    def calculate_ferrante_specialisation(self, team_type, selection_level, individual_1, individual_2, render=False):
-        """
-        Calculates fitness of a controller by running a simulation
-        :param individual_1:
-        :param team_type Accepts "homogeneous" or "heterogeneous"
-        :param learning_method Accepts cma. Also accepts qn or bq but will only work for homogeneous teams
-        :param render:
-        :return:
-        """
-
-        # render = True
-        average_score = 0
+        average_fitness_1 = 0
+        average_fitness_2 = 0
         average_specialisation = 0
-        temp_seed = self.random_seed
 
-        # Load genomes into TinyAgent objects (i.e. neural networks)
-        temp_individual_1 = TinyAgent(self.observation_size, self.action_size, temp_seed)
-        temp_individual_2 = TinyAgent(self.observation_size, self.action_size, temp_seed)
-        temp_individual_1.load_weights(individual_1)
-        temp_individual_2.load_weights(individual_2)
-        individual_1 = temp_individual_1
-        individual_2 = temp_individual_2
+        # Create logging file if logging
+        if logging:
+            if not logfilename:
+                raise RuntimeError("Cannot log results without naming the logfile")
 
-        # For use with individual level selection
-        average_score_1 = 0
-        average_score_2 = 0
+            if not os.path.exists(logfilename):
+                file_reader = open(logfilename, "w+")
+                header_line = ','.join(f"t={t}" for t in range(self.simulation_length)) + "\n"
+                file_reader.write(header_line)
+            else:
+                file_reader = open(logfilename, "a")
 
-        for trial in range(self.num_trials):
-            self.env.seed(temp_seed)  # makes fitness deterministic
+        # Run the simulation several times
+        for sim_run in range(self.num_simulation_runs):
             observations = self.env.reset()
 
-            score = 0
-
-            # For use with individual selection
-            score_1 = 0
-            score_2 = 0
-
-            for t in range(self.simulation_length):
-                if render:
-                    self.env.render()
-
-                robot_actions = []
-
-                for i in range(len(observations)):
-                    if i % 2 == 0:
-                        robot_actions += [individual_1.act(observations[i])]
-                    else:
-                        robot_actions += [individual_2.act(observations[i])]
-
-                # The environment changes according to all their actions
-                observations, reward, done, info = self.env.step(robot_actions, t)
-
-                # Team selection
-                score += reward
-
-                # Individual selection
-                score_1 += info["reward_1"]
-                score_2 += info["reward_2"]
-
-                #time.sleep(0.1)
-                # print(f'Time: {t} || Score: {score}')
-
-                if done:
-                    break
-
-            # Team selection
-            average_score += score
-            average_specialisation += self.env.calculate_ferrante_specialisation()
-
-            # Individual selection
-            average_score_1 += score_1
-            average_score_2 += score_2
-
-            temp_seed += 1
-
-        return average_score_1 / self.num_trials, average_score_2 / self.num_trials, average_specialisation / self.num_trials
-
-    def calculate_fitness_negation(self, individual, team_type, render=False):
-        #return -1*self.calculate_fitness(individual_1=individual, team_type=team_type, render=True)#render)
-        return -1 * self.calculate_fitness(individual_1=individual, team_type=team_type, render=render)
-
-    def calculate_hardcoded_fitness(self, type, render=False):
-        """
-        Calculates fitness of a controller by running a simulation
-        :param individual_1:
-        :param team_type Accepts "homogeneous" or "heterogeneous"
-        :param learning_method Accepts cma. Also accepts qn or bq but will only work for homogeneous teams
-        :param render:
-        :return:
-        """
-
-        #render = True
-        average_score_1 = 0
-        average_score_2 = 0
-        average_score = 0
-        average_specialisation = 0
-        temp_seed = self.random_seed
-        individual_1 = None
-        individual_2 = None
-
-        if type == "Generalist-Generalist":
-            individual_1 = HardcodedGeneralistAgent()
-            individual_2 = HardcodedGeneralistAgent()
-        elif type == "Dropper-Collector":
-            individual_1 = HardcodedDropperAgent()
-            individual_2 = HardcodedCollectorAgent()
-        elif type == "Generalist-Dropper":
-            individual_1 = HardcodedGeneralistAgent()
-            individual_2 = HardcodedDropperAgent()
-        elif type == "Generalist-Collector":
-            individual_1 = HardcodedGeneralistAgent()
-            individual_2 = HardcodedCollectorAgent()
-        elif type == "Dropper-Dropper":
-            individual_1 = HardcodedDropperAgent()
-            individual_2 = HardcodedDropperAgent()
-        elif type == "Collector-Collector":
-            individual_1 = HardcodedCollectorAgent()
-            individual_2 = HardcodedCollectorAgent()
-        else:
-            raise RuntimeError("Hardcoding type must be either generalist or specialist")
-
-        for trial in range(self.num_trials):
-            self.env.seed(temp_seed)  # makes fitness deterministic
-            observations = self.env.reset()
-
-            score_1 = 0
-            score_2 = 0
-            score = 0
-            done = False
-
-            for t in range(self.simulation_length):
-                if render:
-                    self.env.render()
-
-                robot_actions = []
-
-                for i in range(len(observations)):
-                    if i % 2 == 0:
-                        robot_actions += [individual_1.act(observations[i])]
-                    else:
-                        robot_actions += [individual_2.act(observations[i])]
-
-                # The environment changes according to all their actions
-                old_observations = observations[:]
-                observations, reward, done, info = self.env.step(robot_actions, t)
-
-                # Team selection
-                score += reward
-
-                # Individual selection
-                score_1 += info["reward_1"]
-                score_2 += info["reward_2"]
-
-                #time.sleep(0.1)
-                #print(f'Time: {t} || Score: {score}')
-
-                if done:
-                    break
-
-            average_score_1 += score_1
-            average_score_2 += score_2
-            average_score += score
-            average_specialisation += self.env.calculate_ferrante_specialisation()
-            temp_seed += 1
-
-        return average_score_1 / self.num_trials, average_score_2 / self.num_trials, average_specialisation / self.num_trials
-
-    def calculate_fitness_with_logging(self, individual_1, individual_2, render=False, time_delay=0, log_movement=False):
-        """
-        Calculates fitness of a controller by running a simulation
-        :param individual_1: Genome (NN weights)
-        :param individual_2: Genome (NN weights)
-        :param team_type Accepts "homogeneous" or "heterogeneous"
-        :param selection_level Accepts "individual" or "team"
-        :param learning_method Accepts cma. Also accepts qn or bq but will only work for homogeneous teams
-        :param render:
-        :return:
-        """
-
-        average_score = 0
-        temp_seed = self.random_seed
-        file_reader = None
-
-        # Load genomes into TinyAgent objects (i.e. neural networks)
-        temp_individual_1 = TinyAgent(self.observation_size, self.action_size, temp_seed)
-        temp_individual_2 = TinyAgent(self.observation_size, self.action_size, temp_seed)
-        temp_individual_1.load_weights(individual_1)
-        temp_individual_2.load_weights(individual_2)
-        individual_1 = temp_individual_1
-        individual_2 = temp_individual_2
-
-        # For use with individual level selection
-        average_score_1 = 0
-        average_score_2 = 0
-
-        # Open logging file and write first line
-        action_file = "action_taken.csv"
-
-        if not os.path.exists(action_file):
-            file_reader = open(action_file, "w+")
-            header_line = ','.join(f"t={t}" for t in range(self.simulation_length)) + "\n"
-            file_reader.write(header_line)
-        else:
-            file_reader = open(action_file, "a")
-
-        for trial in range(self.num_trials):
-            self.env.seed(temp_seed)  # makes fitness deterministic
-            observations = self.env.reset()
-
-            score = 0
-
-            # For use with individual selection
-            score_1 = 0
-            score_2 = 0
-
-            # Agent action lists
+            # Initialise variables
+            fitness_1 = 0
+            fitness_2 = 0
             agent_1_action_list = []
             agent_2_action_list = []
 
+            # Do 1 run of the simulation
             for t in range(self.simulation_length):
                 if render:
                     self.env.render()
@@ -416,43 +160,46 @@ class FitnessCalculator:
 
                 for i in range(len(observations)):
                     if i % 2 == 0:
-                        robot_actions += [individual_1.act(observations[i])]
+                        robot_actions += [agent_type_1.act(observations[i])]
                         agent_1_action_list += [robot_actions[-1]]
                     else:
-                        robot_actions += [individual_2.act(observations[i])]
+                        robot_actions += [agent_type_2.act(observations[i])]
                         agent_2_action_list += [robot_actions[-1]]
 
                 # The environment changes according to all their actions
-                observations, reward, done, info = self.env.step(robot_actions, t)
+                observations, rewards = self.env.step(robot_actions)
 
-                # Team selection
-                score += reward
-
-                # Individual selection
-                score_1 += info["reward_1"]
-                score_2 += info["reward_2"]
+                fitness_1 += rewards[0]
+                fitness_2 += rewards[1]
 
                 if time_delay > 0:
                     time.sleep(time_delay)
-                    print(f'Time: {t} || Actions: {robot_actions} Scores: {info["reward_1"]} {info["reward_2"]}')
 
-                if done:
-                    break
-
-            # Team selection
-            average_score += score
-
-            #Individual selection
-            average_score_1 += score_1
-            average_score_2 += score_2
-
+            # Update averages and seed
+            average_fitness_1 += fitness_1
+            average_fitness_2 += fitness_2
             temp_seed += 1
 
-            agent_1_action_string = ','.join(str(action) for action in agent_1_action_list) + '\n'
-            agent_2_action_string = ','.join(str(action) for action in agent_2_action_list) + '\n'
-            file_reader.write(agent_1_action_string)
-            file_reader.write(agent_2_action_string)
+            # Extra computations if calculating specialisation or logging actions
+            if measure_specialisation:
+                average_specialisation += self.env.calculate_ferrante_specialisation()
 
-        file_reader.close()
-        return average_score_1/self.num_trials, average_score_2/self.num_trials
+            if logging:
+                agent_1_action_string = ','.join(str(action) for action in agent_1_action_list) + '\n'
+                agent_2_action_string = ','.join(str(action) for action in agent_2_action_list) + '\n'
+                file_reader.write(agent_1_action_string)
+                file_reader.write(agent_2_action_string)
 
+        average_fitness_1 /= self.num_simulation_runs
+        average_fitness_2 /= self.num_simulation_runs
+
+        if measure_specialisation:
+            average_specialisation /= self.num_simulation_runs
+        else:
+            average_specialisation = None
+
+        if logging:
+            file_reader.close()
+
+        return {"fitness_1": average_fitness_1, "fitness_2": average_fitness_2,
+                "specialisation": average_specialisation}

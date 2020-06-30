@@ -1,0 +1,42 @@
+{
+  "general": {
+    "team_type": "homogeneous",
+    "selection_level": "team",
+    "algorithm": "rwg",
+    "seed": 1
+  },
+  "environment": {
+    "num_agents": 2,
+    "num_resources": 3,
+    "sensor_range": 1,
+    "sliding_speed": 4,
+    "arena_length": 8,
+    "arena_width": 4,
+    "cache_start": 1,
+    "slope_start": 3,
+    "source_start": 7,
+    "base_cost": 1,
+    "upward_cost_factor": 3.0,
+    "downward_cost_factor": 0.2,
+    "carry_factor": 2,
+    "resource_reward": 1000,
+    "simulation_length": 500,
+    "num_simulation_runs": 5
+  },
+  "neural_network": {
+    "hidden_layers": 0,
+    "activation_function": "sigmoid"
+  },
+  "algorithm": {
+    "distribution_type": "normal",
+    "mean": 0,
+    "variance": 1,
+    "min": "None",
+    "max": "None",
+    "population_size": 10000,
+    "sigma": "None",
+    "generations": "None",
+    "tolx": "None",
+    "tolfunhist": "None"
+  }
+}
