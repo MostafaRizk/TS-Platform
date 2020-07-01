@@ -28,78 +28,22 @@ class FitnessCalculator:
 
         self.num_simulation_runs = parameter_dictionary['environment']['num_simulation_runs']
 
-    def get_observation_size(self):
-        return self.observation_size
-
-    def get_action_size(self):
-        return self.action_size
-
-    def get_rng(self):
-        return self.np_random
-
-    def calculate_fitness_of_population(self, population, team_type, selection_level, render=False):
+    def calculate_fitness_of_population(self, population):
         """
-        Calculates fitness of entire population
+        Takes a population of Agent objects, places each pair on a team and calculates the fitnesses of each
 
-        :param population:
-        :param team_type:
-        :param selection_level:
-        :param learning_method:
-        :param render:
-        :return: List of fitnesses, one for each member of the population
+        @param population: List of Agent objects
+        @return: List containing fitness value of each Agent in the population
         """
+
         fitnesses = []
 
-        if team_type == "homogeneous" and selection_level == "team":
-            for genome in population:
-                individual_1 = genome
-                individual_2 = genome
-                fitness_1, fitness_2 = self.calculate_fitness(individual_1, individual_2, render)
-                team_fitness = fitness_1 + fitness_2
-                fitnesses += [team_fitness]
+        for i in range(0, len(population), 2):
+            agent_1 = population[i]
+            agent_2 = population[i + 1]
+            fitness_1, fitness_2 = self.calculate_fitness(agent_1, agent_2)
 
-                file_name = f"landscape_analysis_{team_type}_{selection_level}_{self.random_seed}.csv"
-                flacco_file = open(file_name, "a")
-                genome_str = str(genome.tolist()).strip("[]") + "," + str(team_fitness) + "\n"
-                flacco_file.write(genome_str)
-                flacco_file.close()
-
-        elif team_type == "heterogeneous" and selection_level == "team":
-            for genome in population:
-                mid = int(len(genome) / 2)
-                individual_1 = genome[0:mid]
-                individual_2 = genome[mid:]
-                fitness_1, fitness_2 = self.calculate_fitness(individual_1,
-                                                              individual_2, render)
-                team_fitness = fitness_1 + fitness_2
-                fitnesses += [team_fitness]
-
-                file_name = f"landscape_analysis_{team_type}_{selection_level}_{self.random_seed}.csv"
-                flacco_file = open(file_name, "a")
-                genome_str = str(genome.tolist()).strip("[]") + "," + str(team_fitness) + "\n"
-                flacco_file.write(genome_str)
-                flacco_file.close()
-
-        elif (team_type == "heterogeneous" and selection_level == "individual") or \
-                (team_type == "homogeneous" and selection_level == "individual"):
-            for i in range(0, len(population), 2):
-                individual_1 = population[i]
-                individual_2 = population[i + 1]
-                fitness_1, fitness_2 = self.calculate_fitness(individual_1,
-                                                              individual_2, render)
-
-                fitnesses += [fitness_1, fitness_2]
-
-                file_name = f"landscape_analysis_{team_type}_{selection_level}_{self.random_seed}.csv"
-                flacco_file = open(file_name, "a")
-                genome_str_1 = str(individual_1.tolist()).strip("[]") + "," + str(fitness_1) + "\n"
-                genome_str_2 = str(individual_2.tolist()).strip("[]") + "," + str(fitness_2) + "\n"
-                flacco_file.write(genome_str_1)
-                flacco_file.write(genome_str_2)
-                flacco_file.close()
-
-        else:
-            raise RuntimeError("Invalid team type and/or selection level")
+            fitnesses += [fitness_1, fitness_2]
 
         return fitnesses
 
@@ -159,6 +103,7 @@ class FitnessCalculator:
                 robot_actions = []
 
                 for i in range(len(observations)):
+                    # TODO: Update this to work with teams greater than 2
                     if i % 2 == 0:
                         robot_actions += [agent_type_1.act(observations[i])]
                         agent_1_action_list += [robot_actions[-1]]
@@ -178,7 +123,7 @@ class FitnessCalculator:
             # Update averages and seed
             average_fitness_1 += fitness_1
             average_fitness_2 += fitness_2
-            temp_seed += 1
+            temp_seed += 1  # TODO: Check that the logic of incrementing the seed every run makes sense
 
             # Extra computations if calculating specialisation or logging actions
             if measure_specialisation:
@@ -203,3 +148,14 @@ class FitnessCalculator:
 
         return {"fitness_1": average_fitness_1, "fitness_2": average_fitness_2,
                 "specialisation": average_specialisation}
+
+    # Helpers ---------------------------------------------------------------------------------------------------------
+
+    def get_observation_size(self):
+        return self.observation_size
+
+    def get_action_size(self):
+        return self.action_size
+
+    def get_rng(self):
+        return self.np_random
