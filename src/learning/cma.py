@@ -1,96 +1,21 @@
-import numpy as np
-import math
-import copy
-import cma
-import sys
-import os
+from learning.learner_parent import Learner
 
-from agents import TinyAgent
-
-LOG_EVERY = 20
+class CMALearner(Learner):
+    def learn(self):
 
 
-def create_population(seed_value, calculator, num_teams, team_type, selection_level):
-    population = []
-
-    if team_type == "homogeneous" and selection_level == "team":
-        dummy_individual = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), seed=seed_value)
-        for i in range(num_teams):
-            dummy_individual.load_weights()  # No parameters means random weights are generated
-            genome = dummy_individual.get_weights()
-            population += [genome]
-
-    elif team_type == "heterogeneous" and selection_level == "team":
-        dummy_individual_1 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), seed=seed_value)
-        dummy_individual_2 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(), seed=seed_value)
-        for i in range(num_teams):
-            dummy_individual_1.load_weights()  # No parameters means random weights are generated
-            dummy_individual_2.load_weights()
-            genome = np.concatenate([dummy_individual_1.get_weights(), dummy_individual_2.get_weights()])
-            population += [genome]
-
-    elif team_type == "heterogeneous" and selection_level == "individual":
-        dummy_individual_1 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(),
-                                       seed=seed_value)
-        dummy_individual_2 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(),
-                                       seed=seed_value)
-        for i in range(num_teams*2):
-            dummy_individual_1.load_weights()  # No parameters means random weights are generated
-            dummy_individual_2.load_weights()
-            genome_1 = dummy_individual_1.get_weights()
-            genome_2 = dummy_individual_2.get_weights()
-            population += [genome_1, genome_2]
-
-    elif team_type == "homogeneous" and selection_level == "individual":
-        dummy_individual_1 = TinyAgent(calculator.get_observation_size(), calculator.get_action_size(),
-                                       seed=seed_value)
-        for i in range(num_teams*2):
-            dummy_individual_1.load_weights()  # No parameters means random weights are generated
-            genome_1 = dummy_individual_1.get_weights()
-            genome_2 = dummy_individual_1.get_weights()  # Second genome is a copy of the first
-            population += [genome_1, genome_2]
-    else:
-        raise RuntimeError("Invalid team type and/or selection level")
-
-    return population
 
 
-def rwg(seed_value, calculator, num_teams, team_type, selection_level):
-    """
-    Finds a genome with non-zero fitness score by randomly guessing neural network weights. Exists as a helper for CMA
-    """
 
-    population = create_population(seed_value=seed_value, calculator=calculator, num_teams=num_teams,
-                                   team_type=team_type, selection_level=selection_level)
 
-    file_name = f"landscape_analysis_{team_type}_{selection_level}_{seed_value}.csv"
-    flacco_file = open(file_name, "w")
-    flacco_file.close()
 
-    fitnesses = calculator.calculate_fitness_of_population(population, team_type, selection_level)
 
-    best_fitness, best_fitness_index = max([(value, index) for index,value in enumerate(fitnesses)])
-    best_genome = population[best_fitness_index]
 
-    return best_genome, best_fitness
+
+
 
 
 def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name, team_type, selection_level, num_generations, num_teams):
-    """
-    Evolves a model or pair of models to accomplish the task
-
-    :param fitness_calculator:
-    :param seed_value:
-    :param sigma:
-    :param model_name:
-    :param results_file_name:
-    :param team_type:
-    :param selection_level:
-    :param num_generations:
-    :param population_size:
-    :return:
-    """
-
     pop_size = num_teams
 
     if team_type == "heterogeneous" and selection_level == "individual":

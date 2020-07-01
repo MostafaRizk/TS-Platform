@@ -28,7 +28,7 @@ class FitnessCalculator:
 
         self.num_simulation_runs = parameter_dictionary['environment']['num_simulation_runs']
 
-    def calculate_fitness_of_population(self, population):
+    def calculate_fitness_of_agent_population(self, population):
         """
         Takes a population of Agent objects, places each pair on a team and calculates the fitnesses of each
 

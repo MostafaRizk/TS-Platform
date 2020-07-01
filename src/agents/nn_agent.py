@@ -1,7 +1,7 @@
 import json
 import tinynet
 import numpy as np
-from agents.Agent import Agent
+from agents.agent import Agent
 
 
 def linear(x):
@@ -16,7 +16,7 @@ activation_dictionary = {"linear": linear, "sigmoid": sigmoid}
 
 
 class NNAgent(Agent):
-    def __init__(self, observation_size, action_size, parameter_filename):
+    def __init__(self, observation_size, action_size, parameter_filename, genome=None):
         # Load parameters
         if parameter_filename is None:
             raise RuntimeError("No parameter file specified for the neural network")
@@ -35,16 +35,17 @@ class NNAgent(Agent):
         self.net = tinynet.RNN(self.net_structure, act_fn=activation_function)
         self.np_random = np.random.RandomState(parameter_dictionary['general']['seed'])
 
+        # Set weights if possible
+        if genome is None:
+            raise RuntimeWarning("Creating an agent with no genome")
+        else:
+            self.net.set_weights(genome)
+
     def get_genome(self):
         return self.net.get_weights()
 
     def get_num_weights(self):
         return self.net.nweights
-
-    def load_weights(self, weights=None):
-        if weights is None:
-            weights = self.np_random.randn(self.net.nweights)
-        self.net.set_weights(weights)
 
     def act(self, observation):
         return self.net.activate(observation).argmax()

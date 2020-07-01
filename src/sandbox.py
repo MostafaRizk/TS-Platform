@@ -15,10 +15,8 @@ random_variable = multivariate_normal(mean=mean_array, cov=np.identity(num_dimen
 sampled_points = random_variable.rvs(num_samples, seed)
 genome = sampled_points[0]
 
-agent1 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), 'default_parameters.json')
-agent1.load_weights(genome)
-agent2 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), 'default_parameters.json')
-agent2.load_weights(genome)
+agent1 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), 'default_parameters.json', genome)
+agent2 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), 'default_parameters.json', genome)
 
 fitness_data = fitness_calculator.calculate_fitness(agent1, agent2, render=False, time_delay=0, measure_specialisation=False, logging=True, logfilename="demo_action_log.csv")
 fitness_1 = fitness_data["fitness_1"]

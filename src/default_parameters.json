@@ -1,8 +1,9 @@
 {
   "general": {
     "team_type": "homogeneous",
-    "selection_level": "team",
-    "algorithm": "rwg",
+    "reward_level": "team",
+    "algorithm_selected": "rwg",
+    "agent_type": "nn",
     "seed": 1
   },
   "environment": {
@@ -23,20 +24,30 @@
     "simulation_length": 500,
     "num_simulation_runs": 5
   },
-  "neural_network": {
-    "hidden_layers": 0,
-    "activation_function": "sigmoid"
+  "agent": {
+    "neural_network": {
+      "hidden_layers": 0,
+      "activation_function": "sigmoid"
+    }
   },
   "algorithm": {
-    "distribution_type": "normal",
-    "mean": 0,
-    "variance": 1,
-    "min": "None",
-    "max": "None",
-    "population_size": 10000,
-    "sigma": "None",
-    "generations": "None",
-    "tolx": "None",
-    "tolfunhist": "None"
+    "agent_population_size": 10000,
+    "rwg": {
+      "sampling_distribution": "normal",
+      "normal": {
+        "mean": 0,
+        "std": 1
+      },
+      "uniform": {
+        "min": -3,
+        "max": 3
+      }
+    },
+    "cma": {
+      "sigma": 0.2,
+      "generations": 5000,
+      "tolx": 1e-3,
+      "tolfunhist": 2e2
+    }
   }
 }

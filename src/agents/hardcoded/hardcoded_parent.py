@@ -1,7 +1,7 @@
 import re
 from collections import deque
 import numpy as np
-from agents.Agent import Agent
+from agents.agent import Agent
 
 
 class HardcodedAgent(Agent):

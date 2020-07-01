@@ -1,7 +1,7 @@
 import re
 import math
 
-from agents.HardcodedAgent import HardcodedAgent
+from agents.hardcoded.hardcoded_parent import HardcodedAgent
 
 
 class HardcodedDropperAgent(HardcodedAgent):
