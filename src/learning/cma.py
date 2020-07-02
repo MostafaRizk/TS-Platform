@@ -2,7 +2,7 @@ from learning.learner_parent import Learner
 
 class CMALearner(Learner):
     def learn(self):
-
+        pass
 
 
 

@@ -12,7 +12,8 @@ class FitnessCalculator:
         if parameter_filename is None:
             raise RuntimeError("No parameter file specified for the fitness function")
 
-        parameter_dictionary = json.loads(open(parameter_filename).read())
+        self.parameter_filename = parameter_filename
+        self.parameter_dictionary = json.loads(open(parameter_filename).read())
 
         self.env = SlopeEnv(parameter_filename)
 
@@ -21,12 +22,12 @@ class FitnessCalculator:
         self.action_size = self.env.get_action_size()
 
         # Seeding values
-        self.random_seed = parameter_dictionary['general']['seed']
+        self.random_seed = self.parameter_dictionary['general']['seed']
         self.np_random = np.random.RandomState(self.random_seed)
 
-        self.simulation_length = parameter_dictionary['environment']['simulation_length']
+        self.simulation_length = self.parameter_dictionary['environment']['simulation_length']
 
-        self.num_simulation_runs = parameter_dictionary['environment']['num_simulation_runs']
+        self.num_simulation_runs = self.parameter_dictionary['environment']['num_simulation_runs']
 
     def calculate_fitness_of_agent_population(self, population):
         """
@@ -41,7 +42,9 @@ class FitnessCalculator:
         for i in range(0, len(population), 2):
             agent_1 = population[i]
             agent_2 = population[i + 1]
-            fitness_1, fitness_2 = self.calculate_fitness(agent_1, agent_2)
+            fitness_dict = self.calculate_fitness(agent_1, agent_2)
+            fitness_1 = fitness_dict['fitness_1']
+            fitness_2 = fitness_dict['fitness_2']
 
             fitnesses += [fitness_1, fitness_2]
 
@@ -159,3 +162,10 @@ class FitnessCalculator:
 
     def get_rng(self):
         return self.np_random
+
+    def get_parameter_filename(self):
+        return self.parameter_filename
+
+    def get_parameter_dictionary(self):
+        return self.parameter_dictionary
+

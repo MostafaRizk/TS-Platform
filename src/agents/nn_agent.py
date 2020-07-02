@@ -1,6 +1,7 @@
 import json
 import tinynet
 import numpy as np
+import warnings
 from agents.agent import Agent
 
 
@@ -24,7 +25,7 @@ class NNAgent(Agent):
         parameter_dictionary = json.loads(open(parameter_filename).read())
 
         # Set activation
-        key = parameter_dictionary['neural_network']['activation_function']
+        key = parameter_dictionary['agent']['neural_network']['activation_function']
         activation_function = activation_dictionary[key]
 
         # Set hidden layers
@@ -37,7 +38,7 @@ class NNAgent(Agent):
 
         # Set weights if possible
         if genome is None:
-            raise RuntimeWarning("Creating an agent with no genome")
+            warnings.warn("Creating an agent with no genome")
         else:
             self.net.set_weights(genome)
 

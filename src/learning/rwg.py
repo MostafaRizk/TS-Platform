@@ -67,7 +67,7 @@ class RWGLearner(Learner):
             num_genomes = agent_population_size
         else:
             assert agent_population_size % 2 == 0, "Agent population needs to be even"
-            num_genomes = agent_population_size/2
+            num_genomes = agent_population_size//2
 
         # Sample genomes from a normal distribution
         if self.parameter_dictionary['algorithm']['rwg']['sampling_distribution'] == "normal":
@@ -86,8 +86,8 @@ class RWGLearner(Learner):
         @param num_genomes: Number of genomes to sample
         @return: Sampled genomes
         """
-        mean = self.parameter_dictionary['algorithm']['rwg']['sampling_distribution']['normal']['mean']
-        std = self.parameter_dictionary['algorithm']['rwg']['sampling_distribution']['normal']['std']
+        mean = self.parameter_dictionary['algorithm']['rwg']['normal']['mean']
+        std = self.parameter_dictionary['algorithm']['rwg']['normal']['std']
         seed = self.parameter_dictionary['general']['seed']
 
         mean_array = [mean] * self.genome_length
@@ -101,8 +101,8 @@ class RWGLearner(Learner):
         @param num_genomes: Number of genomes to sample
         @return: Sampled genomes
         """
-        min = self.parameter_dictionary['algorithm']['rwg']['sampling_distribution']['uniform']['min']
-        max = self.parameter_dictionary['algorithm']['rwg']['sampling_distribution']['uniform']['max']
+        min = self.parameter_dictionary['algorithm']['rwg']['uniform']['min']
+        max = self.parameter_dictionary['algorithm']['rwg']['uniform']['max']
         seed = self.parameter_dictionary['general']['seed']
 
         min_array = np.full((1, self.genome_length), min)

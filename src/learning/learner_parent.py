@@ -4,18 +4,14 @@ from agents.nn_agent import NNAgent
 
 
 class Learner:
-    def __init__(self, calculator, parameter_filename):
+    def __init__(self, calculator):
         assert isinstance(calculator, FitnessCalculator), "Did not pass a fitness calculator object"
 
-        # Load parameters
-        if parameter_filename is None:
-            raise RuntimeError("No parameter file specified for the learner")
-
-        self.parameter_filename = parameter_filename
-        self.parameter_dictionary = json.loads(open(parameter_filename).read())
+        self.parameter_filename = calculator.get_parameter_filename()
+        self.parameter_dictionary = calculator.get_parameter_dictionary()
 
         self.fitness_calculator = calculator
-        self.population_size = self.parameter_dictionary['algorithm']['population_size']
+        self.population_size = self.parameter_dictionary['algorithm']['agent_population_size']
         self.team_type = self.parameter_dictionary['general']['team_type']
         self.reward_level = self.parameter_dictionary['general']['reward_level']
         self.genome_length = self.get_genome_length()
@@ -36,7 +32,7 @@ class Learner:
 
             # Get the number of weights in a neural network-based agent
             num_weights = NNAgent(self.fitness_calculator.get_observation_size(),
-                                  self.fitness_calculator.get_action_size(), self.parameter_filename)
+                                  self.fitness_calculator.get_action_size(), self.parameter_filename).get_num_weights()
 
             # Genomes for heterogeneous teams rewarded at the team level are twice as long because two agent genomes
             # must be concatenated into a larger one
