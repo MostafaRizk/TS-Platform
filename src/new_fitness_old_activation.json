@@ -27,7 +27,7 @@
   "agent": {
     "nn": {
       "hidden_layers": 0,
-      "activation_function": "sigmoid"
+      "activation_function": "linear"
     }
   },
   "algorithm": {

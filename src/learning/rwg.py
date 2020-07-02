@@ -1,9 +1,17 @@
 from learning.learner_parent import Learner
 from scipy.stats import multivariate_normal
+from agents.nn_agent import NNAgent
 import numpy as np
 
 
 class RWGLearner(Learner):
+    def __init__(self, calculator):
+        super().__init__(calculator)
+
+        if self.parameter_dictionary['general']['algorithm_selected'] != "rwg":
+            raise RuntimeError(f"Cannot run rwg. Parameters request "
+                               f"{self.parameter_dictionary['general']['algorithm_selected']}")
+
     def learn(self):
         """
         Find the best genome and its fitness according to the rwg algorithm and the set parameters
@@ -19,19 +27,21 @@ class RWGLearner(Learner):
         # Get fitnesses of agents
         agent_fitnesses = self.fitness_calculator.calculate_fitness_of_agent_population(agent_population)
 
+        best_genome = None
+        best_fitness = None
+
         # Find genome of best agent
         if self.reward_level == "individual":
             best_fitness, best_fitness_index = max([(value, index) for index, value in enumerate(agent_fitnesses)])
             best_agent = agent_population[best_fitness_index]
             best_genome = best_agent.get_genome()
-            return best_genome, best_fitness
 
         # Find genome of best team
         elif self.reward_level == "team":
             best_team_fitness, best_team_index = float('-inf'), None
 
-            for i in range(0, len(agent_fitnesses)-1, 2):
-                team_fitness = agent_fitnesses[i] + agent_fitnesses[i+1]
+            for i in range(0, len(agent_fitnesses) - 1, 2):
+                team_fitness = agent_fitnesses[i] + agent_fitnesses[i + 1]
 
                 if team_fitness > best_team_fitness:
                     best_team_fitness = team_fitness
@@ -44,10 +54,20 @@ class RWGLearner(Learner):
             # For heterogeneous teams with team reward, the genome of the team is the genome of both agents concatenated
             elif self.team_type == "heterogeneous":
                 genome_part_1 = agent_population[best_team_index].get_genome()
-                genome_part_2 = agent_population[best_team_index+1].get_genome()
+                genome_part_2 = agent_population[best_team_index + 1].get_genome()
                 best_genome = np.concatenate([genome_part_1, genome_part_2])
 
-            return best_genome, best_team_fitness
+            best_fitness = best_team_fitness
+
+        # Save best genome as a model file
+        model_name = self.generate_model_name(best_fitness)
+        self.save_genome(best_genome, model_name)
+
+        # Log all generated genomes and their fitnesses in one file
+        genome_fitnesses = self.get_genome_fitnesses_from_agent_fitnesses(agent_fitnesses)
+        self.log_all_genomes(genome_population, genome_fitnesses)
+
+        return best_genome, best_fitness
 
     # Helpers ---------------------------------------------------------------------------------------------------------
 
@@ -67,7 +87,7 @@ class RWGLearner(Learner):
             num_genomes = agent_population_size
         else:
             assert agent_population_size % 2 == 0, "Agent population needs to be even"
-            num_genomes = agent_population_size//2
+            num_genomes = agent_population_size // 2
 
         # Sample genomes from a normal distribution
         if self.parameter_dictionary['algorithm']['rwg']['sampling_distribution'] == "normal":
@@ -109,3 +129,68 @@ class RWGLearner(Learner):
         max_array = np.full((1, self.genome_length), max)
         random_state = np.random.RandomState(seed)
         return random_state.uniform(min_array, max_array, (num_genomes, self.genome_length))
+
+    def save_genome(self, genome, filename):
+        """
+        Save a genome with under a particular filename
+
+        @param genome: Genome to be saved
+        @param filename: String representing the filename to save the genome as
+        @return:
+        """
+        self.Agent.save_given_model(genome, filename)
+
+    def log_all_genomes(self, genomes, genome_fitnesses):
+        assert len(genomes) == len(genome_fitnesses), "List of genomes and list of fitnesses are unequal"
+
+        parameters_in_name = ["all_genomes"]
+        parameters_in_name += Learner.get_core_params_in_model_name(self.parameter_dictionary)
+        parameters_in_name += RWGLearner.get_additional_params_in_model_name(self.parameter_dictionary)
+        parameters_in_name += [".csv"]
+        filename = "_".join([str(param) for param in parameters_in_name])
+
+        f = open(filename, "w")
+
+        for i in range(len(genomes)):
+            genome = genomes[i]
+            fitness = genome_fitnesses[i]
+
+            genome_str = str(genome.tolist()).strip("[]") + "," + str(fitness) + "\n"
+            f.write(genome_str)
+
+        f.close()
+
+    def generate_model_name(self, fitness):
+        """
+        Create a name string for a model generated using the given parameter file and fitness value
+
+        @param fitness: Fitness of the model to be saved
+        @return:
+        """
+        parameters_in_name = Learner.get_core_params_in_model_name(self.parameter_dictionary)
+        parameters_in_name += RWGLearner.get_additional_params_in_model_name(self.parameter_dictionary)
+
+        # Get fitness
+        parameters_in_name += [fitness]
+
+        # Put all in a string and return
+        return "_".join([str(param) for param in parameters_in_name])
+
+    @staticmethod
+    def get_additional_params_in_model_name(parameter_dictionary):
+        parameters_in_name = []
+
+        # Get algorithm params for relevant algorithm & distribution
+        parameters_in_name += [parameter_dictionary['algorithm']['agent_population_size']]
+        sampling_distribution = parameter_dictionary['algorithm']['rwg']['sampling_distribution']
+        parameters_in_name += [sampling_distribution]
+
+        if sampling_distribution == "normal":
+            parameters_in_name += [parameter_dictionary['algorithm']['rwg']['normal']['mean']]
+            parameters_in_name += [parameter_dictionary['algorithm']['rwg']['normal']['std']]
+
+        elif sampling_distribution == "uniform":
+            parameters_in_name += [parameter_dictionary['algorithm']['rwg']['uniform']['min']]
+            parameters_in_name += [parameter_dictionary['algorithm']['rwg']['uniform']['max']]
+
+        return parameters_in_name

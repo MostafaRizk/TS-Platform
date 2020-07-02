@@ -25,7 +25,7 @@ class NNAgent(Agent):
         parameter_dictionary = json.loads(open(parameter_filename).read())
 
         # Set activation
-        key = parameter_dictionary['agent']['neural_network']['activation_function']
+        key = parameter_dictionary['agent']['nn']['activation_function']
         activation_function = activation_dictionary[key]
 
         # Set hidden layers
@@ -57,3 +57,14 @@ class NNAgent(Agent):
     def save_model(self, name):
         weights = self.net.get_weights()
         np.save(name, weights)
+
+    @staticmethod
+    def save_given_model(model, filename):
+        np.save(filename, model)
+
+    @staticmethod
+    def load_model_from_file(filename):
+        try:
+            return np.load(filename)
+        except:
+            raise RuntimeError("Could not load model from given filename")
