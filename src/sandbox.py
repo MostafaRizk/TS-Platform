@@ -22,12 +22,16 @@ for parameter_filename in filenames:
     genome, fitness = learner.learn()
 '''
 
+fitness_calculator = FitnessCalculator("default_parameters.json")
+learner = RWGLearner(fitness_calculator)
+genome, fitness = learner.learn()
+
 """
 0- Old fitness + old activation = 7.6
 1- Old fitness + new activation = 0.0
 2- New fitness + old activation = 6356.6
 3- New fitness + new activation = -698.96
-"""
+
 
 model_id = 0
 parameter_filename = filenames[model_id]
@@ -37,4 +41,4 @@ genome = NNAgent.load_model_from_file(model_name)
 agent_1 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_filename, genome)
 agent_2 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_filename, genome)
 fitness_calculator.calculate_fitness(agent_1, agent_2, render=True, time_delay=0.1, )
-
+"""
