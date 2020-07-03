@@ -49,7 +49,9 @@ class NNAgent(Agent):
         return self.net.nweights
 
     def act(self, observation):
-        return self.net.activate(observation).argmax()
+        activation_values = self.net.activate(observation)
+        action = activation_values.argmax()
+        return action
 
     def get_all_activation_values(self, observation):
         return self.net.activate(observation)
