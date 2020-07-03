@@ -1,6 +1,6 @@
 {
   "general": {
-    "algorithm_selected": "rwg",
+    "algorithm_selected": "cma",
     "team_type": "homogeneous",
     "reward_level": "team",
     "agent_type": "nn",
@@ -27,11 +27,11 @@
   "agent": {
     "nn": {
       "hidden_layers": 0,
-      "activation_function": "sigmoid"
+      "activation_function": "linear"
     }
   },
   "algorithm": {
-    "agent_population_size": 10,
+    "agent_population_size": 20,
     "rwg": {
       "sampling_distribution": "normal",
       "normal": {

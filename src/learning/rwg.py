@@ -130,16 +130,6 @@ class RWGLearner(Learner):
         random_state = np.random.RandomState(seed)
         return random_state.uniform(min_array, max_array, (num_genomes, self.genome_length))
 
-    def save_genome(self, genome, filename):
-        """
-        Save a genome with under a particular filename
-
-        @param genome: Genome to be saved
-        @param filename: String representing the filename to save the genome as
-        @return:
-        """
-        self.Agent.save_given_model(genome, filename)
-
     def log_all_genomes(self, genomes, genome_fitnesses):
         assert len(genomes) == len(genome_fitnesses), "List of genomes and list of fitnesses are unequal"
 

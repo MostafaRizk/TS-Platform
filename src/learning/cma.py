@@ -1,6 +1,7 @@
 import cma
 import copy
 import sys
+import os
 from learning.learner_parent import Learner
 from glob import glob
 from io import StringIO
@@ -18,6 +19,16 @@ class CMALearner(Learner):
         self.logging_rate = 20
 
     def learn(self):
+        """
+        Search for the best genome that solves the problem using CMA-ES, while also saving the models every so often
+        and logging the results to a result file for analysis.
+
+        @return: The best genome found by CMA-ES and its fitness
+        """
+        # Put CMA output in a buffer for logging to a file at the end of the function
+        old_stdout = sys.stdout
+        sys.stdout = mystdout = StringIO()
+
         options = {'seed': self.parameter_dictionary['general']['seed'],
                    'maxiter': self.parameter_dictionary['algorithm']['cma']['generations'],
                    'popsize': self.get_genome_population_length(),
@@ -25,12 +36,8 @@ class CMALearner(Learner):
                    'tolfunhist': self.parameter_dictionary['algorithm']['cma']['tolfunhist']}
 
         # Initialise cma with a mean genome and sigma
-        seed_genome = self.get_seed_genome()
+        seed_genome, seed_fitness = self.get_seed_genome()
         es = cma.CMAEvolutionStrategy(seed_genome, self.parameter_dictionary['algorithm']['cma']['sigma'], options)
-
-        # Put CMA output in a buffer for logging to a file at the end of the function
-        old_stdout = sys.stdout
-        sys.stdout = mystdout = StringIO()
 
         # Learning loop
         while not es.stop():
@@ -64,16 +71,30 @@ class CMALearner(Learner):
             generation = es.result.iterations
 
             if generation % self.logging_rate == 0:
-                self.log(es.result[0], -es.result[1], generation)
+                self.log(es.result[0], -es.result[1], generation, seed_fitness)
 
             es.disp()
 
-        print(f"Best score is {-es.result[1]}")
+        # Get best genome and its fitness value
+        best_genome = es.result[0]
+        best_fitness = -es.result.fbest
+
+        print(f"Best fitness is {best_fitness}")
+
+        # Save best model
+        model_name = self.generate_model_name(best_fitness)
+        self.save_genome(best_genome, model_name)
+        self.log(best_genome, best_fitness, "final", seed_fitness)
+
+        # Log evolution details to file
+        log_file_name = model_name + ".log"
+        f = open(log_file_name, "w")
+        f.write(mystdout.getvalue())
+        f.close()
+
+        # Reset output stream
         sys.stdout = old_stdout
 
-        # Return best genome and its fitness value
-        best_genome = es.result[0]
-        best_fitness = -es.result[-1]
         return best_genome, best_fitness
 
     def get_genome_population_length(self):
@@ -108,19 +129,51 @@ class CMALearner(Learner):
         elif len(possible_seedfiles) > 1:
             raise RuntimeError('Too many valid seed files')
         else:
-            return self.Agent.load_model_from_file(possible_seedfiles[0])
+            model_file_extension = self.Agent.get_model_file_extension()
+            seed_fitness = float(possible_seedfiles[0].split("_")[-1].strip(model_file_extension))
+            return self.Agent.load_model_from_file(possible_seedfiles[0]), seed_fitness
 
-    def log(self, genome, genome_fitness, generation):
-        # Get experiment parameter prefix list
-        # Generate results filename
-        pass
+    def log(self, genome, genome_fitness, generation, seed_fitness):
+        """
+        Save the genome model and save fitness and parameters to a results file
+
+        @param genome: The genome being logged
+        @param genome_fitness: The fitness of the genome
+        @param generation: The current generation of CMA-ES
+        @param seed_fitness: The fitness of the seed genome
+        @return:
+        """
+        # Save model
+        model_name = self.generate_model_name(genome_fitness)
+        model_name = f"{model_name}_{generation}"
+        self.save_genome(genome, model_name)
+
+        # Log results
+        results_filename = f"results_{generation}.csv"
+        results_file = open(results_filename, 'a')
+
+        if not os.path.isfile(results_filename):
+            # Write header line of results file
+            result_headings = self.get_results_headings(self.parameter_dictionary)
+            result_headings += ["seed_fitness", "fitness", "model_name"]
+            result_headings = ",".join(result_headings)
+            result_headings += "\n"
+            results_file.write(result_headings)
+
+        result_data = Learner.get_core_params_in_model_name(self.parameter_dictionary) + \
+                      CMALearner.get_additional_params_in_model_name(self.parameter_dictionary) + \
+                      [seed_fitness, genome_fitness, model_name]
+        results = ",".join([str(element) for element in result_data])
+
+        results_file.write(f"{results}\n")
+        results_file.close()
 
     def generate_model_name(self, fitness):
         """
         Create a name string for a model generated using the given parameter file and fitness value
 
         @param fitness: Fitness of the model to be saved
-        @return:
+        @return: The model name as a string
         """
         parameters_in_name = Learner.get_core_params_in_model_name(self.parameter_dictionary)
         parameters_in_name += CMALearner.get_additional_params_in_model_name(self.parameter_dictionary)
@@ -133,6 +186,12 @@ class CMALearner(Learner):
 
     @staticmethod
     def get_additional_params_in_model_name(parameter_dictionary):
+        """
+        Return the parameters of the model that are specific to CMA-ES
+
+        @param parameter_dictionary: Dictionary containing the desired parameters
+        @return: List of parameter values
+        """
         parameters_in_name = []
 
         # Get algorithm params for relevant algorithm
@@ -144,72 +203,19 @@ class CMALearner(Learner):
 
         return parameters_in_name
 
+    @staticmethod
+    def get_results_headings(parameter_dictionary):
+        """
+        Get a list containing (most) of the columns that will be printed to the results file
 
-def cma_es(fitness_calculator, seed_value, sigma, model_name, results_file_name, team_type, selection_level,
-           num_generations, num_teams):
-    while not es.stop():
-        iteration_number = es.result.iterations
+        @param parameter_dictionary: Dictionary containing parameter values
+        @return: List of column names
+        """
+        headings = Learner.get_results_headings(parameter_dictionary)
+        headings += ["agent_population_size",
+                     "sigma",
+                     "generations",
+                     "tolx",
+                     "tolfunhist"]
 
-        if iteration_number == 0:
-            seed_fitness = -es.result[1]
-
-        if iteration_number % LOG_EVERY == 0:
-            # Log results to results file
-            results = model_name.replace("_", ",")
-            results += f",{log_file_name}, {seed_fitness}, {-es.result[1]}\n"
-            intermediate_results_file_name = f"results_{iteration_number}.csv"
-
-            if not os.path.exists(intermediate_results_file_name):
-                results_file = open(intermediate_results_file_name, 'a')
-                results_file.write(
-                    "Algorithm Name, Team Type, Selection Level, Simulation Length, Num Generations, Num Trials, "
-                    "Random Seed, Num Robots, Num Resources, Sensor Range, Slope Angle, Arena Length, "
-                    "Arena Width, Cache Start, Slope Start, Source Start, Sigma, Population, Log File, "
-                    "Seed Fitness, Evolved Fitness\n")
-            else:
-                results_file = open(intermediate_results_file_name, 'a')
-
-            results_file.write(results)
-            results_file.close()
-
-            # Log genome
-            # Split the genome and save both halves separately for heterogeneous setup
-            if team_type == "heterogeneous" and selection_level == "team":
-                best_individual_1 = TinyAgent(fitness_calculator.get_observation_size(),
-                                              fitness_calculator.get_action_size(),
-                                              seed=seed_value)
-                best_individual_2 = TinyAgent(fitness_calculator.get_observation_size(),
-                                              fitness_calculator.get_action_size(),
-                                              seed=seed_value)
-
-                # Split genome
-                mid = int(len(es.result[0]) / 2)
-                best_individual_1.load_weights(es.result[0][0:mid])
-                best_individual_2.load_weights(es.result[0][mid:])
-
-                best_individual_1.save_model(model_name + "_controller1_" + str(iteration_number) + "_")
-                best_individual_2.save_model(model_name + "_controller2_" + str(iteration_number) + "_")
-
-            else:
-                best_individual = TinyAgent(fitness_calculator.get_observation_size(),
-                                            fitness_calculator.get_action_size(),
-                                            seed=seed_value)
-                best_individual.load_weights(es.result[0])
-                best_individual.save_model(model_name + "_" + str(iteration_number))
-
-        es.disp()
-
-    print(f"Best score is {-es.result[1]}")
-
-    ''''''
-    sys.stdout = old_stdout
-    log_file.close()
-
-    # Append results to results file. Create file if it doesn't exist
-    results = model_name.replace("_", ",")
-    results += f",{log_file_name}, {seed_fitness}, {-es.result[1]}\n"
-    results_file = open(results_file_name, 'a')
-    results_file.write(results)
-    results_file.close()
-
-    return es.result[0]
+        return headings

@@ -70,3 +70,7 @@ class NNAgent(Agent):
             return np.load(filename)
         except:
             raise RuntimeError("Could not load model from given filename")
+
+    @staticmethod
+    def get_model_file_extension():
+        return ".npy"

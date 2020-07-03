@@ -18,3 +18,7 @@ class Agent:
     @staticmethod
     def load_model_from_file(filename):
         pass
+
+    @staticmethod
+    def get_model_file_extension():
+        pass

@@ -100,8 +100,8 @@ class Learner:
         genome_fitnesses = []
 
         if self.reward_level == "team":
-            for i in range(0, len(agent_fitnesses)-1, 2):
-                genome_fitness = agent_fitnesses[i] + agent_fitnesses[i+1]
+            for i in range(0, len(agent_fitnesses) - 1, 2):
+                genome_fitness = agent_fitnesses[i] + agent_fitnesses[i + 1]
                 genome_fitnesses += [genome_fitness]
 
             return genome_fitnesses
@@ -112,9 +112,18 @@ class Learner:
         else:
             raise RuntimeError('Homogeneous-Individual configuration not fully supported yet')
 
-
     def generate_model_name(self, fitness):
         pass
+
+    def save_genome(self, genome, filename):
+        """
+        Save a genome with under a particular filename
+
+        @param genome: Genome to be saved
+        @param filename: String representing the filename to save the genome as
+        @return:
+        """
+        self.Agent.save_given_model(genome, filename)
 
     @staticmethod
     def get_core_params_in_model_name(parameter_dictionary):
@@ -163,3 +172,39 @@ class Learner:
     @staticmethod
     def get_additional_params_in_model_name(parameter_dictionary):
         pass
+
+    @staticmethod
+    def get_results_headings(parameter_dictionary):
+        """
+        Given a parameter dictionary, returns a list of the names of important parameters that are not specific to the
+        algorithm being used
+
+        @param parameter_dictionary:
+        @return:
+        """
+        # TODO: Change the heading so it accomodates other agent types
+        headings = ["algorithm_selected",
+                    "team_type",
+                    "reward_level",
+                    "agent_type",
+                    "seed",
+                    "num_agents",
+                    "num_resources",
+                    "sensor_range",
+                    "sliding_speed",
+                    "arena_length",
+                    "arena_width",
+                    "cache_start",
+                    "slope_start",
+                    "source_start",
+                    "base_cost",
+                    "upward_cost_factor",
+                    "downward_cost_factor",
+                    "carry_factor",
+                    "resource_reward",
+                    "simulation_length",
+                    "num_simulation_runs",
+                    "hidden_layers",
+                    "activation_function"]
+
+        return headings
