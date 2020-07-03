@@ -1,4 +1,2 @@
 python3 sandbox.py --parameter old_fitness_old_activation.json
-python3 sandbox.py --parameter old_fitness_new_activation.json
 python3 sandbox.py --parameter new_fitness_old_activation.json
-python3 sandbox.py --parameter new_fitness_new_activation.json
