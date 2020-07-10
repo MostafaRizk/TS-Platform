@@ -131,6 +131,9 @@ class Learner:
         Given a parameter dictionary, returns a list of the important parameter values that are not specific to the
         algorithm being used (e.g. environment params, seed, agent type etc).
 
+        Note: Tightly coupled with:
+        get_seed_genome() in cma.py
+
         @param parameter_dictionary: Dictionary of parameters
         @return: List of parameter values
         """

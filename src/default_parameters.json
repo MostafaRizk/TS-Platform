@@ -4,7 +4,7 @@
     "team_type": "homogeneous",
     "reward_level": "team",
     "agent_type": "nn",
-    "seed": 1
+    "seed": 2
   },
   "environment": {
     "num_agents": 2,
@@ -31,7 +31,7 @@
     }
   },
   "algorithm": {
-    "agent_population_size": 20,
+    "agent_population_size": 5,
     "rwg": {
       "sampling_distribution": "normal",
       "normal": {

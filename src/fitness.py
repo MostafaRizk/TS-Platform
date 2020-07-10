@@ -70,7 +70,6 @@ class FitnessCalculator:
         (a measure of the degree of specialisation observed)
         """
         # Initialise major variables
-        temp_seed = self.random_seed
         file_reader = None
         average_fitness_1 = 0
         average_fitness_2 = 0
@@ -126,7 +125,6 @@ class FitnessCalculator:
             # Update averages and seed
             average_fitness_1 += fitness_1
             average_fitness_2 += fitness_2
-            temp_seed += 1  # TODO: Check that the logic of incrementing the seed every run makes sense
 
             # Extra computations if calculating specialisation or logging actions
             if measure_specialisation:
