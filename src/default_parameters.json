@@ -31,7 +31,7 @@
     }
   },
   "algorithm": {
-    "agent_population_size": 5,
+    "agent_population_size": 80,
     "rwg": {
       "sampling_distribution": "normal",
       "normal": {
@@ -45,7 +45,7 @@
     },
     "cma": {
       "sigma": 0.2,
-      "generations": 10,
+      "generations": 5000,
       "tolx": 1e-3,
       "tolfunhist": 2e2
     }
