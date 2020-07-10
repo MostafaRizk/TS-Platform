@@ -11,6 +11,6 @@
 #SBATCH --mail-user=mostafa.rizk@monash.edu
 
 export OMP_NUM_THREADS=1
-source /home/mriz9/om18/actual_code/TS-Platform/src/env/bin/activate
+source /home/mriz9/om18/latest_code/TS-Platform/src/env/bin/activate
 CMD=`head -n ${SLURM_ARRAY_TASK_ID} LIST_rwg | tail -1`
 $CMD
