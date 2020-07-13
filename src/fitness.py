@@ -43,10 +43,10 @@ class FitnessCalculator:
             agent_1 = population[i]
             agent_2 = population[i + 1]
             fitness_dict = self.calculate_fitness(agent_1, agent_2)
-            fitness_1 = fitness_dict['fitness_1']
-            fitness_2 = fitness_dict['fitness_2']
+            fitness_1_list = fitness_dict['fitness_1_list']
+            fitness_2_list = fitness_dict['fitness_2_list']
 
-            fitnesses += [fitness_1, fitness_2]
+            fitnesses += [fitness_1_list, fitness_2_list]
 
         return fitnesses
 
@@ -55,9 +55,9 @@ class FitnessCalculator:
         """
         Calculates the fitness of a team of agents (composed of two different types of agent). Fitness is calculated
         by running the simulation for t time steps (as specified in the parameter file) with each agent acting every
-        time step based on its observations. The simulation is reset at the end and repeated a certain number of
-        times (according to the parameter file) each with a different temporary seed. The average is taken over all
-        runs of the simulation.
+        time step based on its observations. The simulation is restarted at the end and repeated a certain number of
+        times (according to the parameter file). This is done without resetting the random number generator so that
+        there are new initial positions for agents and resources in each simulation run.
 
         @param agent_type_1: The first Agent object
         @param agent_type_2: The second Agent object
@@ -66,14 +66,15 @@ class FitnessCalculator:
         @param measure_specialisation: Boolean indicating whether or not specialisation is being measured
         @param logging: Boolean indicating whether or not actions will be logged
         @param logfilename: String name of the file where actions will be logged
-        @return: Dictionary containing 'fitness_1' (agent1 fitness), 'fitness_2' (agent 2 fitness) and 'specialisation'
-        (a measure of the degree of specialisation observed)
+        @return: Dictionary containing 'fitness_1_list' (fitnesses of agent 1 for each simulation run), 'fitness_2_list'
+        (fitnesses of agent 2 for each simulation run) and 'specialisation_list' (a measure of the degree of
+        specialisation observed for the team for each simulation runs)
         """
         # Initialise major variables
         file_reader = None
-        average_fitness_1 = 0
-        average_fitness_2 = 0
-        average_specialisation = 0
+        fitness_1_list = []
+        fitness_2_list = []
+        specialisation_list = []
 
         # Create logging file if logging
         if logging:
@@ -123,12 +124,12 @@ class FitnessCalculator:
                     time.sleep(time_delay)
 
             # Update averages and seed
-            average_fitness_1 += fitness_1
-            average_fitness_2 += fitness_2
+            fitness_1_list += [fitness_1]
+            fitness_2_list += [fitness_2]
 
             # Extra computations if calculating specialisation or logging actions
             if measure_specialisation:
-                average_specialisation += self.env.calculate_ferrante_specialisation()
+                specialisation_list += [self.env.calculate_ferrante_specialisation()]
 
             if logging:
                 agent_1_action_string = ','.join(str(action) for action in agent_1_action_list) + '\n'
@@ -136,19 +137,11 @@ class FitnessCalculator:
                 file_reader.write(agent_1_action_string)
                 file_reader.write(agent_2_action_string)
 
-        average_fitness_1 /= self.num_simulation_runs
-        average_fitness_2 /= self.num_simulation_runs
-
-        if measure_specialisation:
-            average_specialisation /= self.num_simulation_runs
-        else:
-            average_specialisation = None
-
         if logging:
             file_reader.close()
 
-        return {"fitness_1": average_fitness_1, "fitness_2": average_fitness_2,
-                "specialisation": average_specialisation}
+        return {"fitness_1_list": fitness_1_list, "fitness_2_list": fitness_2_list,
+                "specialisation_list": specialisation_list}
 
     # Helpers ---------------------------------------------------------------------------------------------------------
 

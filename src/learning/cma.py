@@ -59,14 +59,15 @@ class CMALearner(Learner):
             agent_population = self.convert_genomes_to_agents(genome_population)
 
             # Get fitnesses of agents
-            agent_fitnesses = self.fitness_calculator.calculate_fitness_of_agent_population(agent_population)
+            agent_fitness_lists = self.fitness_calculator.calculate_fitness_of_agent_population(agent_population)
 
             # Convert agent fitnesses into genome fitnesses
-            genome_fitnesses = self.get_genome_fitnesses_from_agent_fitnesses(agent_fitnesses)
+            genome_fitness_lists = self.get_genome_fitnesses_from_agent_fitnesses(agent_fitness_lists)
+            genome_fitness_average = [sum(fitness_list) / len(fitness_list) for fitness_list in genome_fitness_lists]
 
             # Update the algorithm with the new fitness evaluations
             # CMA minimises fitness so we negate the fitness values
-            es.tell(genome_population, [-f for f in genome_fitnesses])
+            es.tell(genome_population, [-f for f in genome_fitness_average])
 
             generation = es.result.iterations
 

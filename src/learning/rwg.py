@@ -25,14 +25,15 @@ class RWGLearner(Learner):
         agent_population = self.convert_genomes_to_agents(genome_population)
 
         # Get fitnesses of agents
-        agent_fitnesses = self.fitness_calculator.calculate_fitness_of_agent_population(agent_population)
+        agent_fitness_lists = self.fitness_calculator.calculate_fitness_of_agent_population(agent_population)
+        agent_fitness_average = [sum(fitness_list)/len(fitness_list) for fitness_list in agent_fitness_lists]
 
         best_genome = None
         best_fitness = None
 
         # Find genome of best agent
         if self.reward_level == "individual":
-            best_fitness, best_fitness_index = max([(value, index) for index, value in enumerate(agent_fitnesses)])
+            best_fitness, best_fitness_index = max([(value, index) for index, value in enumerate(agent_fitness_average)])
             best_agent = agent_population[best_fitness_index]
             best_genome = best_agent.get_genome()
 
@@ -40,11 +41,16 @@ class RWGLearner(Learner):
         elif self.reward_level == "team":
             best_team_fitness, best_team_index = float('-inf'), None
 
-            for i in range(0, len(agent_fitnesses) - 1, 2):
-                team_fitness = agent_fitnesses[i] + agent_fitnesses[i + 1]
+            for i in range(0, len(agent_fitness_lists) - 1, 2):
+                # Get the average team fitness
+                fitness_1_list = agent_fitness_lists[i]
+                fitness_2_list = agent_fitness_lists[i+1]
+                zipped_fitness = zip(fitness_1_list, fitness_2_list)
+                team_fitness_list = [fitness_1 + fitness_2 for (fitness_1, fitness_2) in zipped_fitness]
+                team_fitness_average = sum(team_fitness_list)/len(team_fitness_list)
 
-                if team_fitness > best_team_fitness:
-                    best_team_fitness = team_fitness
+                if team_fitness_average > best_team_fitness:
+                    best_team_fitness = team_fitness_average
                     best_team_index = i
 
             # For homogeneous teams with team reward, the genome of one agent is also the team genome
@@ -64,8 +70,8 @@ class RWGLearner(Learner):
         self.save_genome(best_genome, model_name)
 
         # Log all generated genomes and their fitnesses in one file
-        genome_fitnesses = self.get_genome_fitnesses_from_agent_fitnesses(agent_fitnesses)
-        self.log_all_genomes(genome_population, genome_fitnesses)
+        genome_fitness_lists = self.get_genome_fitnesses_from_agent_fitnesses(agent_fitness_lists)
+        self.log_all_genomes(genome_population, genome_fitness_lists)
 
         return best_genome, best_fitness
 
@@ -130,8 +136,8 @@ class RWGLearner(Learner):
         random_state = np.random.RandomState(seed)
         return random_state.uniform(min_array, max_array, (num_genomes, self.genome_length))
 
-    def log_all_genomes(self, genomes, genome_fitnesses):
-        assert len(genomes) == len(genome_fitnesses), "List of genomes and list of fitnesses are unequal"
+    def log_all_genomes(self, genomes, genome_fitness_list):
+        assert len(genomes) == len(genome_fitness_list), "List of genomes and list of fitnesses are unequal"
 
         parameters_in_name = ["all_genomes"]
         parameters_in_name += Learner.get_core_params_in_model_name(self.parameter_dictionary)
@@ -143,9 +149,9 @@ class RWGLearner(Learner):
 
         for i in range(len(genomes)):
             genome = genomes[i]
-            fitness = genome_fitnesses[i]
+            fitness_list = genome_fitness_list[i]
 
-            genome_str = str(genome.tolist()).strip("[]") + "," + str(fitness) + "\n"
+            genome_str = str(genome.tolist()).strip("[]") + "," + ",".join(str(fitness) for fitness in fitness_list) + "\n"
             f.write(genome_str)
 
         f.close()

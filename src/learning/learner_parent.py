@@ -89,25 +89,26 @@ class Learner:
 
         return agent_population
 
-    def get_genome_fitnesses_from_agent_fitnesses(self, agent_fitnesses):
+    def get_genome_fitnesses_from_agent_fitnesses(self, agent_fitness_lists):
         """
-        Given a list of fitnesses of pairs of agents, returns the fitnesses of the genomes they came from, based on the
+        Given a list of fitness lists of pairs of agents, returns the fitness lists of the genomes they came from, based on the
         configuration of team type and reward level
 
-        @param agent_fitnesses: A list of fitness values for each agent in the agent population
-        @return: A list of fitness values for each genome that the agents came from
+        @param agent_fitnesses: A list of fitness lists for each agent in the agent population
+        @return: A list of fitness lists for each genome that the agents came from
         """
-        genome_fitnesses = []
+        genome_fitness_lists = []
 
         if self.reward_level == "team":
-            for i in range(0, len(agent_fitnesses) - 1, 2):
-                genome_fitness = agent_fitnesses[i] + agent_fitnesses[i + 1]
-                genome_fitnesses += [genome_fitness]
+            for i in range(0, len(agent_fitness_lists) - 1, 2):
+                zipped_fitness_list = zip(agent_fitness_lists[i], agent_fitness_lists[i+1])
+                genome_fitness_list = [fitness_1 + fitness_2 for (fitness_1, fitness_2) in zipped_fitness_list]
+                genome_fitness_lists += [genome_fitness_list]
 
-            return genome_fitnesses
+            return genome_fitness_lists
 
         elif self.reward_level == "individual" and self.team_type == "heterogneous":
-            return agent_fitnesses
+            return agent_fitness_lists
 
         else:
             raise RuntimeError('Homogeneous-Individual configuration not fully supported yet')
