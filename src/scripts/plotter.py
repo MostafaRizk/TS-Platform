@@ -68,57 +68,49 @@ def plot_hardcoded_fitness(results_file, graph_file):
 def plot_evolution_fitness(results_file, graph_file):
     # Read data
     data = pd.read_csv(results_file)
-    num_seeds = 30
-    #trimmed_data = data[[" Team Type", " Slope Angle", " Arena Length", " Sigma", " Population", " Fitness"]]
 
     # Format data
     results = {#"Homogeneous-Individual": {"Individual 1": [], "Individual 2": []},
-               "Homogeneous-Team": {"Individual 1": [], "Individual 2": []},
-               "Heterogeneous-Individual": {"Individual 1": [], "Individual 2": []},
+               "Homogeneous-Team": [],
+               #"Heterogeneous-Individual": {"Individual 1": [], "Individual 2": []},
                #"Heterogeneous-Team": {"Individual 1": [], "Individual 2": []}
                 }
 
-    data_points = 0
-
     for index, row in data.iterrows():
-        team_type = row[" Team Type"].capitalize()
-        selection_level = row[" Selection Level"].capitalize()
-        key = f"{team_type}-{selection_level}"
+        team_type = row["team_type"].capitalize()
+        reward_level = row["reward_level"].capitalize()
+        key = f"{team_type}-{reward_level}"
 
-        results[key]["Individual 1"] += [row[" Fitness 1"]]
-        results[key]["Individual 2"] += [row[" Fitness 2"]]
-        data_points += 1
-
-    print(f"Quality check: There were {data_points} data points out of {num_seeds*len(results)}. ")
+        results[key] += [row["fitness"]]
 
     # Plot data
     fig1, ax1 = plt.subplots(figsize=(12,4))
     ax1.set_title('Best Fitness Score of Evolved Runs')
-    ax1.set_ylim(-1000, 100000)
+    ax1.set_ylim(0, 100000)
     ax1.set_ylabel('Fitness')
     ax1.set_xlabel('Evolutionary Configuration')
 
-    positions = [1, 3]
+    positions = [1]  # [1,3,5,7]
     #configs = ["Homogeneous-Individual", "Homogeneous-Team", "Heterogeneous-Individual", "Heterogeneous-Team"]
-    configs = ["Homogeneous-Team", "Heterogeneous-Individual"]
+    configs = ["Homogeneous-Team"]
 
     for i in range(len(configs)):
         config = configs[i]
-        box1 = ax1.boxplot(results[config]["Individual 1"], positions=[positions[i]], widths=0.3)
-        box2 = ax1.boxplot(results[config]["Individual 2"], positions=[positions[i]+1], widths=0.3)
+        box1 = ax1.boxplot(results[config], positions=[positions[i]], widths=0.3)
+        #box2 = ax1.boxplot(results[config]["Individual 2"], positions=[positions[i]+1], widths=0.3)
         for item in ['boxes', 'whiskers', 'fliers', 'medians', 'caps']:
             plt.setp(box1[item], color="red")
-            plt.setp(box2[item], color="blue")
+            #plt.setp(box2[item], color="blue")
 
     ax1.set_xticklabels([x for x in configs])
     ax1.set_xticks([x + 0.5 for x in positions])
     #ax1.set_xticks([x for x in positions])
 
     hB, = ax1.plot([1, 1], 'r-')
-    hR, = ax1.plot([1, 1], 'b-')
-    legend((hB, hR), ('Individual 1', 'Individual 2'))
+    #hR, = ax1.plot([1, 1], 'b-')
+    #legend((hB, hR), ('Individual 1', 'Individual 2'))
     hB.set_visible(False)
-    hR.set_visible(False)
+    #hR.set_visible(False)
 
     #plt.show()
     plt.savefig(graph_file)
@@ -181,7 +173,30 @@ def plot_evolution_specialisation(results_file, graph_file):
     #plt.show()
     plt.savefig(graph_file)
 
+def plot_evolution_history(results_folder, graph_file):
+    # Get list of fitnesses from each file
+    x = [i for i in range(20,5020,20)]
+    y = []
+    yerr = []
 
-#plot_hardcoded_fitness("hardcoded_results.csv", "hardcoded_fitness.png")
-#plot_evolution_fitness("results_specialisation.csv", "evolution_fitness.png")
-#plot_evolution_specialisation("results_specialisation.csv", "evolution_specialisation.png")
+    for i in range(20, 5020, 20):
+        results_file = f"{results_folder}/results_{i}.csv"
+        data = pd.read_csv(results_file)
+
+        fitnesses = []
+        for index, row in data.iterrows():
+            fitnesses += [row["fitness"]]
+
+        y += [np.mean(fitnesses)]
+        yerr += [np.std(fitnesses)]
+
+    # Plot
+    fig1, ax1 = plt.subplots(figsize=(12, 4))
+    ax1.set_title('Fitness Throughout Evolution')
+    ax1.set_ylim(0, 100000)
+    ax1.set_ylabel('Fitness')
+    ax1.set_xlabel('Generation')
+    plt.errorbar(x, y, yerr)
+    plt.savefig(graph_file)
+
+

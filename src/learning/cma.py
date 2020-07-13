@@ -157,15 +157,20 @@ class CMALearner(Learner):
 
         # Log results
         results_filename = f"results_{generation}.csv"
-        results_file = open(results_filename, 'a')
+        results_file = None
 
         if not os.path.isfile(results_filename):
+            results_file = open(results_filename, 'a')
+
             # Write header line of results file
             result_headings = self.get_results_headings(self.parameter_dictionary)
             result_headings += ["seed_fitness", "fitness", "model_name"]
             result_headings = ",".join(result_headings)
             result_headings += "\n"
             results_file.write(result_headings)
+
+        else:
+            results_file = open(results_filename, 'a')
 
         result_data = Learner.get_core_params_in_model_name(self.parameter_dictionary) + \
                       CMALearner.get_additional_params_in_model_name(self.parameter_dictionary) + \

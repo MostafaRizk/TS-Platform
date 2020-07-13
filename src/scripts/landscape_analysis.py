@@ -2,11 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from pyDOE import *
-from gym_TS.fitness_calculator import FitnessCalculator
 from scipy.stats.distributions import norm
 from scipy.stats import multivariate_normal
 
-from gym_TS.agents.TinyAgent import TinyAgent
+
 
 import pandas as pd
 
@@ -106,10 +105,7 @@ def plot_fitness_distribution(results_file, graph_file):
     Plot distribution of random points from the fitness landscape as violin plots
     """
     # Read data
-    #data = pd.read_csv(results_file)
-    f = open(results_file, "r")
-    data = f.read().strip().split("\n")
-    f.close()
+    data = pd.read_csv(results_file)
 
 
     # Format data
@@ -117,15 +113,17 @@ def plot_fitness_distribution(results_file, graph_file):
         "Homogeneous-Team": [],
     }
 
-    data_points = 0
+    for index, row in data.iterrows():
+        team_type = row["team_type"].capitalize()
+        reward_level = row["reward_level"].capitalize()
+        key = f"{team_type}-{reward_level}"
 
-    for row in data:
-        results["Homogeneous-Team"] += [float(row.split(",")[-1])]
+        results[key] += [row["fitness"]]
 
     # Plot data
     fig1, ax1 = plt.subplots(figsize=(12, 4))
-    ax1.set_title('Distribution of Landscape')
-    ax1.set_ylim(-4000, 4000)
+    ax1.set_title('Fitness Distribution')
+    ax1.set_ylim(0, 100000)
     ax1.set_ylabel('Fitness')
     ax1.set_xlabel('Evolutionary Configuration')
 
@@ -464,17 +462,17 @@ def plot_action_progression(genome_file, graph_file):
     plt.savefig(graph_file)
 
 
-distribution = "normal"
-team_type = "homogeneous"
-selection_level = "team"
-num_samples = 60000
-start_sample = 50001
+#distribution = "normal"
+#team_type = "homogeneous"
+#selection_level = "team"
+#num_samples = 60000
+#start_sample = 50001
 #generate_genomes(team_type, selection_level, distribution, num_samples, start_sample)
 #plot_fitness_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"fitness_distribution_{distribution}_{team_type}_{selection_level}.png")
 #plot_weight_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"weight_distribution_{distribution}_{team_type}_{selection_level}.png")
 #plot_weight_histogram(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"weight_histogram_{distribution}_{team_type}_{selection_level}.png")
 #plot_action_distribution(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"action_distribution_{distribution}_{team_type}_{selection_level}.png")
-analyse_motion(f"genomes_{distribution}_{team_type}_{selection_level}_50001_sorted.csv", True)
+#analyse_motion(f"genomes_{distribution}_{team_type}_{selection_level}_50001_sorted.csv", True)
 #plot_activation_progression(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"activation_distribution_{distribution}_{team_type}_{selection_level}.png")
 #plot_action_progression(f"genomes_{distribution}_{team_type}_{selection_level}.csv", f"action_progression_{distribution}_{team_type}_{selection_level}.png")
 
