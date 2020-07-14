@@ -22,19 +22,29 @@ class NNAgent(Agent):
         if parameter_filename is None:
             raise RuntimeError("No parameter file specified for the neural network")
 
-        parameter_dictionary = json.loads(open(parameter_filename).read())
+        self.parameter_dictionary = json.loads(open(parameter_filename).read())
 
         # Set activation
-        key = parameter_dictionary['agent']['nn']['activation_function']
+        key = self.parameter_dictionary['agent']['nn']['activation_function']
         activation_function = activation_dictionary[key]
 
         # Set hidden layers
-        self.hidden = []
+        self.hidden = self.parameter_dictionary['agent']['nn']['hidden_units']
         self.net_structure = [observation_size, *self.hidden, action_size]
 
         # Create neural network and random number generator
-        self.net = tinynet.RNN(self.net_structure, act_fn=activation_function)
-        self.np_random = np.random.RandomState(parameter_dictionary['general']['seed'])
+        self.net = None
+
+        if self.parameter_dictionary['agent']['nn']['architecture'] == "rnn" and len(self.hidden) == 0:
+            self.net = tinynet.RNN(self.net_structure, act_fn=activation_function)
+
+        elif self.parameter_dictionary['agent']['nn']['architecture'] == "rnn" and len(self.hidden) == 1:
+            self.net = tinynet.RNN1L(observation_size, self.hidden[0], act_fn=activation_function)
+
+        elif self.parameter_dictionary['agent']['nn']['architecture'] == "ffnn":
+            self.net = tinynet.FFNN(self.net_structure, act_fn=activation_function)
+
+        self.np_random = np.random.RandomState(self.parameter_dictionary['general']['seed'])
 
         # Set weights if possible
         if genome is None:
@@ -43,10 +53,16 @@ class NNAgent(Agent):
             self.net.set_weights(genome)
 
     def get_genome(self):
-        return self.net.get_weights()
+        if self.parameter_dictionary['agent']['nn']['architecture'] == "rnn" and len(self.hidden) == 1:
+            return self.net.weights_matrix
+        else:
+            return self.net.get_weights()
 
     def get_num_weights(self):
-        return self.net.nweights
+        if self.parameter_dictionary['agent']['nn']['architecture'] == "rnn" and len(self.hidden) == 1:
+            return self.net.nweights()
+        else:
+            return self.net.nweights
 
     def act(self, observation):
         activation_values = self.net.activate(observation)

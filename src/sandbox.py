@@ -107,6 +107,7 @@ agent_2 = HardcodedGeneralistAgent()
 results = fitness_calculator.calculate_fitness(agent_1, agent_2, render=True, time_delay=0.1)
 """
 
+"""
 model_name = "rwg_homogeneous_team_nn_1_2_3_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_5_0_linear_100000_normal_0_1_13656.359999999991.npy"
 parameter_filename = "new_fitness_old_activation.json"
 fitness_calculator = FitnessCalculator(parameter_filename)
@@ -121,3 +122,9 @@ fitness_team_list = [x+y for (x,y) in zipped_list]
 
 print(f"{fitness_team_list}")
 print(f"{np.mean(fitness_team_list)}")
+"""
+
+parameter_filename = "default_parameters.json"
+fitness_calculator = FitnessCalculator(parameter_filename)
+learner = RWGLearner(fitness_calculator)
+genome, fitness = learner.learn()
