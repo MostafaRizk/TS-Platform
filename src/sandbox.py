@@ -99,8 +99,25 @@ for i in range(20,5020,20):
 #landscape_analysis.plot_fitness_distribution("results_final.csv", "fitness_distribution.png")
 #plotter.plot_evolution_history("results_files", "evolution_history.png")
 
+"""
 parameter_filename = "cma_homogeneous_team_nn_117628830_2_3_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_5_0_linear_80_0.2_5000_0.001_200.0.json"
 fitness_calculator = FitnessCalculator(parameter_filename)
 agent_1 = HardcodedGeneralistAgent()
 agent_2 = HardcodedGeneralistAgent()
 results = fitness_calculator.calculate_fitness(agent_1, agent_2, render=True, time_delay=0.1)
+"""
+
+model_name = "rwg_homogeneous_team_nn_1_2_3_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_5_0_linear_100000_normal_0_1_13656.359999999991.npy"
+parameter_filename = "new_fitness_old_activation.json"
+fitness_calculator = FitnessCalculator(parameter_filename)
+genome = NNAgent.load_model_from_file(model_name)
+agent_1 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_filename, genome)
+agent_2 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_filename, genome)
+results = fitness_calculator.calculate_fitness(agent_1, agent_2, render=False, time_delay=0)
+fitness_1_list = results["fitness_1_list"]
+fitness_2_list = results["fitness_2_list"]
+zipped_list = zip(fitness_1_list, fitness_2_list)
+fitness_team_list = [x+y for (x,y) in zipped_list]
+
+print(f"{fitness_team_list}")
+print(f"{np.mean(fitness_team_list)}")

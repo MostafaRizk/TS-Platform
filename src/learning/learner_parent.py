@@ -186,7 +186,7 @@ class Learner:
         @param parameter_dictionary:
         @return:
         """
-        # TODO: Change the heading so it accomodates other agent types
+        # TODO: Change the heading so it accommodates other agent types
         headings = ["algorithm_selected",
                     "team_type",
                     "reward_level",

@@ -27,20 +27,21 @@ rwg_genomes_file = "all_genomes_rwg_homogeneous_team_nn_1_2_3_1_4_8_4_1_3_7_1_3.
 f = open(rwg_genomes_file, "r")
 data = f.read().strip().split("\n")
 
-best_weights = np.array([float(element) for element in data[0].split(",")[0:-1]])
-best_score = float(data[0].split(",")[-1])
+best_weights = np.array([float(element) for element in data[0].split(",")[0:-N_episodes]])
+best_score = np.mean([float(episode_score) for episode_score in data[0].split(",")[-N_episodes:]])
 
 for row in data:
-    genome = np.array([float(element) for element in row.split(",")[0:-1]])
-    score = float(row.split(",")[-1])
-    all_scores += [score]
+    genome = np.array([float(element) for element in row.split(",")[0:-N_episodes]])
+    episode_scores = [float(score) for score in row.split(",")[-N_episodes:]]
+    mean_score = np.mean(episode_scores)
+    all_scores += [mean_score]
 
-    if score > best_score:
-        best_score = score
+    if mean_score > best_score:
+        best_score = mean_score
         best_weights = genome
 
     best_scores += [best_score]
-    all_trials += [[score]*N_episodes]
+    all_trials += [episode_scores]
 
     L0 = sum([np.sum(w) for w in genome]) / len(genome)
     L1 = sum([np.abs(w).sum() for w in genome]) / len(genome)

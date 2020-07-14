@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 import numpy as np
@@ -50,7 +51,7 @@ class FitnessCalculator:
 
         return fitnesses
 
-    def calculate_fitness(self, agent_type_1, agent_type_2, render=False, time_delay=0, measure_specialisation=False,
+    def calculate_fitness(self, agent_1, agent_2, render=False, time_delay=0, measure_specialisation=False,
                           logging=False, logfilename=None):
         """
         Calculates the fitness of a team of agents (composed of two different types of agent). Fitness is calculated
@@ -59,8 +60,8 @@ class FitnessCalculator:
         times (according to the parameter file). This is done without resetting the random number generator so that
         there are new initial positions for agents and resources in each simulation run.
 
-        @param agent_type_1: The first Agent object
-        @param agent_type_2: The second Agent object
+        @param agent_1: The first Agent object
+        @param agent_2: The second Agent object
         @param render: Boolean indicating whether or not simulations will be visualised
         @param time_delay: Integer indicating how many seconds delay (for smoother visualisation)
         @param measure_specialisation: Boolean indicating whether or not specialisation is being measured
@@ -75,6 +76,8 @@ class FitnessCalculator:
         fitness_1_list = []
         fitness_2_list = []
         specialisation_list = []
+        agent_1_copy = copy.deepcopy(agent_1)
+        agent_2_copy = copy.deepcopy(agent_2)
 
         # Create logging file if logging
         if logging:
@@ -108,10 +111,10 @@ class FitnessCalculator:
                 for i in range(len(observations)):
                     # TODO: Update this to work with teams greater than 2
                     if i % 2 == 0:
-                        robot_actions += [agent_type_1.act(observations[i])]
+                        robot_actions += [agent_1_copy.act(observations[i])]
                         agent_1_action_list += [robot_actions[-1]]
                     else:
-                        robot_actions += [agent_type_2.act(observations[i])]
+                        robot_actions += [agent_2_copy.act(observations[i])]
                         agent_2_action_list += [robot_actions[-1]]
 
                 # The environment changes according to all their actions
@@ -126,6 +129,10 @@ class FitnessCalculator:
             # Update averages and seed
             fitness_1_list += [fitness_1]
             fitness_2_list += [fitness_2]
+
+            # Reset agent networks
+            agent_1_copy = copy.deepcopy(agent_1)
+            agent_2_copy = copy.deepcopy(agent_2)
 
             # Extra computations if calculating specialisation or logging actions
             if measure_specialisation:
