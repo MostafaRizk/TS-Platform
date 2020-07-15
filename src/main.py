@@ -53,9 +53,11 @@ for model_name in model_names:
 agent_1 = HardcodedGeneralistAgent()
 agent_2 = HardcodedGeneralistAgent()
 results = fitness_calculator.calculate_fitness(agent_1, agent_2)
-fitness_1 = results["fitness_1"]
-fitness_2 = results["fitness_2"]
-specialisation = results["specialisation"]
+fitness_1_list = results["fitness_1_list"]
+fitness_2_list = results["fitness_2_list"]
+specialisation_list = results["specialisation_list"]
+zipped_list = zip(fitness_1_list, fitness_2_list)
+print(f"{np.mean([fitness_1 + fitness_2 for (fitness_1, fitness_2) in zipped_list])}")
 """
 
 

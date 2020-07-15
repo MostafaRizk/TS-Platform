@@ -1,4 +1,1 @@
-python3 sandbox.py --parameter rnn_bias_0HL.json
-python3 sandbox.py --parameter rnn_bias_1HL.json
-python3 sandbox.py --parameter ffnn_bias_0HL.json
-python3 sandbox.py --parameter ffnn_bias_1HL.json
+python3 sandbox.py --parameter ffnn_bias_2HL.json
