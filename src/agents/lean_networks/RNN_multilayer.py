@@ -44,7 +44,7 @@ class RNN_multilayer:
         """
         self.last_output = []
 
-        for layer in self.N_hidden_layers:
+        for layer in range(self.N_hidden_layers):
             self.last_output += [np.zeros(self.N_hidden_units)]
 
         self.last_output += [np.zeros(self.N_outputs)]
@@ -104,9 +104,9 @@ class RNN_multilayer:
 
             # The next layer's input includes the next layer's output at t-1
             # Output size depends on whether or not the next layer is hidden or the output layer
-            if i < self.N_hidden_layers:
+            if i < self.N_hidden_layers-1:
                 mat_input_size = mat_output_size + self.N_hidden_units
-            elif i == self.N_hidden_layers:
+            elif i == self.N_hidden_layers-1:
                 mat_input_size = mat_output_size + self.N_outputs
 
             if self.use_bias:
