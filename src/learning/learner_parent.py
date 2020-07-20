@@ -170,7 +170,8 @@ class Learner:
         if agent_type == 'nn':
             parameters_in_name += [parameter_dictionary['agent']['nn']['architecture']]
             parameters_in_name += [parameter_dictionary['agent']['nn']['bias']]
-            parameters_in_name += [parameter_dictionary['agent']['nn']['hidden_units']]
+            parameters_in_name += [parameter_dictionary['agent']['nn']['hidden_layers']]
+            parameters_in_name += [parameter_dictionary['agent']['nn']['hidden_units_per_layer']]
             parameters_in_name += [parameter_dictionary['agent']['nn']['activation_function']]
 
         return parameters_in_name
@@ -212,7 +213,8 @@ class Learner:
                     "num_simulation_runs",
                     "architecture",
                     "bias",
-                    "hidden_units"
+                    "hidden_layers"
+                    "hidden_units_per_layer"
                     "activation_function"]
 
         return headings
