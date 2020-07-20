@@ -1,6 +1,5 @@
 from learning.learner_parent import Learner
 from scipy.stats import multivariate_normal
-from agents.nn_agent import NNAgent
 import numpy as np
 
 

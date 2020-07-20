@@ -11,8 +11,8 @@ import json
 
 
 class BenchmarkPlotter:
-    def __init__(self):
-        self.env_name = "Slope"
+    def __init__(self, env_name):
+        self.env_name = env_name
         self.run_dir = ""
         self.dt_str = datetime.now().strftime('%d-%m-%Y_%H-%M-%S')
 

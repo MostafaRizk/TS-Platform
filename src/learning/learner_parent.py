@@ -1,6 +1,6 @@
 import json
 from fitness import FitnessCalculator
-from agents.nn_agent import NNAgent
+from agents.nn_agent_lean import NNAgent
 
 
 class Learner:

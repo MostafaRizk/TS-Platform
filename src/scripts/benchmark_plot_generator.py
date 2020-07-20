@@ -23,7 +23,7 @@ N_episodes = 5
 total_runtime = -1.0
 
 #####
-rwg_genomes_file = "all_genomes_rwg_homogeneous_team_nn_1_2_3_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_5_rnn_True_[]_linear_100000_normal_0_1_.csv"
+rwg_genomes_file = "all_genomes_rwg_homogeneous_team_nn_1_2_3_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_5_ffnn_True_[4]_linear_100000_normal_0_1_.csv"
 f = open(rwg_genomes_file, "r")
 data = f.read().strip().split("\n")
 
@@ -67,5 +67,5 @@ data_dict = {
             'total_runtime' : total_runtime
         }
 
-plotter = BenchmarkPlotter()
+plotter = BenchmarkPlotter("SlopeForaging")
 plotter.save_all_sample_stats(data_dict)
