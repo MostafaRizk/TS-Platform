@@ -27,9 +27,9 @@
   "agent": {
     "nn": {
       "architecture": "ffnn",
-      "bias": "True",
-      "hidden_layers": 0,
-      "hidden_units_per_layer": 0,
+      "bias": "False",
+      "hidden_layers": 2,
+      "hidden_units_per_layer": 4,
       "activation_function": "linear"
     }
   },
