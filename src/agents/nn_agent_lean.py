@@ -22,7 +22,7 @@ class NNAgent(Agent):
         self.num_hidden_units = self.parameter_dictionary['agent']['nn']['hidden_units_per_layer']
 
         # Set bias
-        self.bias = self.parameter_dictionary['agent']['nn']['bias']
+        self.bias = bool(self.parameter_dictionary['agent']['nn']['bias'])
 
         # Create neural network and random number generator
         self.net = None
