@@ -10,7 +10,7 @@
     "num_agents": 2,
     "num_resources": 3,
     "sensor_range": 1,
-    "sliding_speed": 4,
+    "sliding_speed": 2,
     "arena_length": 8,
     "arena_width": 4,
     "cache_start": 1,
@@ -27,9 +27,9 @@
   "agent": {
     "nn": {
       "architecture": "rnn",
-      "bias": "False",
-      "hidden_layers": 1,
-      "hidden_units_per_layer": 4,
+      "bias": "True",
+      "hidden_layers": 0,
+      "hidden_units_per_layer": 0,
       "activation_function": "linear"
     }
   },

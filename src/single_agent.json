@@ -7,7 +7,7 @@
     "seed": 1
   },
   "environment": {
-    "num_agents": 2,
+    "num_agents": 1,
     "num_resources": 3,
     "sensor_range": 1,
     "sliding_speed": 4,
@@ -28,8 +28,8 @@
     "nn": {
       "architecture": "rnn",
       "bias": "True",
-      "hidden_layers": 2,
-      "hidden_units_per_layer": 4,
+      "hidden_layers": 0,
+      "hidden_units_per_layer": 0,
       "activation_function": "linear"
     }
   },

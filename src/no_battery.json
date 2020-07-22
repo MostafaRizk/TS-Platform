@@ -16,20 +16,20 @@
     "cache_start": 1,
     "slope_start": 3,
     "source_start": 7,
-    "base_cost": 1,
-    "upward_cost_factor": 3.0,
-    "downward_cost_factor": 0.2,
-    "carry_factor": 2,
-    "resource_reward": 1000,
+    "base_cost": 0,
+    "upward_cost_factor": 1.0,
+    "downward_cost_factor": 1.0,
+    "carry_factor": 1,
+    "resource_reward": 1,
     "simulation_length": 500,
     "num_simulation_runs": 5
   },
   "agent": {
     "nn": {
-      "architecture": "ffnn",
+      "architecture": "rnn",
       "bias": "True",
-      "hidden_layers": 2,
-      "hidden_units_per_layer": 4,
+      "hidden_layers": 0,
+      "hidden_units_per_layer": 0,
       "activation_function": "linear"
     }
   },
