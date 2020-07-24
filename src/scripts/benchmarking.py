@@ -11,10 +11,11 @@ import json
 
 
 class BenchmarkPlotter:
-    def __init__(self, env_name):
+    def __init__(self, env_name, genomes_file):
         self.env_name = env_name
         self.run_dir = ""
         self.dt_str = datetime.now().strftime('%d-%m-%Y_%H-%M-%S')
+        self.genomes_file = genomes_file
 
         #### Plot params
         self.plot_pt_alpha = 0.2
@@ -27,6 +28,73 @@ class BenchmarkPlotter:
         self.plot_title_params = {
             'fontsize': 18
         }
+
+    def load_dictionary_from_file(self, num_samples, num_episodes):
+        # Best mean score so far
+        best_scores = []
+
+        # Mean score for each sample (genome)
+        all_scores = []
+
+        # List of scores in all episodes (simulation runs) for each sample (genome)
+        # 50,000 lists of length 5, in my case
+        all_trials = []
+
+        # Weights of
+        best_weights = []
+
+        L0_weights = []
+        L1_weights = []
+        L2_weights = []
+
+        N_samples = num_samples
+        N_episodes = num_episodes
+        total_runtime = -1.0
+
+        #####
+        f = open(self.genomes_file, "r")
+        data = f.read().strip().split("\n")
+
+        best_weights = np.array([float(element) for element in data[0].split(",")[0:-N_episodes]])
+        best_score = np.mean([float(episode_score) for episode_score in data[0].split(",")[-N_episodes:]])
+
+        for row in data:
+            genome = np.array([float(element) for element in row.split(",")[0:-N_episodes]])
+            episode_scores = [float(score) for score in row.split(",")[-N_episodes:]]
+            mean_score = np.mean(episode_scores)
+            all_scores += [mean_score]
+
+            if mean_score > best_score:
+                best_score = mean_score
+                best_weights = genome
+
+            best_scores += [best_score]
+            all_trials += [episode_scores]
+
+            L0 = sum([np.sum(w) for w in genome]) / len(genome)
+            L1 = sum([np.abs(w).sum() for w in genome]) / len(genome)
+            L2 = sum([(w ** 2).sum() for w in genome]) / len(genome)
+
+            L0_weights.append(L0)
+            L1_weights.append(L1)
+            L2_weights.append(L2)
+
+        #####
+
+        data_dict = {
+            'best_scores': best_scores,
+            'all_scores': all_scores,
+            'all_trials': all_trials,
+            'best_weights': [bw.tolist() for bw in best_weights],
+            'L0_weights': L0_weights,
+            'L1_weights': L1_weights,
+            'L2_weights': L2_weights,
+            'N_samples': N_samples,
+            'N_episodes': N_episodes,
+            'total_runtime': total_runtime
+        }
+
+        return data_dict
 
     def plot_scores(self, sample_dict, **kwargs):
 
@@ -357,14 +425,16 @@ class BenchmarkPlotter:
         with open(fname, 'w+') as f:
             json.dump(sample_dict_copy, f, indent=4)
 
-    def save_all_sample_stats(self, sample_dict, **kwargs):
-        '''
+    def save_all_sample_stats(self, **kwargs):
+        """
         For saving all the stats and plots for the sampling, just a collector
         function.
 
-        '''
+        """
 
+        sample_dict = self.load_dictionary_from_file(num_samples=50000, num_episodes=5)
         self.save_sample_dict(sample_dict)
+
         if kwargs.get('save_plots', True):
             self.plot_scores(sample_dict)
             self.plot_all_trial_stats(sample_dict)

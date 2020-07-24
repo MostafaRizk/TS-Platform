@@ -31,7 +31,8 @@ class RNN_multilayer:
         activation_fn_d = {
             'tanh': np.tanh,
             'linear': lambda x: x,
-            'relu': lambda x: np.maximum(0, x)
+            'relu': lambda x: np.maximum(0, x),
+            'sigmoid': lambda x: 1 / (1 + np.exp(-x))
         }
 
         assert act_fn in activation_fn_d.keys(), 'Must supply valid activation function name!'
