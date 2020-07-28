@@ -13,8 +13,10 @@ import json
 class BenchmarkPlotter:
     def __init__(self, env_name, genomes_file):
         self.env_name = env_name
-        self.run_dir = ""
-        self.dt_str = datetime.now().strftime('%d-%m-%Y_%H-%M-%S')
+        self.run_dir = env_name
+        os.mkdir(self.run_dir)
+
+        self.dt_str = "" #datetime.now().strftime('%d-%m-%Y_%H-%M-%S')
         self.genomes_file = genomes_file
 
         #### Plot params
@@ -109,6 +111,7 @@ class BenchmarkPlotter:
 
         ###################### In time order
 
+        """
         plt.close('all')
         plt.plot(sample_dict['all_scores'], color='dodgerblue', label='All mean scores')
 
@@ -119,12 +122,14 @@ class BenchmarkPlotter:
         plt.yticks(**self.plot_tick_params)
 
         # plt.legend()
-        plt.title(f'{self.env_name} environment', **self.plot_title_params)
+        plt.title(f'{self.env_name}', **self.plot_title_params)
         plt.tight_layout()
         plt.savefig(os.path.join(self.run_dir, '{}_score_mean_timeseries_{}.png'.format(self.env_name, self.dt_str)))
+        """
 
         ###################### In mean order
 
+        """
         all_scores = sample_dict['all_scores']
         all_scores = sorted(all_scores)
 
@@ -138,9 +143,10 @@ class BenchmarkPlotter:
         plt.yticks(**self.plot_tick_params)
 
         # plt.legend()
-        plt.title(f'{self.env_name} environment', **self.plot_title_params)
+        plt.title(f'{self.env_name}', **self.plot_title_params)
         plt.tight_layout()
         plt.savefig(os.path.join(self.run_dir, '{}_score_mean_ordered_{}.png'.format(self.env_name, self.dt_str)))
+        """
 
         ###################### In mean order, with all trials
 
@@ -160,6 +166,11 @@ class BenchmarkPlotter:
         all_trials_above = np.array([x for x in all_trials_indexed if x[1] >= perc_cutoff_val])
 
         plt.close('all')
+
+        if kwargs.get('mean_lim', None) is not None:
+            lims = kwargs.get('mean_lim', None)
+            plt.ylim(lims[0], lims[1])
+
         plt.plot(*all_trials_below.transpose(), 'o', color='tomato', alpha=self.plot_pt_alpha, markersize=3)
         plt.plot(*all_trials_above.transpose(), 'o', color='mediumseagreen', alpha=self.plot_pt_alpha, markersize=3)
         plt.plot(all_trials_mean, color='black')
@@ -171,7 +182,7 @@ class BenchmarkPlotter:
         plt.yticks(**self.plot_tick_params)
 
         # plt.legend()
-        plt.title(f'{self.env_name} environment', **self.plot_title_params)
+        plt.title(f'{self.env_name}', **self.plot_title_params)
         plt.tight_layout()
         plt.savefig(os.path.join(self.run_dir, '{}_score_trials_ordered_{}.png'.format(self.env_name, self.dt_str)))
 
@@ -191,6 +202,14 @@ class BenchmarkPlotter:
 
         sigma = np.std(sample_dict['all_trials'], axis=1)
 
+        if kwargs.get('var_lim', None) is not None:
+            lims = kwargs.get('var_lim', None)
+            plt.ylim(lims[0], lims[1])
+
+        if kwargs.get('mean_lim', None) is not None:
+            lims = kwargs.get('mean_lim', None)
+            plt.xlim(lims[0], lims[1])
+
         plt.plot(sample_dict['all_scores'], sigma, 'o', color='mediumorchid', alpha=self.plot_pt_alpha)
 
         plt.xlabel('$M_a(n)$', **self.plot_label_params)
@@ -199,12 +218,13 @@ class BenchmarkPlotter:
         plt.xticks(**self.plot_tick_params)
         plt.yticks(**self.plot_tick_params)
 
-        plt.title(f'{self.env_name} environment', **self.plot_title_params)
+        plt.title(f'{self.env_name}', **self.plot_title_params)
         plt.tight_layout()
         fname = os.path.join(self.run_dir, '{}_variance_meanscore_{}.png'.format(self.env_name, self.dt_str))
         plt.savefig(fname)
 
         ####################### Min sample score
+        """
         plt.close('all')
 
         trial_min = np.min(sample_dict['all_trials'], axis=1)
@@ -217,12 +237,14 @@ class BenchmarkPlotter:
         plt.xticks(**self.plot_tick_params)
         plt.yticks(**self.plot_tick_params)
 
-        plt.title(f'{self.env_name} environment,\n min score of N_episodes = {N_episodes}', **self.plot_title_params)
+        plt.title(f'{self.env_name},\n min score of N_episodes = {N_episodes}', **self.plot_title_params)
         plt.tight_layout()
         fname = os.path.join(self.run_dir, '{}_min_score_{}.png'.format(self.env_name, self.dt_str))
         plt.savefig(fname)
+        """
 
         ####################### Max episode score
+        """
         plt.close('all')
 
         trial_max = np.max(sample_dict['all_trials'], axis=1)
@@ -235,12 +257,14 @@ class BenchmarkPlotter:
         plt.xticks(**self.plot_tick_params)
         plt.yticks(**self.plot_tick_params)
 
-        plt.title(f'{self.env_name} environment,\n max score of N_episodes = {N_episodes}', **self.plot_title_params)
+        plt.title(f'{self.env_name},\n max score of N_episodes = {N_episodes}', **self.plot_title_params)
         plt.tight_layout()
         fname = os.path.join(self.run_dir, '{}_max_score_{}.png'.format(self.env_name, self.dt_str))
         plt.savefig(fname)
+        """
 
         ####################### Min and max episode score
+        """
         plt.close('all')
 
         trial_min = np.min(sample_dict['all_trials'], axis=1)
@@ -255,11 +279,12 @@ class BenchmarkPlotter:
         plt.xticks(**self.plot_tick_params)
         plt.yticks(**self.plot_tick_params)
 
-        plt.title(f'{self.env_name} environment, min (turquoise) and \nmax (purple) score of N_episodes = {N_episodes}',
+        plt.title(f'{self.env_name}, min (turquoise) and \nmax (purple) score of N_episodes = {N_episodes}',
                   **self.plot_title_params)
         plt.tight_layout()
         fname = os.path.join(self.run_dir, '{}_min_max_score_{}.png'.format(self.env_name, self.dt_str))
         plt.savefig(fname)
+        """
 
     def plot_sample_histogram(self, dist, dist_label, fname, **kwargs):
 
@@ -277,6 +302,7 @@ class BenchmarkPlotter:
         # mu = np.mean(dist)
         # sd = np.std(dist)
 
+        """
         if kwargs.get('N_bins', None) is None:
             plt.hist(dist, color='dodgerblue', edgecolor='gray')
         else:
@@ -294,8 +320,13 @@ class BenchmarkPlotter:
 
         # plt.title(f'{dist_label} distribution for {self.env_name}\n$\mu = {mu:.1f}$, $\sigma = {sd:.1f}$', **self.plot_title_params)
         # plt.title(f'{dist_label} distribution \nfor {self.env_name}', **self.plot_title_params)
-        plt.title(f'{self.env_name} environment', **self.plot_title_params)
+        plt.title(f'{self.env_name}', **self.plot_title_params)
         plt.savefig(fname)
+        """
+
+        if kwargs.get('dist_lim', None) is not None:
+            lims = kwargs.get('dist_lim', None)
+            plt.ylim(lims[0], lims[1])
 
         if kwargs.get('plot_log', False):
             if kwargs.get('N_bins', None) is None:
@@ -313,7 +344,7 @@ class BenchmarkPlotter:
 
             # plt.title(f'{dist_label} distribution for {self.env_name}\n$\mu = {mu:.1f}$, $\sigma = {sd:.1f}$', **self.plot_title_params)
             # plt.title(f'{dist_label} distribution \nfor {self.env_name}', **self.plot_title_params)
-            plt.title(f'{self.env_name} environment', **self.plot_title_params)
+            plt.title(f'{self.env_name}', **self.plot_title_params)
             plt.tight_layout()
             plt.savefig(fname.replace('dist', 'log_dist'))
 
@@ -341,7 +372,7 @@ class BenchmarkPlotter:
         plt.yticks(**self.plot_tick_params)
 
         # plt.legend()
-        plt.title(f'{self.env_name} environment,\n L0 sum of weights', **self.plot_title_params)
+        plt.title(f'{self.env_name},\n L0 sum of weights', **self.plot_title_params)
         plt.tight_layout()
         plt.savefig(os.path.join(self.run_dir, '{}_L0_vs_meanscore_{}.png'.format(self.env_name, self.dt_str)))
 
@@ -356,7 +387,7 @@ class BenchmarkPlotter:
         plt.yticks(**self.plot_tick_params)
 
         # plt.legend()
-        plt.title(f'{self.env_name} environment,\n L1 sum of weights', **self.plot_title_params)
+        plt.title(f'{self.env_name},\n L1 sum of weights', **self.plot_title_params)
         plt.tight_layout()
         plt.savefig(os.path.join(self.run_dir, '{}_L1_vs_meanscore_{}.png'.format(self.env_name, self.dt_str)))
 
@@ -371,7 +402,7 @@ class BenchmarkPlotter:
         plt.yticks(**self.plot_tick_params)
 
         # plt.legend()
-        plt.title(f'{self.env_name} environment,\n L2 sum of weights', **self.plot_title_params)
+        plt.title(f'{self.env_name},\n L2 sum of weights', **self.plot_title_params)
         plt.tight_layout()
         plt.savefig(os.path.join(self.run_dir, '{}_L2_vs_meanscore_{}.png'.format(self.env_name, self.dt_str)))
 
@@ -405,7 +436,7 @@ class BenchmarkPlotter:
         plt.yticks(**self.plot_tick_params)
 
         plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        plt.title(f'{self.env_name} environment', **self.plot_title_params)
+        plt.title(f'{self.env_name}', **self.plot_title_params)
         plt.tight_layout()
         plt.savefig(os.path.join(self.run_dir, '{}_percentiles_{}.png'.format(self.env_name, self.dt_str)))
 
@@ -433,12 +464,12 @@ class BenchmarkPlotter:
         """
 
         sample_dict = self.load_dictionary_from_file(num_samples=50000, num_episodes=5)
-        self.save_sample_dict(sample_dict)
+        # self.save_sample_dict(sample_dict)
 
         if kwargs.get('save_plots', True):
-            self.plot_scores(sample_dict)
-            self.plot_all_trial_stats(sample_dict)
+            self.plot_scores(sample_dict, **kwargs)
+            self.plot_all_trial_stats(sample_dict, **kwargs)
             self.plot_sample_histogram(sample_dict['all_scores'], 'Mean sample score',
                                        f'{self.env_name}_all_scores_dist_{self.dt_str}.png', plot_log=True, **kwargs)
-            self.plot_weight_stats(sample_dict)
-            self.plot_score_percentiles(sample_dict)
+            #self.plot_weight_stats(sample_dict)
+            #self.plot_score_percentiles(sample_dict)
