@@ -1,7 +1,7 @@
 from scripts.benchmarking import BenchmarkPlotter
 import os
 
-experiments = [("ffnn_bias_0HL", "result_files/ffnn_bias_0HL.csv"),
+"""("ffnn_bias_0HL", "result_files/ffnn_bias_0HL.csv"),
                ("ffnn_bias_1HL_4HU", "result_files/ffnn_bias_1HL_4HU.csv"),
                ("ffnn_bias_2HL_4HU", "result_files/ffnn_bias_2HL_4HU.csv"),
                ("ffnn_no-bias_0HL", "result_files/ffnn_no-bias_0HL.csv"),
@@ -44,8 +44,11 @@ experiments = [("ffnn_bias_0HL", "result_files/ffnn_bias_0HL.csv"),
                ("ffnn_bias_0HL_tanh", "result_files/ffnn_bias_0HL_tanh.csv"),
                ("ffnn_bias_1HL_4HU_tanh", "result_files/ffnn_bias_1HL_4HU_tanh.csv"),
                ("ffnn_bias_2HL_4HU_tanh", "result_files/ffnn_bias_2HL_4HU_tanh.csv"),
-               #("rnn_no-bias_1HL_4HU_sigmoid.csv"),
-               #("rnn_no-bias_2HL_4HU_sigmoid.csv"),
+               ("rnn_no-bias_1HL_4HU_sigmoid", "result_files/rnn_no-bias_1HL_4HU_sigmoid.csv"),
+               ("rnn_no-bias_2HL_4HU_sigmoid", "result_files/rnn_no-bias_2HL_4HU_sigmoid.csv"),"""
+
+
+experiments = [("no_battery", "result_files/no_battery.csv")
                ]
 
 original_dir = os.getcwd()
@@ -55,5 +58,8 @@ for experiment in experiments:
     experiment_filename = experiment[1]
 
     plotter = BenchmarkPlotter(experiment_name, experiment_filename)
-    plotter.save_all_sample_stats(N_bins=[-5000, 0, 5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000],
-                                  mean_lim=(-3000, 50000), var_lim=(0, 15000), dist_lim=(1, 100000))
+    #plotter.save_all_sample_stats(N_bins=[-5000, 0, 5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000],
+    #                              mean_lim=(-3000, 50000), var_lim=(0, 15000), dist_lim=(1, 100000))
+    plotter.save_all_sample_stats(
+        N_bins=[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50],
+                                  mean_lim=(0, 50), var_lim=(0, 15), dist_lim=(1, 100))

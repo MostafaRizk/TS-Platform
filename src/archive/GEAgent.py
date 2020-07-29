@@ -94,7 +94,7 @@ class GEAgent:
         return True
 
     def do_actions(self, actions):
-
+        pass
 
     def load(self):
         pass
