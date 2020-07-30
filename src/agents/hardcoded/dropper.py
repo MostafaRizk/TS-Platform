@@ -30,7 +30,7 @@ class HardcodedDropperAgent(HardcodedAgent):
                 return self.find_resource()
 
         elif self.has_resource:
-            # If on the nest drop the resource
+            # If on the slope drop the resource
             if self.current_zone == "SLOPE":
                 return self.action_index["DROP"]
 

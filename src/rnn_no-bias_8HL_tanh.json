@@ -28,9 +28,9 @@
     "nn": {
       "architecture": "rnn",
       "bias": "False",
-      "hidden_layers": 1,
+      "hidden_layers": 8,
       "hidden_units_per_layer": 4,
-      "activation_function": "sigmoid"
+      "activation_function": "tanh"
     }
   },
   "algorithm": {

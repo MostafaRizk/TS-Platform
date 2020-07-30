@@ -1,1 +1,1 @@
-__all__ = ["hardcoded_parent", "collector", "dropper", "generalist"]
+__all__ = ["hardcoded_parent", "collector", "dropper", "generalist", "lazy_generalist"]
