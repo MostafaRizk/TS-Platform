@@ -105,6 +105,7 @@ class FitnessCalculator:
             for t in range(self.simulation_length):
                 if render:
                     self.env.render()
+                    print(t)
 
                 robot_actions = []
 

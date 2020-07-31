@@ -43,6 +43,7 @@ class HardcodedLazyGeneralistAgent(HardcodedAgent):
                 action = self.action_index["BACKWARD"]
 
         if self.is_stuck():
+            action = self.random_state.randint(low=0, high=len(self.action_index))
             self.switch()
 
         self.memory.append((observation, action))
@@ -58,6 +59,8 @@ class HardcodedLazyGeneralistAgent(HardcodedAgent):
 
             if random_number < self.switch_probability:
                 self.switch()
+
+
 
         if self.current_strategy == "dropper":
 

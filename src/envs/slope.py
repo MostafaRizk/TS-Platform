@@ -134,7 +134,7 @@ class SlopeEnv:
 
         rewards = [0.0, 0.0]
 
-        # The agents act
+        # The agents act and rewards are assigned
         old_agent_positions = copy.deepcopy(self.agent_positions)
 
         for i in range(len(agent_actions)):
@@ -184,24 +184,9 @@ class SlopeEnv:
         for i in range(len(self.agent_positions)):
             for j in range(len(self.agent_positions)):
                 # If the agent's new position is the same as another agent's new position, it stays where it was
-                if (self.agent_positions[i] == self.agent_positions[j] or self.agent_positions[i] ==
-                    old_agent_positions[j]) and i != j:
-                    # If agent i is colliding with agent j's new position, it keeps its old position
-                    # If agent i is colliding with agent j's old position, it keeps its old position (this is in case
-                    # agent j changes its mind and decides to stay where it is to avoid a collision with a third agent)
-                    # But do not update agent i's position in self.agent_positions so that agent j has the chance to
-                    # update its position too. Otherwise, agent i will back off but agent j will continue and agents
-                    # with higher indices will have an advantage
+                if (self.agent_positions[i] == self.agent_positions[j]) and (i < j or (i >= j and self.agent_positions[j] == old_agent_positions[j])):
+                    # If agent i is colliding with agent j's new position, it keeps its old position if it has a smaller index
                     agent_collision_positions[i] = old_agent_positions[i]
-
-            # If agent i's new position is the same as resource j and it is carrying a resource and that resource
-            # is not resource j, then stay at the previous position
-            # i.e agents should only collide with resources to pick them up and they can only hold one resource at a
-            # time
-            for j in range(len(self.resource_positions)):
-                if self.agent_positions[i] == self.resource_positions[j]:
-                    if self.has_resource[i] is not None and self.has_resource[i] != j:
-                        agent_collision_positions[i] = old_agent_positions[i]
 
             # self.state[agent_collision_positions[i][1]][agent_collision_positions[i][0]] = i + 1
             self.agent_map[agent_collision_positions[i][1]][agent_collision_positions[i][0]] = i + 1
