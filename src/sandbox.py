@@ -10,6 +10,17 @@ from learning.rwg import RWGLearner
 import numpy as np
 from agents.nn_agent_lean import NNAgent
 
+parameter_filename = "rnn_no-bias_0HL_linear.json"
+fitness_calculator = FitnessCalculator(parameter_filename)
+#model_name = "rwg_homogeneous_team_nn_1_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_5_rnn_False_0_0_linear_100000_normal_0_1_74576.11999999991.npy"
+model_name = "rwg_homogeneous_team_nn_1_2_3_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_5_rnn_False_0_0_linear_100000_normal_0_1_39080.759999999966.npy"
+
+genome = NNAgent.load_model_from_file(model_name)
+agent_1 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_filename, genome)
+agent_2 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_filename, genome)
+fitness_calculator.calculate_fitness(agent_1, agent_2, render=True, time_delay=0.1)
+
+"""
 parameter_filename = "lazy_generalist.json"
 fitness_calculator = FitnessCalculator(parameter_filename)
 
@@ -74,3 +85,5 @@ print(np.mean(total_fitness))
 # Generalist = 122,458
 # Lazy Generalist = 127558
 # Specialist = 115,561
+
+"""
