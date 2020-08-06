@@ -8,7 +8,7 @@
 \usepackage{fancyhdr}
 \usepackage{url}
 \usepackage{tabu}
-\usepackage[title]{appendix}
+\usepackage[toc,page]{appendix}
 
 \fancyhead{}
 \fancyfoot{}
@@ -26,7 +26,7 @@ We conducted an analysis of the SlopeForaging problem using Oller et al's rwg be
 \begin{itemize}
 \item The SlopeForaging task has similar attributes to MountainCar, meaning a highly exploratory algorithm may be more successful.
 
-\item SlopeForaging is more difficult than MountainCar due to observation size, action space, partial observability and the cooperative nature of the task. Memory appears to be required for good performance but bias neurons don't make a difference. A non-linear activation may be necessary for better results.
+\item SlopeForaging is more difficult than MountainCar due to observation size, action space, partial observability and the cooperative nature of the task. An RNN architecture appears to be required for good performance but bias neurons don't make a difference. A non-linear activation may be necessary for better results.
 
 \item Sliding speed doesn't significantly impact the success of generalist solutions because changing sliding speed doesn't make agents slower or increase the cost of moving up the slope.
 
@@ -44,13 +44,13 @@ We have faced difficulty evolving cooperation in the SlopeForaging multi-agent s
 
 In each experiment, we sampled 50,000 genomes from a normal distribution with a mean of 0 and unit variance. Each genome was evaluated for 5 episodes. In any instance where hidden layers were used, we used 4 hidden units. We plot a) all the trials in sorted order, b) the variance of all trials and c) the distribution on a log scale. Details of the experimental setup can be found in the appendix.
 		
-\subsection{FFNN vs RNN} \label{FFNNvRNN}
+\subsection{RNN Architecture} \label{RNN Architecture}
 
-We started our experiments with the simplest possible architecture, a FFNN with no bias, no hidden layers and linear activation (i.e. the identity function). We added up to two hidden layers, then repeated with bias, making for a total of 6 experiments. We then repeated the 6 experiments with a RNN.\\
+We started our experiments with the simplest possible architecture, a FFNN with no bias, no hidden layers and linear activation (i.e. the identity function). We added up to two hidden layers, then repeated with bias, making for a total of 6 experiments. We then repeated the 6 experiments with a RNN. \\
 
-For the FFNN, the scores are overwhelmingly poor, all falling into the leftmost bucket of the distribution plot as we see in Figure \ref{fig:ffnn_linear}. We see that the mean curve is very flat, with very little variance. The results appear to be almost identical regardless of the number of hidden layers. We discovered later, according to Theorem 1.5.1 in \cite{aggarwal:Springer:2018}, that hidden layers do not add computational power if the activation function is linear. We therefore chose to exclude these plots and repeated these experiments in Section \ref{non-linear} with various non-linear activations. We also find that adding a bias neuron does not make a difference to the results.\\
+For the FFNN, the scores are overwhelmingly poor in comparison to RNNs. For brevity we put the FFNN plots and analysis in the appendix in Section \ref{FFNN}. We also learned, after the experiments, that according to Theorem 1.5.1 in \cite{aggarwal:Springer:2018}, that hidden layers do not add computational power if the activation function is linear. We therefore chose to exclude those plots and repeated these experiments in Section \ref{non-linear} with various non-linear activations.\\
 
-Most significantly, we see that an RNN performs overwhelmingly better than a FFNN. This makes sense because the environment is partially observable; an agent can only see 1 tile in any direction. A recurrent architecture means an agent can act on sequences of observations rather than individual observations, giving it an advantage over an agent with no memory. Presumably, if the agent's sensing radius was expanded to include the entire arena then the FFNN would perform similarly to the RNN.\\ 
+The fact that RNNs outperform FFNNs makes sense because the environment is partially observable; an agent can only see 1 tile in any direction. A recurrent architecture means an agent can act on sequences of observations rather than individual observations, giving it an advantage over an agent with no memory. Presumably, if the agent's sensing radius was expanded to include the entire arena then the FFNN would perform similarly to the RNN. Interestingly, though, we find that adding a bias neuron does not make a difference to the results.\\ 
 
 Most of the RNN solutions are still quite poor, with the majority again fitting in the leftmost bucket in the distribution histogram. The mean curve is, as with the FFNN, very flat as we see in Figure \ref{fig:rnn_linear} but there is a spike at the end, denoting a very small proportion of samples that perform much better than the others. We can also see that the variance is higher for higher means which indicates that genomes that score well do not do so consistently across all episodes.\\
 
@@ -69,27 +69,6 @@ In fact, the SlopeForaging task is actually more difficult for the following rea
 
 \textbf{Main takeaway: The SlopeForaging task has similar attributes to MountainCar but is more difficult due to observation size, action space, partial observability and the cooperative nature of the task. Memory appears to be required for good performance but bias doesn't make a difference. A non-linear activation may be necessary for better results.}
 
-\begin{figure}[!tbp]
-  \centering
-  % FFNN no-bias 0HL
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_0HL/ffnn_no-bias_0HL_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_0HL/ffnn_no-bias_0HL_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_0HL/ffnn_no-bias_0HL_all_scores_log_dist_.png}}
-  
-% FFNN bias 0HL
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_0HL/ffnn_bias_0HL_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_0HL/ffnn_bias_0HL_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_0HL/ffnn_bias_0HL_all_scores_log_dist_.png}}
-  
-  \caption{FFNN with linear activation}
-  \label{fig:ffnn_linear}
-\end{figure}
-
-%%%
 
 \begin{figure}[!tbp]
   \centering
@@ -113,116 +92,10 @@ In fact, the SlopeForaging task is actually more difficult for the following rea
 
 %%%
 	
-						
-\subsection{Modifying Environmental Factors}
-
-The initial experiments gave us an understanding of why the task is difficult, but they used a specific configuration of the environment. It was important to observe how changing these parameters changed the task difficulty. We varied a) the sliding speed, an approximation of slope angle for a 2D discrete environment, b) the presence of a battery i.e. the cost associated with performing actions, and c) the multi-agent nature.
-
-\subsubsection{Sliding speed}
-
-By default, the environment has sliding speed = 4. This means that when a resource is dropped, it slides 4 tiles per time step. This simulates a slope. The presence of a slope is the environmental factor that makes specialised teams outperform generalist teams. In an environment with no slope, a specialist strategy adds no benefit over a generalist one and may even be worse. Conversely, in an environment with a steeper slope, a specialist strategy could provide an even larger advantage because the slope can get resources to the bottom even faster. We ran experiments with varying sliding speed to observe how it impacts the solutions found. For brevity, we only use one architecture: an RNN with bias, no hidden layers and linear activation.\\
-
-From the plots in Figure \ref{fig:sliding_speed} we find that the sliding speed doesn't make much of a difference to the quality of solutions. It is important to note that while sliding speed is an approximation of slope angle it is not a direct analogue. Slope angle affects the speed at which a resource slides down the slope and the speed at which an agent goes up, but sliding speed only affects the speed of the resource. Since the only successful solutions rwg finds are generalists, the speed at which resources slide doesn't factor into their scores because they never drop resources. Any solutions that do drop resources, don't succeed at the task, so the speed at which those resources slid did not affect their score.\\
-
-We also spotted a minor logical error in the code that causes the cost of moving up/down the slope to be the same regardless of the sliding speed. This does not change the stag hunt dynamic of the environment, however it would more accurately represent a slope if the cost of moving changed with the sliding speed.\\ 
-
-\textbf{Main takeaway: Sliding speed doesn't significantly impact the success of generalist solutions because changing sliding speed doesn't make agents slower or increase the cost of moving up the slope.}
-
-\begin{figure}[!tbp]
-  \centering
-  % Sliding speed 0
-  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_0/sliding_0_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_0/sliding_0_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_0/sliding_0_all_scores_log_dist_.png}}
-  
-  % Sliding speed 1
-  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_1/sliding_1_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_1/sliding_1_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_1/sliding_1_all_scores_log_dist_.png}}
-  
-  % Sliding speed 2
-  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_2/sliding_2_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_2/sliding_2_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_2/sliding_2_all_scores_log_dist_.png}}
-  
-  % Sliding speed 3
-  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_3/sliding_3_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_3/sliding_3_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_3/sliding_3_all_scores_log_dist_.png}}
-  
-  % Sliding speed 5
-  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_5/sliding_5_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_5/sliding_5_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_5/sliding_5_all_scores_log_dist_.png}}
-  
-   % Sliding speed 6
-  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_6/sliding_6_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_6/sliding_6_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_6/sliding_6_all_scores_log_dist_.png}}
-  
-  \caption{Varying sliding speed}
-  \label{fig:sliding_speed}
-\end{figure}
-
-\subsubsection{No "battery''}
-
-In our default setup, agents pay a cost for moving in any direction. The cost is higher going up the slope and lower coming down the slope. It is also higher if carrying a resource. This simulates the presence of a battery. An agent is thus, penalised for wasting time and for carrying things on the slope, making specialisation more advantageous and more accurately representing a real robot. A battery is not used by Ferrante et al. \cite{ferrante:2015:PLoSCB} and simply counting the number of resources is sufficient to see specialisation emerge, however, Ferrante et al also had the benefit of 3D physics to create delays in robot and resource movement. It is important to understand how the penalisation of movement impacts the scores of solutions.\\
-
-In the no battery experiments, movement has no cost and agents are rewarded one point for retrieving a resource rather than 1000. We scale down the mean and variance axes in our plots by 1000 to account for this difference. Once again we see in Figure \ref{fig:no_battery} that the majority of solutions are poor, with most retrieving 0 resources. And again we see that variance is higher for the better solutions indicating they are not always successful. There would appear to be more solutions that fall into larger buckets but this is likely only because the scale of the y-axis is smaller, so it is easier for those buckets to be filled. The experiment may need to be repeated with a 1000 score for each retrieved resource.\\
-
-Overall, the absence of a ''battery" or cost to movement does not appear to make any difference to the difficulty of the task which makes sense as the main source of difficulty is the sparseness of the reward. We also know from hardcoded controllers that in the absence of a battery, a specialist team still outperforms a generalist team (scoring 158.4 as opposed to 114.4). The presence or absence of movement and carrying costs does not appear to affect task difficulty.\\
-
-\textbf{Main takeaway: The presence or absence of a ''battery" does not appear to affect task difficulty.}
-
-\begin{figure}[!tbp]
-  \centering
-  % No battery
-  \subfloat{\includegraphics[width=0.3\textwidth]{no_battery/no_battery_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{no_battery/no_battery_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{no_battery/no_battery_all_scores_log_dist_.png}}
-  
-  \caption{No battery}
-  \label{fig:no_battery}
-\end{figure}
-
-\subsubsection{Single agent}
-
-In the single agent experiment, we again used an RNN with bias, no hidden layers and linear activation. Here the results are significantly lower, with the top score reaching only 6153 (Table \ref{tab:environment_comparison}), compared to a 2-agent team which achieves a top score of 39,082. This can be explained by the reward function. When an agent retrieves a resource, it receives +1000 and its teammates do as well. The team score is the sum of all individual scores. This mean that if there are two agents, one retrieved resource counts as 2000 and with two agents acting on the environment, they are likely to gather twice as many resources for four times the score. This is a logical error that was spotted as a result of these experiments.\\
-
-In terms of task difficulty, having only one agent does not impact the difficulty. Figure \ref{fig:single_agent} shows similar patterns to previous plots, but this may be a factor if there are enough agents in the arena to experience collisions. Sequential position updates are one way of solving that problem.\\
-
-\textbf{Main takeaway: Rewards should be divided not multiplied}
-
-\begin{figure}[!tbp]
-  \centering
-  % Single Agent
-  \subfloat{\includegraphics[width=0.3\textwidth]{single_agent/single_agent_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{single_agent/single_agent_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{single_agent/single_agent_all_scores_log_dist_.png}}
-  
-  \caption{Single agent}
-  \label{fig:single_agent}
-\end{figure}
-
+					
 \subsection{Non-linear Activation}\label{non-linear}
 
-Following the results from Section \ref{FFNNvRNN} we conducted the same experiments with non-linear activations, specifically tanh, ReLU and sigmoid functions. We primarily looked at RNNs because previous experiments indicated that memory was likely necessary for successful behaviour, but we included a FFNN with tanh activation for due diligence. For the three activations, as before, we did six experiments, three with bias and three without, and of those three we tested 0, 1 and 2 hidden layers, with 4 hidden units.\\
+Following the results from Section \ref{RNN Architecture} we conducted the same experiments with non-linear activations, specifically tanh, ReLU and sigmoid functions. We primarily looked at RNNs because previous experiments indicated that an RNN architecture may be necessary for successful behaviour, but we included a FFNN with tanh activation for due diligence in Section \ref{ffnn_non-linear} of the appendix. For the three activations, as before, we did six experiments, three with bias and three without, and of those three we tested 0, 1 and 2 hidden layers, with 4 hidden units.\\
 
 For all three activations, the highest scores are lower than they are for linear activation. This is surprising as one would expect nonlinear activation to provide more representational power to the neural network. Interestingly, though, for tanh and ReLU (Figures \ref{fig:rnn_tanh} and \ref{fig:rnn_relu} respectively) the instances of high scores (and the top score) increase as hidden layers are added. This suggests that while a network with linear activation is more successful with no hidden layers than its counterparts, the networks with tanh and ReLU activation gain representational power and their performance improves with additional layers. In the histograms in Figure \ref{fig:rnn_relu}, the difference between layers is not as visible as it is for Figure \ref{fig:rnn_tanh} but can be seen in the top scores in Table \ref{tab:architecture_comparison}. This suggests that the added gain of each new layer is greater for networks using tanh than networks using ReLU.\\
 
@@ -377,53 +250,7 @@ Sigmoid activation was the exception to the trend, with the distribution of RNN 
   \label{fig:rnn_sigmoid}	
 \end{figure}	
 
-\begin{figure}[!tbp]
-  \centering
-  % FFNN no-bias 0HL
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_0HL_tanh/ffnn_no-bias_0HL_tanh_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_0HL_tanh/ffnn_no-bias_0HL_tanh_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_0HL_tanh/ffnn_no-bias_0HL_tanh_all_scores_log_dist_.png}}
-  
-  % FFNN no-bias 1HL
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_1HL_4HU_tanh/ffnn_no-bias_1HL_4HU_tanh_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_1HL_4HU_tanh/ffnn_no-bias_1HL_4HU_tanh_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_1HL_4HU_tanh/ffnn_no-bias_1HL_4HU_tanh_all_scores_log_dist_.png}}
 
-% FFNN no-bias 2HL
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_2HL_4HU_tanh/ffnn_no-bias_2HL_4HU_tanh_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_2HL_4HU_tanh/ffnn_no-bias_2HL_4HU_tanh_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_2HL_4HU_tanh/ffnn_no-bias_2HL_4HU_tanh_all_scores_log_dist_.png}}
-  
-% FFNN bias 0HL
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_0HL_tanh/ffnn_bias_0HL_tanh_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_0HL_tanh/ffnn_bias_0HL_tanh_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_0HL_tanh/ffnn_bias_0HL_tanh_all_scores_log_dist_.png}}
-  
-  % FFNN bias 1HL
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_1HL_4HU_tanh/ffnn_bias_1HL_4HU_tanh_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_1HL_4HU_tanh/ffnn_bias_1HL_4HU_tanh_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_1HL_4HU_tanh/ffnn_bias_1HL_4HU_tanh_all_scores_log_dist_.png}}
-
-% FFNN bias 2HL
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_2HL_4HU_tanh/ffnn_bias_2HL_4HU_tanh_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_2HL_4HU_tanh/ffnn_bias_2HL_4HU_tanh_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_2HL_4HU_tanh/ffnn_bias_2HL_4HU_tanh_all_scores_log_dist_.png}}  
-  
-  \caption{FFNN with tanh activation}
-  \label{fig:ffnn_tanh}	
-\end{figure}
 
 \begin{table}
 \begin{center}
@@ -539,9 +366,9 @@ Single agent & 6153 \\
 
 \begin{appendices}
 
-In the following sections we explain the current experimental setup for reference.
-
 \section{Experimental Setup}
+
+In the following, we explain the current experimental setup for reference.
 
 \subsection{The Foraging Task}\label{task_description}
 
@@ -678,5 +505,191 @@ In the latter case, an individual agent with a high reward and low cost can be s
 The four combinations are thus: heterogeneous team with team rewards (Het-Team), homogeneous team with team rewards (Hom-Team), heterogeneous team with individual rewards (Het-Ind) and homogeneous team with individual rewards (Hom-Ind).\\
 
 For the purposes of this analysis, we only use the Hom-Team configuration.
+
+\section{Additional Experiments}
+
+In the following, we show experimental results that were not included in the main report.
+
+\subsection{FFNN}\label{FFNN}
+
+The scores for FFNNs all fall into the leftmost bucket of the distribution plot as we see in Figure \ref{fig:ffnn_linear}. We also see that the mean curve is very flat, with very little variance. FFNN solutions are consistently poor, indicating, as mentioned in the main text of the report, that RNNs might be necessary to solve the problem.
+
+\begin{figure}[!tbp]
+  \centering
+  % FFNN no-bias 0HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_0HL/ffnn_no-bias_0HL_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_0HL/ffnn_no-bias_0HL_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_0HL/ffnn_no-bias_0HL_all_scores_log_dist_.png}}
+  
+% FFNN bias 0HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_0HL/ffnn_bias_0HL_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_0HL/ffnn_bias_0HL_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_0HL/ffnn_bias_0HL_all_scores_log_dist_.png}}
+  
+  \caption{FFNN with linear activation}
+  \label{fig:ffnn_linear}
+\end{figure}
+
+%%%
+
+\subsection{Modifying Environmental Factors}
+
+The initial experiments gave us an understanding of why the task is difficult, but they used a specific configuration of the environment. It was important to observe how changing these parameters changed the task difficulty. We varied a) the sliding speed, an approximation of slope angle for a 2D discrete environment, b) the presence of a battery i.e. the cost associated with performing actions, and c) the multi-agent nature.
+
+\subsubsection{Sliding Speed}
+
+By default, the environment has sliding speed = 4. This means that when a resource is dropped, it slides 4 tiles per time step. This simulates a slope. The presence of a slope is the environmental factor that makes specialised teams outperform generalist teams. In an environment with no slope, a specialist strategy adds no benefit over a generalist one and may even be worse. Conversely, in an environment with a steeper slope, a specialist strategy could provide an even larger advantage because the slope can get resources to the bottom even faster. We ran experiments with varying sliding speed to observe how it impacts the solutions found. For brevity, we only use one architecture: an RNN with bias, no hidden layers and linear activation.\\
+
+From the plots in Figure \ref{fig:sliding_speed} we find that the sliding speed doesn't make much of a difference to the quality of solutions. It is important to note that while sliding speed is an approximation of slope angle it is not a direct analogue. Slope angle affects the speed at which a resource slides down the slope and the speed at which an agent goes up, but sliding speed only affects the speed of the resource. Since the only successful solutions rwg finds are generalists, the speed at which resources slide doesn't factor into their scores because they never drop resources. Any solutions that do drop resources, don't succeed at the task, so the speed at which those resources slid did not affect their score.\\
+
+We also spotted a minor logical error in the code that causes the cost of moving up/down the slope to be the same regardless of the sliding speed. This does not change the stag hunt dynamic of the environment, however it would more accurately represent a slope if the cost of moving changed with the sliding speed.\\ 
+
+\textbf{Main takeaway: Sliding speed doesn't significantly impact the success of generalist solutions because changing sliding speed doesn't make agents slower or increase the cost of moving up the slope.}
+
+\begin{figure}[!tbp]
+  \centering
+  % Sliding speed 0
+  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_0/sliding_0_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_0/sliding_0_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_0/sliding_0_all_scores_log_dist_.png}}
+  
+  % Sliding speed 1
+  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_1/sliding_1_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_1/sliding_1_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_1/sliding_1_all_scores_log_dist_.png}}
+  
+  % Sliding speed 2
+  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_2/sliding_2_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_2/sliding_2_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_2/sliding_2_all_scores_log_dist_.png}}
+  
+  % Sliding speed 3
+  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_3/sliding_3_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_3/sliding_3_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_3/sliding_3_all_scores_log_dist_.png}}
+  
+  % Sliding speed 5
+  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_5/sliding_5_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_5/sliding_5_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_5/sliding_5_all_scores_log_dist_.png}}
+  
+   % Sliding speed 6
+  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_6/sliding_6_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_6/sliding_6_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{sliding_6/sliding_6_all_scores_log_dist_.png}}
+  
+  \caption{Varying sliding speed}
+  \label{fig:sliding_speed}
+\end{figure}
+
+\subsubsection{No "battery''}
+
+In our default setup, agents pay a cost for moving in any direction. The cost is higher going up the slope and lower coming down the slope. It is also higher if carrying a resource. This simulates the presence of a battery. An agent is thus, penalised for wasting time and for carrying things on the slope, making specialisation more advantageous and more accurately representing a real robot. A battery is not used by Ferrante et al. \cite{ferrante:PLOS_CB:2015} and simply counting the number of resources is sufficient to see specialisation emerge, however, Ferrante et al also had the benefit of 3D physics to create delays in robot and resource movement. It is important to understand how the penalisation of movement impacts the scores of solutions.\\
+
+In the no battery experiments, movement has no cost and agents are rewarded one point for retrieving a resource rather than 1000. We scale down the mean and variance axes in our plots by 1000 to account for this difference. Once again we see in Figure \ref{fig:no_battery} that the majority of solutions are poor, with most retrieving 0 resources. And again we see that variance is higher for the better solutions indicating they are not always successful. There would appear to be more solutions that fall into larger buckets but this is likely only because the scale of the y-axis is smaller, so it is easier for those buckets to be filled. The experiment may need to be repeated with a 1000 score for each retrieved resource.\\
+
+Overall, the absence of a ''battery" or cost to movement does not appear to make any difference to the difficulty of the task which makes sense as the main source of difficulty is the sparseness of the reward. We also know from hardcoded controllers that in the absence of a battery, a specialist team still outperforms a generalist team (scoring 158.4 as opposed to 114.4). The presence or absence of movement and carrying costs does not appear to affect task difficulty.\\
+
+\textbf{Main takeaway: The presence or absence of a ''battery" does not appear to affect task difficulty.}
+
+\begin{figure}[!tbp]
+  \centering
+  % No battery
+  \subfloat{\includegraphics[width=0.3\textwidth]{no_battery/no_battery_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{no_battery/no_battery_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{no_battery/no_battery_all_scores_log_dist_.png}}
+  
+  \caption{No battery}
+  \label{fig:no_battery}
+\end{figure}
+
+\subsubsection{Single Agent}
+
+In the single agent experiment, we again used an RNN with bias, no hidden layers and linear activation. Here the results are significantly lower, with the top score reaching only 6153 (Table \ref{tab:environment_comparison}), compared to a 2-agent team which achieves a top score of 39,082. This can be explained by the reward function. When an agent retrieves a resource, it receives +1000 and its teammates do as well. The team score is the sum of all individual scores. This mean that if there are two agents, one retrieved resource counts as 2000 and with two agents acting on the environment, they are likely to gather twice as many resources for four times the score. This is a logical error that was spotted as a result of these experiments.\\
+
+In terms of task difficulty, having only one agent does not impact the difficulty. Figure \ref{fig:single_agent} shows similar patterns to previous plots, but this may be a factor if there are enough agents in the arena to experience collisions. Sequential position updates are one way of solving that problem.\\
+
+\textbf{Main takeaway: Rewards should be divided not multiplied}
+
+\begin{figure}[!tbp]
+  \centering
+  % Single Agent
+  \subfloat{\includegraphics[width=0.3\textwidth]{single_agent/single_agent_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{single_agent/single_agent_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{single_agent/single_agent_all_scores_log_dist_.png}}
+  
+  \caption{Single agent}
+  \label{fig:single_agent}
+\end{figure}
+
+\section{FFNN w/ Non-linear Activation} \label{ffnn_non-linear}
+\begin{figure}[!tbp]
+  \centering
+  % FFNN no-bias 0HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_0HL_tanh/ffnn_no-bias_0HL_tanh_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_0HL_tanh/ffnn_no-bias_0HL_tanh_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_0HL_tanh/ffnn_no-bias_0HL_tanh_all_scores_log_dist_.png}}
+  
+  % FFNN no-bias 1HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_1HL_4HU_tanh/ffnn_no-bias_1HL_4HU_tanh_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_1HL_4HU_tanh/ffnn_no-bias_1HL_4HU_tanh_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_1HL_4HU_tanh/ffnn_no-bias_1HL_4HU_tanh_all_scores_log_dist_.png}}
+
+% FFNN no-bias 2HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_2HL_4HU_tanh/ffnn_no-bias_2HL_4HU_tanh_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_2HL_4HU_tanh/ffnn_no-bias_2HL_4HU_tanh_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_no-bias_2HL_4HU_tanh/ffnn_no-bias_2HL_4HU_tanh_all_scores_log_dist_.png}}
+  
+% FFNN bias 0HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_0HL_tanh/ffnn_bias_0HL_tanh_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_0HL_tanh/ffnn_bias_0HL_tanh_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_0HL_tanh/ffnn_bias_0HL_tanh_all_scores_log_dist_.png}}
+  
+  % FFNN bias 1HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_1HL_4HU_tanh/ffnn_bias_1HL_4HU_tanh_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_1HL_4HU_tanh/ffnn_bias_1HL_4HU_tanh_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_1HL_4HU_tanh/ffnn_bias_1HL_4HU_tanh_all_scores_log_dist_.png}}
+
+% FFNN bias 2HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_2HL_4HU_tanh/ffnn_bias_2HL_4HU_tanh_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_2HL_4HU_tanh/ffnn_bias_2HL_4HU_tanh_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{ffnn_bias_2HL_4HU_tanh/ffnn_bias_2HL_4HU_tanh_all_scores_log_dist_.png}}  
+  
+  \caption{FFNN with tanh activation}
+  \label{fig:ffnn_tanh}	
+\end{figure}
+
 \end{appendices}
 \end{document}

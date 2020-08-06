@@ -1,5 +1,3 @@
-from gym.utils import seeding
-
 # *:*:IS_WANT_OBJECT,false,16;B_RANDOM_WALK,92#
 # *:B_PHOTOTAXIS;B_RANDOM_WALK;*:IS_WANT_OBJECT,true,70;IS_MOTIVATION_1_DEC,false,89;B_RANDOM_WALK,9#
 # P_ON_SOURCE,true;*:*:B_RANDOM_WALK,67#
@@ -18,7 +16,7 @@ class GEAgent:
         self.on_source = False
         self.has_resource = False
         self.nothing_detected = False
-        self.robot_detected = False
+        self.agent_detected = False
         self.resource_detected = False
         self.wall_detected = False
 
@@ -34,22 +32,51 @@ class GEAgent:
                 action = self.do_actions(actions)
 
     def parse_observation(self, observation):
+        """
+        Convert onehotencoded binary observations into boolean values
+        @param observation:
+        @return:
+        """
         if observation[0] == 1:
             self.nothing_detected = True
+            self.agent_detected = False
+            self.resource_detected = False
+            self.wall_detected = False
         elif observation[1] == 1:
-            self.robot_detected = True
+            self.nothing_detected = False
+            self.agent_detected = True
+            self.resource_detected = False
+            self.wall_detected = False
         elif observation[2] == 1:
+            self.nothing_detected = False
+            self.agent_detected = False
             self.resource_detected = True
+            self.wall_detected = False
         elif observation[3] == 1:
+            self.nothing_detected = False
+            self.agent_detected = False
+            self.resource_detected = False
             self.wall_detected = True
 
         if observation[4] == 1:
             self.on_nest = True
+            self.on_cache = False
+            self.on_slope = False
+            self.on_source = False
         elif observation[5] == 1:
+            self.on_nest = False
             self.on_cache = True
+            self.on_slope = False
+            self.on_source = False
         elif observation[6] == 1:
+            self.on_nest = False
+            self.on_cache = False
             self.on_slope = True
+            self.on_source = False
         elif observation[7] == 1:
+            self.on_nest = False
+            self.on_cache = False
+            self.on_slope = False
             self.on_source = True
 
         if observation[8] == 1:
@@ -78,8 +105,8 @@ class GEAgent:
             elif condition == "P_NOTHING_DETECTED":
                 if self.nothing_detected != value:
                     return False
-            elif condition == "P_ROBOT_DETECTED":
-                if self.robot_detected != value:
+            elif condition == "P_AGENT_DETECTED":
+                if self.agent_detected != value:
                     return False
             elif condition == "P_RESOURCE_DETECTED":
                 if self.resource_detected != value:
