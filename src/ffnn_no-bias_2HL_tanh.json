@@ -26,9 +26,9 @@
     },
     "agent": {
         "nn": {
-            "architecture": "rnn",
+            "architecture": "ffnn",
             "bias": "False",
-            "hidden_layers": 5,
+            "hidden_layers": 2,
             "hidden_units_per_layer": 4,
             "activation_function": "tanh"
         }

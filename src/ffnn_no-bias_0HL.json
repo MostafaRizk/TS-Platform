@@ -26,11 +26,11 @@
     },
     "agent": {
         "nn": {
-            "architecture": "rnn",
+            "architecture": "ffnn",
             "bias": "False",
-            "hidden_layers": 5,
-            "hidden_units_per_layer": 4,
-            "activation_function": "tanh"
+            "hidden_layers": 0,
+            "hidden_units_per_layer": 0,
+            "activation_function": "linear"
         }
     },
     "algorithm": {

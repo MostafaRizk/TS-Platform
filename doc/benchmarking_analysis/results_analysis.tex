@@ -1,5 +1,5 @@
 \documentclass[12pt]{article}
-\title{Results Analysis}
+\title{Understanding the Challenges of Evolving Multi-Agent Cooperation Using RWG Benchmarking}
 \author{Mostafa Rizk}
 
 \usepackage{graphicx}
@@ -21,53 +21,109 @@
 
 \section{Executive Summary}
 
-We conducted an analysis of the SlopeForaging problem using Oller et al's rwg benchmarking approach to understand the types of challenges it poses and why it is difficult to evolve cooperative behaviour. Our main insights were:
+We conducted an analysis of the SlopeForaging problem, described in Section \ref{experimental_setup} of the appendix, using Oller et al's rwg benchmarking approach \cite{oller:AAMAS:2020} to understand the types of challenges it poses and why it is difficult to evolve cooperative behaviour. 
+We focused primarily on the role of the neural network architecture.
+Our main insights were as follows:\\
 
+Primary:
 \begin{itemize}
 \item The SlopeForaging task has similar attributes to MountainCar, meaning a highly exploratory algorithm may be more successful.
 
-\item SlopeForaging is more difficult than MountainCar due to observation size, action space, partial observability and the cooperative nature of the task. An RNN architecture appears to be required for good performance but bias neurons don't make a difference. A non-linear activation may be necessary for better results.
+\item SlopeForaging is more difficult than MountainCar due to observation size, action space, partial observability and the cooperative nature of the task. 
 
+\item An RNN architecture appears to be required for good performance but bias neurons don't make a difference.
+
+\item Networks with non-linear activation are not as successful as those with linear activation but get better with additional layers. 
+This is most pronounced for tanh activation.
+
+\item Deeper networks skew slightly towards better solutions, though not significantly. 
+Good solutions may be more prevalent for deeper networks but harder to find due to the larger solution space.
+
+\item In order for a homogeneous team to exhibit specialisation, it might need to be able to switch between policies and remember how long it has been doing each one.
+A network with long term memory may be necessary.
+
+\end{itemize}
+
+Secondary:
+\begin{itemize}
 \item Sliding speed doesn't significantly impact the success of generalist solutions because changing sliding speed doesn't make agents slower or increase the cost of moving up the slope.
 
 \item The absence of a cost for moving and carrying (i.e. a battery) does not make it harder to find generalist solutions.
 
 \item The implementation contains some minor logical errors with regards to reward allocation and movement costs that should be modified for future experiments.
-
-\item Networks with non-linear activation are not as successful as those with linear activation but get better with additional layers. This is most pronounced for tanh activation.
-
 \end{itemize}
 
 \section{Analysis}
 		
-We have faced difficulty evolving cooperation in the SlopeForaging multi-agent setting. We conducted an analysis using Oller et al's rwg benchmarking approach \cite{oller:AAMAS:2020} to understand the nature of the difficulties posed by this environment. We hope this will provide insight into what changes need to be made to our approach in order to produce the desired behaviour. All experiments used a homogeneous team, rewarded at the team level. Heterogeneous teams and individual rewards are not considered yet.\\
+We have faced difficulty evolving cooperation in the SlopeForaging multi-agent setting (described in Section \ref{experimental_setup}). 
+We conducted an analysis using Oller et al's rwg benchmarking approach \cite{oller:AAMAS:2020} to understand the nature of the difficulties posed by this environment. 
+We hope this will provide insight into what changes need to be made to our approach in order to produce the desired behaviour. 
+All experiments used a homogeneous team, rewarded at the team level. 
+Heterogeneous teams and individual rewards are not considered yet.\\
 
-In each experiment, we sampled 50,000 genomes from a normal distribution with a mean of 0 and unit variance. Each genome was evaluated for 5 episodes. In any instance where hidden layers were used, we used 4 hidden units. We plot a) all the trials in sorted order, b) the variance of all trials and c) the distribution on a log scale. Details of the experimental setup can be found in the appendix.
-		
-\subsection{RNN Architecture} \label{RNN Architecture}
+In each experiment, we sampled 50,000 genomes from a normal distribution with a mean of 0 and unit variance. 
+Each genome was evaluated for 5 episodes. 
+In any instance where hidden layers were used, we used 4 hidden units. 
+We plot a) all the trials in sorted order by score, b) the variance of all trials and c) the distribution on a log scale.\\
 
-We started our experiments with the simplest possible architecture, a FFNN with no bias, no hidden layers and linear activation (i.e. the identity function). We added up to two hidden layers, then repeated with bias, making for a total of 6 experiments. We then repeated the 6 experiments with a RNN. \\
+We started our experiments with the simplest possible architecture, a FFNN with no bias, no hidden layers and linear activation (i.e. the identity function). 
+We added up to two hidden layers, then repeated with bias, making for a total of 6 experiments. 
+We then repeated the 6 experiments with a RNN. \\
 
-For the FFNN, the scores are overwhelmingly poor in comparison to RNNs. For brevity we put the FFNN plots and analysis in the appendix in Section \ref{FFNN}. We also learned, after the experiments, that according to Theorem 1.5.1 in \cite{aggarwal:Springer:2018}, that hidden layers do not add computational power if the activation function is linear. We therefore chose to exclude those plots and repeated these experiments in Section \ref{non-linear} with various non-linear activations.\\
+For the FFNN, the scores are overwhelmingly poor in comparison to RNNs. 
+For brevity we put the FFNN plots and analysis in the appendix in Section \ref{FFNN}. 
+We also learned, after the experiments, that according to Theorem 1.5.1 in \cite{aggarwal:Springer:2018}, that hidden layers do not add computational power if the activation function is linear. 
+We therefore chose to exclude those plots and repeated these experiments in Section \ref{non-linear} with various non-linear activations.\\
 
-The fact that RNNs outperform FFNNs makes sense because the environment is partially observable; an agent can only see 1 tile in any direction. A recurrent architecture means an agent can act on sequences of observations rather than individual observations, giving it an advantage over an agent with no memory. Presumably, if the agent's sensing radius was expanded to include the entire arena then the FFNN would perform similarly to the RNN. Interestingly, though, we find that adding a bias neuron does not make a difference to the results.\\ 
+The organisation of this report is as follows: 
+Section \ref{task_difficulty} discusses the fundamental difficulties of the task using Oller et al's analysis of MountainCar \cite{MountainCar} as a reference. 
+Section \ref{RNN Architecture} talks about why a recurrent network may be necessary. 
+Section \ref{non-linear} explores the impact of non-linear activation functions on performance. 
+Section \ref{tanh_multilayer} does a preliminary analysis of the benefit of additional layers. 
+Section \ref{lazy_generalist} uses additional experiments to examine what may be the minimum requirements of a neural network used in this task. 
+Finally Section \ref{conclusion} summarises our findings and proposes our next steps. \\ 
 
-Most of the RNN solutions are still quite poor, with the majority again fitting in the leftmost bucket in the distribution histogram. The mean curve is, as with the FFNN, very flat as we see in Figure \ref{fig:rnn_linear} but there is a spike at the end, denoting a very small proportion of samples that perform much better than the others. We can also see that the variance is higher for higher means which indicates that genomes that score well do not do so consistently across all episodes.\\
+\subsection{Task Difficulty} \label{task_difficulty}
 
-On a more fundamental level, we learn that the environment, independent of architecture, is challenging in a way that is similar to the MountainCar \cite{MountainCar} environment investigated by Oller et al \cite{oller:AAMAS:2020}. The plots are very similar with most solutions being equally poor and very few demonstrating a successful behaviour. This is likely because both environments have a sparse reward. In the case of MountainCar, an agent must reach the top of the mountain to receive a score better than -200 and there are no rewards for partially successful intermediate behaviours. An agent that never moves is equivalent to one that stops just short of the goal. In SlopeForaging, an agent that travels up the slope, picks up a resource, carries it to the bottom of the slope and drops it just short of the nest is equivalent to an agent that oscillates back and forth between two tiles. A non-negative score can only be achieved if a resource is fully retrieved and there are no rewards for partially successful intermediate behaviours, so the task can not be learned incrementally.\\
+On a fundamental level, we learn from these experiments that the environment, independent of architecture, is challenging in a way that is similar to the MountainCar environment  \cite{MountainCar} investigated by Oller et al \cite{oller:AAMAS:2020}. 
+The plots are very similar with most solutions being equally poor and very few demonstrating a successful behaviour. 
+We see this in Figure \ref{fig:rnn_linear} where for both rows (the top row being a network with no bias and the bottom row being a network with bias) the mean curve is very flat with a spike at the end, indicating there are a small number of high performing solutions while the rest score below 0.
+This can also be seen in the distribution histogram, to the right, where the majority of solutions fall in the leftmost bucket for scores below 0. 
+The variance plot, in the center, shows that variance is higher for higher means suggesting that genomes that score well do not do so consistently across all episodes.\\
+
+The reason most solutions score very poorly is likely because both the SlopeForaging and MountainCar environments have a sparse reward. 
+In the case of MountainCar, an agent must reach the top of the mountain to receive a score better than -200 and there are no rewards for partially successful intermediate behaviours. 
+An agent that never moves is equivalent to one that stops just short of the goal. 
+In SlopeForaging, an agent that travels up the slope, picks up a resource, carries it to the bottom of the slope and drops it just short of the nest is equivalent to an agent that oscillates back and forth between two tiles. 
+A non-negative score can only be achieved if a resource is fully retrieved and there are no rewards for partially successful intermediate behaviours, so the task can not be learned incrementally.\\
 
 In fact, the SlopeForaging task is actually more difficult for the following reasons:
 
 \begin{itemize}
-\item \textit{The observation and action spaces are larger}- An observation consists of 41 binary inputs and there are 6 discrete actions. Even the simplest FFNN would have 41x6=246 weights compared to (2x4) + (4x4) + (4x3) = 36 for the most complex controller used by Oller et al to solve MountainCar. 
+\item \textit{The observation and action spaces are larger}- An observation consists of 41 binary inputs and there are 6 discrete actions. 
+Even the simplest FFNN would have 41x6=246 weights compared to (2x4) + (4x4) + (4x3) = 36 for the most complex controller used by Oller et al to solve MountainCar. 
 
-\item \textit{The environment is partially observable}- Partial observability means a more complex architecture (RNN) is required.
+\item \textit{The environment is partially observable}- Partial observability suggests that a more complex architecture, such as an RNN, may be required as stated by Oller et al \cite{oller:AAMAS:2020}.
 
-\item \textit{The best solution isn't found even after 50,000 samples}- In MountainCar \cite{MountainCar}, the theoretical best score is close to 0 and the solutions generated by Oller et al approach this value, whereas in SlopeForaging, a team of specialists hardcoded with a cooperative strategy scores 157,000 but the best mean score of the solutions found by rwg is 39,879 and the best episode score is 52,642 (for a recurrent network). This is very far from the best known solution. It is even far from the best known generalist strategy, which scores 112,000. And all this is with 5 times more sampled solutions than Oller et al. All this is to say, the task is difficult to solve and, according to Oller et al's recommendations, may require an algorithm with a strong exploratory component.
+\item \textit{The best solution isn't found even after 50,000 samples}- In MountainCar \cite{MountainCar}, the theoretical best score is close to 0 and the solutions generated by Oller et al approach this value, whereas in SlopeForaging, a team of specialists hardcoded with a cooperative strategy scores 157,711 but the best mean score of the solutions found by rwg is 39,879 and the best episode score is 52,642 (for a recurrent network). 
+This is very far from the best known solution. It is even far from the best known generalist strategy, which scores 118,353. 
+And all this is with 5 times more sampled solutions than Oller et al. 
+All this is to say, the task is difficult to solve and, according to Oller et al's recommendations, may require an algorithm with a strong exploratory component.
 
 \end{itemize}
 
-\textbf{Main takeaway: The SlopeForaging task has similar attributes to MountainCar but is more difficult due to observation size, action space, partial observability and the cooperative nature of the task. Memory appears to be required for good performance but bias doesn't make a difference. A non-linear activation may be necessary for better results.}
+\textbf{Main takeaway: The SlopeForaging task has similar attributes to MountainCar but is more difficult due to observation size, action space, partial observability and the cooperative nature of the task.}
+		
+\subsection{Recurrent Networks and Memory} \label{RNN Architecture}
+
+As stated at the beginning of the section, RNNs were found to outperform FFNNs. 
+This makes sense because the environment is partially observable; an agent can only see 1 tile in any direction. 
+A recurrent architecture means an agent can act on its observation while also knowing the action it took in the previous time step.
+This gives it a form of memory, meaning it is effectively able to act on sequences of observations rather than individual observations, giving it an advantage over an agent with no memory. 
+Presumably, if the agent's sensing radius was expanded to include the entire arena then the FFNN would perform similarly to the RNN. 
+Interestingly, though, we find that adding a bias neuron does not make a difference to the results, with the plots in both the first and second row of Figure \ref{fig:rnn_linear} being identical.\\ 
+
+\textbf{Main takeaway: Memory appears to be required for good performance but bias doesn't make a difference.}
 
 
 \begin{figure}[!tbp]
@@ -95,16 +151,26 @@ In fact, the SlopeForaging task is actually more difficult for the following rea
 					
 \subsection{Non-linear Activation}\label{non-linear}
 
-Following the results from Section \ref{RNN Architecture} we conducted the same experiments with non-linear activations, specifically tanh, ReLU and sigmoid functions. We primarily looked at RNNs because previous experiments indicated that an RNN architecture may be necessary for successful behaviour, but we included a FFNN with tanh activation for due diligence in Section \ref{ffnn_non-linear} of the appendix. For the three activations, as before, we did six experiments, three with bias and three without, and of those three we tested 0, 1 and 2 hidden layers, with 4 hidden units.\\
+Following the results from Section \ref{RNN Architecture} we conducted the same experiments with non-linear activations, specifically tanh, ReLU and sigmoid functions. 
+We primarily looked at RNNs because previous experiments indicated that an RNN architecture may be necessary for successful behaviour, but we included a FFNN with tanh activation for due diligence in Section \ref{ffnn_non-linear} of the appendix. 
+For the three activations, as before, we did six experiments, three with bias and three without, and of those three we tested 0, 1 and 2 hidden layers, with 4 hidden units.
+Again we found no difference between networks with and without bias so we moved the bias plots to Section \ref{rnn_non-linear_bias} of the appendix.\\
 
-For all three activations, the highest scores are lower than they are for linear activation. This is surprising as one would expect nonlinear activation to provide more representational power to the neural network. Interestingly, though, for tanh and ReLU (Figures \ref{fig:rnn_tanh} and \ref{fig:rnn_relu} respectively) the instances of high scores (and the top score) increase as hidden layers are added. This suggests that while a network with linear activation is more successful with no hidden layers than its counterparts, the networks with tanh and ReLU activation gain representational power and their performance improves with additional layers. In the histograms in Figure \ref{fig:rnn_relu}, the difference between layers is not as visible as it is for Figure \ref{fig:rnn_tanh} but can be seen in the top scores in Table \ref{tab:architecture_comparison}. This suggests that the added gain of each new layer is greater for networks using tanh than networks using ReLU.\\
+For all three activations, the highest scores are lower than they are for linear activation. 
+This is surprising as one would expect non-linear activation to provide more representational power to the neural network. 
+Interestingly, though, for tanh and ReLU (Figures \ref{fig:rnn_tanh} and \ref{fig:rnn_relu} respectively) the instances of high scores (and the top score) increase as hidden layers are added. 
+This suggests that while a network with linear activation is more successful with no hidden layers than its counterparts, the networks with tanh and ReLU activation gain representational power and their performance improves with additional layers. 
+In the histograms in Figure \ref{fig:rnn_relu}, the difference between layers is not as visible as it is for Figure \ref{fig:rnn_tanh} but can be seen in the top scores in Table \ref{tab:architecture_comparison}. 
+This suggests that the added gain of each new layer is greater for networks using tanh than networks using ReLU.\\
 
-In both cases, though, it is unclear how many layers this trend continues for, or if varying the number of hidden units would accelerate the improvement or if there is another activation function for which the improvement is more pronounced. Additional rwg runs with these deeper architectures could help answer these questions but may also reach a bottleneck as additional layers means more weights, increasing the size of the solution space. Some form of topological search \cite{stanley:MIT:2002} is another way of discovering which architecture is most capable of representing problem solutions.\\ 
+In both cases, though, it is unclear how many layers this trend continues for, or if varying the number of hidden units would accelerate the improvement or if there is another activation function for which the improvement is more pronounced. 
+Additional rwg runs with these deeper architectures can help answer these questions but may also reach a bottleneck as additional layers means more weights, increasing the size of the solution space. 
+Some form of topological search \cite{stanley:MIT:2002} is another way of discovering which architecture is most capable of representing problem solutions.\\ 
 
-Sigmoid activation was the exception to the trend, with the distribution of RNN solutions in Figure \ref{fig:rnn_sigmoid} being similar to those of FFNNs with linear activation in Figure \ref{fig:ffnn_linear}. Networks with sigmoid activation appear to not have the representational power required to solve the problem, but it is unclear why. The same holds true for FFNNs with tanh activation (Figure \ref{fig:ffnn_tanh}). For all networks, though, bias neurons did not make a notable difference.\\
-
-\textbf{Main takeaway: Networks with non-linear activation are not as successful as those with linear activation but get better with additional layers. This is most pronounced for tanh activation. }
-
+Sigmoid activation was the exception to the trend, with the distribution of RNN solutions in Figure \ref{fig:rnn_sigmoid} being similar to those of FFNNs with linear activation in Figure \ref{fig:ffnn_linear}. 
+Networks with sigmoid activation appear to not have the representational power required to solve the problem, but it is unclear why. 
+The same holds true for FFNNs with tanh activation (Figure \ref{fig:ffnn_tanh}). 
+For all networks, though, bias neurons did not make a notable difference.\\
 
 \begin{figure}[!tbp]
   \centering
@@ -128,27 +194,6 @@ Sigmoid activation was the exception to the trend, with the distribution of RNN 
   \subfloat{\includegraphics[width=0.3\textwidth]{rnn_no-bias_2HL_4HU_tanh/rnn_no-bias_2HL_4HU_tanh_variance_meanscore_.png}}
   \hfill
   \subfloat{\includegraphics[width=0.3\textwidth]{rnn_no-bias_2HL_4HU_tanh/rnn_no-bias_2HL_4HU_tanh_all_scores_log_dist_.png}}
-  
-% RNN bias 0HL
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_0HL_tanh/rnn_bias_0HL_tanh_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_0HL_tanh/rnn_bias_0HL_tanh_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_0HL_tanh/rnn_bias_0HL_tanh_all_scores_log_dist_.png}}
-  
-  % RNN bias 1HL
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_1HL_4HU_tanh/rnn_bias_1HL_4HU_tanh_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_1HL_4HU_tanh/rnn_bias_1HL_4HU_tanh_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_1HL_4HU_tanh/rnn_bias_1HL_4HU_tanh_all_scores_log_dist_.png}}
-
-% RNN bias 2HL
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_2HL_4HU_tanh/rnn_bias_2HL_4HU_tanh_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_2HL_4HU_tanh/rnn_bias_2HL_4HU_tanh_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_2HL_4HU_tanh/rnn_bias_2HL_4HU_tanh_all_scores_log_dist_.png}}  
   
   \caption{RNN with tanh activation}
   \label{fig:rnn_tanh}	
@@ -177,27 +222,6 @@ Sigmoid activation was the exception to the trend, with the distribution of RNN 
   \hfill
   \subfloat{\includegraphics[width=0.3\textwidth]{rnn_no-bias_2HL_4HU_relu/rnn_no-bias_2HL_4HU_relu_all_scores_log_dist_.png}}
   
-% RNN bias 0HL
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_0HL_relu/rnn_bias_0HL_relu_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_0HL_relu/rnn_bias_0HL_relu_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_0HL_relu/rnn_bias_0HL_relu_all_scores_log_dist_.png}}
-  
-  % RNN bias 1HL
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_1HL_4HU_relu/rnn_bias_1HL_4HU_relu_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_1HL_4HU_relu/rnn_bias_1HL_4HU_relu_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_1HL_4HU_relu/rnn_bias_1HL_4HU_relu_all_scores_log_dist_.png}}
-
-% RNN bias 2HL
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_2HL_4HU_relu/rnn_bias_2HL_4HU_relu_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_2HL_4HU_relu/rnn_bias_2HL_4HU_relu_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_2HL_4HU_relu/rnn_bias_2HL_4HU_relu_all_scores_log_dist_.png}}  
-  
   \caption{RNN with ReLU activation}
   \label{fig:rnn_relu}	
 \end{figure}	
@@ -225,32 +249,9 @@ Sigmoid activation was the exception to the trend, with the distribution of RNN 
   \hfill
   \subfloat{\includegraphics[width=0.3\textwidth]{rnn_no-bias_2HL_4HU_sigmoid/rnn_no-bias_2HL_4HU_sigmoid_all_scores_log_dist_.png}}
   
-% RNN bias 0HL
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_0HL_sigmoid/rnn_bias_0HL_sigmoid_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_0HL_sigmoid/rnn_bias_0HL_sigmoid_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_0HL_sigmoid/rnn_bias_0HL_sigmoid_all_scores_log_dist_.png}}
-  
-  % RNN bias 1HL
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_1HL_4HU_sigmoid/rnn_bias_1HL_4HU_sigmoid_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_1HL_4HU_sigmoid/rnn_bias_1HL_4HU_sigmoid_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_1HL_4HU_sigmoid/rnn_bias_1HL_4HU_sigmoid_all_scores_log_dist_.png}}
-
-% RNN bias 2HL
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_2HL_4HU_sigmoid/rnn_bias_2HL_4HU_sigmoid_score_trials_ordered_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_2HL_4HU_sigmoid/rnn_bias_2HL_4HU_sigmoid_variance_meanscore_.png}}
-  \hfill
-  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_2HL_4HU_sigmoid/rnn_bias_2HL_4HU_sigmoid_all_scores_log_dist_.png}}  
-  
   \caption{RNN with sigmoid activation}
   \label{fig:rnn_sigmoid}	
 \end{figure}	
-
-
 
 \begin{table}
 \begin{center}
@@ -325,48 +326,144 @@ Sigmoid activation was the exception to the trend, with the distribution of RNN 
 \caption{\label{tab:architecture_comparison} Top scores with different architectures}
 \end{table}
 
+\textbf{Main takeaway: Networks with non-linear activation are not as successful as those with linear activation but get better with additional layers. 
+This is most pronounced for tanh activation. }
+
+\subsection{Adding Layers} \label{tanh_multilayer}
+
+As noted in the previous section, networks with tanh activation seem to yield more high performing solutions as the number of hidden layers increases. 
+To investigate this further, we ran additional experiments, using tanh activation, no bias and 3, 4, 5, 6 and 7 hidden layers.
+We found that while the quality of solutions appeared to increase between 0, 1 and 2 hidden layers, this trend does continue but only very slightly.
+We can see in the histograms in Figure \ref{fig:tanh_multilayer} that the almost all solutions fall into the first 2 buckets, with only 1 falling into the third bucket in the network with 4 hidden layers (in the second row of plots). 
+Higher top scores are thus not found, which we also see in Table \ref{tab:architecture_comparison_tanh} where the highest score fluctuates, suggesting that the distribution does not shift significantly, though this does not mean the distribution does not shift at all.\\
+
+The height of the second bucket in the histogram plots approaches and reaches $10^2$ as the number of layers increases.
+The corresponding plot for the 2 layer setup in Figure \ref{fig:rnn_tanh} is not as high.
+Further increasing the number of layers does in fact allow us to find more solutions of higher quality, however the number is only on the order of tens.
+However, it is important to view this in the context of the larger solution space (due to the larger genome size).
+A network with 2 hidden layers has 260 weights, whereas one with 7 hidden layers has 420.
+RWG was able to find tens more solutions that fit in the second bucket, but there are also many more possible solutions to sample. 
+It is possible that in the solution space for a 7-hidden layer network there is a larger number of successful architectures but they are harder to find by sampling. 
+The RWG approach may be limited in its ability to analyse task difficulty for applications with larger neural networks.
+Further analysis may require alternative techniques.\\
+
+\textbf{Main takeaway: Deeper networks may be more adept at solving the task but it is difficult to tell because the solution space is much larger. }
+
+\begin{figure}[!tbp]
+  \centering
+  % RNN no-bias 3HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{3_layers/3_layers_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{3_layers/3_layers_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{3_layers/3_layers_all_scores_log_dist_.png}}
+  
+  % RNN no-bias 4HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{4_layers/4_layers_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{4_layers/4_layers_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{4_layers/4_layers_all_scores_log_dist_.png}}
+
+  % RNN no-bias 5HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{5_layers/5_layers_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{5_layers/5_layers_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{5_layers/5_layers_all_scores_log_dist_.png}}
+
+  % RNN no-bias 6HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{6_layers/6_layers_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{6_layers/6_layers_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{6_layers/6_layers_all_scores_log_dist_.png}}
+
+  % RNN no-bias 7HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{7_layers/7_layers_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{7_layers/7_layers_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{7_layers/7_layers_all_scores_log_dist_.png}}
+  
+  
+  \caption{RNN with tanh activation and multiple layers}
+  \label{fig:tanh_multilayer}	
+\end{figure}
+
 \begin{table}
 \begin{center}
-\begin{tabu}{ |c|c| } 
+\begin{tabu}{ |c|c|c|c|c| } 
  \hline
- Environment & Top Score\\
+ Network Type & Layers & Bias & Activation & Top Score\\
  \tabucline[1.5pt]{-}
- 
-Sliding speed = 0 & 39082 \\
+ RNN & 0 & N & tanh & 297 \\
  \hline
-Sliding speed = 1 & 39879 \\
+ RNN & 1 & N & tanh & 3361 \\
  \hline
- Sliding speed = 2 & 39879 \\
+ RNN & 2 & N & tanh & 8376 \\
  \hline
- Sliding speed = 3 & 39879 \\
+ RNN & 3 & N & tanh & 3965 \\
  \hline
- Sliding speed = 4 & 39879 \\
+ RNN & 4 & N & tanh & 5197 \\
  \hline
- Sliding speed = 5 & 39879 \\
+ RNN & 5 & N & tanh & 4064 \\
  \hline
- Sliding speed = 6 & 39879 \\
- \tabucline[1.5pt]{-}
-
- No battery & 41.2 \\
- \tabucline[1.5pt]{-}
- 
-Single agent & 6153 \\
- \tabucline[1.5pt]{-}
-
-
-
+ RNN & 6 & N & tanh & 4853 \\
+ \hline
+ RNN & 7 & N & tanh & 5087 \\
  \hline
 \end{tabu}
 \end{center}	
-\caption{\label{tab:environment_comparison} Top scores in different environments}
+\caption{\label{tab:architecture_comparison_tanh} Top scores with tanh activation and different numbers of layers}
 \end{table}
+
+\subsection{Minimum Architecture Complexity} \label{lazy_generalist}
+
+A question that arises in performing all the above analysis of various architectures is ''What is the minimal architecture needed to represent a successful solution to this problem?".
+Our results so far seem to indicate that more network complexity may be required.
+RNNs are more successful than FFNNs, indicating the need for memory and multiple hidden layers with non-linear activation show a trend towards better solutions.
+Though none of these have been able to represent a specialist team yet, which raises the question of how much is needed?
+Insight into this question can be gained by looking at a behaviour we call a ''lazy generalist".\\
+
+A lazy generalist is a strategy where an agent goes up the slope and drops resources for a while before switching activities, going to the cache and moving the resources it dropped into the nest.
+This agent is ''lazy" because it does not want to pay the cost of carrying a resource down the slope.
+By dropping the resource, it saves itself time and energy.
+In the case of our setup, it loses less points by letting resources slide.
+If two agents perform this behaviour simultaneously, they exhibit what looks like specialisation.
+Both agents begin as droppers but at some point, one of them drops resources while the other collects what was dropped, effectively collecting the resources the other agent intended to collect itself.
+We confirm this by hardcoding a lazy generalist behaviour and observing two of them working in the same environment.\\
+
+Intuitively, in order for a homogeneous team to perform specialisation, each individual agent must be capable of both dropping and collecting and switch between the two behaviours.
+In order for specialisation to emerge, evolution must find the lazy generalist behaviour and the neural network must be capable of representing it.
+RWG does not appear to find this behaviour, which could suggest it is rare.
+However, further optimising with CMA does not find it either, which suggests that the neural networks we are using are not able to represent it.\\
+
+In order for a neural network to represent the lazy generalist behaviour, it needs to be able to observe the same state and do two different actions depending on whether it is a dropper or a collector. 
+This could mean that it randomly chooses whether to do one or the other based on a certain probability, or it could mean that it remembers what it has been doing for several time steps.
+For example, an agent that is empty-handed at the top of the slope should know to go forward (to collect more resources) unless it has been in that region and dropping for several time steps, then it should know to go backward towards the nest to collect.
+This suggests the need for a network capable of 'remembering' several time steps i.e. that is able to recognise sequences over many time steps.
+A standard RNN may not be sufficient for this.
+A more sophisticated recurrent network such as an LSTM may be needed or an RNN with several layers.\\
+
+\textbf{Main takeaway: In order for a homogeneous team to exhibit specialisation, it needs to be able to switch between policies and remember how long it has been doing each one.
+A network with long term memory may be necessary.}
+
+\subsection{Conclusion and Next Steps} \label{conclusion}
+
+SlopeForaging is a non-trivial task to solve and the above analysis confirms it at several junctions.
+Our challenges in finding a solution may be influenced by the choice of algorithm but the results seem to point towards the need for a more expressive architecture.
+Throughout the study, as we have complexified the network by adding recurrence, non-linear activation and multiple hidden layers, we have seen signs that these features give the network more representational power.
+Based on these findings we believe it is highly likely that a more sophisticated network is needed to solve this problem.
+We believe that the next logical course of action is to investigate the techniques available for architecture search such as those in \cite{stanley:MIT:2002} and its successors.
+It may be worthwhile to first try an exploratory search algorithm and if that algorithm fails to find the desired solution, that would further support the hypothesis that a more expressive architecture is needed.
 
 \bibliographystyle{plain}
 \bibliography{references}
 
 \begin{appendices}
 
-\section{Experimental Setup}
+\section{Experimental Setup}\label{experimental_setup}
 
 In the following, we explain the current experimental setup for reference.
 
@@ -642,6 +739,42 @@ In terms of task difficulty, having only one agent does not impact the difficult
   \label{fig:single_agent}
 \end{figure}
 
+\begin{table}
+\begin{center}
+\begin{tabu}{ |c|c| } 
+ \hline
+ Environment & Top Score\\
+ \tabucline[1.5pt]{-}
+ 
+Sliding speed = 0 & 39082 \\
+ \hline
+Sliding speed = 1 & 39879 \\
+ \hline
+ Sliding speed = 2 & 39879 \\
+ \hline
+ Sliding speed = 3 & 39879 \\
+ \hline
+ Sliding speed = 4 & 39879 \\
+ \hline
+ Sliding speed = 5 & 39879 \\
+ \hline
+ Sliding speed = 6 & 39879 \\
+ \tabucline[1.5pt]{-}
+
+ No battery & 41.2 \\
+ \tabucline[1.5pt]{-}
+ 
+Single agent & 6153 \\
+ \tabucline[1.5pt]{-}
+
+
+
+ \hline
+\end{tabu}
+\end{center}	
+\caption{\label{tab:environment_comparison} Top scores in different environments}
+\end{table}
+
 \section{FFNN w/ Non-linear Activation} \label{ffnn_non-linear}
 \begin{figure}[!tbp]
   \centering
@@ -690,6 +823,91 @@ In terms of task difficulty, having only one agent does not impact the difficult
   \caption{FFNN with tanh activation}
   \label{fig:ffnn_tanh}	
 \end{figure}
+
+\section{RNN with Non-linear Activation and Bias} \label{rnn_non-linear_bias}
+
+\begin{figure}[!tbp]
+  \centering
+  
+% RNN bias 0HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_0HL_tanh/rnn_bias_0HL_tanh_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_0HL_tanh/rnn_bias_0HL_tanh_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_0HL_tanh/rnn_bias_0HL_tanh_all_scores_log_dist_.png}}
+  
+  % RNN bias 1HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_1HL_4HU_tanh/rnn_bias_1HL_4HU_tanh_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_1HL_4HU_tanh/rnn_bias_1HL_4HU_tanh_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_1HL_4HU_tanh/rnn_bias_1HL_4HU_tanh_all_scores_log_dist_.png}}
+
+% RNN bias 2HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_2HL_4HU_tanh/rnn_bias_2HL_4HU_tanh_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_2HL_4HU_tanh/rnn_bias_2HL_4HU_tanh_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_2HL_4HU_tanh/rnn_bias_2HL_4HU_tanh_all_scores_log_dist_.png}}  
+  
+  \caption{RNN with tanh activation and bias}
+  \label{fig:rnn_tanh_bias}	
+\end{figure}	
+
+\begin{figure}[!tbp]
+  \centering
+  
+% RNN bias 0HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_0HL_relu/rnn_bias_0HL_relu_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_0HL_relu/rnn_bias_0HL_relu_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_0HL_relu/rnn_bias_0HL_relu_all_scores_log_dist_.png}}
+  
+  % RNN bias 1HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_1HL_4HU_relu/rnn_bias_1HL_4HU_relu_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_1HL_4HU_relu/rnn_bias_1HL_4HU_relu_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_1HL_4HU_relu/rnn_bias_1HL_4HU_relu_all_scores_log_dist_.png}}
+
+% RNN bias 2HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_2HL_4HU_relu/rnn_bias_2HL_4HU_relu_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_2HL_4HU_relu/rnn_bias_2HL_4HU_relu_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_2HL_4HU_relu/rnn_bias_2HL_4HU_relu_all_scores_log_dist_.png}}  
+  
+  \caption{RNN with ReLU activation and bias}
+  \label{fig:rnn_relu_bias}	
+\end{figure}	
+
+\begin{figure}[!tbp]
+  \centering
+  % RNN bias 0HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_0HL_sigmoid/rnn_bias_0HL_sigmoid_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_0HL_sigmoid/rnn_bias_0HL_sigmoid_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_0HL_sigmoid/rnn_bias_0HL_sigmoid_all_scores_log_dist_.png}}
+  
+  % RNN bias 1HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_1HL_4HU_sigmoid/rnn_bias_1HL_4HU_sigmoid_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_1HL_4HU_sigmoid/rnn_bias_1HL_4HU_sigmoid_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_1HL_4HU_sigmoid/rnn_bias_1HL_4HU_sigmoid_all_scores_log_dist_.png}}
+
+% RNN bias 2HL
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_2HL_4HU_sigmoid/rnn_bias_2HL_4HU_sigmoid_score_trials_ordered_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_2HL_4HU_sigmoid/rnn_bias_2HL_4HU_sigmoid_variance_meanscore_.png}}
+  \hfill
+  \subfloat{\includegraphics[width=0.3\textwidth]{rnn_bias_2HL_4HU_sigmoid/rnn_bias_2HL_4HU_sigmoid_all_scores_log_dist_.png}}  
+  
+  \caption{RNN with sigmoid activation and bias}
+  \label{fig:rnn_sigmoid_bias}	
+\end{figure}	
 
 \end{appendices}
 \end{document}

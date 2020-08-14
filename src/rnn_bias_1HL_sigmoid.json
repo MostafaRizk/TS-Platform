@@ -27,10 +27,10 @@
     "agent": {
         "nn": {
             "architecture": "rnn",
-            "bias": "False",
-            "hidden_layers": 5,
+            "bias": "True",
+            "hidden_layers": 1,
             "hidden_units_per_layer": 4,
-            "activation_function": "tanh"
+            "activation_function": "sigmoid"
         }
     },
     "algorithm": {
