@@ -1,7 +1,7 @@
 {
     "general": {
         "algorithm_selected": "rwg",
-        "team_type": "heterogneous",
+        "team_type": "heterogeneous",
         "reward_level": "team",
         "agent_type": "nn",
         "seed": 1

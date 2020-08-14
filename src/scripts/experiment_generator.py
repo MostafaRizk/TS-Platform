@@ -39,7 +39,7 @@ for parameter_filename in json_files:
     parameter_dictionary = json.loads(open(parameter_filename).read())
 
     # change to heterogneous
-    parameter_dictionary["general"]["team_type"] = "heterogneous"
+    parameter_dictionary["general"]["team_type"] = "heterogeneous"
 
     # write to file
     f = open(parameter_filename, "w")
