@@ -32,14 +32,15 @@ g.close()
 '''
 
 #for every json file except lazy_generalist and default_parameters
-json_files = glob(f'../*nn*.json')
+json_files = glob(f'../cma_*.json')
 
 for parameter_filename in json_files:
     # load parameter dictionary
     parameter_dictionary = json.loads(open(parameter_filename).read())
 
-    # change to heterogneous
+    # change to heterogeneous
     parameter_dictionary["general"]["team_type"] = "heterogeneous"
+    parameter_filename = parameter_filename.replace("homogeneous", "heterogeneous")
 
     # write to file
     f = open(parameter_filename, "w")

@@ -9,15 +9,11 @@ from learning.rwg import RWGLearner
 import numpy as np
 from agents.nn_agent_lean import NNAgent
 
-parameter_filename = "single_agent.json"
+parameter_filename = "rnn_no-bias_0HL.json"
 fitness_calculator = FitnessCalculator(parameter_filename)
+model_name = "rwg_heterogeneous_team_nn_1_2_3_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_5_rnn_False_0_0_linear_100000_normal_0_1_6065.800000000005.npy"
 
-agent_1 = HardcodedLazyGeneralistAgent(switch_probability=0.1, seed=1)
-agent_2 = HardcodedLazyGeneralistAgent(switch_probability=0.1, seed=1)
-results = fitness_calculator.calculate_fitness(agent_1, agent_2, render=True, time_delay=0.1)
-#results = fitness_calculator.calculate_fitness(agent_1, agent_2)
-fitness_1_list = results["fitness_1_list"]
-fitness_2_list = results["fitness_2_list"]
-specialisation_list = results["specialisation_list"]
-zipped_list = zip(fitness_1_list, fitness_2_list)
-print(f"{np.mean([fitness_1 + fitness_2 for (fitness_1, fitness_2) in zipped_list])}")
+genome = NNAgent.load_model_from_file(model_name)
+agent_1 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_filename, genome)
+agent_2 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_filename, genome)
+fitness_calculator.calculate_fitness(agent_1, agent_2, render=True, time_delay=0.1)
