@@ -1,5 +1,7 @@
-from scripts.benchmarking import BenchmarkPlotter
 import os
+
+from scripts.benchmarking import BenchmarkPlotter
+from glob import glob
 
 """("ffnn_bias_0HL", "result_files/ffnn_bias_0HL.csv"),
                ("ffnn_bias_1HL_4HU", "result_files/ffnn_bias_1HL_4HU.csv"),
@@ -47,13 +49,12 @@ import os
                ("rnn_no-bias_1HL_4HU_sigmoid", "result_files/rnn_no-bias_1HL_4HU_sigmoid.csv"),
                ("rnn_no-bias_2HL_4HU_sigmoid", "result_files/rnn_no-bias_2HL_4HU_sigmoid.csv"),"""
 
+csv_files = glob(f'result_files_het/*.csv')
+experiments = []
 
-experiments = [("3_layers", "result_files/3_layers.csv"),
-               ("4_layers", "result_files/4_layers.csv"),
-               ("5_layers", "result_files/5_layers.csv"),
-               ("6_layers", "result_files/6_layers.csv"),
-               ("7_layers", "result_files/7_layers.csv"),
-               ]
+for filename in csv_files:
+    shortened_name = filename.split("/")[1].strip(".csv")
+    experiments += [(shortened_name, filename)]
 
 original_dir = os.getcwd()
 

@@ -23,7 +23,7 @@ except:
 
 class SlopeEnv:
     # Primary functions -----------------------------------------------------------------------------------------------
-    def __init__(self, parameter_filename=None):
+    def __init__(self, parameter_filename=None, version="simple"):
         """
         Initialises constants and variables for agents, resources and environment
         :param
@@ -32,6 +32,8 @@ class SlopeEnv:
             raise RuntimeError("No parameter file specified for the environment")
 
         parameter_dictionary = json.loads(open(parameter_filename).read())
+
+        self.version = version
 
         # Environment dimensions
         self.arena_constraints = {"x_min": 0, "x_max": parameter_dictionary['environment']['arena_width'], "y_min": 0,
@@ -103,10 +105,15 @@ class SlopeEnv:
         self.np_random = np.random.RandomState(self.seed_value)
 
         # Observation space (additional details explained in self.get_agent_observations())
+
         # Range=1 -> 9 tiles. Range=2 -> 25 tiles. Agent at the center.
         self.tiles_in_sensing_range = (2 * self.sensor_range + 1) ** 2
-        # Tiles in sensing range are onehotencoded + 4 bits for location + 1 bit for object possession
-        self.observation_space_size = self.tiles_in_sensing_range * 4 + 4 + 1
+
+        if self.version == "simple":
+            self.observation_space_size = (self.tiles_in_sensing_range-1) + 1 +
+        else:
+            # Tiles in sensing range are onehotencoded + 4 bits for location + 1 bit for object possession
+            self.observation_space_size = self.tiles_in_sensing_range * 4 + 4 + 1
 
         # Action space
         # 0- Forward, 1- Backward, 2- Left, 3- Right, 4- Pick up, 5- Drop
