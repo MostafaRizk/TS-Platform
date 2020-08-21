@@ -1,7 +1,7 @@
 {
   "general": {
-    "algorithm_selected": "cma",
-    "team_type": "homogeneous",
+    "algorithm_selected": "rwg",
+    "team_type": "heterogeneous",
     "reward_level": "team",
     "agent_type": "nn",
     "seed": 1
@@ -22,19 +22,20 @@
     "carry_factor": 2,
     "resource_reward": 1000,
     "simulation_length": 500,
-    "num_simulation_runs": 5
+    "num_simulation_runs": 5,
+    "observation_version": "simple"
   },
   "agent": {
     "nn": {
       "architecture": "rnn",
-      "bias": "True",
+      "bias": "False",
       "hidden_layers": 0,
       "hidden_units_per_layer": 4,
       "activation_function": "linear"
     }
   },
   "algorithm": {
-    "agent_population_size": 80,
+    "agent_population_size": 1000,
     "rwg": {
       "sampling_distribution": "normal",
       "normal": {

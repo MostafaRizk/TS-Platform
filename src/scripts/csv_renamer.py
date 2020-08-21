@@ -1,6 +1,7 @@
 import os
 from glob import glob
 
+
 csv_files = glob(f'result_files_het/all_genomes_*.csv')
 
 for filename in csv_files:
@@ -12,8 +13,29 @@ for filename in csv_files:
         name_parts[1] = "bias"
 
     name_parts[2] += "HL"
-    name_parts[3] += "HU"
+
+    if int(name_parts[3]) > 0:
+        name_parts[3] += "HU"
+    else:
+        del name_parts[3]
 
     shortened_name = "_".join(name_parts)
 
     os.rename(filename, f"result_files_het/{shortened_name}.csv")
+
+'''
+# Fix all file and folder names with 0HU in them as it is redundant
+redundant_names = glob(f'*0HU_*')
+
+for name in redundant_names:
+    os.chdir(name)
+    redundant_sub_names = glob(f'*0HU_*')
+
+    for sub_name in redundant_sub_names:
+        replacement = sub_name.replace("0HU_", "")
+        os.rename(sub_name, replacement)
+
+    os.chdir("../")
+    replacement = name.replace("0HU_", "")
+    os.rename(name, replacement)
+'''

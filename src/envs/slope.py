@@ -23,7 +23,7 @@ except:
 
 class SlopeEnv:
     # Primary functions -----------------------------------------------------------------------------------------------
-    def __init__(self, parameter_filename=None, version="simple"):
+    def __init__(self, parameter_filename=None):
         """
         Initialises constants and variables for agents, resources and environment
         :param
@@ -33,7 +33,10 @@ class SlopeEnv:
 
         parameter_dictionary = json.loads(open(parameter_filename).read())
 
-        self.version = version
+        try:
+            self.observation_version = parameter_dictionary['environment']['observation_version']
+        except KeyError:
+            self.observation_version = "complex"
 
         # Environment dimensions
         self.arena_constraints = {"x_min": 0, "x_max": parameter_dictionary['environment']['arena_width'], "y_min": 0,
@@ -109,8 +112,9 @@ class SlopeEnv:
         # Range=1 -> 9 tiles. Range=2 -> 25 tiles. Agent at the center.
         self.tiles_in_sensing_range = (2 * self.sensor_range + 1) ** 2
 
-        if self.version == "simple":
-            self.observation_space_size = (self.tiles_in_sensing_range-1) + 1 +
+        if self.observation_version == "simple":
+            # 1 bit for each tile in range + 4 bits for location + 1 bit for object detection + 1 bit for object possession
+            self.observation_space_size = self.tiles_in_sensing_range + 4 + 1 + 1
         else:
             # Tiles in sensing range are onehotencoded + 4 bits for location + 1 bit for object possession
             self.observation_space_size = self.tiles_in_sensing_range * 4 + 4 + 1
@@ -383,6 +387,100 @@ class SlopeEnv:
         return x, y
 
     def get_agent_observations(self):
+        if self.observation_version == "simple":
+            return self.get_observations_simple()
+        elif self.observation_version == "complex":
+            return self.get_observations_complex()
+
+    def get_observations_simple(self):
+        observations = []
+        readable_observations = []
+
+        for j in range(len(self.agent_positions)):
+            position = self.agent_positions[j]
+            observation = [0] * self.observation_space_size
+            readable_observation = []
+
+            # If a tile in the agent's sensing range is:
+            # An agent, wall or object-            observation[k] = 1, otherwise 0
+            current_x = position[0] - self.sensor_range
+            current_y = position[1] + self.sensor_range
+            row_progress = 0
+
+            resource_in_range = False
+
+            for k in range(self.tiles_in_sensing_range):
+                # If coordinate is out of bounds then it is a wall
+                if self.arena_constraints["x_max"] <= current_x or current_x < 0 or self.arena_constraints["y_max"] <= current_y or current_y < 0:
+                    observation[k] = 1  # Wall
+                    readable_observation += ["Object (wall)"]
+                # If coordinate contains a agent and the agent is not this agent
+                elif self.agent_map[current_y][current_x] != 0 and (
+                        current_x != position[0] or current_y != position[1]):
+                    observation[k] = 1  # Another agent
+                    readable_observation += ["Object (agent)"]
+                # If coordinate is a resource
+                elif self.resource_map[current_y][current_x] != 0 and self.has_resource[j] != self.resource_map[current_y][current_x] - 1:
+                    observation[k] = 1  # A resource
+                    readable_observation += ["Object (resource)"]
+                    resource_in_range = True
+                else:
+                    observation[k] = 0  # Blank space
+                    readable_observation += ["Blank"]
+
+                row_progress += 1
+
+                if row_progress >= self.sensor_range * 2 + 1:
+                    row_progress = 0
+                    current_x = position[0] - self.sensor_range
+                    current_y -= 1
+                else:
+                    current_x += 1
+
+            area = self.get_area_from_position(position)
+            obs_index = self.tiles_in_sensing_range
+
+            # If the area the agent is located in is
+            # The nest-     observation[9] = 1, otherwise 0
+            # The cache-    observation[10] = 1, otherwise 0
+            # The slope-    observation[11] = 1, otherwise 0
+            # The source-   observation[12] = 1, otherwise 0
+            if area == "NEST":
+                observation[obs_index] = 1
+            elif area == "CACHE":
+                observation[obs_index + 1] = 1
+            elif area == "SLOPE":
+                observation[obs_index + 2] = 1
+            else:
+                observation[obs_index + 3] = 1
+
+            readable_observation += [area]
+
+            # If a resource is
+            # In range-   observation[13] = 1, otherwise 0
+            if resource_in_range:
+                observation[obs_index + 4] = 1
+                readable_observation = ["In range"]
+            else:
+                readable_observation = ["Not in range"]
+
+
+            # If the agent
+            # Has a resource-   observation[14] = 1, otherwise 0
+            if self.has_resource[j] is not None:
+                observation[obs_index + 5] = 1
+                readable_observation += ["Has"]
+            else:
+                readable_observation += ["Doesn't have"]
+
+            observations += [np.array(observation)]
+            readable_observations += [readable_observation]
+
+        return observations
+
+
+
+    def get_observations_complex(self):
         """
         Generate a list containing each agent's observation. Each agent observes:
         1. A radius of self.sensor_range around itself. If sensor range is 0, it only checks the tile it is currently
@@ -394,7 +492,7 @@ class SlopeEnv:
         2. Where the agent is (Nest, Cache, Slope, Source) also encoded as a bit-vector
         3. Whether or not the agent is carrying a resource (encoded as a single bit)
         :return:
-        """
+         """
 
         observations = []
         readable_observations = []

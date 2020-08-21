@@ -9,9 +9,10 @@ from learning.rwg import RWGLearner
 import numpy as np
 from agents.nn_agent_lean import NNAgent
 
-parameter_filename = "rnn_no-bias_0HL.json"
+parameter_filename = "default_parameters.json"
 fitness_calculator = FitnessCalculator(parameter_filename)
-model_name = "cma_heterogeneous_team_nn_550290314_2_3_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_5_rnn_False_0_0_linear_80_0.2_5000_0.001_200.0_41549.87999999998_2960.npy"
+
+model_name = "rwg_heterogeneous_team_nn_1_2_3_1_6_8_4_1_3_7_1_3.0_0.2_2_1000_500_5_rnn_False_0_4_linear_1000_normal_0_1_1223.2800000000002.npy"
 
 genome = NNAgent.load_model_from_file(model_name)
 agent_1 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_filename, genome)
