@@ -1,2 +1,14 @@
-python3 experiment.py --parameter ffnn_no-bias_0HL.json
 python3 experiment.py --parameter rnn_bias_0HL.json
+python3 experiment.py --parameter rnn_no-bias_0HL.json
+python3 experiment.py --parameter rnn_bias_0HL_tanh.json
+python3 experiment.py --parameter rnn_bias_1HL_tanh.json
+python3 experiment.py --parameter rnn_bias_2HL_tanh.json
+python3 experiment.py --parameter rnn_no-bias_0HL_tanh.json
+python3 experiment.py --parameter rnn_no-bias_1HL_tanh.json
+python3 experiment.py --parameter rnn_no-bias_2HL_tanh.json
+python3 experiment.py --parameter rnn_no-bias_3HL_tanh.json
+python3 experiment.py --parameter rnn_no-bias_4HL_tanh.json
+python3 experiment.py --parameter rnn_no-bias_5HL_tanh.json
+python3 experiment.py --parameter rnn_no-bias_6HL_tanh.json
+python3 experiment.py --parameter rnn_no-bias_7HL_tanh.json
+

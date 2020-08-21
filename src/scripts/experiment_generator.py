@@ -31,6 +31,7 @@ for i in range(num_experiments):
 g.close()
 '''
 
+'''
 #for every json file except lazy_generalist and default_parameters
 json_files = glob(f'../cma_*.json')
 
@@ -43,6 +44,20 @@ for parameter_filename in json_files:
     parameter_filename = parameter_filename.replace("homogeneous", "heterogeneous")
 
     # write to file
+    f = open(parameter_filename, "w")
+    dictionary_string = json.dumps(parameter_dictionary, indent=4)
+    f.write(dictionary_string)
+    f.close()
+'''
+json_files = glob(f'../rnn*.json')
+
+for parameter_filename in json_files:
+    parameter_dictionary = json.loads(open(parameter_filename).read())
+
+    # Set observation version to simple
+    parameter_dictionary["environment"]["observation_version"] = "simple"
+
+    # Write files
     f = open(parameter_filename, "w")
     dictionary_string = json.dumps(parameter_dictionary, indent=4)
     f.write(dictionary_string)

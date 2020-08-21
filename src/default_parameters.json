@@ -1,6 +1,6 @@
 {
   "general": {
-    "algorithm_selected": "rwg",
+    "algorithm_selected": "cma",
     "team_type": "heterogeneous",
     "reward_level": "team",
     "agent_type": "nn",
@@ -35,7 +35,7 @@
     }
   },
   "algorithm": {
-    "agent_population_size": 1000,
+    "agent_population_size": 10,
     "rwg": {
       "sampling_distribution": "normal",
       "normal": {
@@ -49,7 +49,7 @@
     },
     "cma": {
       "sigma": 0.2,
-      "generations": 5000,
+      "generations": 5,
       "tolx": 1e-3,
       "tolfunhist": 2e2
     }
