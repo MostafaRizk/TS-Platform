@@ -1,10 +1,10 @@
 {
     "general": {
-        "algorithm_selected": "rwg",
+        "algorithm_selected": "cma",
         "team_type": "heterogeneous",
         "reward_level": "team",
         "agent_type": "nn",
-        "seed": 1
+        "seed": 4282876140
     },
     "environment": {
         "num_agents": 2,
@@ -29,13 +29,13 @@
         "nn": {
             "architecture": "rnn",
             "bias": "False",
-            "hidden_layers": 6,
-            "hidden_units_per_layer": 4,
-            "activation_function": "tanh"
+            "hidden_layers": 0,
+            "hidden_units_per_layer": 0,
+            "activation_function": "linear"
         }
     },
     "algorithm": {
-        "agent_population_size": 100000,
+        "agent_population_size": 80,
         "rwg": {
             "sampling_distribution": "normal",
             "normal": {
@@ -49,7 +49,7 @@
         },
         "cma": {
             "sigma": 0.2,
-            "generations": 10,
+            "generations": 5000,
             "tolx": 0.001,
             "tolfunhist": 200.0
         }

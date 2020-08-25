@@ -49,7 +49,9 @@ for parameter_filename in json_files:
     f.write(dictionary_string)
     f.close()
 '''
-json_files = glob(f'../rnn*.json')
+
+''''''
+json_files = glob(f'../cma_het*.json')
 
 for parameter_filename in json_files:
     parameter_dictionary = json.loads(open(parameter_filename).read())
@@ -62,3 +64,4 @@ for parameter_filename in json_files:
     dictionary_string = json.dumps(parameter_dictionary, indent=4)
     f.write(dictionary_string)
     f.close()
+

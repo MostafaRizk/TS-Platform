@@ -11,6 +11,9 @@ class Agent:
     def get_genome(self):
         pass
 
+    def save_model(self, name):
+        pass
+
     @staticmethod
     def save_given_model(model, filename):
         pass
