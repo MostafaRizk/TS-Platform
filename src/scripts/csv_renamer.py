@@ -2,7 +2,7 @@ import os
 from glob import glob
 
 
-csv_files = glob(f'result_files_het/all_genomes_*.csv')
+csv_files = glob(f'result_files/all_genomes_*.csv')
 
 for filename in csv_files:
     name_parts = filename.split("_")[-10:-5]
@@ -21,7 +21,7 @@ for filename in csv_files:
 
     shortened_name = "_".join(name_parts)
 
-    os.rename(filename, f"result_files_het/{shortened_name}.csv")
+    os.rename(filename, f"result_files/{shortened_name}.csv")
 
 '''
 # Fix all file and folder names with 0HU in them as it is redundant

@@ -3,7 +3,7 @@ import os
 from scripts.benchmarking import BenchmarkPlotter
 from glob import glob
 
-csv_files = glob(f'result_files_het/rnn*.csv')
+csv_files = glob(f'result_files/rnn*.csv')
 experiments = []
 
 for filename in csv_files:
