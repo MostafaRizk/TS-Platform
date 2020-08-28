@@ -16,7 +16,8 @@ class FitnessCalculator:
         self.parameter_filename = parameter_filename
         self.parameter_dictionary = json.loads(open(parameter_filename).read())
 
-        self.env = SlopeEnv(parameter_filename)
+        if self.parameter_dictionary["general"]["environment"] == "slope":
+            self.env = SlopeEnv(parameter_filename)
 
         # Get size of input and output space (for use in agent creation)
         self.observation_size = self.env.get_observation_size()
