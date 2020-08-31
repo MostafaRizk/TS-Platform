@@ -201,13 +201,12 @@ class SlopeEnv:
         """
         Agents act and receive rewards depending on where they are and what they do
         @param agent_actions: Action being taken by each agent
-        @return: A list of two float-value rewards, one for each agent
+        @return: A list of float-value rewards, one for each agent
         """
-        rewards = [0.0, 0.0]
+        rewards = [0.0] * len(agent_actions)
 
         for i in range(len(agent_actions)):
             cost_multiplier = 1
-            team_id = i % 2
 
             # If agent is carrying something, multiply the cost of moving
             if self.has_resource[i] is not None:
@@ -219,21 +218,23 @@ class SlopeEnv:
                 # More costly for agent to move up the slope than down
                 if self.get_area_from_position(self.agent_positions[i]) == "SLOPE":
                     if self.action_name[agent_actions[i]] == "FORWARD":
-                        rewards[team_id] -= self.upward_cost_factor * self.base_cost * cost_multiplier
+                        rewards[i] -= self.base_cost*cost_multiplier + \
+                                      (self.base_cost * cost_multiplier * self.upward_cost_factor * self.sliding_speed)
 
                     elif self.action_name[agent_actions[i]] == "BACKWARD":
-                        rewards[team_id] -= self.base_cost * self.downward_cost_factor * cost_multiplier
+                        rewards[i] -= self.base_cost*cost_multiplier - \
+                                      (self.base_cost * cost_multiplier * self.downward_cost_factor * self.sliding_speed)
 
                     else:
-                        rewards[team_id] -= self.base_cost * cost_multiplier
+                        rewards[i] -= self.base_cost * cost_multiplier
 
                 # Negative reward for moving when not on slope. Same as having a battery
                 else:
-                    rewards[team_id] -= self.base_cost * cost_multiplier
+                    rewards[i] -= self.base_cost * cost_multiplier
 
             # Negative reward for dropping/picking up but is not affected by resource weight
             else:
-                rewards[team_id] -= self.base_cost
+                rewards[i] -= self.base_cost
 
         return rewards
 
@@ -304,8 +305,8 @@ class SlopeEnv:
                 resource_id = self.resource_positions.index(self.agent_positions[i])
 
                 # Reward all agents if a resource is retrieved
-                rewards[0] += self.reward_for_resource
-                rewards[1] += self.reward_for_resource
+                for j in range(self.num_agents):
+                    rewards[j] += self.reward_for_resource / self.num_agents
 
                 self.delete_resource(resource_id)
 

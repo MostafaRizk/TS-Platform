@@ -121,8 +121,12 @@ class FitnessCalculator:
                 # The environment changes according to all their actions
                 observations, rewards = self.env.step(robot_actions)
 
-                fitness_1 += rewards[0]
-                fitness_2 += rewards[1]
+                # Calculate how much of the rewards go to each agent type
+                for i in range(len(rewards)):
+                    if i % 2 == 0:
+                        fitness_1 += rewards[i]
+                    else:
+                        fitness_2 += rewards[i]
 
                 if time_delay > 0:
                     time.sleep(time_delay)

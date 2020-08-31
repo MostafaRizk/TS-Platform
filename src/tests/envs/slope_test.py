@@ -2,4 +2,8 @@ import unittest
 
 
 class SlopeEnv(unittest.TestCase):
-    pass
+    def create_testing_env(self):
+        pass
+
+    def test_act_and_reward(self):
+        pass
