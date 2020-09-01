@@ -33,38 +33,43 @@ class SlopeEnv:
 
         parameter_dictionary = json.loads(open(parameter_filename).read())
 
+        try:
+            self.observation_version = parameter_dictionary['environment']['observation_version']
+        except KeyError:
+            self.observation_version = "complex"
+
         # Environment dimensions
-        self.arena_constraints = {"x_min": 0, "x_max": parameter_dictionary['environment']['slope']['arena_width'], "y_min": 0,
-                                  "y_max": parameter_dictionary['environment']['slope']['arena_length']}
-        self.nest_size = parameter_dictionary['environment']['slope']['cache_start']
-        self.cache_size = parameter_dictionary['environment']['slope']['slope_start'] - parameter_dictionary['environment']['slope'][
+        self.arena_constraints = {"x_min": 0, "x_max": parameter_dictionary['environment']['arena_width'], "y_min": 0,
+                                  "y_max": parameter_dictionary['environment']['arena_length']}
+        self.nest_size = parameter_dictionary['environment']['cache_start']
+        self.cache_size = parameter_dictionary['environment']['slope_start'] - parameter_dictionary['environment'][
             'cache_start']
-        self.slope_size = parameter_dictionary['environment']['slope']['source_start'] - parameter_dictionary['environment']['slope'][
+        self.slope_size = parameter_dictionary['environment']['source_start'] - parameter_dictionary['environment'][
             'slope_start']
-        self.source_size = parameter_dictionary['environment']['slope']['arena_length'] - parameter_dictionary['environment']['slope'][
+        self.source_size = parameter_dictionary['environment']['arena_length'] - parameter_dictionary['environment'][
             'source_start']
         self.nest_start = self.arena_constraints["y_min"]
-        self.cache_start = parameter_dictionary['environment']['slope']['cache_start']
-        self.slope_start = parameter_dictionary['environment']['slope']['slope_start']
-        self.source_start = parameter_dictionary['environment']['slope']['source_start']
+        self.cache_start = parameter_dictionary['environment']['cache_start']
+        self.slope_start = parameter_dictionary['environment']['slope_start']
+        self.source_start = parameter_dictionary['environment']['source_start']
         self.num_arena_tiles = self.arena_constraints["x_max"] * self.arena_constraints["y_max"]
-        self.sliding_speed = parameter_dictionary['environment']['slope']['sliding_speed']
+        self.sliding_speed = parameter_dictionary['environment']['sliding_speed']
 
         # agent constants
         self.agent_width = 0.8
-        self.sensor_range = parameter_dictionary['environment']['slope']['sensor_range']
+        self.sensor_range = parameter_dictionary['environment']['sensor_range']
 
         # Resource constants
         self.resource_width = 0.6
-        self.base_cost = parameter_dictionary['environment']['slope']['base_cost']
-        self.reward_for_resource = parameter_dictionary['environment']['slope']['resource_reward']
-        self.upward_cost_factor = parameter_dictionary['environment']['slope']['upward_cost_factor']
-        self.downward_cost_factor = parameter_dictionary['environment']['slope']['downward_cost_factor']
-        self.carry_factor = parameter_dictionary['environment']['slope']['carry_factor']
+        self.base_cost = parameter_dictionary['environment']['base_cost']
+        self.reward_for_resource = parameter_dictionary['environment']['resource_reward']
+        self.upward_cost_factor = parameter_dictionary['environment']['upward_cost_factor']
+        self.downward_cost_factor = parameter_dictionary['environment']['downward_cost_factor']
+        self.carry_factor = parameter_dictionary['environment']['carry_factor']
 
         # Other constants and variables
-        self.num_agents = parameter_dictionary['environment']['slope']['num_agents']
-        self.default_num_resources = parameter_dictionary['environment']['slope']['num_resources']
+        self.num_agents = parameter_dictionary['environment']['num_agents']
+        self.default_num_resources = parameter_dictionary['environment']['num_resources']
         self.current_num_resources = self.default_num_resources
         self.latest_resource_id = self.default_num_resources - 1
         self.dumping_position = (-10, -10)
@@ -107,8 +112,12 @@ class SlopeEnv:
         # Range=1 -> 9 tiles. Range=2 -> 25 tiles. Agent at the center.
         self.tiles_in_sensing_range = (2 * self.sensor_range + 1) ** 2
 
-        # 1 bit for each tile in range + 4 bits for location + 1 bit for object detection + 1 bit for object possession
-        self.observation_space_size = self.tiles_in_sensing_range + 4 + 1 + 1
+        if self.observation_version == "simple":
+            # 1 bit for each tile in range + 4 bits for location + 1 bit for object detection + 1 bit for object possession
+            self.observation_space_size = self.tiles_in_sensing_range + 4 + 1 + 1
+        else:
+            # Tiles in sensing range are onehotencoded + 4 bits for location + 1 bit for object possession
+            self.observation_space_size = self.tiles_in_sensing_range * 4 + 4 + 1
 
         # Action space
         # 0- Forward, 1- Backward, 2- Left, 3- Right, 4- Pick up, 5- Drop
@@ -129,84 +138,19 @@ class SlopeEnv:
 
         # Returns an error if any action is invalid
         for action in agent_actions:
+            # assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
             assert action in range(self.action_space_size), "%r (%s) invalid" % (action, type(action))
 
+        done = False
+
+        rewards = [0.0, 0.0]
+
+        # The agents act
         old_agent_positions = copy.deepcopy(self.agent_positions)
-
-        rewards = self.act_and_reward(agent_actions)
-        self.wipe_old_positions(old_agent_positions)
-        self.update_agent_positions(old_agent_positions)
-        rewards = self.update_resource_positions(agent_actions, old_agent_positions, rewards)
-        self.replenish_resources()
-        observations = self.get_agent_observations()
-
-        return observations, rewards
-
-    def reset(self):
-        """
-        """
-
-        # Make sure agents and resources will all fit in the environment
-        assert self.num_agents <= self.arena_constraints["x_max"] * self.nest_size, "Not enough room in the nest for all agents"
-        assert self.default_num_resources <= self.arena_constraints["x_max"] * self.source_size, "Not enough room in the source for all resources"
-
-        try:
-            self.viewer.close()
-        except:
-            pass
-
-        self.viewer = None
-        self.resource_positions = [None for i in range(self.default_num_resources)]
-        self.resource_carried_by = [[] for i in range(self.default_num_resources)]
-
-        try:
-            self.resource_transforms = [rendering.Transform() for i in range(self.default_num_resources)]
-        except:
-            pass
-
-        self.latest_resource_id = self.default_num_resources - 1
-
-        # Creates empty state
-        self.agent_map = self.generate_arena()  # Empty agent map
-        self.resource_map = self.generate_arena()  # Empty resource map
-
-        # Places all agents
-        for i in range(self.num_agents):
-            agent_placed = False
-            while not agent_placed:
-                x, y = self.generate_agent_position()
-                if self.agent_map[y][x] == 0:
-                    self.agent_map[y][x] = i + 1
-                    self.agent_positions[i] = (x, y)
-                    agent_placed = True
-
-        # Places all resources
-        for i in range(self.default_num_resources):
-            resource_placed = False
-            while not resource_placed:
-                x, y = self.generate_resource_position()
-                if self.resource_map[y][x] == 0:
-                    self.resource_map[y][x] = i + 1
-                    self.resource_positions[i] = (x, y)
-                    resource_placed = True
-
-        # Reset variables that were changed during runtime
-        self.has_resource = [None for i in range(self.num_agents)]
-        self.current_num_resources = self.default_num_resources
-
-        return self.get_agent_observations()
-
-    # Step helpers ----------------------------------------------------------------------------------------------------
-    def act_and_reward(self, agent_actions):
-        """
-        Agents act and receive rewards depending on where they are and what they do
-        @param agent_actions: Action being taken by each agent
-        @return: A list of float-value rewards, one for each agent
-        """
-        rewards = [0.0] * len(agent_actions)
 
         for i in range(len(agent_actions)):
             cost_multiplier = 1
+            team_id = i % 2
 
             # If agent is carrying something, multiply the cost of moving
             if self.has_resource[i] is not None:
@@ -218,107 +162,103 @@ class SlopeEnv:
                 # More costly for agent to move up the slope than down
                 if self.get_area_from_position(self.agent_positions[i]) == "SLOPE":
                     if self.action_name[agent_actions[i]] == "FORWARD":
-                        rewards[i] -= self.base_cost*cost_multiplier + \
-                                      (self.base_cost * cost_multiplier * self.upward_cost_factor * self.sliding_speed)
+                        rewards[team_id] -= self.upward_cost_factor * self.base_cost * cost_multiplier
 
                     elif self.action_name[agent_actions[i]] == "BACKWARD":
-                        rewards[i] -= self.base_cost*cost_multiplier - \
-                                      (self.base_cost * cost_multiplier * self.downward_cost_factor * self.sliding_speed)
+                        rewards[team_id] -= self.base_cost * self.downward_cost_factor * cost_multiplier
 
                     else:
-                        rewards[i] -= self.base_cost * cost_multiplier
+                        rewards[team_id] -= self.base_cost * cost_multiplier
 
                 # Negative reward for moving when not on slope. Same as having a battery
                 else:
-                    rewards[i] -= self.base_cost * cost_multiplier
+                    rewards[team_id] -= self.base_cost * cost_multiplier
 
             # Negative reward for dropping/picking up but is not affected by resource weight
             else:
-                rewards[i] -= self.base_cost
+                rewards[team_id] -= self.base_cost
 
-        return rewards
-
-    def wipe_old_positions(self, old_agent_positions):
-        """
-        Set positions of agents and resources to 0 in the maps
-        @return:
-        """
         # The agents' old positions are wiped out
         for position in old_agent_positions:
+            # self.state[position[1]][position[0]] = 0
             self.agent_map[position[1]][position[0]] = 0
 
         # The resources' old positions are wiped out
         for position in self.resource_positions:
             if position != self.dumping_position:
+                # self.state[position[1] + self.arena_constraints["y_max"]][position[0]] = 0
                 self.resource_map[position[1]][position[0]] = 0
 
-    def update_agent_positions(self, old_agent_positions):
-        """
-        Update the positions of agents
-        @param old_agent_positions: Positions of agents at previous time step
-        @return:
-        """
         agent_collision_positions = copy.deepcopy(self.agent_positions)
 
         # The agents' new positions are updated
         for i in range(len(self.agent_positions)):
             for j in range(len(self.agent_positions)):
-                # If agent i is colliding with agent j's new position, it keeps its old position if it has a smaller index
-                if (self.agent_positions[i] == self.agent_positions[j]) and (i < j or (i >= j and self.agent_positions[j] == old_agent_positions[j])):
+                # If the agent's new position is the same as another agent's new position, it stays where it was
+                if (self.agent_positions[i] == self.agent_positions[j] or self.agent_positions[i] ==
+                    old_agent_positions[j]) and i != j:
+                    # If agent i is colliding with agent j's new position, it keeps its old position
+                    # If agent i is colliding with agent j's old position, it keeps its old position (this is in case
+                    # agent j changes its mind and decides to stay where it is to avoid a collision with a third agent)
+                    # But do not update agent i's position in self.agent_positions so that agent j has the chance to
+                    # update its position too. Otherwise, agent i will back off but agent j will continue and agents
+                    # with higher indices will have an advantage
                     agent_collision_positions[i] = old_agent_positions[i]
 
+            # If agent i's new position is the same as resource j and it is carrying a resource and that resource
+            # is not resource j, then stay at the previous position
+            # i.e agents should only collide with resources to pick them up and they can only hold one resource at a
+            # time
+            for j in range(len(self.resource_positions)):
+                if self.agent_positions[i] == self.resource_positions[j]:
+                    if self.has_resource[i] is not None and self.has_resource[i] != j:
+                        agent_collision_positions[i] = old_agent_positions[i]
+
+            # self.state[agent_collision_positions[i][1]][agent_collision_positions[i][0]] = i + 1
             self.agent_map[agent_collision_positions[i][1]][agent_collision_positions[i][0]] = i + 1
 
         self.agent_positions = agent_collision_positions
 
-    def update_resource_positions(self, agent_actions, old_agent_positions, rewards):
-        """
-        Resources get moved, dropped, picked up, slided and deleted (if at the nest)
-        @param agent_actions: Action being performed by each agent
-        @param old_agent_positions: Positions of all agents prior to acting
-        @param rewards: List of rewards for each agent
-        @return: Updated list of rewards for each agent
-        """
         for i in range(len(self.resource_positions)):
             for j in range(len(old_agent_positions)):
-                # Move resources with the agents carrying them or drop them
+                # Ensure that a resource that was at the same location as a agent in the last time step moves with the agent
+                # (i.e. the agent holds onto the resource). Also ensure that agent picks it up (unless it was just dropped)
                 if self.resource_positions[i] == old_agent_positions[j]:
+                    # If an agent currently has a resource and is doing a drop action, drop the resource
+                    # If an agent currently has a resource and is NOT doing a drop action, hold onto it
                     if self.has_resource[j] == i:
                         if self.action_name[agent_actions[j]] == "DROP":
                             self.drop_resource(j)
                         else:
                             self.pickup_or_hold_resource(j, i)
 
-                 # Ensure that a resource that is in range of an agent now gets picked up if the agent is
-                 # doing a pickup action
-                if self.resource_in_range(j, i):
+                # Ensure that a resource that is at the same location as a agent now gets picked up if the agent is
+                # doing a pickup action
+                if self.resource_positions[i] == self.agent_positions[j]:
                     if self.has_resource[j] is None:
                         if self.action_name[agent_actions[j]] == "PICKUP":
                             self.pickup_or_hold_resource(j, i)
 
             # If a resource is on the slope and not in the possession of a agent, it slides
-            if self.resource_positions[i] != self.dumping_position and self.get_area_from_position(self.resource_positions[i]) == "SLOPE" and i not in self.has_resource:
+            if self.resource_positions[i] != self.dumping_position and \
+                    self.get_area_from_position(self.resource_positions[i]) == "SLOPE" and \
+                    i not in self.has_resource:
                 self.slide_resource(i)
 
-        # If a agent has returned a resource to the nest, the resource is deleted and the agent is rewarded
+        # If a agent has returned a resource to the nest the resource is deleted and the agent is rewarded
         for i in range(self.num_agents):
-            if self.get_area_from_position(self.agent_positions[i]) == "NEST" and self.has_resource[i] is None and self.agent_positions[i] in self.resource_positions:
+            if self.get_area_from_position(self.agent_positions[i]) == "NEST" and \
+                    self.has_resource[i] is None and \
+                    self.agent_positions[i] in self.resource_positions:
                 # Find the resource with the same position as the current agent and get that resource's id
                 resource_id = self.resource_positions.index(self.agent_positions[i])
 
                 # Reward all agents if a resource is retrieved
-                for j in range(self.num_agents):
-                    rewards[j] += self.reward_for_resource / self.num_agents
+                rewards[0] += self.reward_for_resource
+                rewards[1] += self.reward_for_resource
 
                 self.delete_resource(resource_id)
 
-        return rewards
-
-    def replenish_resources(self):
-        """
-        Spawn new resources at the source if some have been moved
-        @return:
-        """
         num_resources_at_source = 0
 
         # Spawn a new resource any time the number of resources at the source decreases below the default threshold
@@ -343,6 +283,81 @@ class SlopeEnv:
         for i in range(len(self.resource_positions)):
             if self.resource_positions[i] != self.dumping_position:
                 self.resource_map[self.resource_positions[i][1]][self.resource_positions[i][0]] = i + 1
+
+        self.state = np.concatenate((self.agent_map, self.resource_map), axis=0)  # Fully observable environment
+        observations = self.get_agent_observations()
+
+        return observations, rewards
+
+    def reset(self):
+        """
+        """
+
+        # Make sure agents and resources will all fit in the environment
+        assert self.num_agents <= self.arena_constraints[
+            "x_max"] * self.nest_size, "Not enough room in the nest for all agents"
+        assert self.default_num_resources <= self.arena_constraints[
+            "x_max"] * self.source_size, "Not enough room in the source for all resources"
+
+        try:
+            self.viewer.close()
+        except:
+            pass
+
+        self.viewer = None
+
+        self.resource_positions = [None for i in range(self.default_num_resources)]
+
+        self.resource_carried_by = [[] for i in range(self.default_num_resources)]
+
+        try:
+            self.resource_transforms = [rendering.Transform() for i in range(self.default_num_resources)]
+        except:
+            pass
+
+        self.latest_resource_id = self.default_num_resources - 1
+
+        # Creates empty state
+        self.agent_map = self.generate_arena()  # Empty agent map
+
+        self.resource_map = self.generate_arena()  # Empty resource map
+
+        # Places all agents
+        for i in range(self.num_agents):
+            agent_placed = False
+            while not agent_placed:
+                x, y = self.generate_agent_position()
+                if self.agent_map[y][x] == 0:
+                    self.agent_map[y][x] = i + 1
+                    self.agent_positions[i] = (x, y)
+                    agent_placed = True
+
+        # Places all resources
+        for i in range(self.default_num_resources):
+            resource_placed = False
+            while not resource_placed:
+                x, y = self.generate_resource_position()
+                if self.resource_map[y][x] == 0:
+                    self.resource_map[y][x] = i + 1
+                    self.resource_positions[i] = (x, y)
+                    resource_placed = True
+        '''
+        # Places straight line of resources
+        for i in range(self.default_num_resources):
+            x, y = i, self.arena_constraints["y_max"]-1
+            self.resource_map[y][x] = i + 1
+            self.resource_positions[i] = (x,y)
+        '''
+
+        # NOTE: To change this, must also change the observation space in __init__
+        self.state = np.concatenate((self.agent_map, self.resource_map), axis=0)
+
+        # Reset variables that were changed during runtime
+        self.has_resource = [None for i in range(self.num_agents)]
+        self.current_num_resources = self.default_num_resources
+
+        # return np.array(self.state)
+        return self.get_agent_observations()
 
     # Initialisers ----------------------------------------------------------------------------------------------------
     def generate_arena(self):
@@ -372,22 +387,12 @@ class SlopeEnv:
         return x, y
 
     def get_agent_observations(self):
-        """
-        Generate a list containing each agent's observation. Each agent observes:
+        if self.observation_version == "simple":
+            return self.get_observations_simple()
+        elif self.observation_version == "complex":
+            return self.get_observations_complex()
 
-        1. A radius of self.sensor_range around itself. If sensor range is 0, it only checks the tile it is currently
-        on. A onehotencoded bit-vector is added to the observation denoting whether the agent detects a blank space or
-        an object (which could be a resource, another agent or a wall).
-        If the radius is greater than 0, then the agent is at the center of a square (side=3 if radius=1,
-        side=5 if radius=2 etc). The same readings are added starting from the top left tile and going row by row
-        until the bottom right tile.
-
-        2. Where the agent is (Nest, Cache, Slope, Source) also encoded as a bit-vector
-
-        3. Whether or not the agent is carrying a resource (encoded as a single bit)
-
-        :return:
-        """
+    def get_observations_simple(self):
         observations = []
         readable_observations = []
 
@@ -406,8 +411,7 @@ class SlopeEnv:
 
             for k in range(self.tiles_in_sensing_range):
                 # If coordinate is out of bounds then it is a wall
-                if self.arena_constraints["x_max"] <= current_x or current_x < 0 or self.arena_constraints[
-                    "y_max"] <= current_y or current_y < 0:
+                if self.arena_constraints["x_max"] <= current_x or current_x < 0 or self.arena_constraints["y_max"] <= current_y or current_y < 0:
                     observation[k] = 1  # Wall
                     readable_observation += ["Object (wall)"]
                 # If coordinate contains a agent and the agent is not this agent
@@ -416,8 +420,7 @@ class SlopeEnv:
                     observation[k] = 1  # Another agent
                     readable_observation += ["Object (agent)"]
                 # If coordinate is a resource
-                elif self.resource_map[current_y][current_x] != 0 and self.has_resource[j] != \
-                        self.resource_map[current_y][current_x] - 1:
+                elif self.resource_map[current_y][current_x] != 0 and self.has_resource[j] != self.resource_map[current_y][current_x] - 1:
                     observation[k] = 1  # A resource
                     readable_observation += ["Object (resource)"]
                     resource_in_range = True
@@ -453,8 +456,112 @@ class SlopeEnv:
 
             readable_observation += [area]
 
+            # If a resource is
+            # In range-   observation[13] = 1, otherwise 0
+            if resource_in_range:
+                observation[obs_index + 4] = 1
+                readable_observation = ["In range"]
+            else:
+                readable_observation = ["Not in range"]
+
+
             # If the agent
-            # Has a resource-   observation[13] = 1, otherwise 0
+            # Has a resource-   observation[14] = 1, otherwise 0
+            if self.has_resource[j] is not None:
+                observation[obs_index + 5] = 1
+                readable_observation += ["Has"]
+            else:
+                readable_observation += ["Doesn't have"]
+
+            observations += [np.array(observation)]
+            readable_observations += [readable_observation]
+
+        return observations
+
+
+
+    def get_observations_complex(self):
+        """
+        Generate a list containing each agent's observation. Each agent observes:
+        1. A radius of self.sensor_range around itself. If sensor range is 0, it only checks the tile it is currently
+        on. A onehotencoded bit-vector is added to the observation denoting whether the agent detects a blank space,
+        another agent (not possible if it's the tile directly underneath), a resource or a wall (also not possible).
+        If the radius is greater than 0, then the agent is at the center of a square (side=3 if radius=1,
+        side=5 if radius=2 etc). The same readings are added starting from the top left tile and going row by row
+        until the bottom right tile.
+        2. Where the agent is (Nest, Cache, Slope, Source) also encoded as a bit-vector
+        3. Whether or not the agent is carrying a resource (encoded as a single bit)
+        :return:
+         """
+
+        observations = []
+        readable_observations = []
+
+        for j in range(len(self.agent_positions)):
+            position = self.agent_positions[j]
+            observation = [0] * self.observation_space_size
+            readable_observation = []
+
+            # If a tile in the agent's sensing range is:
+            # Blank-            observation[k + 0] = 1, otherwise 0
+            # Another agent-    observation[k + 1] = 1, otherwise 0
+            # A resource-       observation[k + 2] = 1, otherwise 0
+            # A wall-           observation[k + 3] = 1, otherwise 0
+            # Each tile is represented by 4 indices instead of 1(for purposes of onehotencoding)
+            current_x = position[0] - self.sensor_range
+            current_y = position[1] + self.sensor_range
+            row_progress = 0
+
+            for k in range(self.tiles_in_sensing_range):
+                # If coordinate is out of bounds then it is a wall
+                if self.arena_constraints["x_max"] <= current_x or current_x < 0 or self.arena_constraints[
+                    "y_max"] <= current_y or current_y < 0:
+                    observation[4 * k + 3] = 1  # Wall
+                    readable_observation += ["Wall"]
+                # If coordinate contains a agent and the agent is not this agent
+                elif self.agent_map[current_y][current_x] != 0 and (
+                        current_x != position[0] or current_y != position[1]):
+                    observation[4 * k + 1] = 1  # Another agent
+                    readable_observation += ["agent"]
+                # If coordinate is a resource
+                elif self.resource_map[current_y][current_x] != 0 and self.has_resource[j] != \
+                        self.resource_map[current_y][current_x] - 1:
+                    observation[4 * k + 2] = 1  # A resource
+                    readable_observation += ["Resource"]
+                else:
+                    observation[4 * k + 0] = 1  # Blank space
+                    readable_observation += ["Blank"]
+
+                row_progress += 1
+
+                if row_progress >= self.sensor_range * 2 + 1:
+                    row_progress = 0
+                    current_x = position[0] - self.sensor_range
+                    current_y -= 1
+                else:
+                    current_x += 1
+
+            area = self.get_area_from_position(position)
+            obs_index = self.tiles_in_sensing_range * 4
+
+            # If the area the agent is located in is
+            # The nest-     observation[4] = 1, otherwise 0
+            # The cache-    observation[5] = 1, otherwise 0
+            # The slope-    observation[6] = 1, otherwise 0
+            # The source-   observation[7] = 1, otherwise 0
+            if area == "NEST":
+                observation[obs_index] = 1
+            elif area == "CACHE":
+                observation[obs_index + 1] = 1
+            elif area == "SLOPE":
+                observation[obs_index + 2] = 1
+            else:
+                observation[obs_index + 3] = 1
+
+            readable_observation += [area]
+
+            # If the agent
+            # Has a resource-   observation[8] = 1, otherwise 0
             if self.has_resource[j] is not None:
                 observation[obs_index + 4] = 1
                 readable_observation += ["Has"]
@@ -524,22 +631,6 @@ class SlopeEnv:
                     return False
 
         return True
-
-    def resource_in_range(self, agent_index, resource_index):
-        """
-        Determine if the given resource is in the sensing range of the given agent
-        @param agent_index: Index of an agent in the agent position list
-        @param resource_index: Index of a resource in the resource position list
-        @return: Boolean denoting whether the resource is in range of the agent
-        """
-        agent_pos = self.agent_positions[agent_index]
-        res_pos = self.resource_positions[resource_index]
-
-        if agent_pos[0] - self.sensor_range <= res_pos[0] <= agent_pos[0] + self.sensor_range and\
-            agent_pos[1] - self.sensor_range <= res_pos[1] <= agent_pos[1] + self.sensor_range:
-            return True
-        else:
-            return False
 
     # Actions ---------------------------------------------------------------------------------------------------------
     def forward_step(self, agent_id):
