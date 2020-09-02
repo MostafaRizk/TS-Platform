@@ -1,0 +1,59 @@
+{
+    "general": {
+        "algorithm_selected": "rwg",
+        "team_type": "heterogeneous",
+        "reward_level": "team",
+        "agent_type": "nn",
+        "environment": "slope",
+        "seed": 1
+    },
+    "environment": {
+        "slope": {
+            "num_agents": 2,
+            "num_resources": 4,
+            "sensor_range": 1,
+            "sliding_speed": 4,
+            "arena_length": 8,
+            "arena_width": 4,
+            "cache_start": 1,
+            "slope_start": 3,
+            "source_start": 7,
+            "base_cost": 1,
+            "upward_cost_factor": 3.0,
+            "downward_cost_factor": 0.2,
+            "carry_factor": 2,
+            "resource_reward": 1000,
+            "simulation_length": 500,
+            "num_simulation_runs": 5
+        }
+    },
+    "agent": {
+        "nn": {
+            "architecture": "ffnn",
+            "bias": "False",
+            "hidden_layers": 0,
+            "hidden_units_per_layer": 0,
+            "activation_function": "linear"
+        }
+    },
+    "algorithm": {
+        "agent_population_size": 20000,
+        "rwg": {
+            "sampling_distribution": "normal",
+            "normal": {
+                "mean": 0,
+                "std": 1
+            },
+            "uniform": {
+                "min": -3,
+                "max": 3
+            }
+        },
+        "cma": {
+            "sigma": 0.2,
+            "generations": 10,
+            "tolx": 0.001,
+            "tolfunhist": 200.0
+        }
+    }
+}
