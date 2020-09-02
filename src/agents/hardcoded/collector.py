@@ -17,48 +17,46 @@ class HardcodedCollectorAgent(HardcodedAgent):
 
         super().act(observation)
 
-        # Begin behaviour loop
         if not self.has_resource:
-            current_tile_contents = self.sensor_map[self.robot_position[1]][self.robot_position[0]]
 
-            # If resource is on the current tile, pick it up
-            if current_tile_contents == "RESOURCE":
-                return self.action_index["PICKUP"]
+            if self.current_zone == "NEST":
+                action = self.action_index["FORWARD"]
 
-            # Otherwise, find a resource (while avoiding obstacles)
+            elif self.current_zone == "CACHE":
+                # If an obstacle is detected but there are no walls
+                if "OBSTACLE" in self.sensor_map[0]+self.sensor_map[1]+self.sensor_map[2] and \
+                    self.sensor_map != [["OBSTACLE", "BLANK", "BLANK"], ["OBSTACLE", "BLANK", "BLANK"], ["OBSTACLE", "BLANK", "BLANK"]] and \
+                    self.sensor_map != [["BLANK", "BLANK", "OBSTACLE"], ["BLANK", "BLANK", "OBSTACLE"], ["BLANK", "BLANK", "OBSTACLE"]]:
+                    action = self.action_index["PICKUP"]
+
+                # If left wall
+                elif self.sensor_map[0][0] == self.sensor_map[1][0] == self.sensor_map[2][0] == "OBSTACLE":
+                    action = self.action_index["RIGHT"]
+
+                # If right wall
+                elif self.sensor_map[0][2] == self.sensor_map[1][2] == self.sensor_map[2][2] == "OBSTACLE":
+                    action = self.action_index["LEFT"]
+
+                # If no wall
+                else:
+                    if self.last_action == self.action_index["RIGHT"]:
+                        action = self.action_index["RIGHT"]
+
+                    else:
+                        action = self.action_index["LEFT"]
+
             else:
-                return self.find_resource()
+                action = self.action_index["BACKWARD"]
 
         elif self.has_resource:
-            # If on the nest drop the resource
-            if self.current_zone == "NEST":
-                return self.action_index["DROP"]
 
-            # Otherwise look for the nest (while avoiding obstacles
-            else:
-                # Look for the nest
-                return self.action_index["BACKWARD"]
+            if self.current_zone != "NEST":
+                action = self.action_index["BACKWARD"]
 
-    def find_resource(self):
-        """
-        Do actions that help the robot find the resource
-        :return:
-        """
-        # Move to the cache
-        if self.current_zone == "NEST":
-            return self.action_index["FORWARD"]
+            elif self.current_zone == "NEST":
+                action = self.action_index["DROP"]
 
-        elif self.current_zone == "SLOPE" or self.current_zone == "SOURCE":
-            return self.action_index["BACKWARD"]
+        self.last_action = action
 
-        # If on the cache, move towards the edge, move right or left if you're at the edge
-        else:
-            if "RESOURCE" in self.sensor_map[0]:
-                return self.action_index["FORWARD"]
-            elif self.sensor_map[1][2] == "BLANK" or self.sensor_map[1][2] == "RESOURCE":
-                return self.action_index["RIGHT"]
-            elif self.sensor_map[1][0] == "BLANK" or self.sensor_map[1][0] == "RESOURCE":
-                return self.action_index["LEFT"]
-            else:
-                return self.action_index["BACKWARD"]
+        return action
 

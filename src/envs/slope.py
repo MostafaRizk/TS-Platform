@@ -107,8 +107,8 @@ class SlopeEnv:
         # Range=1 -> 9 tiles. Range=2 -> 25 tiles. Agent at the center.
         self.tiles_in_sensing_range = (2 * self.sensor_range + 1) ** 2
 
-        # 1 bit for each tile in range + 4 bits for location + 1 bit for object detection + 1 bit for object possession
-        self.observation_space_size = self.tiles_in_sensing_range + 4 + 1 + 1
+        # 1 bit for each tile in range + 4 bits for location + 1 bit for object possession
+        self.observation_space_size = self.tiles_in_sensing_range + 4 + 1
 
         # Action space
         # 0- Forward, 1- Backward, 2- Left, 3- Right, 4- Pick up, 5- Drop
@@ -448,7 +448,7 @@ class SlopeEnv:
                 observation[obs_index + 1] = 1
             elif area == "SLOPE":
                 observation[obs_index + 2] = 1
-            else:
+            elif area == "SOURCE":
                 observation[obs_index + 3] = 1
 
             readable_observation += [area]
