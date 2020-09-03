@@ -107,7 +107,7 @@ class Learner:
 
             return genome_fitness_lists
 
-        elif self.reward_level == "individual" and self.team_type == "heterogneous":
+        elif self.reward_level == "individual" and self.team_type == "heterogeneous":
             return agent_fitness_lists
 
         else:

@@ -39,7 +39,7 @@
     "algorithm": {
         "agent_population_size": 20000,
         "rwg": {
-            "sampling_distribution": "normal",
+            "sampling_distribution": "uniform",
             "normal": {
                 "mean": 0,
                 "std": 1

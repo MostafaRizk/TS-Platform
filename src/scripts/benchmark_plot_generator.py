@@ -3,7 +3,7 @@ import os
 from scripts.benchmarking import BenchmarkPlotter
 from glob import glob
 
-csv_files = glob(f'result_files/rnn*.csv')
+csv_files = glob(f'result_files/*.csv')
 experiments = []
 
 for filename in csv_files:
@@ -24,5 +24,5 @@ for experiment in experiments:
     #                              mean_lim=(0, 50), var_lim=(0, 15), dist_lim=(1, 100))
 
     plotter.save_all_sample_stats(
-        N_bins=[-5000, 0, 5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000],
-                                  mean_lim=(-3000, 50000), var_lim=(0, 15000), dist_lim=(10**-1, 100000))
+        N_bins=[-5000, 0, 5000, 10000, 15000, 20000, 25000, 30000],
+                                  mean_lim=(-3000, 30000), var_lim=(0, 15000), dist_lim=(10**-1, 10000))

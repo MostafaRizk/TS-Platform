@@ -30,10 +30,10 @@
     "agent": {
         "nn": {
             "architecture": "rnn",
-            "bias": "False",
-            "hidden_layers": 0,
-            "hidden_units_per_layer": 0,
-            "activation_function": "linear"
+            "bias": "True",
+            "hidden_layers": 1,
+            "hidden_units_per_layer": 4,
+            "activation_function": "tanh"
         }
     },
     "algorithm": {
