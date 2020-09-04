@@ -24,22 +24,22 @@
             "carry_factor": 2,
             "resource_reward": 1000,
             "simulation_length": 500,
-            "num_simulation_runs": 5
+            "num_simulation_runs": 20
         }
     },
     "agent": {
         "nn": {
             "architecture": "ffnn",
             "bias": "False",
-            "hidden_layers": 0,
-            "hidden_units_per_layer": 0,
-            "activation_function": "linear"
+            "hidden_layers": 1,
+            "hidden_units_per_layer": 4,
+            "activation_function": "tanh"
         }
     },
     "algorithm": {
         "agent_population_size": 20000,
         "rwg": {
-            "sampling_distribution": "uniform",
+            "sampling_distribution": "normal",
             "normal": {
                 "mean": 0,
                 "std": 1

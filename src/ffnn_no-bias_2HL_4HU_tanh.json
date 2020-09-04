@@ -24,14 +24,14 @@
             "carry_factor": 2,
             "resource_reward": 1000,
             "simulation_length": 500,
-            "num_simulation_runs": 5
+            "num_simulation_runs": 20
         }
     },
     "agent": {
         "nn": {
-            "architecture": "rnn",
-            "bias": "True",
-            "hidden_layers": 1,
+            "architecture": "ffnn",
+            "bias": "False",
+            "hidden_layers": 2,
             "hidden_units_per_layer": 4,
             "activation_function": "tanh"
         }

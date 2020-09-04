@@ -24,5 +24,5 @@ for experiment in experiments:
     #                              mean_lim=(0, 50), var_lim=(0, 15), dist_lim=(1, 100))
 
     plotter.save_all_sample_stats(
-        N_bins=[-5000, 0, 5000, 10000, 15000, 20000, 25000, 30000],
-                                  mean_lim=(-3000, 30000), var_lim=(0, 15000), dist_lim=(10**-1, 10000))
+        N_bins=[-10000, -5000, 0, 5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000],
+                                  mean_lim=(-10000, 40000), var_lim=(0, 15000), dist_lim=(10**-1, 10000))
