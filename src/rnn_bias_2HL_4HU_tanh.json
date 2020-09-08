@@ -24,7 +24,7 @@
             "carry_factor": 2,
             "resource_reward": 1000,
             "simulation_length": 500,
-            "num_simulation_runs": 5
+            "num_simulation_runs": 20
         }
     },
     "agent": {

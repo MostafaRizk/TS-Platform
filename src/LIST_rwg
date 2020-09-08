@@ -1,3 +1,6 @@
 python3 experiment.py --parameter rnn_bias_0HL_tanh.json
 python3 experiment.py --parameter rnn_bias_1HL_4HU_tanh.json
 python3 experiment.py --parameter rnn_bias_2HL_4HU_tanh.json
+python3 experiment.py --parameter rnn_no-bias_0HL_tanh.json
+python3 experiment.py --parameter rnn_no-bias_1HL_4HU_tanh.json
+python3 experiment.py --parameter rnn_no-bias_2HL_4HU_tanh.json
