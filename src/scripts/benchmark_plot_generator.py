@@ -9,7 +9,6 @@ experiments = []
 for filename in csv_files:
     shortened_name = filename.split("/")[1].strip(".csv")
     experiments += [(shortened_name, filename)]
-
 original_dir = os.getcwd()
 
 for experiment in experiments:
@@ -24,5 +23,5 @@ for experiment in experiments:
     #                              mean_lim=(0, 50), var_lim=(0, 15), dist_lim=(1, 100))
 
     plotter.save_all_sample_stats(
-        N_bins=[-10000, -5000, 0, 5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000],
-                                  mean_lim=(-10000, 40000), var_lim=(0, 15000), dist_lim=(10**-1, 10000))
+        N_bins=[-20000, -10000, 0, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000, 110000, 120000],
+                                  mean_lim=(-20000, 120000), var_lim=(0, 60000), dist_lim=(10**-1, 10000))
