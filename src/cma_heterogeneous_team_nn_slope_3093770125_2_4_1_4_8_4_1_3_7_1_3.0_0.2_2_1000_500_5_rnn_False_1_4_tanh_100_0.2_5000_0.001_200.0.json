@@ -1,11 +1,11 @@
 {
     "general": {
-        "algorithm_selected": "rwg",
+        "algorithm_selected": "cma",
         "team_type": "heterogeneous",
         "reward_level": "team",
         "agent_type": "nn",
         "environment": "slope",
-        "seed": 1
+        "seed": 3093770125
     },
     "environment": {
         "slope": {
@@ -24,20 +24,20 @@
             "carry_factor": 2,
             "resource_reward": 1000,
             "simulation_length": 500,
-            "num_simulation_runs": 20
+            "num_simulation_runs": 5
         }
     },
     "agent": {
         "nn": {
             "architecture": "rnn",
-            "bias": "True",
+            "bias": "False",
             "hidden_layers": 1,
             "hidden_units_per_layer": 4,
             "activation_function": "tanh"
         }
     },
     "algorithm": {
-        "agent_population_size": 20000,
+        "agent_population_size": 100,
         "rwg": {
             "sampling_distribution": "normal",
             "normal": {
@@ -51,7 +51,7 @@
         },
         "cma": {
             "sigma": 0.2,
-            "generations": 10,
+            "generations": 5000,
             "tolx": 0.001,
             "tolfunhist": 200.0
         }

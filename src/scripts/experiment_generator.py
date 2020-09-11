@@ -8,12 +8,12 @@ from learning.learner_parent import Learner
 from glob import glob
 
 # Generate CMA experiments
-'''
+''''''
 core_parameter_filename = "../default_parameters.json"
 parameter_dictionary = json.loads(open(core_parameter_filename).read())
 num_experiments = 30
 np_random = np.random.RandomState(1)
-g = open("../LIST_cma", "w")
+g = open("../LIST_cma", "a")
 
 for i in range(num_experiments):
     new_seed = np_random.randint(low=1, high=2**32-1)
@@ -26,10 +26,10 @@ for i in range(num_experiments):
     dictionary_string = json.dumps(parameter_dictionary, indent=4)
     f.write(dictionary_string)
     f.close()
-    g.write(f"python3 sandbox.py --parameters {filename}\n")
+    g.write(f"python3 experiment.py --parameters {filename}\n")
 
 g.close()
-'''
+
 
 '''
 #for every json file except lazy_generalist and default_parameters
@@ -50,18 +50,6 @@ for parameter_filename in json_files:
     f.close()
 '''
 
-''''''
-json_files = glob(f'../cma_het*.json')
 
-for parameter_filename in json_files:
-    parameter_dictionary = json.loads(open(parameter_filename).read())
 
-    # Set observation version to simple
-    parameter_dictionary["environment"]["observation_version"] = "simple"
-
-    # Write files
-    f = open(parameter_filename, "w")
-    dictionary_string = json.dumps(parameter_dictionary, indent=4)
-    f.write(dictionary_string)
-    f.close()
 

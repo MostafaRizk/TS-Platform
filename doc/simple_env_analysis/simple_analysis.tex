@@ -8,6 +8,7 @@
 \usepackage{fancyhdr}
 \usepackage{url}
 \usepackage{tabu}
+\usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
 \usepackage[toc,page]{appendix}
 
 \fancyhead{}
@@ -41,15 +42,15 @@ This partitioned approach is advantageous because gravity transports leaves fast
 Rather than every ant climbing up the tree, cutting a leaf and bringing it to the nest, when they partition the ants are able to transport more leaves in the same time-span while consuming less energy.\\
 
 We model this scenario similarly to Ferrante et al \cite{ferrante:PLOS_CB:2015}, with a slope in place of the tree trunk. 
-Pini et al use a slightly different implementation where there resources can be transported via a long corridor or a booth with a wait time \cite{pini:ICSI:2012, pini:Swarm_Intelligence:2011}. 
-Pini et al's approach may be useful for comparison at a later stage of the research.
+Pini et al use a slightly different implementation where the resources can be transported via a long corridor or a booth with a wait time \cite{pini:ICSI:2012, pini:Swarm_Intelligence:2011}. 
+This approach may be useful for comparison at a later stage of the research.
 Much like the ants, agents transport resources from the source to the nest.
 An agent on a team can use a generalist strategy where it acts individually, going up and down the slope to retrieve resources.
 An agent can also use a specialist strategy. 
 As a specialist it can either be a dropper, going up the slope once and dropping things from the nest, or it can be a collector and gather the resources that accumulate at the base of the slope, called the cache.
 Much like real robots that deplete their battery and ants that deplete their energy stores, there is a cost to moving and it is compounded when going up the slope. 
 Teams that use complementary specialist strategies pay a smaller energy cost as well as time cost, since resources slide down faster than they can be carried. 
-Preliminary analysis with hard-coded agents verifies that specialist teams gain higher overall reward than generalist teams.\\
+Preliminary analysis with hard-coded agents verifies that specialist teams gain higher overall reward than generalist teams (Table \ref{tab:hardcoded}.\\
 
 More formally, you have a team of $n_{agents}$ agents. 
 They are placed in a rectangular arena that is $l$ tiles long and $w$ tiles wide, illustrated in Figure \ref{fig:arena} and Figure \ref{fig:arena_2}. 
@@ -157,7 +158,7 @@ The output layer uses a linear activation function.
 
 \section{Experimental Methods}
 
-We use the same setup as Oller et al \cite{ferrante:PLOS_CB:2015}.
+We use the same setup as Oller et al \cite{oller:AAMAS:2020}.
 We use 3 different architectures: a feedforward neural network (FFNN) with no hidden layers, one with 1 hidden layer composed of 4 hidden units and one with 2 hidden layers also composed of 4 hidden units.
 We ran experiments with and without a bias neuron and found no noticeable difference. We include the no- bias plots.
 All networks use tanh activation.
@@ -239,8 +240,7 @@ For each sampled genome, we do 20 runs of the simulation (i.e. 20 episodes).
   
   \caption{RNN bias}
   \label{fig:rnn-bias}	
-\end{figure}	
-	
+\end{figure}		
 
 Looking at Figure \ref{fig:ffnn-no-bias} and Figure \ref{fig:ffnn-bias} in comparison with the Gym benchmarks in Figure \ref{fig:oller}, we can immediately see that the SlopeForaging task is more difficult than all the standard Gym benchmarks.
 The mean score is below zero for all architectures and the distribution histogram for the architecture with two hidden layers shows that all episodes indeed receive negative scores.
@@ -249,55 +249,83 @@ The same architectures that can successfully solve the Gym benchmarks appear to 
 
 When we observe the failed controllers to see where they go wrong, we see them carrying out repetitive unproductive behaviours or oscillating between states.
 For example, an agent at the nest might choose to do a pickup action, despite there being no resource in range.
-Since there is no resource in range, the state won't change and the agent's observation will be the same at the next time step.
+Since there is no resource in range, the state won't change and the agent's observation will be the same at the next time step and it will do the same action again, repeating itself until the final time step.
 Another agent might move forward when in the nest and move backward when in the cache, oscillating between two states until the end of the episode.
-Using a FFNN means that if an agent makes an observation, they will perform the same action every time they make that observation, meaning it is easy to get stuck like our agents do.
+Using a FFNN means that if an agent makes a particular observation, they will perform the same action every time they make that observation, meaning it is easy to get stuck like our agents do.
 A recurrent neural network (RNN) performs an action based on the observation as well as the last action, so if the observation is the same at time $t$ as it was at $t-1$ then an agent can, in principle, do a different action than the one it did at $t-1$ as that one obviously did not change the state.
-Consider the previously mentioned agent that does a pickup action with no resources nearby and receives the same observation at the following time step.
+Consider the previously mentioned agent that does a pickup action with no resources nearby and makes the same observation at the following time step.
 An FFNN-based agent will, by necessity, do that same action again.
 An RNN-based agent might do a different action because while the observation is the same, the action it did at $t-1$ may not be.
-Of course, there is a chance the network will have the same output for that observation regardless of what the action at $t-1$ was, but that chance is $100\%$ for an FFNN.\\
+Of course, there is a chance the network will have the same output for that observation regardless of what the action at $t-1$ was, but the chance of that happening is less than it is for an FFNN, for which it is a certainty.\\
 
 We repeat the experiments with an RNN, with the same combinations of hidden layers and bias.
 The RNN achieves much higher scores than the FFNN.
-The 
+Similar to the FFNN experiments, most samples score poorly, but in contrast, we see in Figures \ref{fig:rnn-no-bias} and \ref{fig:rnn-bias} that top ranked episodes receive non-negative scores, which are only possible if resources are successfully retrieved by the agents.
+The mean curve has a spike at the far right, which gets more pronounced as more hidden layers are added.
+We also see in the distribution histogram that there are samples whose mean scores fall into higher ranking buckets.
+Much like Oller et al \cite{oller:AAMAS:2020} networks with no bias neuron outperform those with a bias neuron.
+Most interestingly, we see in Figure \ref{fig:rnn-no-bias} that six episodes score above 100,000 and three of those achieve a score of ~113,000.
+To get a sense of the scores a good team should be able to achieve, we hardcoded both generalist and specialist behaviours and averaged their scores over 30 episodes, varying the random seed.
+The results can be found in Table \ref{tab:hardcoded}.
+The top scoring sample gets very close to the performance of the best human-implemented solution.
+Thus, the SlopeForaging problem is trivial enough that rwg with a relatively simple neural network is enough to start finding solutions that rival the best a human could implement.
+That said, SlopeForaging is more difficult than all its counterparts among the Gym classic control benchmarks.\\
+\todo{Run experiments with linear activation}
 
-RNN comparison
-Difficult in a way that is similar to MountainCar and, to an extent, Acrobot
-Sparse reward
-Observation/action space (and weights)
-Partial observability
-Closeness to optimal
+\begin{table}
+\begin{center}
+\begin{tabu}{ |c|c|c|c| } 
+ \hline
+  & Generalist & Dropper & Collector \\
+ \tabucline[1.5pt]{-}
+ Generalist & 43,649 & & \\
+ \hline
+ Dropper & & & 120,903 \\
+ \hline
+ Collector & & & \\
+ \hline
+\end{tabu}
+\end{center}	
+\caption{\label{tab:hardcoded} Hardcoded behaviour scores}
+\end{table}
 
-
-On a fundamental level, we learn from these experiments that the environment, independent of architecture, is challenging in a way that is similar to the MountainCar environment  \cite{MountainCar} investigated by Oller et al \cite{oller:AAMAS:2020}. 
-The plots are very similar with most solutions being equally poor and very few demonstrating a successful behaviour. 
-We see this in Figure \ref{fig:rnn_linear} where for both rows (the top row being a network with no bias and the bottom row being a network with bias) the mean curve is very flat with a spike at the end, indicating there are a small number of high performing solutions while the rest score below 0.
-This can also be seen in the distribution histogram, to the right, where the majority of solutions fall in the leftmost bucket for scores below 0. 
-The variance plot, in the center, shows that variance is higher for higher means suggesting that genomes that score well do not do so consistently across all episodes.\\
-
-The reason most solutions score very poorly is likely because both the SlopeForaging and MountainCar environments have a sparse reward. 
+Looking at the plots in Figure \ref{fig:oller}, the environment most similar to SlopeForaging is MountainCar.
+The mean curve is flat with a sharp spike at the end and the distribution histogram has most samples fall in the leftmost bucket, with fewer and fewer falling into the higher ranking buckets.
+The reason most solutions score very poorly is because both the SlopeForaging and MountainCar environments have sparse rewards.
 In the case of MountainCar, an agent must reach the top of the mountain to receive a score better than -200 and there are no rewards for partially successful intermediate behaviours. 
 An agent that never moves is equivalent to one that stops just short of the goal. 
 In SlopeForaging, an agent that travels up the slope, picks up a resource, carries it to the bottom of the slope and drops it just short of the nest is equivalent to an agent that oscillates back and forth between two tiles. 
-A non-negative score can only be achieved if a resource is fully retrieved and there are no rewards for partially successful intermediate behaviours, so the task can not be learned incrementally.\\
+A non-negative score can only be achieved if a resource is fully retrieved and there are no rewards for partially successful intermediate behaviours, so the core task of the environment cannot be learned incrementally.
+Acrobot also has a sparse reward.
+The goal of Acrobot is to swing the agent's arm up to a certain height within the allotted time.
+An agent that swings very close to that height is equivalent to one that does nothing.
+However, for Acrobot, there is a clearly visible gradient in the mean plot.
+This is because within the set of agents that complete the task, some complete it faster.
+The same applies to MountainCar and SlopeForaging.
+Within the set of agents that go up the mountain in MountainCar, some do it faster.
+Within the set of agent teams that can retrieve a resource, some retrieve more.
+So those mean plots also have a gradient, but a very faint one.
+Oller et al suggest that for environments with a large plateau and sharp spike in their mean curve, such as MountainCar, highly exploratory algorithms are likely the best choice.\\
 
-In fact, the SlopeForaging task is actually more difficult for the following reasons:
+While SlopeForaging is similar to MountainCar and, to a lesser extent, Acrobot, the challenge posed by SlopeForaging is much more significant:
 
 \begin{itemize}
-\item \textit{The observation and action spaces are larger}- An observation consists of 14 binary inputs and there are 6 discrete actions. 
-Even the simplest FFNN would have 14x6=84 weights per agent (168 total) compared to (2x4) + (4x4) + (4x3) = 36 for the most complex controller used by Oller et al to solve MountainCar. 
 
-\item \textit{The environment is partially observable}- Partial observability suggests that a more complex architecture, such as an RNN, may be required as stated by Oller et al \cite{oller:AAMAS:2020}.
+\item \textit{The task is multi-agent}- A minimum of two agents are needed to complete the task in the most effective way (i.e. cooperation) and because there is a non-cooperative solution to the problem, there are two stable equilibria that a learning algorithm can find.
 
-\item \textit{The best solution isn't found even after 50,000 samples}- In MountainCar \cite{MountainCar}, the theoretical best score is close to 0 and the solutions generated by Oller et al approach this value, whereas in SlopeForaging, a team of specialists hardcoded with a cooperative strategy scores 157,711 but the best mean score of the solutions found by rwg is 39,879 and the best episode score is 52,642 (for a recurrent network). 
-This is very far from the best known solution. It is even far from the best known generalist strategy, which scores 118,353. 
-And all this is with 5 times more sampled solutions than Oller et al. 
-All this is to say, the task is difficult to solve and, according to Oller et al's recommendations, may require an algorithm with a strong exploratory component.
+\item \textit{The environment is stochastic} In a single agent environment, an agent's actions are the only thing that affect the state.
+In a multi-agent environment, the state is also dependent on the other agent(s), which means the environment is effectively stochastic.
+There can also be stochasticity in where new resources spawn, but only if the source has several empty spaces, which is not the case in our experiments.
+
+\item \textit{The environment is partially observable}- Agents can only sense 1 tile in any direction (unless this parameter is changed).
+An agent can never truly know how its actions affect the state and oftentimes the state can change in ways that are relevant to an agent but the agent cannot detect it.
+Memory can help overcome this difficulty, which is likely why the RNN architecture is more successful.
+
+\item \textit{The observation and action spaces are larger}- Looking at the observation and action spaces of all environments in Table \ref{tab:environment_comparison} it's immediately apparent that SlopeForaging dwarfs all of its counterparts
+Even the simplest FFNN with no hidden layers or bias would require 14x6=84 weights per agent (168 for a team of two unique agents) compared to ((2+1)x4) + ((4+1)x4) + ((4+1)x3) = 47 for the most complex controller used by Oller et al to solve MountainCar or (4+1)x4) + ((4+1)x4) + ((4+1)x3) = 55 for Acrobot.
+The minimum weights required for each environment are enumerated in Table \ref{tab:weight_comparison}.
 
 \end{itemize}
-
-\textbf{Main takeaway: The SlopeForaging task has similar attributes to MountainCar but is more difficult due to observation size, action space, partial observability and the cooperative nature of the task.}
 
 \begin{table}
 \begin{center}
@@ -345,22 +373,7 @@ All this is to say, the task is difficult to solve and, according to Oller et al
 \caption{\label{tab:weight_comparison} Number of weights required for the smallest possible network}
 \end{table}
 
-\begin{table}
-\begin{center}
-\begin{tabu}{ |c|c|c|c| } 
- \hline
-  & Generalist & Dropper & Collector \\
- \tabucline[1.5pt]{-}
- Generalist & 43,649 & & \\
- \hline
- Dropper & & & 120,903 \\
- \hline
- Collector & & & \\
- \hline
-\end{tabu}
-\end{center}	
-\caption{\label{tab:hardcoded} Hardcoded behaviour scores}
-\end{table}
+
 
 
 
