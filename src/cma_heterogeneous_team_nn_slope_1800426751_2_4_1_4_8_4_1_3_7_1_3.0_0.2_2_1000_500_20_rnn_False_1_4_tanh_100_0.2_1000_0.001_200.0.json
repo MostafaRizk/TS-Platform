@@ -5,7 +5,7 @@
         "reward_level": "team",
         "agent_type": "nn",
         "environment": "slope",
-        "seed": 1
+        "seed": 1800426751
     },
     "environment": {
         "slope": {

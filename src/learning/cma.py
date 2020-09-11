@@ -123,8 +123,8 @@ class CMALearner(Learner):
         parameters_in_name[0] = "rwg"
 
         # The seed value (at index 4) does not have to match for cma
-        pre_seed_parameters = parameters_in_name[0:4]
-        post_seed_parameters = parameters_in_name[5:]
+        pre_seed_parameters = parameters_in_name[0:5]
+        post_seed_parameters = parameters_in_name[6:]
 
         seedfile_prefix_pre_seed = "_".join([str(param) for param in pre_seed_parameters])
         seedfile_prefix_post_seed = "_".join([str(param) for param in post_seed_parameters])
