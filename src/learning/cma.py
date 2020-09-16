@@ -2,6 +2,7 @@ import cma
 import copy
 import sys
 import os
+import numpy as np
 from learning.learner_parent import Learner
 from glob import glob
 from io import StringIO
@@ -16,7 +17,7 @@ class CMALearner(Learner):
                                f"{self.parameter_dictionary['general']['algorithm_selected']}")
 
         # Log every x many generations
-        self.logging_rate = 20
+        self.logging_rate = self.parameter_dictionary['algorithm']['cma']['logging_rate']
 
     def learn(self):
         """
@@ -63,7 +64,7 @@ class CMALearner(Learner):
 
             # Convert agent fitnesses into genome fitnesses
             genome_fitness_lists = self.get_genome_fitnesses_from_agent_fitnesses(agent_fitness_lists)
-            genome_fitness_average = [sum(fitness_list) / len(fitness_list) for fitness_list in genome_fitness_lists]
+            genome_fitness_average = [np.mean(fitness_list) for fitness_list in genome_fitness_lists]
 
             # Update the algorithm with the new fitness evaluations
             # CMA minimises fitness so we negate the fitness values
@@ -108,9 +109,9 @@ class CMALearner(Learner):
         if self.team_type == "heterogeneous" and self.reward_level == "individual":
             return self.parameter_dictionary['algorithm']['agent_population_size']
 
-        # For most configurations, each genome is either copied onto two agents or split across two agents
+        # For most configurations, each genome is either copied onto multiple agents or split across multiple agents
         else:
-            return self.parameter_dictionary['algorithm']['agent_population_size'] / 2
+            return self.parameter_dictionary['algorithm']['agent_population_size'] / self.num_agents
 
     def get_seed_genome(self):
         """

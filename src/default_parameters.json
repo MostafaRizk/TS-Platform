@@ -53,7 +53,8 @@
             "sigma": 0.2,
             "generations": 1000,
             "tolx": 0.001,
-            "tolfunhist": 200.0
+            "tolfunhist": 200.0,
+            "logging_rate": 20
         }
     }
 }

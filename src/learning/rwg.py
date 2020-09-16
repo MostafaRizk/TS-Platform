@@ -1,6 +1,8 @@
+import numpy as np
+
 from learning.learner_parent import Learner
 from scipy.stats import multivariate_normal
-import numpy as np
+from operator import add
 
 
 class RWGLearner(Learner):
@@ -25,7 +27,7 @@ class RWGLearner(Learner):
 
         # Get fitnesses of agents
         agent_fitness_lists = self.fitness_calculator.calculate_fitness_of_agent_population(agent_population)
-        agent_fitness_average = [sum(fitness_list)/len(fitness_list) for fitness_list in agent_fitness_lists]
+        agent_fitness_average = [np.mean(fitness_list) for fitness_list in agent_fitness_lists]
 
         best_genome = None
         best_fitness = None
@@ -40,13 +42,14 @@ class RWGLearner(Learner):
         elif self.reward_level == "team":
             best_team_fitness, best_team_index = float('-inf'), None
 
-            for i in range(0, len(agent_fitness_lists) - 1, 2):
+            for i in range(0, len(agent_fitness_lists) - 1, self.num_agents):
+                team_fitness_list = [0] * len(agent_fitness_lists[i])
+
                 # Get the average team fitness
-                fitness_1_list = agent_fitness_lists[i]
-                fitness_2_list = agent_fitness_lists[i+1]
-                zipped_fitness = zip(fitness_1_list, fitness_2_list)
-                team_fitness_list = [fitness_1 + fitness_2 for (fitness_1, fitness_2) in zipped_fitness]
-                team_fitness_average = sum(team_fitness_list)/len(team_fitness_list)
+                for j in range(self.num_agents):
+                    team_fitness_list = list(map(add, team_fitness_list, agent_fitness_lists[i+j]))
+
+                team_fitness_average = np.mean(team_fitness_list)
 
                 if team_fitness_average > best_team_fitness:
                     best_team_fitness = team_fitness_average
@@ -56,11 +59,13 @@ class RWGLearner(Learner):
             if self.team_type == "homogeneous":
                 best_genome = agent_population[best_team_index].get_genome()
 
-            # For heterogeneous teams with team reward, the genome of the team is the genome of both agents concatenated
+            # For heterogeneous teams with team reward, the genome of the team is the genome of all agents concatenated
             elif self.team_type == "heterogeneous":
-                genome_part_1 = agent_population[best_team_index].get_genome()
-                genome_part_2 = agent_population[best_team_index + 1].get_genome()
-                best_genome = np.concatenate([genome_part_1, genome_part_2])
+                best_genome = np.array([])
+
+                for j in range(self.num_agents):
+                    sub_genome = agent_population[best_team_index + j]
+                    best_genome = np.concatenate([best_genome, sub_genome])
 
             best_fitness = best_team_fitness
 
@@ -92,7 +97,7 @@ class RWGLearner(Learner):
             num_genomes = agent_population_size
         else:
             assert agent_population_size % 2 == 0, "Agent population needs to be even"
-            num_genomes = agent_population_size // 2
+            num_genomes = agent_population_size // self.num_agents
 
         # Sample genomes from a normal distribution
         if self.parameter_dictionary['algorithm']['rwg']['sampling_distribution'] == "normal":

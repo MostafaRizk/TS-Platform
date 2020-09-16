@@ -105,7 +105,7 @@ class Learner:
             for i in range(0, len(agent_fitness_lists) - 1, self.num_agents):
                 team_fitness_list = [0] * len(agent_fitness_lists[i])
 
-                for j in range(0, self.num_agents):
+                for j in range(self.num_agents):
                     team_fitness_list = list(map(add, team_fitness_list, agent_fitness_lists[i+j]))
 
                 genome_fitness_lists += [team_fitness_list]
