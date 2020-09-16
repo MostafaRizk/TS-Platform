@@ -18,7 +18,9 @@ class FitnessCalculator:
 
         if self.parameter_dictionary["general"]["environment"] == "slope":
             self.env = SlopeEnv(parameter_filename)
-            self.num_agents = self.parameter_dictionary['environment']['slope']['num_agents']
+
+        environment_name = self.parameter_dictionary['general']['environment']
+        self.num_agents = self.parameter_dictionary['environment'][environment_name]['num_agents']
 
         # Get size of input and output space (for use in agent creation)
         self.observation_size = self.env.get_observation_size()

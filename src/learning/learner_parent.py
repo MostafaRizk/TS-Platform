@@ -1,6 +1,7 @@
 import json
 from fitness import FitnessCalculator
 from agents.nn_agent_lean import NNAgent
+from operator import add
 
 
 class Learner:
@@ -12,6 +13,8 @@ class Learner:
 
         self.fitness_calculator = calculator
         self.population_size = self.parameter_dictionary['algorithm']['agent_population_size']
+        environment_name = self.parameter_dictionary['general']['environment']
+        self.num_agents = self.parameter_dictionary['environment'][environment_name]['num_agents']
         self.team_type = self.parameter_dictionary['general']['team_type']
         self.reward_level = self.parameter_dictionary['general']['reward_level']
         self.genome_length = self.get_genome_length()
@@ -38,11 +41,11 @@ class Learner:
             num_weights = NNAgent(self.fitness_calculator.get_observation_size(),
                                   self.fitness_calculator.get_action_size(), self.parameter_filename).get_num_weights()
 
-            # Genomes for heterogeneous teams rewarded at the team level are twice as long because two agent genomes
+            # Genomes for heterogeneous teams rewarded at the team level are longer because multiple agent genomes
             # must be concatenated into a larger one
             if self.parameter_dictionary['general']['team_type'] == "heterogeneous" and \
                     self.parameter_dictionary['general']['reward_level'] == "team":
-                return num_weights * 2
+                return num_weights * self.num_agents
             else:
                 return num_weights
 
@@ -59,39 +62,38 @@ class Learner:
         # In homogeneous teams, each genome is used for two identical agents
         if self.team_type == "homogeneous":
             for genome in genome_population:
-                agent_1 = self.Agent(self.fitness_calculator.get_observation_size(),
+                agent = self.Agent(self.fitness_calculator.get_observation_size(),
                                      self.fitness_calculator.get_action_size(), self.parameter_filename, genome)
-                agent_2 = self.Agent(self.fitness_calculator.get_observation_size(),
-                                     self.fitness_calculator.get_action_size(), self.parameter_filename, genome)
-                agent_population += [agent_1, agent_2]
+                agent_population += [agent]
 
         elif self.team_type == "heterogeneous":
             # In heterogeneous teams rewarded at the team level, each genome is two concatenated agents
             if self.reward_level == "team":
                 for genome in genome_population:
-                    mid = int(len(genome) / 2)
-                    genome_part_1 = genome[0:mid]
-                    genome_part_2 = genome[mid:]
-                    agent_1 = self.Agent(self.fitness_calculator.get_observation_size(),
+                    sub_genome_length = int(len(genome) / self.num_agents)
+
+                    for i in range(self.num_agents):
+                        start_index = i * sub_genome_length
+                        end_index = (i+1) * sub_genome_length
+                        sub_genome = genome[start_index:end_index]
+
+                        agent = self.Agent(self.fitness_calculator.get_observation_size(),
                                          self.fitness_calculator.get_action_size(), self.parameter_filename,
-                                         genome_part_1)
-                    agent_2 = self.Agent(self.fitness_calculator.get_observation_size(),
-                                         self.fitness_calculator.get_action_size(), self.parameter_filename,
-                                         genome_part_2)
-                    agent_population += [agent_1, agent_2]
+                                         sub_genome)
+                        agent_population += [agent]
 
             # In heterogeneous teams rewarded at the individual level, each genome is a unique agent
             elif self.reward_level == "individual":
                 for genome in genome_population:
-                    agent_1 = self.Agent(self.fitness_calculator.get_observation_size(),
+                    agent = self.Agent(self.fitness_calculator.get_observation_size(),
                                          self.fitness_calculator.get_action_size(), self.parameter_filename, genome)
-                    agent_population += [agent_1]
+                    agent_population += [agent]
 
         return agent_population
 
     def get_genome_fitnesses_from_agent_fitnesses(self, agent_fitness_lists):
         """
-        Given a list of fitness lists of pairs of agents, returns the fitness lists of the genomes they came from, based on the
+        Given a list of fitness lists of teams of agents, returns the fitness lists of the genomes they came from, based on the
         configuration of team type and reward level
 
         @param agent_fitnesses: A list of fitness lists for each agent in the agent population
@@ -100,10 +102,13 @@ class Learner:
         genome_fitness_lists = []
 
         if self.reward_level == "team":
-            for i in range(0, len(agent_fitness_lists) - 1, 2):
-                zipped_fitness_list = zip(agent_fitness_lists[i], agent_fitness_lists[i+1])
-                genome_fitness_list = [fitness_1 + fitness_2 for (fitness_1, fitness_2) in zipped_fitness_list]
-                genome_fitness_lists += [genome_fitness_list]
+            for i in range(0, len(agent_fitness_lists) - 1, self.num_agents):
+                team_fitness_list = [0] * len(agent_fitness_lists[i])
+
+                for j in range(0, self.num_agents):
+                    team_fitness_list = list(map(add, team_fitness_list, agent_fitness_lists[i+j]))
+
+                genome_fitness_lists += [team_fitness_list]
 
             return genome_fitness_lists
 
