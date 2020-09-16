@@ -162,8 +162,8 @@ class Learner:
         parameters_in_name += [parameter_dictionary['environment']['slope']['downward_cost_factor']]
         parameters_in_name += [parameter_dictionary['environment']['slope']['carry_factor']]
         parameters_in_name += [parameter_dictionary['environment']['slope']['resource_reward']]
-        parameters_in_name += [parameter_dictionary['environment']['slope']['simulation_length']]
-        parameters_in_name += [parameter_dictionary['environment']['slope']['num_simulation_runs']]
+        parameters_in_name += [parameter_dictionary['environment']['slope']['episode_length']]
+        parameters_in_name += [parameter_dictionary['environment']['slope']['num_episodes']]
 
         # Get agent params for relevant agent type
         agent_type = parameter_dictionary['general']['agent_type']

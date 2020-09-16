@@ -18,6 +18,7 @@ class FitnessCalculator:
 
         if self.parameter_dictionary["general"]["environment"] == "slope":
             self.env = SlopeEnv(parameter_filename)
+            self.num_agents = self.parameter_dictionary['environment']['slope']['num_agents']
 
         # Get size of input and output space (for use in agent creation)
         self.observation_size = self.env.get_observation_size()
@@ -27,58 +28,59 @@ class FitnessCalculator:
         self.random_seed = self.parameter_dictionary['general']['seed']
         self.np_random = np.random.RandomState(self.random_seed)
 
-        self.simulation_length = self.parameter_dictionary['environment']['slope']['simulation_length']
+        self.episode_length = self.parameter_dictionary['environment']['slope']['episode_length']
 
-        self.num_simulation_runs = self.parameter_dictionary['environment']['slope']['num_simulation_runs']
+        self.num_episodes = self.parameter_dictionary['environment']['slope']['num_episodes']
 
     def calculate_fitness_of_agent_population(self, population):
         """
-        Takes a population of Agent objects, places each pair on a team and calculates the fitnesses of each
+        Takes a population of Agent objects, places each group in a team and calculates the fitnesses of each
 
         @param population: List of Agent objects
         @return: List containing fitness value of each Agent in the population
         """
 
+        assert len(population) % self.num_agents == 0, "Population needs to be divisible by the number of agents per team"
+
         fitnesses = []
+        agents_per_team = self.num_agents
 
-        for i in range(0, len(population), 2):
-            agent_1 = population[i]
-            agent_2 = population[i + 1]
-            fitness_dict = self.calculate_fitness(agent_1, agent_2)
-            fitness_1_list = fitness_dict['fitness_1_list']
-            fitness_2_list = fitness_dict['fitness_2_list']
+        for i in range(0, len(population), agents_per_team):
+            agent_list = [population[i+j] for j in range(0, agents_per_team)]
+            fitness_dict = self.calculate_fitness(agent_list)
+            fitness_matrix = fitness_dict['fitness_matrix']
 
-            fitnesses += [fitness_1_list, fitness_2_list]
+            fitnesses += fitness_matrix
 
         return fitnesses
 
-    def calculate_fitness(self, agent_1, agent_2, render=False, time_delay=0, measure_specialisation=False,
+    def calculate_fitness(self, agent_list, render=False, time_delay=0, measure_specialisation=False,
                           logging=False, logfilename=None):
         """
-        Calculates the fitness of a team of agents (composed of two different types of agent). Fitness is calculated
+        Calculates the fitness of a team of agents. Fitness is calculated
         by running the simulation for t time steps (as specified in the parameter file) with each agent acting every
         time step based on its observations. The simulation is restarted at the end and repeated a certain number of
         times (according to the parameter file). This is done without resetting the random number generator so that
         there are new initial positions for agents and resources in each simulation run.
 
-        @param agent_1: The first Agent object
-        @param agent_2: The second Agent object
+        @param agent_list: List of Agent objects
         @param render: Boolean indicating whether or not simulations will be visualised
         @param time_delay: Integer indicating how many seconds delay (for smoother visualisation)
         @param measure_specialisation: Boolean indicating whether or not specialisation is being measured
         @param logging: Boolean indicating whether or not actions will be logged
         @param logfilename: String name of the file where actions will be logged
-        @return: Dictionary containing 'fitness_1_list' (fitnesses of agent 1 for each simulation run), 'fitness_2_list'
-        (fitnesses of agent 2 for each simulation run) and 'specialisation_list' (a measure of the degree of
-        specialisation observed for the team for each simulation runs)
+        @return: Dictionary containing 'fitness_matrix' (each index i is a list of agent i's fitnesses for every episode)
+        and 'specialisation_list' (a measure of the degree of
+        specialisation observed for the team for each episode)
         """
+
+        assert len(agent_list) == self.num_agents, "Agents passed to function do not match parameter file"
+
         # Initialise major variables
         file_reader = None
-        fitness_1_list = []
-        fitness_2_list = []
+        fitness_matrix = [[0]*self.num_episodes for i in range(len(agent_list))]
         specialisation_list = []
-        agent_1_copy = copy.deepcopy(agent_1)
-        agent_2_copy = copy.deepcopy(agent_2)
+        agent_copies = [copy.deepcopy(agent) for agent in agent_list]
 
         # Create logging file if logging
         if logging:
@@ -87,73 +89,55 @@ class FitnessCalculator:
 
             if not os.path.exists(logfilename):
                 file_reader = open(logfilename, "w+")
-                header_line = ','.join(f"t={t}" for t in range(self.simulation_length)) + "\n"
+                header_line = ','.join(f"t={t}" for t in range(self.episode_length)) + "\n"
                 file_reader.write(header_line)
             else:
                 file_reader = open(logfilename, "a")
 
         # Run the simulation several times
-        for sim_run in range(self.num_simulation_runs):
+        for episode in range(self.num_episodes):
             observations = self.env.reset()
 
             # Initialise variables
-            fitness_1 = 0
-            fitness_2 = 0
-            agent_1_action_list = []
-            agent_2_action_list = []
+            agent_action_matrix = [[-1]*self.episode_length for i in range(len(agent_list))]
 
             # Do 1 run of the simulation
-            for t in range(self.simulation_length):
+            for t in range(self.episode_length):
                 if render:
                     self.env.render()
 
                 robot_actions = []
 
                 for i in range(len(observations)):
-                    # TODO: Update this to work with teams greater than 2
-                    if i % 2 == 0:
-                        robot_actions += [agent_1_copy.act(observations[i])]
-                        agent_1_action_list += [robot_actions[-1]]
-                    else:
-                        robot_actions += [agent_2_copy.act(observations[i])]
-                        agent_2_action_list += [robot_actions[-1]]
+                    robot_actions += [agent_copies[i].act(observations[i])]
+                    agent_action_matrix[i][t] = [robot_actions[-1]]
 
                 # The environment changes according to all their actions
                 observations, rewards = self.env.step(robot_actions)
 
                 # Calculate how much of the rewards go to each agent type
                 for i in range(len(rewards)):
-                    if i % 2 == 0:
-                        fitness_1 += rewards[i]
-                    else:
-                        fitness_2 += rewards[i]
+                    fitness_matrix[i][episode] = rewards[i]
 
                 if time_delay > 0:
                     time.sleep(time_delay)
 
-            # Update averages and seed
-            fitness_1_list += [fitness_1]
-            fitness_2_list += [fitness_2]
-
             # Reset agent networks
-            agent_1_copy = copy.deepcopy(agent_1)
-            agent_2_copy = copy.deepcopy(agent_2)
+            agent_copies = [copy.deepcopy(agent) for agent in agent_list]
 
             # Extra computations if calculating specialisation or logging actions
             if measure_specialisation:
                 specialisation_list += [self.env.calculate_ferrante_specialisation()]
 
             if logging:
-                agent_1_action_string = ','.join(str(action) for action in agent_1_action_list) + '\n'
-                agent_2_action_string = ','.join(str(action) for action in agent_2_action_list) + '\n'
-                file_reader.write(agent_1_action_string)
-                file_reader.write(agent_2_action_string)
+                for agent_action_list in agent_action_matrix:
+                    action_string = ','.join(str(action) for action in agent_action_list) + '\n'
+                    file_reader.write(action_string)
 
         if logging:
             file_reader.close()
 
-        return {"fitness_1_list": fitness_1_list, "fitness_2_list": fitness_2_list,
-                "specialisation_list": specialisation_list}
+        return {"fitness_matrix": fitness_matrix, "specialisation_list": specialisation_list}
 
     # Helpers ---------------------------------------------------------------------------------------------------------
 
