@@ -160,7 +160,7 @@ class RWGLearner(Learner):
 
         f.close()
 
-    def generate_model_name(self, fitness):
+    def generate_model_name(self, fitness, agent_rank=None):
         """
         Create a name string for a model generated using the given parameter file and fitness value
 

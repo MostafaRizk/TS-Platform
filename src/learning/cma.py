@@ -40,6 +40,9 @@ class CMALearner(Learner):
         seed_genome, seed_fitness = self.get_seed_genome()
         es = cma.CMAEvolutionStrategy(seed_genome, self.parameter_dictionary['algorithm']['cma']['sigma'], options)
 
+        best_population = None
+        best_scores = None
+
         # Learning loop
         while not es.stop():
             # Get population of genomes to be used this generation
@@ -47,6 +50,8 @@ class CMALearner(Learner):
 
             # For homogeneous teams rewarding at the individual level,
             if self.team_type == "homogeneous" and self.reward_level == "individual":
+                raise RuntimeError("This configuration is not supported yet")
+                """
                 new_population = []
 
                 for ind in genome_population:
@@ -55,6 +60,7 @@ class CMALearner(Learner):
                     new_population += [ind_1, ind_2]
 
                 genome_population = new_population
+                """
 
             # Convert genomes to agents
             agent_population = self.convert_genomes_to_agents(genome_population)
@@ -73,20 +79,45 @@ class CMALearner(Learner):
             generation = es.result.iterations
 
             if generation % self.logging_rate == 0:
-                self.log(es.result[0], -es.result[1], generation, seed_fitness)
+                if self.reward_level == "team":
+                    self.log(es.result[0], -es.result[1], generation, seed_fitness)
+
+                elif self.reward_level == "individual":
+                    for i in range(self.num_agents):
+                        agent_rank = i
+                        self.log(genome_population[i], genome_fitness_average[i], generation, seed_fitness, agent_rank)
+
+            best_population = genome_population
+            best_scores = genome_fitness_average
 
             es.disp()
 
-        # Get best genome and its fitness value
-        best_genome = es.result[0]
-        best_fitness = -es.result.fbest
+        best_genomes = None
+        best_fitnesses = None
 
-        print(f"Best fitness is {best_fitness}")
+        if self.reward_level == "team":
+            # Get best genome and its fitness value
+            best_genomes = [es.result[0]]
+            best_fitnesses = [-es.result.fbest]
 
-        # Save best model
-        model_name = self.generate_model_name(best_fitness)
-        self.save_genome(best_genome, model_name)
-        self.log(best_genome, best_fitness, "final", seed_fitness)
+            print(f"Best fitness is {best_fitnesses[0]}")
+
+            # Save best model
+            model_name = self.generate_model_name(best_fitnesses[0])
+            self.log(best_genomes[0], best_fitnesses[0], "final", seed_fitness)
+
+        elif self.reward_level == "individual":
+            # Get best genomes and their fitness values
+            best_genomes = best_population[0:self.num_agents]
+            best_fitnesses = best_scores[0:self.num_agents]
+
+            print(f"Best fitnesses are {best_fitnesses}")
+
+            # Save best models
+            for i in range(self.num_agents):
+                agent_rank = i
+                model_name = self.generate_model_name(best_fitnesses[i], agent_rank)
+                self.log(best_genomes[i], best_fitnesses[i], "final", seed_fitness, agent_rank)
 
         # Log evolution details to file
         log_file_name = model_name + ".log"
@@ -97,7 +128,7 @@ class CMALearner(Learner):
         # Reset output stream
         sys.stdout = old_stdout
 
-        return best_genome, best_fitness
+        return best_genomes, best_fitnesses
 
     def get_genome_population_length(self):
         """
@@ -141,7 +172,7 @@ class CMALearner(Learner):
             seed_fitness = float(possible_seedfiles[0].split("_")[-1].strip(model_file_extension))
             return self.Agent.load_model_from_file(possible_seedfiles[0]), seed_fitness
 
-    def log(self, genome, genome_fitness, generation, seed_fitness):
+    def log(self, genome, genome_fitness, generation, seed_fitness, agent_rank=None):
         """
         Save the genome model and save fitness and parameters to a results file
 
@@ -149,10 +180,11 @@ class CMALearner(Learner):
         @param genome_fitness: The fitness of the genome
         @param generation: The current generation of CMA-ES
         @param seed_fitness: The fitness of the seed genome
+        @param agent_rank: Rank of agent in the team
         @return:
         """
         # Save model
-        model_name = self.generate_model_name(genome_fitness)
+        model_name = self.generate_model_name(genome_fitness, agent_rank)
         model_name = f"{model_name}_{generation}"
         self.save_genome(genome, model_name)
 
@@ -181,15 +213,21 @@ class CMALearner(Learner):
         results_file.write(f"{results}\n")
         results_file.close()
 
-    def generate_model_name(self, fitness):
+    def generate_model_name(self, fitness, agent_rank):
         """
-        Create a name string for a model generated using the given parameter file and fitness value
+        Create a name string for a model generated using the given parameter file, its rank and fitness value
 
         @param fitness: Fitness of the model to be saved
+        @param agent_rank: Rank of agent on the team
         @return: The model name as a string
         """
+
         parameters_in_name = Learner.get_core_params_in_model_name(self.parameter_dictionary)
         parameters_in_name += CMALearner.get_additional_params_in_model_name(self.parameter_dictionary)
+
+        if self.reward_level == "individual":
+            assert agent_rank is not None, "Agent rank must be included in model name"
+            parameters_in_name += [agent_rank]
 
         # Get fitness
         parameters_in_name += [fitness]

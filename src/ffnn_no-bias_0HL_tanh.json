@@ -1,6 +1,6 @@
 {
     "general": {
-        "algorithm_selected": "cma",
+        "algorithm_selected": "rwg",
         "team_type": "heterogeneous",
         "reward_level": "individual",
         "agent_type": "nn",
@@ -24,20 +24,20 @@
             "carry_factor": 2,
             "resource_reward": 1000,
             "episode_length": 500,
-            "num_episodes": 5
+            "num_episodes": 20
         }
     },
     "agent": {
         "nn": {
-            "architecture": "rnn",
+            "architecture": "ffnn",
             "bias": "False",
-            "hidden_layers": 1,
+            "hidden_layers": 0,
             "hidden_units_per_layer": 4,
             "activation_function": "tanh"
         }
     },
     "algorithm": {
-        "agent_population_size": 20,
+        "agent_population_size": 20000,
         "rwg": {
             "sampling_distribution": "normal",
             "normal": {
@@ -51,7 +51,7 @@
         },
         "cma": {
             "sigma": 0.2,
-            "generations": 20,
+            "generations": 10,
             "tolx": 0.001,
             "tolfunhist": 200.0,
             "logging_rate": 20

@@ -118,7 +118,7 @@ class Learner:
         else:
             raise RuntimeError('Homogeneous-Individual configuration not fully supported yet')
 
-    def generate_model_name(self, fitness):
+    def generate_model_name(self, fitness, agent_rank):
         pass
 
     def save_genome(self, genome, filename):

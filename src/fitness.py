@@ -119,7 +119,7 @@ class FitnessCalculator:
 
                 # Calculate how much of the rewards go to each agent type
                 for i in range(len(rewards)):
-                    fitness_matrix[i][episode] = rewards[i]
+                    fitness_matrix[i][episode] += rewards[i]
 
                 if time_delay > 0:
                     time.sleep(time_delay)
