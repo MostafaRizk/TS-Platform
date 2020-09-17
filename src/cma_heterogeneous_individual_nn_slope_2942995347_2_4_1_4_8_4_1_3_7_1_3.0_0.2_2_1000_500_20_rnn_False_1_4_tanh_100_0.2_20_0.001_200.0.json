@@ -5,7 +5,7 @@
         "reward_level": "individual",
         "agent_type": "nn",
         "environment": "slope",
-        "seed": 1
+        "seed": 2942995347
     },
     "environment": {
         "slope": {
