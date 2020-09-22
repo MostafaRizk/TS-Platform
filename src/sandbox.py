@@ -12,10 +12,8 @@ import numpy as np
 from agents.nn_agent_lean import NNAgent
 import pandas as pd
 
-parameter_filename = "rnn_no-bias_1HL_4HU_tanh.json"
+parameter_filename = "default_parameters.json"
 fitness_calculator = FitnessCalculator(parameter_filename)
 
-learner = RWGLearner(fitness_calculator)
-#learner = CMALearner(fitness_calculator)
-
+learner = CMALearner(fitness_calculator)
 genome, fitness = learner.learn()

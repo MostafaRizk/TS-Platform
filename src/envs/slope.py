@@ -289,10 +289,10 @@ class SlopeEnv:
                         else:
                             self.pickup_or_hold_resource(j, i)
 
-                 # Ensure that a resource that is in range of an agent now gets picked up if the agent is
-                 # doing a pickup action
+                # Ensure that a resource that is in range of an agent now gets picked up if the agent is
+                # doing a pickup action and no other agent is carrying the resource
                 if self.resource_in_range(j, i):
-                    if self.has_resource[j] is None:
+                    if self.has_resource[j] is None and i not in self.has_resource:
                         if self.action_name[agent_actions[j]] == "PICKUP":
                             self.pickup_or_hold_resource(j, i)
 

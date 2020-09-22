@@ -1,11 +1,17 @@
+import json
+
 import cma
 import copy
 import sys
 import os
 import numpy as np
+
+from fitness import FitnessCalculator
 from learning.learner_parent import Learner
 from glob import glob
 from io import StringIO
+
+from learning.rwg import RWGLearner
 
 
 class CMALearner(Learner):
@@ -19,7 +25,7 @@ class CMALearner(Learner):
         # Log every x many generations
         self.logging_rate = self.parameter_dictionary['algorithm']['cma']['logging_rate']
 
-    def learn(self):
+    def learn(self, logging=True):
         """
         Search for the best genome that solves the problem using CMA-ES, while also saving the models every so often
         and logging the results to a result file for analysis.
@@ -50,17 +56,17 @@ class CMALearner(Learner):
 
             # For homogeneous teams rewarding at the individual level,
             if self.team_type == "homogeneous" and self.reward_level == "individual":
+                """
+                                new_population = []
+
+                                for ind in genome_population:
+                                    ind_1 = copy.deepcopy(ind)
+                                    ind_2 = copy.deepcopy(ind)
+                                    new_population += [ind_1, ind_2]
+
+                                genome_population = new_population
+                """
                 raise RuntimeError("This configuration is not supported yet")
-                """
-                new_population = []
-
-                for ind in genome_population:
-                    ind_1 = copy.deepcopy(ind)
-                    ind_2 = copy.deepcopy(ind)
-                    new_population += [ind_1, ind_2]
-
-                genome_population = new_population
-                """
 
             # Convert genomes to agents
             agent_population = self.convert_genomes_to_agents(genome_population)
@@ -146,31 +152,65 @@ class CMALearner(Learner):
 
     def get_seed_genome(self):
         """
-        Get the seed genome to be used as cma's mean. The appropriate seed genome is the one that has the same
-        parameter values as the current experiment
-        @return:
+        Get the seed genome to be used as cma's mean. If getting it from a file, the appropriate seed genome is the one
+        that has the same parameter values as the current experiment
+
+        @return: Genome and its fitness
         """
-        # Looks for seedfiles with the same parameters as the current experiment
-        parameters_in_name = Learner.get_core_params_in_model_name(self.parameter_dictionary)
-        parameters_in_name[0] = "rwg"
 
-        # The seed value (at index 4) does not have to match for cma
-        pre_seed_parameters = parameters_in_name[0:5]
-        post_seed_parameters = parameters_in_name[6:]
+        if self.parameter_dictionary['algorithm']['cma']['seeding_required'] == "True":
+            # Looks for seedfiles with the same parameters as the current experiment
+            parameters_in_name = Learner.get_core_params_in_model_name(self.parameter_dictionary)
+            parameters_in_name[0] = "rwg"
 
-        seedfile_prefix_pre_seed = "_".join([str(param) for param in pre_seed_parameters])
-        seedfile_prefix_post_seed = "_".join([str(param) for param in post_seed_parameters])
-        possible_seedfiles = glob(f'{seedfile_prefix_pre_seed}_*_{seedfile_prefix_post_seed}*')
+            # The seed value (at index 4) does not have to match for cma
+            pre_seed_parameters = parameters_in_name[0:5]
+            post_seed_parameters = parameters_in_name[6:]
 
-        # Makes sure there is only one unambiguous seedfile
-        if len(possible_seedfiles) == 0:
-            raise RuntimeError('No valid seed files')
-        elif len(possible_seedfiles) > 1:
-            raise RuntimeError('Too many valid seed files')
+            seedfile_prefix_pre_seed = "_".join([str(param) for param in pre_seed_parameters])
+            seedfile_prefix_post_seed = "_".join([str(param) for param in post_seed_parameters])
+            possible_seedfiles = glob(f'{seedfile_prefix_pre_seed}_*_{seedfile_prefix_post_seed}*')
+
+            # Makes sure there is only one unambiguous seedfile
+            if len(possible_seedfiles) == 0:
+                raise RuntimeError('No valid seed files')
+            elif len(possible_seedfiles) > 1:
+                raise RuntimeError('Too many valid seed files')
+            else:
+                model_file_extension = self.Agent.get_model_file_extension()
+                seed_fitness = float(possible_seedfiles[0].split("_")[-1].strip(model_file_extension))
+                return self.Agent.load_model_from_file(possible_seedfiles[0]), seed_fitness
+
         else:
-            model_file_extension = self.Agent.get_model_file_extension()
-            seed_fitness = float(possible_seedfiles[0].split("_")[-1].strip(model_file_extension))
-            return self.Agent.load_model_from_file(possible_seedfiles[0]), seed_fitness
+            # Set mini-rwg parameters
+            temporary_parameter_dictionary = copy.deepcopy(self.parameter_dictionary)
+            temporary_parameter_dictionary['general']['algorithm_selected'] = "rwg"
+
+            env_name = temporary_parameter_dictionary['general']['environment']
+            num_agents = temporary_parameter_dictionary['environment'][env_name]['num_agents']
+            temporary_parameter_dictionary['algorithm']['agent_population_size'] = num_agents
+
+            temporary_parameter_dictionary['algorithm']['rwg']['sampling_distribution'] = "normal"
+            temporary_parameter_dictionary['algorithm']['rwg']['normal']['mean'] = 0
+            temporary_parameter_dictionary['algorithm']['rwg']['normal']['std'] = 1
+
+            # Write mini-rwg parameters to file
+            temporary_parameter_file = f"temporary_parameter_file_{temporary_parameter_dictionary['general']['seed']}.json"
+            f = open(temporary_parameter_file, "w")
+            dictionary_string = json.dumps(temporary_parameter_dictionary, indent=4)
+            f.write(dictionary_string)
+            f.close()
+
+            # Generate seed genome
+            temporary_calculator = FitnessCalculator(temporary_parameter_file)
+            learner = RWGLearner(temporary_calculator)
+            seed_genome, seed_fitness = learner.learn(logging=False)
+
+            # Delete temporary paramter file
+            os.remove(temporary_parameter_file)
+
+            return seed_genome, seed_fitness
+
 
     def log(self, genome, genome_fitness, generation, seed_fitness, agent_rank=None):
         """

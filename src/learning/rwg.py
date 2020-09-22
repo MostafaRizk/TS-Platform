@@ -13,9 +13,11 @@ class RWGLearner(Learner):
             raise RuntimeError(f"Cannot run rwg. Parameters request "
                                f"{self.parameter_dictionary['general']['algorithm_selected']}")
 
-    def learn(self):
+    def learn(self, logging=True):
         """
         Find the best genome and its fitness according to the rwg algorithm and the set parameters
+
+        @param logging: Boolean denoting if the generated genomes will be saved
 
         @return: The genome with the highest fitness and its fitness
         """
@@ -69,13 +71,14 @@ class RWGLearner(Learner):
 
             best_fitness = best_team_fitness
 
-        # Save best genome as a model file
-        model_name = self.generate_model_name(best_fitness)
-        self.save_genome(best_genome, model_name)
+        if logging:
+            # Save best genome as a model file
+            model_name = self.generate_model_name(best_fitness)
+            self.save_genome(best_genome, model_name)
 
-        # Log all generated genomes and their fitnesses in one file
-        genome_fitness_lists = self.get_genome_fitnesses_from_agent_fitnesses(agent_fitness_lists)
-        self.log_all_genomes(genome_population, genome_fitness_lists)
+            # Log all generated genomes and their fitnesses in one file
+            genome_fitness_lists = self.get_genome_fitnesses_from_agent_fitnesses(agent_fitness_lists)
+            self.log_all_genomes(genome_population, genome_fitness_lists)
 
         return best_genome, best_fitness
 

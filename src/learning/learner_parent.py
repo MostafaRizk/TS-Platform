@@ -23,10 +23,13 @@ class Learner:
         if self.parameter_dictionary['general']['agent_type'] == "nn":
             self.Agent = NNAgent
 
-    def learn(self):
+    def learn(self, logging):
         pass
 
     # Helpers ---------------------------------------------------------------------------------------------------------
+
+    def get_parameter_dictionary(self):
+        return self.parameter_dictionary
 
     def get_genome_length(self):
         """

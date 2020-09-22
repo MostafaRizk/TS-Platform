@@ -2,10 +2,10 @@
     "general": {
         "algorithm_selected": "cma",
         "team_type": "heterogeneous",
-        "reward_level": "individual",
+        "reward_level": "team",
         "agent_type": "nn",
         "environment": "slope",
-        "seed": 1
+        "seed": 986026653
     },
     "environment": {
         "slope": {
