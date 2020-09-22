@@ -253,7 +253,7 @@ class CMALearner(Learner):
         results_file.write(f"{results}\n")
         results_file.close()
 
-    def generate_model_name(self, fitness, agent_rank):
+    def generate_model_name(self, fitness, agent_rank=None):
         """
         Create a name string for a model generated using the given parameter file, its rank and fitness value
 

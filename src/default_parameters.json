@@ -2,7 +2,7 @@
     "general": {
         "algorithm_selected": "cma",
         "team_type": "heterogeneous",
-        "reward_level": "individual",
+        "reward_level": "team",
         "agent_type": "nn",
         "environment": "slope",
         "seed": 1
@@ -37,7 +37,7 @@
         }
     },
     "algorithm": {
-        "agent_population_size": 100,
+        "agent_population_size": 6,
         "rwg": {
             "sampling_distribution": "normal",
             "normal": {
@@ -51,7 +51,7 @@
         },
         "cma": {
             "sigma": 0.2,
-            "generations": 1000,
+            "generations": 20,
             "tolx": 0.001,
             "tolfunhist": 200.0,
             "logging_rate": 20,

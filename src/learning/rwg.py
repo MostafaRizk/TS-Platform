@@ -66,7 +66,7 @@ class RWGLearner(Learner):
                 best_genome = np.array([])
 
                 for j in range(self.num_agents):
-                    sub_genome = agent_population[best_team_index + j]
+                    sub_genome = agent_population[best_team_index + j].get_genome()
                     best_genome = np.concatenate([best_genome, sub_genome])
 
             best_fitness = best_team_fitness
@@ -109,6 +109,9 @@ class RWGLearner(Learner):
         # Sample genomes from a uniform distribution
         elif self.parameter_dictionary['algorithm']['rwg']['sampling_distribution'] == "uniform":
             genome_population = self.sample_from_uniform(num_genomes)
+
+        if num_genomes == 1:
+            genome_population = np.array([genome_population])
 
         return genome_population
 
