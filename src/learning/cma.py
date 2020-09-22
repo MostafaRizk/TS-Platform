@@ -207,7 +207,7 @@ class CMALearner(Learner):
             seed_genome, seed_fitness = learner.learn(logging=False)
 
             # Delete temporary paramter file
-            os.remove(temporary_parameter_file)
+            #os.remove(temporary_parameter_file)
 
             return seed_genome, seed_fitness
 
