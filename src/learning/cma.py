@@ -159,9 +159,16 @@ class CMALearner(Learner):
         """
 
         if self.parameter_dictionary['algorithm']['cma']['seeding_required'] == "True":
+            dictionary_copy = copy.deepcopy(self.parameter_dictionary)
+            dictionary_copy['general']['algorithm_selected'] = "rwg"
+
+            # If individual reward, allow seeds that used any number of agents
+            if dictionary_copy['general']['reward_level'] == "individual":
+                environment_name = dictionary_copy['general']['environment']
+                dictionary_copy['environment'][environment_name]['num_agents'] = '*'
+
             # Looks for seedfiles with the same parameters as the current experiment
-            parameters_in_name = Learner.get_core_params_in_model_name(self.parameter_dictionary)
-            parameters_in_name[0] = "rwg"
+            parameters_in_name = Learner.get_core_params_in_model_name(dictionary_copy)
 
             # The seed value (at index 4) does not have to match for cma
             pre_seed_parameters = parameters_in_name[0:5]
