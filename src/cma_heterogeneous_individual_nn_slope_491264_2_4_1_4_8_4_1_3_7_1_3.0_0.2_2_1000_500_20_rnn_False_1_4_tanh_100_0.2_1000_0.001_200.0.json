@@ -55,7 +55,7 @@
             "tolx": 0.001,
             "tolfunhist": 200.0,
             "logging_rate": 20,
-            "seeding_required": "False"
+            "seeding_required": "True"
         }
     }
 }
