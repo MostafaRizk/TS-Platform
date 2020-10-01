@@ -33,20 +33,20 @@ genome, fitness = learner.learn()
 
 # Visualise
 """
-Homogeneous
+Homogeneous or Het-Ind
 genome = NNAgent.load_model_from_file(model_name)
 agent_1 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_filename, genome)
 agent_2 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_filename, genome)
-fitness_calculator.calculate_fitness(agent_1, agent_2, render=True, time_delay=0.1)
+results = fitness_calculator.calculate_fitness([agent_1, agent_2], render=True, time_delay=0.1)
 
-Heterogeneous
+Het-Team
 full_genome = NNAgent.load_model_from_file(model_name)
 mid = int(len(full_genome) / 2)
 genome_part_1 = full_genome[0:mid]
 genome_part_2 = full_genome[mid:]
 agent_1 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_filename, genome_part_1)
 agent_2 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_filename, genome_part_2)
-results = fitness_calculator.calculate_fitness(agent_1, agent_2, render=True, time_delay=0.1)
+results = fitness_calculator.calculate_fitness([agent_1, agent_2], render=True, time_delay=0.1)
 """
 
 # Printing Fitness

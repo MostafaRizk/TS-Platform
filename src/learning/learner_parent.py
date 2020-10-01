@@ -203,6 +203,7 @@ class Learner:
                     "team_type",
                     "reward_level",
                     "agent_type",
+                    "environment",
                     "seed",
                     "num_agents",
                     "num_resources",
@@ -218,13 +219,12 @@ class Learner:
                     "downward_cost_factor",
                     "carry_factor",
                     "resource_reward",
-                    "simulation_length",
-                    "num_simulation_runs",
-                    "observation_version"
+                    "episode_length",
+                    "num_episodes",
                     "architecture",
                     "bias",
-                    "hidden_layers"
-                    "hidden_units_per_layer"
+                    "hidden_layers",
+                    "hidden_units_per_layer",
                     "activation_function"]
 
         return headings
