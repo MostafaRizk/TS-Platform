@@ -18,7 +18,9 @@ class HardcodedDropperAgent(HardcodedAgent):
         super().act(observation)
 
         if not self.has_resource:
-            if self.current_zone == "SOURCE":
+            #if self.current_zone == "SOURCE":
+            if self.current_zone == "SLOPE" and \
+                    self.sensor_map[0][0] == self.sensor_map[0][1] == self.sensor_map[0][2] == "OBSTACLE":
                 action = self.action_index["PICKUP"]
             else:
                 action = self.action_index["FORWARD"]

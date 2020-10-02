@@ -9,8 +9,19 @@ from glob import glob
 
 # Generate CMA experiments
 ''''''
-core_parameter_filename = "../default_parameters.json"
+core_parameter_filename = "../rwg_team_10_agents.json"
 parameter_dictionary = json.loads(open(core_parameter_filename).read())
+
+# If using rwg json instead of default_parameters
+parameter_dictionary["general"]["algorithm_selected"] = "cma"
+parameter_dictionary["algorithm"]["agent_population_size"] = 100
+parameter_dictionary["algorithm"]["cma"]["generations"] = 1000
+
+# If individual
+if parameter_dictionary["general"]["reward_level"] == "individual":
+    environment_name = parameter_dictionary["general"]["environment"]
+    parameter_dictionary["environment"][environment_name]["num_agents"] = 10
+
 num_experiments = 30
 np_random = np.random.RandomState(1)
 g = open("../LIST_cma", "a")

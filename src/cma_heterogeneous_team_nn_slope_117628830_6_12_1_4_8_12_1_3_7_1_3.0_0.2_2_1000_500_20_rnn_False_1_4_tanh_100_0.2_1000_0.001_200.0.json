@@ -5,16 +5,16 @@
         "reward_level": "team",
         "agent_type": "nn",
         "environment": "slope",
-        "seed": 799981517
+        "seed": 117628830
     },
     "environment": {
         "slope": {
-            "num_agents": 2,
-            "num_resources": 4,
+            "num_agents": 6,
+            "num_resources": 12,
             "sensor_range": 1,
             "sliding_speed": 4,
             "arena_length": 8,
-            "arena_width": 4,
+            "arena_width": 12,
             "cache_start": 1,
             "slope_start": 3,
             "source_start": 7,

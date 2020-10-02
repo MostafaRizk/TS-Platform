@@ -70,29 +70,26 @@ def plot_evolution_fitness(results_file, graph_file):
     data = pd.read_csv(results_file)
 
     # Format data
-    results = {#"Homogeneous-Individual": {"Individual 1": [], "Individual 2": []},
-               "Homogeneous-Team": [],
-               #"Heterogeneous-Individual": {"Individual 1": [], "Individual 2": []},
-               #"Heterogeneous-Team": {"Individual 1": [], "Individual 2": []}
-                }
+    results = {"Team": [],
+               "Individual": []
+               }
 
     for index, row in data.iterrows():
-        team_type = row["team_type"].capitalize()
         reward_level = row["reward_level"].capitalize()
-        key = f"{team_type}-{reward_level}"
+        key = f"{reward_level}"
 
         results[key] += [row["fitness"]]
 
     # Plot data
     fig1, ax1 = plt.subplots(figsize=(12,4))
     ax1.set_title('Best Fitness Score of Evolved Runs')
-    ax1.set_ylim(0, 100000)
+    ax1.set_ylim(0, 130000)
     ax1.set_ylabel('Fitness')
-    ax1.set_xlabel('Evolutionary Configuration')
+    ax1.set_xlabel('Reward Level')
 
-    positions = [1]  # [1,3,5,7]
+    positions = [1, 3]  # [1,3,5,7]
     #configs = ["Homogeneous-Individual", "Homogeneous-Team", "Heterogeneous-Individual", "Heterogeneous-Team"]
-    configs = ["Homogeneous-Team"]
+    configs = ["Team", "Individual"]
 
     for i in range(len(configs)):
         config = configs[i]
@@ -200,3 +197,4 @@ def plot_evolution_history(results_folder, graph_file):
     plt.savefig(graph_file)
 
 
+plot_evolution_fitness("results_final.csv", "team_vs_ind.png")

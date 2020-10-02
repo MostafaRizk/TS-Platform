@@ -1,7 +1,7 @@
 #!/bin/env bash
 #SBATCH --job-name=cma
-#SBATCH --time=72:00:00
-#SBATCH --array=1-60
+#SBATCH --time=120:00:00
+#SBATCH --array=1-300
 #SBATCH --output=cma.out
 #SBATCH --open-mode=append
 #SBATCH --ntasks=1
