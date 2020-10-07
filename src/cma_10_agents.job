@@ -1,6 +1,6 @@
 #!/bin/env bash
 #SBATCH --job-name=cma_10
-#SBATCH --time=144:00:00
+#SBATCH --time=168:00:00
 #SBATCH --array=1-60
 #SBATCH --output=cma_10.out
 #SBATCH --open-mode=append

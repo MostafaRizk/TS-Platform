@@ -40,7 +40,7 @@ for i in range(len(core_parameter_filenames)):
         parameter_dictionary["environment"][environment_name]["num_agents"] = num_agents_in_setup[i]
 
     num_agents = parameter_dictionary["environment"][environment_name]["num_agents"]
-    parameter_dictionary["algorithm"]["agent_population_size"] = 20 * num_agents
+    parameter_dictionary["algorithm"]["agent_population_size"] = 50 * num_agents
 
     num_experiments = 30
     np_random = np.random.RandomState(1)
