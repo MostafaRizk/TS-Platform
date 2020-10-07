@@ -64,7 +64,6 @@ def plot_hardcoded_fitness(results_file, graph_file):
     plt.savefig(graph_file)
     #plt.show()
 
-
 def plot_evolution_fitness(results_file, graph_file):
     # Read data
     data = pd.read_csv(results_file)
@@ -170,6 +169,7 @@ def plot_evolution_specialisation(results_file, graph_file):
     #plt.show()
     plt.savefig(graph_file)
 
+
 def plot_evolution_history(results_folder, graph_file):
     # Get list of fitnesses from each file
     x = [i for i in range(20,5020,20)]
@@ -197,4 +197,39 @@ def plot_evolution_history(results_folder, graph_file):
     plt.savefig(graph_file)
 
 
-plot_evolution_fitness("results_final.csv", "team_vs_ind.png")
+def count_results(results_file):
+    # Read data
+    data = pd.read_csv(results_file)
+
+    # Format data
+    results = {"Team-2": 0,
+               "Team-4": 0,
+               "Team-6": 0,
+               "Team-8": 0,
+               "Team-10": 0,
+               "Individual-2": 0,
+               "Individual-4": 0,
+               "Individual-6": 0,
+               "Individual-8": 0,
+               "Individual-10": 0,
+               "Team-2-slope-0": 0,
+               "Individual-2-slope-0": 0
+               }
+
+    for index, row in data.iterrows():
+        reward_level = row["reward_level"].capitalize()
+        num_agents = row["num_agents"]
+        sliding_speed = row["sliding_speed"]
+
+        if sliding_speed == 4:
+            key = f"{reward_level}-{num_agents}"
+        else:
+            key = f"{reward_level}-{num_agents}-slope-{sliding_speed}"
+
+        results[key] += 1
+
+    for key in results:
+        print(f"{key}: {results[key]}")
+
+#plot_evolution_fitness("results_final.csv", "team_vs_ind.png")
+count_results("results_final.csv")

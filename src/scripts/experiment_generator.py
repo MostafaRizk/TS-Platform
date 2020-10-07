@@ -9,37 +9,57 @@ from glob import glob
 
 # Generate CMA experiments
 ''''''
-core_parameter_filename = "../rwg_team_10_agents.json"
-parameter_dictionary = json.loads(open(core_parameter_filename).read())
+core_parameter_filenames = [
+    "../rwg_ind_0_slope_1_agent.json",
+    "../rwg_team_0_slope_2_agents.json",
+    "../rwg_ind_2_agents.json",
+    "../rwg_team_2_agents.json",
+    "../rwg_ind_4_agents.json",
+    "../rwg_team_4_agents.json",
+    "../rwg_ind_6_agents.json",
+    "../rwg_team_6_agents.json",
+    "../rwg_ind_8_agents.json",
+    "../rwg_team_8_agents.json",
+    "../rwg_ind_10_agents.json",
+    "../rwg_team_10_agents.json",
+    ]
 
-# If using rwg json instead of default_parameters
-parameter_dictionary["general"]["algorithm_selected"] = "cma"
-parameter_dictionary["algorithm"]["agent_population_size"] = 100
-parameter_dictionary["algorithm"]["cma"]["generations"] = 1000
+num_agents_in_setup = [2, 2, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10]
 
-# If individual
-if parameter_dictionary["general"]["reward_level"] == "individual":
+for i in range(len(core_parameter_filenames)):
+    parameter_dictionary = json.loads(open(core_parameter_filenames[i]).read())
+
+    # If using rwg json instead of default_parameters
+    parameter_dictionary["general"]["algorithm_selected"] = "cma"
+    parameter_dictionary["algorithm"]["cma"]["generations"] = 1000
+
     environment_name = parameter_dictionary["general"]["environment"]
-    parameter_dictionary["environment"][environment_name]["num_agents"] = 10
 
-num_experiments = 30
-np_random = np.random.RandomState(1)
-g = open("../LIST_cma", "a")
+    # If individual
+    if parameter_dictionary["general"]["reward_level"] == "individual":
+        parameter_dictionary["environment"][environment_name]["num_agents"] = num_agents_in_setup[i]
 
-for i in range(num_experiments):
-    new_seed = np_random.randint(low=1, high=2**32-1)
-    parameter_dictionary["general"]["seed"] = new_seed
-    parameters_in_filename = []
-    parameters_in_filename += Learner.get_core_params_in_model_name(parameter_dictionary)
-    parameters_in_filename += CMALearner.get_additional_params_in_model_name(parameter_dictionary)
-    filename = "_".join([str(param) for param in parameters_in_filename]) + ".json"
-    f = open("../"+filename, "w")
-    dictionary_string = json.dumps(parameter_dictionary, indent=4)
-    f.write(dictionary_string)
-    f.close()
-    g.write(f"python3 experiment.py --parameters {filename}\n")
+    num_agents = parameter_dictionary["environment"][environment_name]["num_agents"]
+    parameter_dictionary["algorithm"]["agent_population_size"] = 20 * num_agents
 
-g.close()
+    num_experiments = 30
+    np_random = np.random.RandomState(1)
+    g = open(f"../LIST_cma_{num_agents}", "a")
+
+    for i in range(num_experiments):
+        new_seed = np_random.randint(low=1, high=2**32-1)
+        parameter_dictionary["general"]["seed"] = new_seed
+        parameters_in_filename = []
+        parameters_in_filename += Learner.get_core_params_in_model_name(parameter_dictionary)
+        parameters_in_filename += CMALearner.get_additional_params_in_model_name(parameter_dictionary)
+        filename = "_".join([str(param) for param in parameters_in_filename]) + ".json"
+        f = open("../"+filename, "w")
+        dictionary_string = json.dumps(parameter_dictionary, indent=4)
+        f.write(dictionary_string)
+        f.close()
+        g.write(f"python3 experiment.py --parameters {filename}\n")
+
+    g.close()
 
 
 '''

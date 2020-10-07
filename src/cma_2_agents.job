@@ -1,0 +1,16 @@
+#!/bin/env bash
+#SBATCH --job-name=cma_2
+#SBATCH --time=120:00:00
+#SBATCH --array=1-120
+#SBATCH --output=cma_2.out
+#SBATCH --open-mode=append
+#SBATCH --ntasks=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=1
+#SBATCH --mail-type=FAIL,BEGIN,END
+#SBATCH --mail-user=mostafa.rizk@monash.edu
+
+export OMP_NUM_THREADS=1
+source /home/mriz9/om18/latest_code/TS-Platform/src/env/bin/activate
+CMD=`head -n ${SLURM_ARRAY_TASK_ID} LIST_cma_2 | tail -1`
+$CMD
