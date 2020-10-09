@@ -25,6 +25,8 @@ core_parameter_filenames = [
     ]
 
 num_agents_in_setup = [2, 2, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10]
+pop_size_for_team = [-1, -1, 100, -1, 100, -1, 120, -1, 160, -1, 100]
+num_seeds_for_team = [-1, -1, 30, -1, 60, -1, 75, -1, 75, -1, 150]
 
 for i in range(len(core_parameter_filenames)):
     parameter_dictionary = json.loads(open(core_parameter_filenames[i]).read())
@@ -40,11 +42,11 @@ for i in range(len(core_parameter_filenames)):
         parameter_dictionary["environment"][environment_name]["num_agents"] = num_agents_in_setup[i]
 
     num_agents = parameter_dictionary["environment"][environment_name]["num_agents"]
-    parameter_dictionary["algorithm"]["agent_population_size"] = 50 * num_agents
+    parameter_dictionary["algorithm"]["agent_population_size"] = pop_size_for_team[num_agents]
 
-    num_experiments = 30
+    num_experiments = num_seeds_for_team[num_agents]
     np_random = np.random.RandomState(1)
-    g = open(f"../LIST_cma_{num_agents}", "a")
+    g = open(f"../LIST_cma", "a")
 
     for i in range(num_experiments):
         new_seed = np_random.randint(low=1, high=2**32-1)
