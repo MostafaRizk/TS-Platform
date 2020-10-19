@@ -172,11 +172,11 @@ def plot_evolution_specialisation(results_file, graph_file):
 
 def plot_evolution_history(results_folder, graph_file):
     # Get list of fitnesses from each file
-    x = [i for i in range(20,5020,20)]
+    x = [i for i in range(20,1020,20)]
     y = []
     yerr = []
 
-    for i in range(20, 5020, 20):
+    for i in range(20, 1020, 20):
         results_file = f"{results_folder}/results_{i}.csv"
         data = pd.read_csv(results_file)
 
@@ -190,7 +190,7 @@ def plot_evolution_history(results_folder, graph_file):
     # Plot
     fig1, ax1 = plt.subplots(figsize=(12, 4))
     ax1.set_title('Fitness Throughout Evolution')
-    ax1.set_ylim(0, 100000)
+    ax1.set_ylim(0, 300000)
     ax1.set_ylabel('Fitness')
     ax1.set_xlabel('Generation')
     plt.errorbar(x, y, yerr)
@@ -232,4 +232,6 @@ def count_results(results_file):
         print(f"{key}: {results[key]}")
 
 #plot_evolution_fitness("results_final.csv", "team_vs_ind.png")
-count_results("results_final.csv")
+#count_results("results_final.csv")
+
+plot_evolution_history('data/results', 'evolution_history.png')
