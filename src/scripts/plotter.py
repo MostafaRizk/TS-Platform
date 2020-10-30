@@ -234,4 +234,5 @@ def count_results(results_file):
 #plot_evolution_fitness("results_final.csv", "team_vs_ind.png")
 #count_results("results_final.csv")
 
-plot_evolution_history('data/results', 'evolution_history.png')
+#plot_evolution_history('data/results', 'evolution_history.png')
+count_results("data/results/results_final.csv")

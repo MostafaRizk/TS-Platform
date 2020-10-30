@@ -76,4 +76,4 @@ def plot_performance_vs_team_size(results_file_name, graph_file_name):
     plt.legend(loc='upper right')
     plt.savefig(graph_file_name)
 
-plot_performance_vs_team_size("results_final.csv", "performance_vs_team_size.png")
+plot_performance_vs_team_size("data/results/results_final.csv", "performance_vs_team_size.png")

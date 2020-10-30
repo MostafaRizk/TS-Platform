@@ -14,29 +14,56 @@ import pandas as pd
 
 #Het-Ind
 ''''''
-#parameter_filename = "cma_heterogeneous_individual_nn_slope_4018109722_4_8_1_4_8_8_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_1000_0.001_200.0.json"
 parameter_filename = "cma_heterogeneous_individual_nn_slope_550290314_4_8_1_4_8_8_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_1000_0.001_200.0.json"
+#parameter_filename = "rwg_ind_4_agents.json"
 
-#model_name_1 = "cma_heterogeneous_individual_nn_slope_4018109722_4_8_1_4_8_8_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_1000_0.001_200.0_3_-350.399999999998_final.npy"
-model_name_1 = "cma_heterogeneous_individual_nn_slope_550290314_4_8_1_4_8_8_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_1000_0.001_200.0_0_-500.0_final.npy"
-model_name_2 = model_name_3 = model_name_4 = model_name_1
+'''
+model_name_0 = "cma_heterogeneous_individual_nn_slope_550290314_4_8_1_4_8_8_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_1000_0.001_200.0_0_-500.0_final.npy"
+model_name_1 = "cma_heterogeneous_individual_nn_slope_550290314_4_8_1_4_8_8_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_1000_0.001_200.0_1_-500.0_final.npy"
+model_name_2 = "cma_heterogeneous_individual_nn_slope_550290314_4_8_1_4_8_8_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_1000_0.001_200.0_2_-500.0_final.npy"
+model_name_3 = "cma_heterogeneous_individual_nn_slope_550290314_4_8_1_4_8_8_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_1000_0.001_200.0_3_-500.0_final.npy"
+'''
+model_name_0 = "rwg_heterogeneous_individual_nn_slope_1_1_8_1_4_8_8_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_1000_normal_0_1_-27.890000000000136.npy"
+model_name_1 = "rwg_heterogeneous_individual_nn_slope_1_1_8_1_4_8_8_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_1000_normal_0_1_-27.890000000000136.npy"
+model_name_2 = "rwg_heterogeneous_individual_nn_slope_1_1_8_1_4_8_8_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_1000_normal_0_1_-27.890000000000136.npy"
+model_name_3 = "rwg_heterogeneous_individual_nn_slope_1_1_8_1_4_8_8_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_1000_normal_0_1_-27.890000000000136.npy"
 
 fitness_calculator = FitnessCalculator(parameter_filename)
 
+genome_0 = NNAgent.load_model_from_file(model_name_0)
 genome_1 = NNAgent.load_model_from_file(model_name_1)
 genome_2 = NNAgent.load_model_from_file(model_name_2)
 genome_3 = NNAgent.load_model_from_file(model_name_3)
-genome_4 = NNAgent.load_model_from_file(model_name_4)
+
+agent_0 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_filename, genome_0)
 agent_1 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_filename, genome_1)
 agent_2 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_filename, genome_2)
 agent_3 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_filename, genome_3)
-agent_4 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_filename, genome_4)
-#agent_0 = HardcodedDropperAgent()
-#agent_1 = HardcodedCollectorAgent()
-results = fitness_calculator.calculate_fitness([agent_1, agent_2, agent_3, agent_4], render=True, time_delay=0.1)#, logging=True, logfilename="rewards.csv")
-mean = np.mean([results["fitness_matrix"][0][i] + results["fitness_matrix"][1][i] for i in range(len(results["fitness_matrix"][0]))])
-print(mean)
-print(results)
+
+results = fitness_calculator.calculate_fitness([agent_0, agent_1, agent_2, agent_3], render=False, time_delay=0)#, logging=True, logfilename="rewards.csv")
+team_mean = np.mean([results["fitness_matrix"][0][i] +
+                results["fitness_matrix"][1][i] +
+                results["fitness_matrix"][2][i] +
+                results["fitness_matrix"][3][i]
+                for i in range(len(results["fitness_matrix"][0]))])
+#print(team_mean)
+
+mean_for_agent = []
+std_for_agent = []
+for agent_scores in results["fitness_matrix"]:
+    mean_for_agent += [np.mean(agent_scores)]
+    std_for_agent += [np.std(agent_scores)]
+#mean_for_all_agents = np.mean(mean_for_agent)
+#std_for_all_agents = np.std(mean_for_agent)
+
+#print(mean_for_all_agents)
+#print(std_for_all_agents)
+
+print(mean_for_agent)
+print(std_for_agent)
+
+for agent_scores in results["fitness_matrix"]:
+    print(agent_scores)
 
 
 # Single agent
@@ -48,8 +75,14 @@ fitness_calculator = FitnessCalculator(parameter_filename)
 
 genome = NNAgent.load_model_from_file(model_name)
 agent = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_filename, genome)
-results = fitness_calculator.calculate_fitness([agent], render=True, time_delay=0.1)
+results = fitness_calculator.calculate_fitness([agent], render=False, time_delay=0)
+mean = np.mean(results["fitness_matrix"][0])
+std = np.std(results["fitness_matrix"][0])
+print(mean)
+print(std)
+print(results)
 '''
+
 #Het-Team
 '''
 parameter_filename = "cma_heterogeneous_team_nn_slope_4018109722_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_1000_0.001_200.0.json"
