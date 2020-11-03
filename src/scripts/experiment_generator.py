@@ -8,7 +8,7 @@ from learning.learner_parent import Learner
 from glob import glob
 
 # Generate CMA experiments
-''''''
+'''
 core_parameter_filenames = [
     "../rwg_ind_0_slope_1_agent.json",
     "../rwg_team_0_slope_2_agents.json",
@@ -23,8 +23,14 @@ core_parameter_filenames = [
     "../rwg_ind_10_agents.json",
     "../rwg_team_10_agents.json",
     ]
+'''
+core_parameter_filenames = [
+    "../rwg_ind_4_agents.json",
+    "../rwg_team_4_agents.json",
+    ]
 
-num_agents_in_setup = [2, 2, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10]
+#num_agents_in_setup = [2, 2, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10]
+num_agents_in_setup = [4, 4]
 pop_size_for_team = [-1, -1, 100, -1, 100, -1, 120, -1, 160, -1, 100]
 num_seeds_for_team = [-1, -1, 30, -1, 60, -1, 75, -1, 75, -1, 150]
 

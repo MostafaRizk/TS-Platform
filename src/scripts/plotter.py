@@ -235,4 +235,4 @@ def count_results(results_file):
 #count_results("results_final.csv")
 
 #plot_evolution_history('data/results', 'evolution_history.png')
-count_results("data/results/results_final.csv")
+count_results("data/many_agents/results/results_final.csv")

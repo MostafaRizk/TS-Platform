@@ -367,8 +367,8 @@ def calculate_agent_fitness_distribution(reward_level, num_genomes, samples_per_
 
 
 def plot_agent_fitness_distribution(logfile_name, graph_file):
-    bin_list = [i for i in range(-20000, 20000, 250)]
-    #n_bins = 120
+    bin_list = [i for i in range(-5000, 5000, 250)]
+    #n_bins = 20
     data = pd.read_csv(logfile_name)
     num_reward_levels = 2
     num_agent_teams = 5
@@ -457,7 +457,7 @@ print(f'{num_segfaults + num_timeouts + num_unstarted} = {num_reruns}')
 #plot_evolution_history_average("data/results", "evolution_history_2_agents.png", num_generations=1000, start_generation=20, step_size=20, y_min=-1000, y_max=80000)
 #fix_results("data/results", 20, 1000, 20)
 
-calculate_agent_fitness_distribution(reward_level="individual", num_genomes=30, samples_per_genome=120, logfile_name="agent_fitness_distribution.csv")
-calculate_agent_fitness_distribution(reward_level="team", num_genomes=30, samples_per_genome=120, logfile_name="agent_fitness_distribution.csv")
-plot_agent_fitness_distribution("agent_fitness_distribution.csv", "agent_fitness_distribution.png")
+#calculate_agent_fitness_distribution(reward_level="individual", num_genomes=30, samples_per_genome=120, logfile_name="agent_fitness_distribution.csv")
+#calculate_agent_fitness_distribution(reward_level="team", num_genomes=30, samples_per_genome=120, logfile_name="agent_fitness_distribution.csv")
+#plot_agent_fitness_distribution("agent_fitness_distribution.csv", "agent_fitness_distribution.png")
 
