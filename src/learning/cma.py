@@ -5,6 +5,7 @@ import copy
 import sys
 import os
 import numpy as np
+import signal
 
 from fitness import FitnessCalculator
 from learning.learner_parent import Learner
@@ -51,6 +52,47 @@ class CMALearner(Learner):
 
         # Learning loop
         while not es.stop():
+
+            # Graceful exit (allows to pick up from where the algorithm last left off)
+            def signal_handler(*args):
+                # Create crash folder (if it doesn't exist)
+                dir_name = "../crashed_runs"
+                if not os.path.isdir(dir_name):
+                    os.mkdir(dir_name)
+
+                # Calculate latest sigma
+                sigma = es.sigma0
+
+                # Calculate remaining generations
+                remaining_generations = options['maxiter'] - es.result.iterations
+
+                # Save parameter dictionary as json with relevant modified parameters
+                new_dictionary = copy.deepcopy(self.parameter_dictionary)
+                new_dictionary["general"]["algorithm_selected"] = "partialcma"
+                new_dictionary['algorithm']['cma']['sigma'] = sigma
+                new_dictionary['algorithm']['cma']['generations'] = remaining_generations
+                new_dictionary['algorithm']['cma']['seeding_required'] = True  # So that it looks for a seed genome
+
+                parameters_in_filename = []
+                parameters_in_filename += Learner.get_core_params_in_model_name(new_dictionary)
+                parameters_in_filename += CMALearner.get_additional_params_in_model_name(new_dictionary)
+                filename = "_".join([str(param) for param in parameters_in_filename]) + ".json"
+
+                f = open("../" + filename, "w")
+                dictionary_string = json.dumps(new_dictionary, indent=4)
+                f.write(dictionary_string)
+                f.close()
+
+                # Calculate latest mean and save as genome file
+                mean = es.x0
+                fitness = -es.result.fbest
+                intermediate_seed_name = CMALearner.get_model_name_from_dictionary(new_dictionary, fitness)
+                self.save_genome(mean, intermediate_seed_name)
+
+                sys.exit()
+
+            signal.signal(signal.SIGTERM, signal_handler)
+
             # Get population of genomes to be used this generation
             genome_population = es.ask()
 
@@ -160,7 +202,9 @@ class CMALearner(Learner):
 
         if self.parameter_dictionary['algorithm']['cma']['seeding_required'] == "True":
             dictionary_copy = copy.deepcopy(self.parameter_dictionary)
-            dictionary_copy['general']['algorithm_selected'] = "rwg"
+
+            if dictionary_copy['general']['algorithm_selected'] != "partialcma":
+                dictionary_copy['general']['algorithm_selected'] = "rwg"
 
             # If individual reward, allow seeds that used any number of agents
             if dictionary_copy['general']['reward_level'] == "individual":
@@ -170,13 +214,19 @@ class CMALearner(Learner):
             # Looks for seedfiles with the same parameters as the current experiment
             parameters_in_name = Learner.get_core_params_in_model_name(dictionary_copy)
 
-            # The seed value (at index 4) does not have to match for cma
-            pre_seed_parameters = parameters_in_name[0:5]
-            post_seed_parameters = parameters_in_name[6:]
+            # The seed value (at index 4) does not have to match for cma unless it is a continuation of a past run
+            possible_seedfiles = None
 
-            seedfile_prefix_pre_seed = "_".join([str(param) for param in pre_seed_parameters])
-            seedfile_prefix_post_seed = "_".join([str(param) for param in post_seed_parameters])
-            possible_seedfiles = glob(f'{seedfile_prefix_pre_seed}_*_{seedfile_prefix_post_seed}*')
+            if dictionary_copy['general']['algorithm_selected'] == "rwg":
+                pre_seed_parameters = parameters_in_name[0:5]
+                post_seed_parameters = parameters_in_name[6:]
+                seedfile_prefix_pre_seed = "_".join([str(param) for param in pre_seed_parameters])
+                seedfile_prefix_post_seed = "_".join([str(param) for param in post_seed_parameters])
+                possible_seedfiles = glob(f'{seedfile_prefix_pre_seed}_*_{seedfile_prefix_post_seed}*')
+
+            elif dictionary_copy['general']['algorithm_selected'] == "partialcma":
+                seedfile_prefix = "_".join([str(param) for param in parameters_in_name])
+                possible_seedfiles = glob(f'{seedfile_prefix}*')
 
             # Makes sure there is only one unambiguous seedfile
             if len(possible_seedfiles) == 0:
@@ -261,6 +311,10 @@ class CMALearner(Learner):
         results_file.close()
 
     def generate_model_name(self, fitness, agent_rank=None):
+        return CMALearner.get_model_name_from_dictionary(self.parameter_dictionary, fitness, agent_rank)
+
+    @staticmethod
+    def get_model_name_from_dictionary(parameter_dictionary, fitness, agent_rank=None):
         """
         Create a name string for a model generated using the given parameter file, its rank and fitness value
 
@@ -269,10 +323,10 @@ class CMALearner(Learner):
         @return: The model name as a string
         """
 
-        parameters_in_name = Learner.get_core_params_in_model_name(self.parameter_dictionary)
-        parameters_in_name += CMALearner.get_additional_params_in_model_name(self.parameter_dictionary)
+        parameters_in_name = Learner.get_core_params_in_model_name(parameter_dictionary)
+        parameters_in_name += CMALearner.get_additional_params_in_model_name(parameter_dictionary)
 
-        if self.reward_level == "individual":
+        if parameter_dictionary['general']['reward_level'] == "individual":
             assert agent_rank is not None, "Agent rank must be included in model name"
             parameters_in_name += [agent_rank]
 

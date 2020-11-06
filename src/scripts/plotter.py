@@ -1,9 +1,13 @@
+import copy
+import os
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from copy import deepcopy
+import copy
 
 from pylab import legend
+from glob import glob
 
 
 def plot_hardcoded_fitness(results_file, graph_file):
@@ -69,26 +73,28 @@ def plot_evolution_fitness(results_file, graph_file):
     data = pd.read_csv(results_file)
 
     # Format data
-    results = {"Team": [],
-               "Individual": []
+    results = {"Speed-0": [],
+               "Speed-4": []
                }
 
     for index, row in data.iterrows():
-        reward_level = row["reward_level"].capitalize()
-        key = f"{reward_level}"
+        #reward_level = row["reward_level"].capitalize()
+        #key = f"{reward_level}"
+        sliding_speed = row["sliding_speed"]
+        key = f"Speed-{sliding_speed}"
 
         results[key] += [row["fitness"]]
 
     # Plot data
-    fig1, ax1 = plt.subplots(figsize=(12,4))
+    fig1, ax1 = plt.subplots(figsize=(12, 4))
     ax1.set_title('Best Fitness Score of Evolved Runs')
     ax1.set_ylim(0, 130000)
     ax1.set_ylabel('Fitness')
-    ax1.set_xlabel('Reward Level')
+    ax1.set_xlabel('Sliding Speed')
 
-    positions = [1, 3]  # [1,3,5,7]
+    positions = [0.5, 2.5]  # [1,3,5,7]
     #configs = ["Homogeneous-Individual", "Homogeneous-Team", "Heterogeneous-Individual", "Heterogeneous-Team"]
-    configs = ["Team", "Individual"]
+    configs = ["Speed-0", "Speed-4"]
 
     for i in range(len(configs)):
         config = configs[i]
@@ -99,7 +105,7 @@ def plot_evolution_fitness(results_file, graph_file):
             #plt.setp(box2[item], color="blue")
 
     ax1.set_xticklabels([x for x in configs])
-    ax1.set_xticks([x + 0.5 for x in positions])
+    #ax1.set_xticks([x + 0.5 for x in positions])
     #ax1.set_xticks([x for x in positions])
 
     hB, = ax1.plot([1, 1], 'r-')
@@ -231,8 +237,97 @@ def count_results(results_file):
     for key in results:
         print(f"{key}: {results[key]}")
 
+
+def get_seed_dict(results_file):
+    """
+    Get a dict of lists of the unique seeds in the results file
+
+    @param results_file:
+    @return:
+    """
+    # Read data
+    data = pd.read_csv(results_file)
+
+    # Format data
+    results = {"Team-2-slope-0": [],
+               "Individual-2-slope-0": []
+               }
+
+    for index, row in data.iterrows():
+        reward_level = row["reward_level"].capitalize()
+        num_agents = row["num_agents"]
+        sliding_speed = row["sliding_speed"]
+        seed = row["seed"]
+
+        if sliding_speed == 4:
+            continue
+        else:
+            key = f"{reward_level}-{num_agents}-slope-{sliding_speed}"
+
+        results[key] += [seed]
+
+    return results
+
+
+def find_seed_overlap(seed_dict_1, seed_dict_2):
+    """
+    Check if, between two sets of experiments with missing seeds, there are enough unique seeds to create a plot
+
+    @param seed_dict_1:
+    @param seed_dict_2:
+    @return:
+    """
+    seed_dict_3 = copy.deepcopy(seed_dict_1)
+
+    for key in seed_dict_2:
+        for seed in seed_dict_2[key]:
+            if seed not in seed_dict_3[key]:
+                seed_dict_3[key] += [seed]
+
+    return seed_dict_3
+
+
+def get_seeds_to_rerun(original_experiment_directory, combined_seed_dict):
+    # Get list of parameter files from directory
+    os.chdir(original_experiment_directory)
+    parameter_file_list = glob(f'cma_heterogeneous_individual*.json')
+
+    combined_seed_list = combined_seed_dict["Individual-2-slope-0"]
+
+    rerun_list = []
+
+    # Iterate parameter files
+    for filestring in parameter_file_list:
+        # Get reward_level, num_agents, sliding_speed and seed
+        filename = filestring.split("_")
+        reward_level = filename[2]
+        num_agents = filename[6]
+        sliding_speed = filename[9]
+        seed = filename[5]
+
+        # Add parameter file to rerun list if its seed is Ind-2 and not in combined list
+        if reward_level == "individual" and num_agents == "2" and sliding_speed == "0" and seed not in combined_seed_list:
+            rerun_list += [filestring]
+
+
+    # Print rerun list
+    for i in rerun_list:
+        print(i)
+    print(len(rerun_list))
+    # Copy parameter files to new folder
+
 #plot_evolution_fitness("results_final.csv", "team_vs_ind.png")
 #count_results("results_final.csv")
 
 #plot_evolution_history('data/results', 'evolution_history.png')
-count_results("data/many_agents/results/results_final.csv")
+#count_results("data/many_agents/results/results_final.csv")
+#count_results("../../results/2020_10_02_CMA many agents and 0 slope/results/results_final.csv")
+#count_results("../../results/2020_10_07_CMA many agents and big populations/results/results_final.csv")
+
+#seed_dict_1 = get_seed_dict("../../results/2020_10_02_CMA many agents and 0 slope/results/results_final.csv")
+#seed_dict_2 = get_seed_dict("../../results/2020_10_07_CMA many agents and big populations/results/results_final.csv")
+#combined_seed_dict = find_seed_overlap(seed_dict_1, seed_dict_2)
+
+#get_seeds_to_rerun("../../results/2020_10_02_CMA many agents and 0 slope/experiments", combined_seed_dict)
+
+plot_evolution_fitness("../../results/2020_11_06_2-agents_slope_comparison/results/results_final.csv", "slope_vs_no_slope.png")

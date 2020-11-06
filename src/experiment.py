@@ -16,7 +16,8 @@ if parameter_dictionary["general"]["algorithm_selected"] == "rwg":
     learner = RWGLearner(fitness_calculator)
     genome, fitness = learner.learn()
 
-elif parameter_dictionary["general"]["algorithm_selected"] == "cma":
+elif parameter_dictionary["general"]["algorithm_selected"] == "cma" or \
+        parameter_dictionary["general"]["algorithm_selected"] == "partialcma":
     learner = CMALearner(fitness_calculator)
     genome, fitness = learner.learn()
 

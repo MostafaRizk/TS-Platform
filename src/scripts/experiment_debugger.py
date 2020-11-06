@@ -13,6 +13,10 @@ from agents.nn_agent_lean import NNAgent
 from glob import glob
 
 
+def count_all_files():
+    return len(glob(f'cma*json'))
+
+
 def get_all_files():
     return [name.replace('data/experiments/', '') for name in glob(f'data/experiments/cma*json')]
 
