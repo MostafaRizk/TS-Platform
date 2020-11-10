@@ -207,7 +207,7 @@ def plot_evolution_history_average(results_folder, graph_file, num_generations, 
 def fix_results(results_folder, start_generation, num_generations, step_size):
     correct_header = "algorithm_selected,team_type,reward_level,agent_type,environment,seed,num_agents,num_resources,sensor_range,sliding_speed,arena_length,arena_width,cache_start,slope_start,source_start,base_cost,upward_cost_factor,downward_cost_factor,carry_factor,resource_reward,episode_length,num_episodes,architecture,bias,hidden_layers,hidden_units_per_layer,activation_function,agent_population_size,sigma,generations,tolx,tolfunhist,seed_fitness,fitness,model_name"
 
-    for i in range(start_generation, num_generations+1, step_size):
+    """for i in range(start_generation, num_generations+1, step_size):
         results_file = f"{results_folder}/results_{i}.csv"
 
         f = open(results_file)
@@ -217,7 +217,7 @@ def fix_results(results_folder, start_generation, num_generations, step_size):
         file_text = '\n'.join(file_text)
         f = open(results_file, 'w')
         f.write(file_text)
-        f.close()
+        f.close()"""
 
     results_file = f"{results_folder}/results_final.csv"
 
@@ -403,6 +403,119 @@ def plot_agent_fitness_distribution(logfile_name, graph_file):
     plt.savefig(graph_file)
 
 
+def get_seed_file(results_folder, parameter_list):
+    """
+    Get seed file that matches a particular parameter list
+
+    @param results_folder:
+    @param parameter_list:
+    @return:
+    """
+    # Get pre and post seed params for model
+    print(os.getcwd())
+    seed_folder = f'{results_folder}/experiments'
+    os.chdir(seed_folder)
+    pre_seed_parameters = parameter_list[0:5]
+    pre_seed_parameters[0] = "rwg"
+    post_seed_parameters = parameter_list[6:27]
+
+    # Get list of all seed files with matching parameters
+    seedfile_prefix_pre_seed = "_".join([str(param) for param in pre_seed_parameters])
+    seedfile_prefix_post_seed = "_".join([str(param) for param in post_seed_parameters])
+    possible_seedfiles = glob(f'{seedfile_prefix_pre_seed}_*_{seedfile_prefix_post_seed}*')
+
+    # Return seed_file name but throw error if there's more than one
+    if len(possible_seedfiles) == 0:
+        raise RuntimeError('No valid seed files')
+    elif len(possible_seedfiles) > 1:
+        raise RuntimeError('Too many valid seed files')
+    else:
+        return possible_seedfiles[0]
+
+
+def create_results_from_models(results_folder):
+    """
+    Assemble results csv files from numpy files
+
+    Currently only works for results_final.csv
+    @param results_folder:
+    @return:
+    """
+    new_path = f'{results_folder}/results'
+    os.chdir(new_path)
+
+    # Get list of all final models
+    model_files = glob(f'cma*_final.npy')
+
+    # Create final results file
+    results_file = f'results_final.csv'
+    f = open(results_file, 'w')
+
+    # Write header
+    header = "algorithm_selected,team_type,reward_level,agent_type,environment,seed,num_agents,num_resources,sensor_range,sliding_speed,arena_length,arena_width,cache_start,slope_start,source_start,base_cost,upward_cost_factor,downward_cost_factor,carry_factor,resource_reward,episode_length,num_episodes,architecture,bias,hidden_layers,hidden_units_per_layer,activation_function,agent_population_size,sigma,generations,tolx,tolfunhist,seed_fitness,fitness,model_name"
+    f.write(header)
+    f.write("\n")
+
+    # For every model, extract parameters and convert to a comma separated list
+    for model_name in model_files:
+        parameter_list = model_name.split("_")[0:-2]
+        fitness = model_name.split("_")[-2]
+        path_to_results = f'../'
+        seed_file = get_seed_file(path_to_results, parameter_list)
+        seed_fitness = seed_file.split("_")[-1].strip(".npy")
+
+        # Log parameters and score to results file
+        parameters_to_log = parameter_list + [seed_fitness] + [fitness] + [model_name]
+        line_to_log = ",".join(parameters_to_log)
+        f.write(line_to_log)
+        f.write(("\n"))
+
+    # Close results file
+    f.close()
+
+
+def compare_episodes(results_file, graph_file):
+    # Read data
+    data = pd.read_csv(results_file)
+
+    # Format data
+    results = {"5": [],
+               "10": [],
+               "20": []
+               }
+
+    for index, row in data.iterrows():
+        num_episodes = row["num_episodes"]
+        key = f"{num_episodes}"
+
+        results[key] += [row["fitness"]]
+
+    # Plot data
+    fig1, ax1 = plt.subplots(figsize=(12, 4))
+    ax1.set_title('Best Fitness Score of Evolved Runs')
+    ax1.set_ylim(0, 150000)
+    ax1.set_ylabel('Fitness')
+    ax1.set_xlabel('Num Episodes')
+
+    positions = [0.5, 2.5, 4.5]  # [1,3,5,7]
+    #configs = ["Homogeneous-Individual", "Homogeneous-Team", "Heterogeneous-Individual", "Heterogeneous-Team"]
+    configs = ["5", "10", "20"]
+
+    for i in range(len(configs)):
+        config = configs[i]
+        box1 = ax1.boxplot(results[f"{config}"], positions=[positions[i]], widths=0.3)
+        for item in ['boxes', 'whiskers', 'fliers', 'medians', 'caps']:
+            plt.setp(box1[item], color="red")
+
+    ax1.set_xticklabels([x for x in configs])
+    ax1.set_xticks([x for x in positions])
+
+    hB, = ax1.plot([1, 1], 'r-')
+    hB.set_visible(False)
+
+    #plt.show()
+    plt.savefig(graph_file)
+
 '''
 # Get parameter file name
         "cma_heterogeneous_individual_nn_slope_550290314_4_8_1_4_8_8_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_1000_0.001_200.0.json"
@@ -465,3 +578,9 @@ print(f'{num_segfaults + num_timeouts + num_unstarted} = {num_reruns}')
 #calculate_agent_fitness_distribution(reward_level="team", num_genomes=30, samples_per_genome=120, logfile_name="agent_fitness_distribution.csv")
 #plot_agent_fitness_distribution("agent_fitness_distribution.csv", "agent_fitness_distribution.png")
 
+
+#fix_results(results_folder="../../results/2020_11_08_2_agents_with varied_episodes/results_final.csv", start_generation=20, num_generations=1000, step_size=20)
+
+create_results_from_models("../../results/2020_11_08_2_agents_reduced_episodes_evolution")
+
+#compare_episodes(results_file="/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_11_08_2_agents_with varied_episodes/results_final.csv", graph_file="episodes.png")

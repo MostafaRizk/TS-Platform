@@ -73,46 +73,66 @@ def plot_evolution_fitness(results_file, graph_file):
     data = pd.read_csv(results_file)
 
     # Format data
-    results = {"Speed-0": [],
-               "Speed-4": []
+    results = {"Team-Speed-0": [],
+               "Team-Speed-4": [],
+               "Individual-Speed-0": [],
+               "Individual-Speed-4": []
                }
 
+    ind_fitnesses = {
+        "Individual-Speed-0": {},
+        "Individual-Speed-4": {}
+        }
+
     for index, row in data.iterrows():
-        #reward_level = row["reward_level"].capitalize()
+        reward_level = row["reward_level"].capitalize()
         #key = f"{reward_level}"
         sliding_speed = row["sliding_speed"]
-        key = f"Speed-{sliding_speed}"
+        key = f"{reward_level}-Speed-{sliding_speed}"
 
-        results[key] += [row["fitness"]]
+        if reward_level == "Individual":
+            seed = row["seed"]
+
+            if seed in ind_fitnesses[key]:
+                ind_fitnesses[key][seed] += row["fitness"]
+            else:
+                ind_fitnesses[key][seed] = row["fitness"]
+
+        else:
+            results[key] += [row["fitness"]]
+
+    for key in ind_fitnesses:
+        for seed in ind_fitnesses[key]:
+            results[key] += [ind_fitnesses[key][seed]]
 
     # Plot data
     fig1, ax1 = plt.subplots(figsize=(12, 4))
     ax1.set_title('Best Fitness Score of Evolved Runs')
-    ax1.set_ylim(0, 130000)
+    ax1.set_ylim(0, 200000)
     ax1.set_ylabel('Fitness')
     ax1.set_xlabel('Sliding Speed')
 
     positions = [0.5, 2.5]  # [1,3,5,7]
     #configs = ["Homogeneous-Individual", "Homogeneous-Team", "Heterogeneous-Individual", "Heterogeneous-Team"]
-    configs = ["Speed-0", "Speed-4"]
+    configs = ["Team", "Individual"]
 
     for i in range(len(configs)):
         config = configs[i]
-        box1 = ax1.boxplot(results[config], positions=[positions[i]], widths=0.3)
-        #box2 = ax1.boxplot(results[config]["Individual 2"], positions=[positions[i]+1], widths=0.3)
+        box1 = ax1.boxplot(results[f"{config}-Speed-0"], positions=[positions[i]], widths=0.3)
+        box2 = ax1.boxplot(results[f"{config}-Speed-4"], positions=[positions[i]+0.5], widths=0.3)
         for item in ['boxes', 'whiskers', 'fliers', 'medians', 'caps']:
             plt.setp(box1[item], color="red")
-            #plt.setp(box2[item], color="blue")
+            plt.setp(box2[item], color="blue")
 
     ax1.set_xticklabels([x for x in configs])
-    #ax1.set_xticks([x + 0.5 for x in positions])
+    ax1.set_xticks([x + 0.25 for x in positions])
     #ax1.set_xticks([x for x in positions])
 
     hB, = ax1.plot([1, 1], 'r-')
-    #hR, = ax1.plot([1, 1], 'b-')
-    #legend((hB, hR), ('Individual 1', 'Individual 2'))
+    hR, = ax1.plot([1, 1], 'b-')
+    legend((hB, hR), ('Speed-0', 'Speed-4'))
     hB.set_visible(False)
-    #hR.set_visible(False)
+    hR.set_visible(False)
 
     #plt.show()
     plt.savefig(graph_file)
@@ -317,7 +337,7 @@ def get_seeds_to_rerun(original_experiment_directory, combined_seed_dict):
     # Copy parameter files to new folder
 
 #plot_evolution_fitness("results_final.csv", "team_vs_ind.png")
-#count_results("results_final.csv")
+#count_results("../../results/2020_11_06_2-agents_slope_comparison/results/results_final.csv")
 
 #plot_evolution_history('data/results', 'evolution_history.png')
 #count_results("data/many_agents/results/results_final.csv")

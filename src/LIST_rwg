@@ -1,2 +1,0 @@
-python3 experiment.py --parameter rwg_ind_0_slope_1_agent.json
-python3 experiment.py --parameter rwg_team_0_slope_2_agents.json

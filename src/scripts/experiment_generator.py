@@ -25,11 +25,12 @@ core_parameter_filenames = [
     ]
 '''
 core_parameter_filenames = [
-    "../rwg_ind_0_slope_1_agent.json",
+    "../rwg_team_2_agents_5_episodes.json",
+    "../rwg_team_2_agents_10_episodes.json"
     ]
 
 #num_agents_in_setup = [2, 2, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10]
-num_agents_in_setup = [2]
+num_agents_in_setup = [2, 2]
 pop_size_for_team = [-1, -1, 100, -1, 100, -1, 120, -1, 160, -1, 100]
 num_seeds_for_team = [-1, -1, 30, -1, 60, -1, 75, -1, 75, -1, 150]
 
