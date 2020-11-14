@@ -135,6 +135,8 @@ class CMALearner(Learner):
 
         print(f"Best fitness is {best_fitness}")
 
+        print(es.stop())
+
         # Save best model
         model_name = self.generate_model_name(best_fitness)
         self.log(best_genome, best_fitness, "final", seed_fitness)

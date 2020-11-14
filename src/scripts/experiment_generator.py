@@ -8,29 +8,33 @@ from learning.learner_parent import Learner
 from glob import glob
 
 # Generate CMA experiments
+experiment_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_11_10_magic_plot_shortened_episodes_evolution"
+
 '''
 core_parameter_filenames = [
-    "../rwg_ind_0_slope_1_agent.json",
-    "../rwg_team_0_slope_2_agents.json",
-    "../rwg_ind_2_agents.json",
-    "../rwg_team_2_agents.json",
-    "../rwg_ind_4_agents.json",
-    "../rwg_team_4_agents.json",
-    "../rwg_ind_6_agents.json",
-    "../rwg_team_6_agents.json",
-    "../rwg_ind_8_agents.json",
-    "../rwg_team_8_agents.json",
-    "../rwg_ind_10_agents.json",
-    "../rwg_team_10_agents.json",
+    f'{experiment_directory}/experiment_setup/rwg_ind_2_agents.json',
+    f'{experiment_directory}/experiment_setup/rwg_team_2_agents.json',
+    f'{experiment_directory}/experiment_setup/rwg_ind_4_agents.json',
+    f'{experiment_directory}/experiment_setup/rwg_team_4_agents.json',
+    f'{experiment_directory}/experiment_setup/rwg_ind_6_agents.json',
+    f'{experiment_directory}/experiment_setup/rwg_team_6_agents.json',
+    f'{experiment_directory}/experiment_setup/rwg_ind_8_agents.json',
+    f'{experiment_directory}/experiment_setup/rwg_team_8_agents.json',
+    f'{experiment_directory}/experiment_setup/rwg_ind_10_agents.json',
+    f'{experiment_directory}/experiment_setup/rwg_team_10_agents.json',
     ]
 '''
+
 core_parameter_filenames = [
-    "../rwg_team_2_agents_5_episodes.json",
-    "../rwg_team_2_agents_10_episodes.json"
+    f'{experiment_directory}/experiment_setup/rwg_ind_2_agents.json',
+    f'{experiment_directory}/experiment_setup/rwg_ind_4_agents.json',
+    f'{experiment_directory}/experiment_setup/rwg_team_4_agents.json',
+    f'{experiment_directory}/experiment_setup/rwg_ind_6_agents.json',
+    f'{experiment_directory}/experiment_setup/rwg_team_6_agents.json',
     ]
 
 #num_agents_in_setup = [2, 2, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10]
-num_agents_in_setup = [2, 2]
+num_agents_in_setup = [2, 4, 4, 6, 6]
 pop_size_for_team = [-1, -1, 100, -1, 100, -1, 120, -1, 160, -1, 100]
 num_seeds_for_team = [-1, -1, 30, -1, 60, -1, 75, -1, 75, -1, 150]
 
@@ -52,7 +56,7 @@ for i in range(len(core_parameter_filenames)):
 
     num_experiments = num_seeds_for_team[num_agents]
     np_random = np.random.RandomState(1)
-    g = open(f"../LIST_cma", "a")
+    g = open(f"{experiment_directory}/experiments/LIST_cma", "a")
 
     for i in range(num_experiments):
         new_seed = np_random.randint(low=1, high=2**32-1)
@@ -61,7 +65,7 @@ for i in range(len(core_parameter_filenames)):
         parameters_in_filename += Learner.get_core_params_in_model_name(parameter_dictionary)
         parameters_in_filename += CMALearner.get_additional_params_in_model_name(parameter_dictionary)
         filename = "_".join([str(param) for param in parameters_in_filename]) + ".json"
-        f = open("../"+filename, "w")
+        f = open(f"{experiment_directory}/experiments/{filename}", "w")
         dictionary_string = json.dumps(parameter_dictionary, indent=4)
         f.write(dictionary_string)
         f.close()

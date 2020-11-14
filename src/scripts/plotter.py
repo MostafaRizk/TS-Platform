@@ -350,4 +350,6 @@ def get_seeds_to_rerun(original_experiment_directory, combined_seed_dict):
 
 #get_seeds_to_rerun("../../results/2020_10_02_CMA many agents and 0 slope/experiments", combined_seed_dict)
 
-plot_evolution_fitness("../../results/2020_11_06_2-agents_slope_comparison/results/results_final.csv", "slope_vs_no_slope.png")
+#plot_evolution_fitness("../../results/2020_11_06_2-agents_slope_comparison/results/results_final.csv", "slope_vs_no_slope.png")
+
+plot_evolution_history()

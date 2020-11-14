@@ -2,9 +2,11 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+from operator import sub
+
 
 def plot_performance_vs_team_size(results_file_name, graph_file_name):
-    max_agents = 4
+    max_agents = 6
 
     # Prepare data lists
     x = [i for i in range(2, max_agents+2, 2)]
@@ -45,7 +47,12 @@ def plot_performance_vs_team_size(results_file_name, graph_file_name):
         if seed not in results[key]:
             results[key][seed] = 0
 
-        results[key][seed] += row["fitness"]
+        fitness = row["fitness"]
+
+        if reward_level == "Team":
+            fitness /= num_agents
+
+        results[key][seed] += fitness
 
     for num_agents in range(2, max_agents+2, 2):
         team_fitnesses = []
@@ -70,13 +77,105 @@ def plot_performance_vs_team_size(results_file_name, graph_file_name):
     # Plot
     fig1, ax1 = plt.subplots(figsize=(12, 4))
     ax1.set_title('Fitness vs Number of Agents')
-    ax1.set_ylim(-10000, 300000)
+    ax1.set_ylim(-10000, 200000)
     ax1.set_xticks([x for x in range(2, max_agents+2, 2)])
     ax1.set_ylabel('Fitness')
     ax1.set_xlabel('Number of Agents')
     plt.errorbar(x, y_team, yerr_team, label="Team")
     plt.errorbar(x, y_ind, yerr_ind, label="Individual")
+
+    '''
+    plt.plot(x, y_team, 'r-', label="Team")
+    y_team_lower = [y_team[i] - yerr_team[i] for i in range(len(x))]
+    y_team_upper = [y_team[i] + yerr_team[i] for i in range(len(x))]
+    plt.fill_between(x, y_team_lower, y_team_upper, 'r')
+
+    plt.plot(x, y_ind, 'b-', label="Individual")
+    y_ind_lower = [y_ind[i] - yerr_ind[i] for i in range(len(x))]
+    y_ind_upper = [y_ind[i] + yerr_ind[i] for i in range(len(x))]
+    plt.fill_between(x, y_ind_lower, y_ind_upper, 'b')
+    '''
+
     plt.legend(loc='upper right')
     plt.savefig(graph_file_name)
 
-plot_performance_vs_team_size("../../results/magic_plot/results_final.csv", "performance_vs_team_size_with_mem.png")
+
+def plot_multi_setup_evolution(results_folder, graph_file):
+    setups = ["Team-2", "Team-4", "Team-6", "Individual-2", "Individual-4", "Individual-6"]
+    fig1, ax1 = plt.subplots(3, 2, figsize=(12, 6), sharex=True, sharey=True)
+    fig1.suptitle('Evolution History')
+
+    x = [i for i in range(0, 1020, 20)]
+    y = {}
+    yerr = {}
+
+    for setup in setups:
+        y[setup] = []
+        yerr[setup] = []
+
+    for i in range(0, 1020, 20):
+
+        results_file = f"{results_folder}/results_{i}.csv"
+
+        if i == 0:
+            results_file = f"{results_folder}/results_final.csv"
+
+        data = pd.read_csv(results_file)
+
+        fitnesses = {}
+
+        for setup in setups:
+            fitnesses[setup] = []
+
+        for index, row in data.iterrows():
+            reward_level = row["reward_level"].capitalize()
+            num_agents = row["num_agents"]
+            key = f"{reward_level}-{num_agents}"
+
+            fitness = None
+
+            if i == 0:
+                fitness = row["seed_fitness"]
+            else:
+                fitness = row["fitness"]
+
+            if reward_level == "Team":
+                fitness /= num_agents
+
+            fitnesses[key] += [fitness]
+
+
+
+        for setup in setups:
+            y[setup] += [np.mean(fitnesses[setup])]
+            yerr[setup] += [np.std(fitnesses[setup])]
+
+    plot_row = 0
+    plot_col = 0
+
+    for setup in setups:
+        ax1[plot_row][plot_col].set_ylabel(f'Fitness')
+        ax1[plot_row][plot_col].set_xlabel(f'Generation')
+        #ax1[plot_row][plot_col].errorbar(x, y[setup], yerr[setup])
+
+        ax1[plot_row][plot_col].plot(x, y[setup], 'b-')
+        y_lower = [y[setup][i] - yerr[setup][i] for i in range(len(x))]
+        y_upper = [y[setup][i] + yerr[setup][i] for i in range(len(x))]
+
+        ax1[plot_row][plot_col].fill_between(x, y_lower, y_upper, alpha=0.8)
+        ax1[plot_row][plot_col].set_title(f'{setup}')
+
+        plot_row += 1
+
+        if plot_row >= 3:
+            plot_row = 0
+            plot_col += 1
+
+    for ax in ax1.flat:
+        ax.label_outer()
+
+    plt.savefig(graph_file)
+
+
+#plot_performance_vs_team_size("../../results/2020_11_10_magic_plot_shortened_episodes_evolution/results/results_final.csv", "magic_plot_new.png")
+plot_multi_setup_evolution("../../results/2020_11_10_magic_plot_shortened_episodes_evolution/results", "magic_plot_history.png")
