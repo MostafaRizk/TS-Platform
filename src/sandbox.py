@@ -12,10 +12,15 @@ import numpy as np
 from agents.nn_agent_lean import NNAgent
 import pandas as pd
 
-#parameter_filename = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_11_08_2_agents_reduced_episodes_evolution/experiments/cma_heterogeneous_team_nn_slope_4005303369_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_5_rnn_False_1_4_tanh_100_0.2_1000_0.001_200.0.json"
+# Team-2. Slope. Best scoring team (specialist)
+#parameter_filename = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_09_25_CMA_with_shortened_seeding/experiments/cma_heterogeneous_team_nn_slope_4018109722_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_1000_0.001_200.0.json"
+#model_name = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_09_25_CMA_with_shortened_seeding/results/cma_heterogeneous_team_nn_slope_4018109722_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_1000_0.001_200.0_120500.09999999986_final.npy"
+
+# Team-2. No slope. Best scoring team (generalist but weird)
+parameter_filename = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_10_07_CMA many agents and big populations/experiments/cma_heterogeneous_team_nn_slope_2252917205_2_4_1_0_8_4_1_3_7_1_1.0_1.0_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_1000_0.001_200.0.json"
+model_name = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_10_07_CMA many agents and big populations/results/cma_heterogeneous_team_nn_slope_2252917205_2_4_1_0_8_4_1_3_7_1_1.0_1.0_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_1000_0.001_200.0_39794.55_final.npy"
+
 fitness_calculator = FitnessCalculator(parameter_filename)
-#model_name = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_11_08_2_agents_reduced_episodes_evolution/results/cma_heterogeneous_team_nn_slope_4005303369_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_5_rnn_False_1_4_tanh_100_0.2_1000_0.001_200.0_95763.55999999987_final.npy"
-model_name = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_11_06_2-agents_slope_comparison/resultscma_heterogeneous_team_nn_slope_4290846342_2_4_1_0_8_4_1_3_7_1_1.0_1.0_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_1000_0.001_200.0_33790.0_final.npy"
 
 full_genome = NNAgent.load_model_from_file(model_name)
 mid = int(len(full_genome) / 2)

@@ -81,8 +81,8 @@ def plot_performance_vs_team_size(results_file_name, graph_file_name):
     ax1.set_xticks([x for x in range(2, max_agents+2, 2)])
     ax1.set_ylabel('Fitness')
     ax1.set_xlabel('Number of Agents')
-    plt.errorbar(x, y_team, yerr_team, label="Team")
-    plt.errorbar(x, y_ind, yerr_ind, label="Individual")
+    plt.errorbar(x, y_team, yerr_team, label="Centralised")
+    plt.errorbar(x, y_ind, yerr_ind, label="Decentralised")
 
     '''
     plt.plot(x, y_team, 'r-', label="Team")
@@ -177,5 +177,5 @@ def plot_multi_setup_evolution(results_folder, graph_file):
     plt.savefig(graph_file)
 
 
-#plot_performance_vs_team_size("../../results/2020_11_10_magic_plot_shortened_episodes_evolution/results/results_final.csv", "magic_plot_new.png")
-plot_multi_setup_evolution("../../results/2020_11_10_magic_plot_shortened_episodes_evolution/results", "magic_plot_history.png")
+plot_performance_vs_team_size("../../results/2020_11_10_magic_plot_shortened_episodes_evolution/results/results_final.csv", "magic_plot.png")
+#plot_multi_setup_evolution("../../results/2020_11_10_magic_plot_shortened_episodes_evolution/results", "magic_plot_history.png")
