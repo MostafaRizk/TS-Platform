@@ -42,7 +42,8 @@ class CMALearner(Learner):
                    'popsize': self.get_genome_population_length(),
                    'tolx': self.parameter_dictionary['algorithm']['cma']['tolx'],
                    'tolfunhist': self.parameter_dictionary['algorithm']['cma']['tolfunhist'],
-                   'tolflatfitness': self.parameter_dictionary['algorithm']['cma']['tolflatfitness']}
+                   'tolflatfitness': self.parameter_dictionary['algorithm']['cma']['tolflatfitness'],
+                   'tolfun': self.parameter_dictionary['algorithm']['cma']['tolfun']}
 
         # Initialise cma with a mean genome and sigma
         seed_genome, seed_fitness = self.get_seed_genome()
