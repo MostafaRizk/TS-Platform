@@ -26,8 +26,8 @@ elif parameter_dictionary["general"]["algorithm_selected"] == "cma" or \
 elif parameter_dictionary["general"]["algorithm_selected"] == "cma_with_seeding":
 
     # Load default rwg parameters
-    rwg_parameter_filename = 'default_rwg_parameters.json'
-    rwg_parameter_dictionary = json.loads(open(rwg_parameter_filename).read())
+    default_rwg_parameter_filename = 'default_rwg_parameters.json'
+    rwg_parameter_dictionary = json.loads(open(default_rwg_parameter_filename).read())
 
     # Copy general parameters from cma to rwg
     rwg_parameter_dictionary["general"] = copy.deepcopy(parameter_dictionary["general"])
@@ -46,12 +46,12 @@ elif parameter_dictionary["general"]["algorithm_selected"] == "cma_with_seeding"
     # Create rwg json file and load to fitness calculator
     parameters_in_name = Learner.get_core_params_in_model_name(rwg_parameter_dictionary)
     parameters_in_name += RWGLearner.get_additional_params_in_model_name(rwg_parameter_dictionary)
-    rwg_filename = "_".join([str(param) for param in parameters_in_name]) + ".json"
-    f = open(rwg_filename, "w")
+    new_rwg_parameter_filename = "_".join([str(param) for param in parameters_in_name]) + ".json"
+    f = open(new_rwg_parameter_filename, "w")
     rwg_dictionary_string = json.dumps(rwg_parameter_dictionary, indent=4)
     f.write(rwg_dictionary_string)
     f.close()
-    rwg_fitness_calculator = FitnessCalculator(rwg_parameter_filename)
+    rwg_fitness_calculator = FitnessCalculator(new_rwg_parameter_filename)
 
     # Seeding
     learner1 = RWGLearner(rwg_fitness_calculator)

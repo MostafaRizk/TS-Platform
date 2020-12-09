@@ -195,7 +195,8 @@ class CMALearner(Learner):
             possible_seedfiles = None
 
             seedfile_prefix = "_".join([str(param) for param in parameters_in_name])
-            possible_seedfiles = glob(f'{seedfile_prefix}*')
+            seedfile_extension = self.Agent.get_model_file_extension()
+            possible_seedfiles = glob(f'{seedfile_prefix}*{seedfile_extension}')
 
             # Makes sure there is only one unambiguous seedfile
             if len(possible_seedfiles) == 0:

@@ -11,7 +11,6 @@ from glob import glob
 experiment_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_12_09_unique_seeds"
 
 core_parameter_filenames = [
-    #f'{experiment_directory}/experiments/rwg_ind_4_agents.json',
     '../default_parameters.json'
     ]
 
