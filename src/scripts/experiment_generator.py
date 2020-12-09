@@ -8,30 +8,31 @@ from learning.learner_parent import Learner
 from glob import glob
 
 # Generate CMA experiments
-experiment_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_11_14_termination_testing_magic_plot"
+experiment_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_11_22_magic_plot_new_seed_evolution"
 
 '''
 core_parameter_filenames = [
-    f'{experiment_directory}/experiment_setup/rwg_ind_2_agents.json',
-    f'{experiment_directory}/experiment_setup/rwg_team_2_agents.json',
-    f'{experiment_directory}/experiment_setup/rwg_ind_4_agents.json',
-    f'{experiment_directory}/experiment_setup/rwg_team_4_agents.json',
-    f'{experiment_directory}/experiment_setup/rwg_ind_6_agents.json',
-    f'{experiment_directory}/experiment_setup/rwg_team_6_agents.json',
-    f'{experiment_directory}/experiment_setup/rwg_ind_8_agents.json',
-    f'{experiment_directory}/experiment_setup/rwg_team_8_agents.json',
-    f'{experiment_directory}/experiment_setup/rwg_ind_10_agents.json',
-    f'{experiment_directory}/experiment_setup/rwg_team_10_agents.json',
+    f'{experiment_directory}/experiments/rwg_ind_2_agents.json',
+    f'{experiment_directory}/experiments/rwg_team_2_agents.json',
+    f'{experiment_directory}/experiments/rwg_ind_4_agents.json',
+    f'{experiment_directory}/experiments/rwg_team_4_agents.json',
+    f'{experiment_directory}/experiments/rwg_ind_6_agents.json',
+    f'{experiment_directory}/experiments/rwg_team_6_agents.json',
+    f'{experiment_directory}/experiments/rwg_ind_8_agents.json',
+    f'{experiment_directory}/experiments/rwg_team_8_agents.json',
+    f'{experiment_directory}/experiments/rwg_ind_10_agents.json',
+    f'{experiment_directory}/experiments/rwg_team_10_agents.json',
     ]
 '''
 
 core_parameter_filenames = [
-    f'{experiment_directory}/experiment_setup/rwg_team_4_agents.json',
-    f'{experiment_directory}/experiment_setup/rwg_ind_6_agents.json'
+    f'{experiment_directory}/experiments/rwg_ind_4_agents.json',
+    f'{experiment_directory}/experiments/rwg_team_4_agents.json',
+    f'{experiment_directory}/experiments/rwg_ind_6_agents.json',
     ]
 
 #num_agents_in_setup = [2, 2, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10]
-num_agents_in_setup = [4, 6]
+num_agents_in_setup = [4, 4, 6]
 pop_size_for_team = [-1, -1, 100, -1, 100, -1, 120, -1, 160, -1, 100]
 num_seeds_for_team = [-1, -1, 30, -1, 60, -1, 75, -1, 75, -1, 150]
 

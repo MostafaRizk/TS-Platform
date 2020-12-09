@@ -69,24 +69,20 @@ def plot_hardcoded_fitness(results_file, graph_file):
     #plt.show()
 
 def plot_evolution_fitness(results_file, graph_file):
+    num_agents = 2
+
     # Read data
     data = pd.read_csv(results_file)
 
     # Format data
-    results = {"Team-Speed-0": [],
-               "Team-Speed-4": [],
-               "Individual-Speed-0": [],
-               "Individual-Speed-4": []
+    results = {"Centralised-0": [],
+               "Centralised-4": [],
+               "Decentralised-0": [],
+               "Decentralised-4": []
                }
-
-    ind_fitnesses = {
-        "Individual-Speed-0": {},
-        "Individual-Speed-4": {}
-        }
 
     for index, row in data.iterrows():
         reward_level = row["reward_level"].capitalize()
-        #key = f"{reward_level}"
         sliding_speed = row["sliding_speed"]
         key = f"{reward_level}-Speed-{sliding_speed}"
 
@@ -108,13 +104,12 @@ def plot_evolution_fitness(results_file, graph_file):
     # Plot data
     fig1, ax1 = plt.subplots(figsize=(12, 4))
     ax1.set_title('Best Fitness Score of Evolved Runs')
-    ax1.set_ylim(0, 200000)
     ax1.set_ylabel('Fitness')
     ax1.set_xlabel('Sliding Speed')
 
     positions = [0.5, 2.5]  # [1,3,5,7]
     #configs = ["Homogeneous-Individual", "Homogeneous-Team", "Heterogeneous-Individual", "Heterogeneous-Team"]
-    configs = ["Team", "Individual"]
+    configs = ["Centralised", "Decentralised"]
 
     for i in range(len(configs)):
         config = configs[i]
@@ -335,6 +330,9 @@ def get_seeds_to_rerun(original_experiment_directory, combined_seed_dict):
         print(i)
     print(len(rerun_list))
     # Copy parameter files to new folder
+
+
+
 
 #plot_evolution_fitness("results_final.csv", "team_vs_ind.png")
 #count_results("../../results/2020_11_06_2-agents_slope_comparison/results/results_final.csv")

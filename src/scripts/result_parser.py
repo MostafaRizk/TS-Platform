@@ -1,8 +1,10 @@
 import numpy as np
 import json
+import os
 
 from learning.learner_parent import Learner
 from learning.rwg import RWGLearner
+from glob import glob
 
 
 def get_best_of_k_samples(results_file, parameter_filename, k, N_episodes):
@@ -46,7 +48,11 @@ def get_best_of_k_samples(results_file, parameter_filename, k, N_episodes):
 
     np.save(model_name, best_genome)
 
+def copy_all_models(source_directory, destination_directory):
+    npy_files = glob(f'{source_directory}/cma*npy')
+    os.copy
 
-get_best_of_k_samples(
-    "all_genomes_rwg_heterogeneous_team_nn_slope_1_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_20000_normal_0_1_.csv",
-    "rnn_no-bias_1HL_4HU_tanh.json", k=1000, N_episodes=20)
+
+#get_best_of_k_samples(
+#    "all_genomes_rwg_heterogeneous_team_nn_slope_1_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_*.csv')_500_20_rnn_False_1_4_tanh_20000_normal_0_1_.csv",
+#    "rnn_no-bias_1HL_4HU_tanh.json", k=1000, N_episodes=20)

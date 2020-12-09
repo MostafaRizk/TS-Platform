@@ -57,7 +57,7 @@ class FitnessCalculator:
         return fitnesses
 
     def calculate_fitness(self, agent_list, render=False, time_delay=0, measure_specialisation=False,
-                          logging=False, logfilename=None):
+                          logging=False, logfilename=None, render_mode="human"):
         """
         Calculates the fitness of a team of agents. Fitness is calculated
         by running the simulation for t time steps (as specified in the parameter file) with each agent acting every
@@ -71,6 +71,7 @@ class FitnessCalculator:
         @param measure_specialisation: Boolean indicating whether or not specialisation is being measured
         @param logging: Boolean indicating whether or not actions will be logged
         @param logfilename: String name of the file where actions will be logged
+        @param render_mode: If rgb_array, creates an rgb array of the first episode. Otherwise plays video. Only does either if render is True
         @return: Dictionary containing 'fitness_matrix' (each index i is a list of agent i's fitnesses for every episode)
         and 'specialisation_list' (a measure of the degree of
         specialisation observed for the team for each episode)
@@ -83,6 +84,7 @@ class FitnessCalculator:
         fitness_matrix = [[0]*self.num_episodes for i in range(len(agent_list))]
         specialisation_list = []
         agent_copies = [copy.deepcopy(agent) for agent in agent_list]
+        video_frames = []
 
         # Create logging file if logging
         if logging:
@@ -106,8 +108,10 @@ class FitnessCalculator:
 
             # Do 1 run of the simulation
             for t in range(self.episode_length):
-                if render:
-                    self.env.render()
+                if render and render_mode == "rgb_array" and episode == 0:
+                    video_frames += [self.env.render(mode=render_mode)]
+                elif render:
+                    self.env.render(mode=render_mode)
 
                 robot_actions = []
 
@@ -144,7 +148,7 @@ class FitnessCalculator:
         if logging:
             file_reader.close()
 
-        return {"fitness_matrix": fitness_matrix, "specialisation_list": specialisation_list}
+        return {"fitness_matrix": fitness_matrix, "specialisation_list": specialisation_list, "video_frames": video_frames}
 
     # Helpers ---------------------------------------------------------------------------------------------------------
 

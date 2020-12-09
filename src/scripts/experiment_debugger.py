@@ -591,6 +591,6 @@ print(f'{num_segfaults + num_timeouts + num_unstarted} = {num_reruns}')
 
 #fix_results(results_folder="../../results/2020_11_08_2_agents_with varied_episodes/results_final.csv", start_generation=20, num_generations=1000, step_size=20)
 
-create_results_from_models("../../results/2020_11_10_magic_plot_shortened_episodes_evolution", start_generation=20, step_size=20, num_generations=1000)
+create_results_from_models("../../results/2020_11_24_magic_plot_combined_new_seed", start_generation=20, step_size=20, num_generations=1000)
 
 #compare_episodes(results_file="/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_11_08_2_agents_with varied_episodes/results_final.csv", graph_file="episodes.png")

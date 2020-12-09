@@ -2,7 +2,7 @@ import os
 from glob import glob
 
 
-csv_files = glob(f'result_files/all_genomes_*.csv')
+csv_files = glob(f'result_files/all_genomes
 
 for filename in csv_files:
     name_parts = filename.split("_")[-10:-5]
