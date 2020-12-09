@@ -19,7 +19,8 @@ class CMALearner(Learner):
     def __init__(self, calculator):
         super().__init__(calculator)
 
-        if self.parameter_dictionary['general']['algorithm_selected'] != "cma":
+        if self.parameter_dictionary['general']['algorithm_selected'] != "cma" and \
+                self.parameter_dictionary['general']['algorithm_selected'] != "cma_with_seeding":
             raise RuntimeError(f"Cannot run cma. Parameters request "
                                f"{self.parameter_dictionary['general']['algorithm_selected']}")
 
@@ -176,7 +177,8 @@ class CMALearner(Learner):
         @return: Genome and its fitness
         """
 
-        if self.parameter_dictionary['algorithm']['cma']['seeding_required'] == "True":
+        if self.parameter_dictionary['algorithm']['cma']['seeding_required'] == "True" or \
+                self.parameter_dictionary['algorithm'] == "cma_with_seeding":
             dictionary_copy = copy.deepcopy(self.parameter_dictionary)
 
             if dictionary_copy['general']['algorithm_selected'] != "partialcma":
