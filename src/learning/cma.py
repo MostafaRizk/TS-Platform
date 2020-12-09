@@ -190,19 +190,10 @@ class CMALearner(Learner):
             # Looks for seedfiles with the same parameters as the current experiment
             parameters_in_name = Learner.get_core_params_in_model_name(dictionary_copy)
 
-            # The seed value (at index 4) does not have to match for cma unless it is a continuation of a past run
             possible_seedfiles = None
 
-            if dictionary_copy['general']['algorithm_selected'] == "rwg":
-                pre_seed_parameters = parameters_in_name[0:5]
-                post_seed_parameters = parameters_in_name[6:]
-                seedfile_prefix_pre_seed = "_".join([str(param) for param in pre_seed_parameters])
-                seedfile_prefix_post_seed = "_".join([str(param) for param in post_seed_parameters])
-                possible_seedfiles = glob(f'{seedfile_prefix_pre_seed}_*_{seedfile_prefix_post_seed}*')
-
-            elif dictionary_copy['general']['algorithm_selected'] == "partialcma":
-                seedfile_prefix = "_".join([str(param) for param in parameters_in_name])
-                possible_seedfiles = glob(f'{seedfile_prefix}*')
+            seedfile_prefix = "_".join([str(param) for param in parameters_in_name])
+            possible_seedfiles = glob(f'{seedfile_prefix}*')
 
             # Makes sure there is only one unambiguous seedfile
             if len(possible_seedfiles) == 0:
