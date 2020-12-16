@@ -238,7 +238,6 @@ class CMALearner(Learner):
 
             return seed_genome, seed_fitness
 
-
     def log(self, genome, genome_fitness, generation, seed_fitness):
         """
         Save the genome model and save fitness and parameters to a results file

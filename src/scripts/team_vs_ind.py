@@ -226,29 +226,30 @@ def plot_multi_setup_evolution(results_folder, graph_file):
 
 
 def plot_fitness_comparison(results_file, graph_file):
-    num_agents = 2
+    num_agents = 4
 
     # Read data
     data = pd.read_csv(results_file)
 
     # Format data
-    results = {"Centralised-0": {},
-               "Centralised-4": {},
-               "Decentralised-0": {},
-               "Decentralised-4": {}
+    results = {"Centralised": {},
+               "Decentralised": {}
                }
 
     for index, row in data.iterrows():
         reward_level = row["reward_level"].capitalize()
-        sliding_speed = row["sliding_speed"]
         seed = row["seed"]
+        num_agents_in_model = row["num_agents"]
 
         key = None
 
+        if num_agents_in_model != num_agents:
+            continue
+
         if reward_level == "Team":
-            key = f"Centralised-{sliding_speed}"
+            key = f"Centralised"
         elif reward_level == "Individual":
-            key = f"Decentralised-{sliding_speed}"
+            key = f"Decentralised"
 
         if seed in results[key]:
             continue
@@ -273,54 +274,38 @@ def plot_fitness_comparison(results_file, graph_file):
 
         # Plot data
     slope_centralised_fitnesses = []
-    for seed in results["Centralised-4"]:
-        slope_centralised_fitnesses += [results["Centralised-4"][seed]]
+    for seed in results["Centralised"]:
+        slope_centralised_fitnesses += [results["Centralised"][seed]]
 
     slope_decentralised_fitnesses = []
-    for seed in results["Decentralised-4"]:
-        slope_decentralised_fitnesses += [results["Decentralised-4"][seed]]
-
-    no_slope_centralised_fitnesses = []
-    for seed in results["Centralised-0"]:
-        no_slope_centralised_fitnesses += [results["Centralised-0"][seed]]
-
-    no_slope_decentralised_fitnesses = []
-    for seed in results["Decentralised-0"]:
-        no_slope_decentralised_fitnesses += [results["Decentralised-0"][seed]]
+    for seed in results["Decentralised"]:
+        slope_decentralised_fitnesses += [results["Decentralised"][seed]]
 
     slope_data = [slope_centralised_fitnesses, slope_decentralised_fitnesses]
-    no_slope_data = [no_slope_centralised_fitnesses, no_slope_decentralised_fitnesses]
 
-    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(9, 6), sharey=True)
+    fig, (ax1) = plt.subplots(nrows=1, ncols=1, figsize=(9, 6))
     fig.suptitle('Performance of Centralised vs Decentralised Solutions', fontsize=18)
 
-    ax1.set_title('Slope', fontsize=16)
+    #ax1.set_title('Slope', fontsize=16)
     ax1.set_ylabel('Fitness per agent', fontsize=14)
-    ax1.set_ylim(0, 90000)
+    ax1.set_ylim(-5000, 70000)
     parts = ax1.violinplot(slope_data)
     for pc in parts['bodies']:
         pc.set_color('blue')
     for pc in ('cbars','cmins','cmaxes'):
         parts[pc].set_color('blue')
 
-    ax2.set_title('No slope', fontsize=16)
-    parts = ax2.violinplot(no_slope_data)
-    for pc in parts['bodies']:
-        pc.set_color('red')
-    for pc in ('cbars','cmins','cmaxes'):
-        parts[pc].set_color('red')
-
     # set style for the axes
     labels = ['Centralised', 'Decentralised']
-    for ax in [ax1, ax2]:
+    for ax in [ax1]:
         set_axis_style(ax, labels)
 
     plt.subplots_adjust(bottom=0.2, wspace=0.05)
     plt.savefig(graph_file)
 
-old_seed_directory = "../../results/2020_11_22_magic_plot_combined"
-new_seed_directory = "../../results/2020_11_24_magic_plot_combined_new_seed"
-slope_directory = "../../results/2020_11_06_2-agents_slope_comparison"
+#old_seed_directory = "../../results/2020_11_22_magic_plot_combined"
+#new_seed_directory = "../../results/2020_11_24_magic_plot_combined_new_seed"
+#slope_directory = "../../results/2020_11_06_2-agents_slope_comparison"
 
 '''
 plot_performance_vs_team_size(f"{old_seed_directory}/results/results_final.csv", f"{old_seed_directory}/analysis/magic_plot_mean.png", type="mean")
@@ -335,10 +320,19 @@ plot_performance_vs_team_size(f"{new_seed_directory}/results/results_final.csv",
 
 '''
 
-plot_performance_vs_team_size(f"{old_seed_directory}/results/results_final.csv", f"{old_seed_directory}/analysis/magic_plot_error.png", type="error")
-plot_performance_vs_team_size(f"{new_seed_directory}/results/results_final.csv", f"{new_seed_directory}/analysis/magic_plot_error.png", type="error")
+#plot_performance_vs_team_size(f"{old_seed_directory}/results/results_final.csv", f"{old_seed_directory}/analysis/magic_plot_error.png", type="error")
+#plot_performance_vs_team_size(f"{new_seed_directory}/results/results_final.csv", f"{new_seed_directory}/analysis/magic_plot_error.png", type="error")
 
 #plot_multi_setup_evolution("../../results/2020_11_24_magic_plot_combined_new_seed/results", "../../results/2020_11_24_magic_plot_combined_new_seed/analysis/magic_plot_history_all.png")
 
 
 #plot_fitness_comparison(f"{slope_directory}/results/results_final.csv", f"{slope_directory}/analysis/decentralised_comparison.png")
+
+
+unique_seeding_directory = "../../results/2020_12_09_unique_seeds"
+seed_1_directory = "../../results/2020_11_22_magic_plot_combined"
+seed_2_directory = "../../results/2020_11_24_magic_plot_combined_new_seed"
+
+plot_fitness_comparison(f"{unique_seeding_directory}/results/results_final.csv", f"{unique_seeding_directory}/analysis/unique_seeding.png")
+plot_fitness_comparison(f"{seed_1_directory}/results/results_final.csv", f"{unique_seeding_directory}/analysis/first_seeding.png")
+plot_fitness_comparison(f"{seed_2_directory}/results/results_final.csv", f"{unique_seeding_directory}/analysis/second_seeding.png")
