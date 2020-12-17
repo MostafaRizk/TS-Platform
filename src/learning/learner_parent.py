@@ -53,7 +53,7 @@ class Learner:
 
             # Genomes for heterogeneous teams rewarded at the team level are longer because multiple agent genomes
             # must be concatenated into a larger one
-            if self.parameter_dictionary['learning_type'] == "centralised" and self.parameter_dictionary['general']['team_type'] == "heterogeneous" and \
+            if self.parameter_dictionary['general']['learning_type'] == "centralised" and self.parameter_dictionary['general']['team_type'] == "heterogeneous" and \
                     self.parameter_dictionary['general']['reward_level'] == "team":
                 return num_weights * self.num_agents
             else:

@@ -53,7 +53,7 @@ class DecentralisedLearner(Learner):
         agents_per_team = self.num_agents
 
         for i in range(0, len(genome_fitness_lists), agents_per_team):
-            trimmed_fitness_list += genome_fitness_lists[i]
+            trimmed_fitness_list += [genome_fitness_lists[i]]
 
         return trimmed_fitness_list
 

@@ -59,8 +59,8 @@ class DecentralisedCMALearner(DecentralisedLearner, CMALearner):
                     genome_population = learner.ask()
 
                     # Convert genomes to agents
-                    self.insert_representative_genomes_in_population(genome_population, index)
-                    agent_population = self.convert_genomes_to_agents(genome_population)
+                    extended_genome_population = self.insert_representative_genomes_in_population(genome_population, index)
+                    agent_population = self.convert_genomes_to_agents(extended_genome_population)
 
                     # Get fitnesses of genomes (same as fitnesses of agents)
                     genome_fitness_lists = self.fitness_calculator.calculate_fitness_of_agent_population(agent_population)

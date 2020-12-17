@@ -3,18 +3,18 @@ import sys
 
 import numpy as np
 
-from learning.cma import CMALearner
+from learning.cma_parent import CMALearner
 from learning.learner_parent import Learner
 from glob import glob
 
 # Generate CMA experiments
-experiment_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_12_09_unique_seeds"
+experiment_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_12_17_coevolution"
 
 core_parameter_filenames = [
     '../default_parameters.json'
     ]
 
-num_agents_in_setup = [4]
+num_agents_in_setup = [2]
 pop_size_for_team = [-1, -1, 100, -1, 100, -1, 120, -1, 160, -1, 100]
 num_seeds_for_team = [-1, -1, 30, -1, 60, -1, 75, -1, 75, -1, 150]
 
@@ -23,13 +23,9 @@ for i in range(len(core_parameter_filenames)):
 
     # If using rwg json instead of default_parameters
     parameter_dictionary["general"]["algorithm_selected"] = "cma_with_seeding"
-    parameter_dictionary["algorithm"]["cma"]["generations"] = 1000
+    #parameter_dictionary["algorithm"]["cma"]["generations"] = 1000
 
     environment_name = parameter_dictionary["general"]["environment"]
-
-    # If individual
-    if parameter_dictionary["general"]["reward_level"] == "individual":
-        parameter_dictionary["environment"][environment_name]["num_agents"] = num_agents_in_setup[i]
 
     num_agents = parameter_dictionary["environment"][environment_name]["num_agents"]
     parameter_dictionary["algorithm"]["agent_population_size"] = pop_size_for_team[num_agents]
