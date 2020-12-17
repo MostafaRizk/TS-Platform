@@ -1,11 +1,11 @@
 import numpy as np
 
-from learning.learner_parent import Learner
+from learning.learner_centralised import CentralisedLearner
 from scipy.stats import multivariate_normal
 from operator import add
 
 
-class RWGLearner(Learner):
+class RWGLearner(CentralisedLearner):
     def __init__(self, calculator):
         super().__init__(calculator)
 
@@ -150,7 +150,7 @@ class RWGLearner(Learner):
         assert len(genomes) == len(genome_fitness_list), "List of genomes and list of fitnesses are unequal"
 
         parameters_in_name = ["all_genomes"]
-        parameters_in_name += Learner.get_core_params_in_model_name(self.parameter_dictionary)
+        parameters_in_name += CentralisedLearner.get_core_params_in_model_name(self.parameter_dictionary)
         parameters_in_name += RWGLearner.get_additional_params_in_model_name(self.parameter_dictionary)
         parameters_in_name += [".csv"]
         filename = "_".join([str(param) for param in parameters_in_name])
@@ -166,14 +166,14 @@ class RWGLearner(Learner):
 
         f.close()
 
-    def generate_model_name(self, fitness, agent_rank=None):
+    def generate_model_name(self, fitness):
         """
         Create a name string for a model generated using the given parameter file and fitness value
 
         @param fitness: Fitness of the model to be saved
         @return:
         """
-        parameters_in_name = Learner.get_core_params_in_model_name(self.parameter_dictionary)
+        parameters_in_name = CentralisedLearner.get_core_params_in_model_name(self.parameter_dictionary)
         parameters_in_name += RWGLearner.get_additional_params_in_model_name(self.parameter_dictionary)
 
         # Get fitness

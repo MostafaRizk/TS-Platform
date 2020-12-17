@@ -47,6 +47,7 @@ class FitnessCalculator:
         fitnesses = []
         agents_per_team = self.num_agents
 
+        # Get fitnesses of each team of agents
         for i in range(0, len(population), agents_per_team):
             agent_list = [population[i+j] for j in range(0, agents_per_team)]
             fitness_dict = self.calculate_fitness(agent_list)

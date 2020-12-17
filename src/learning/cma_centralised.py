@@ -9,23 +9,16 @@ import signal
 
 from fitness import FitnessCalculator
 from learning.learner_centralised import CentralisedLearner
+from learning.cma_parent import CMALearner
 from glob import glob
 from io import StringIO
 
 from learning.rwg import RWGLearner
 
 
-class CentralisedCMALearner(CentralisedLearner):
+class CentralisedCMALearner(CentralisedLearner, CMALearner):
     def __init__(self, calculator):
         super().__init__(calculator)
-
-        if self.parameter_dictionary['general']['algorithm_selected'] != "cma" and \
-                self.parameter_dictionary['general']['algorithm_selected'] != "cma_with_seeding":
-            raise RuntimeError(f"Cannot run cma. Parameters request "
-                               f"{self.parameter_dictionary['general']['algorithm_selected']}")
-
-        # Log every x many generations
-        self.logging_rate = self.parameter_dictionary['algorithm']['cma']['logging_rate']
 
     def learn(self, logging=True):
         """
@@ -34,6 +27,7 @@ class CentralisedCMALearner(CentralisedLearner):
 
         @return: The best genome found by CMA-ES and its fitness
         """
+
         # Put CMA output in a buffer for logging to a file at the end of the function
         old_stdout = sys.stdout
         sys.stdout = mystdout = StringIO()
@@ -52,48 +46,6 @@ class CentralisedCMALearner(CentralisedLearner):
 
         # Learning loop
         while not es.stop():
-
-            # Graceful exit (allows to pick up from where the algorithm last left off)
-            # Not yet tested
-            def signal_handler(*args):
-                # Create crash folder (if it doesn't exist)
-                dir_name = "../crashed_runs"
-                if not os.path.isdir(dir_name):
-                    os.mkdir(dir_name)
-
-                # Calculate latest sigma
-                sigma = es.sigma0
-
-                # Calculate remaining generations
-                remaining_generations = options['maxiter'] - es.result.iterations
-
-                # Save parameter dictionary as json with relevant modified parameters
-                new_dictionary = copy.deepcopy(self.parameter_dictionary)
-                new_dictionary["general"]["algorithm_selected"] = "partialcma"
-                new_dictionary['algorithm']['cma']['sigma'] = sigma
-                new_dictionary['algorithm']['cma']['generations'] = remaining_generations
-                new_dictionary['algorithm']['cma']['seeding_required'] = True  # So that it looks for a seed genome
-
-                parameters_in_filename = []
-                parameters_in_filename += Learner.get_core_params_in_model_name(new_dictionary)
-                parameters_in_filename += CMALearner.get_additional_params_in_model_name(new_dictionary)
-                filename = "_".join([str(param) for param in parameters_in_filename]) + ".json"
-
-                f = open("../" + filename, "w")
-                dictionary_string = json.dumps(new_dictionary, indent=4)
-                f.write(dictionary_string)
-                f.close()
-
-                # Calculate latest mean and save as genome file
-                mean = es.x0
-                fitness = -es.result.fbest
-                intermediate_seed_name = CentralisedCMALearner.get_model_name_from_dictionary(new_dictionary, fitness)
-                self.save_genome(mean, intermediate_seed_name)
-
-                sys.exit()
-
-            #signal.signal(signal.SIGTERM, signal_handler)
-
             # Get population of genomes to be used this generation
             genome_population = es.ask()
 
@@ -155,6 +107,8 @@ class CentralisedCMALearner(CentralisedLearner):
 
         return best_genome, best_fitness
 
+    # Helpers ---------------------------------------------------------------------------------------------------------
+
     def get_genome_population_length(self):
         """
         Calculates how many genomes should be in the CMA population based on the number of agents
@@ -169,75 +123,6 @@ class CentralisedCMALearner(CentralisedLearner):
         else:
             return self.parameter_dictionary['algorithm']['agent_population_size'] / self.num_agents
 
-    def get_seed_genome(self):
-        """
-        Get the seed genome to be used as cma's mean. If getting it from a file, the appropriate seed genome is the one
-        that has the same parameter values as the current experiment
-
-        @return: Genome and its fitness
-        """
-
-        if self.parameter_dictionary['algorithm']['cma']['seeding_required'] == "True" or \
-                self.parameter_dictionary['algorithm'] == "cma_with_seeding":
-            dictionary_copy = copy.deepcopy(self.parameter_dictionary)
-
-            if dictionary_copy['general']['algorithm_selected'] != "partialcma":
-                dictionary_copy['general']['algorithm_selected'] = "rwg"
-
-            # If individual reward, look for seeds that use just one agent
-            if dictionary_copy['general']['reward_level'] == "individual":
-                environment_name = dictionary_copy['general']['environment']
-                dictionary_copy['environment'][environment_name]['num_agents'] = '1'
-
-            # Looks for seedfiles with the same parameters as the current experiment
-            parameters_in_name = Learner.get_core_params_in_model_name(dictionary_copy)
-
-            possible_seedfiles = None
-
-            seedfile_prefix = "_".join([str(param) for param in parameters_in_name])
-            seedfile_extension = self.Agent.get_model_file_extension()
-            possible_seedfiles = glob(f'{seedfile_prefix}*{seedfile_extension}')
-
-            # Makes sure there is only one unambiguous seedfile
-            if len(possible_seedfiles) == 0:
-                raise RuntimeError('No valid seed files')
-            elif len(possible_seedfiles) > 1:
-                raise RuntimeError('Too many valid seed files')
-            else:
-                model_file_extension = self.Agent.get_model_file_extension()
-                seed_fitness = float(possible_seedfiles[0].split("_")[-1].strip(model_file_extension))
-                return self.Agent.load_model_from_file(possible_seedfiles[0]), seed_fitness
-
-        else:
-            # Set mini-rwg parameters
-            temporary_parameter_dictionary = copy.deepcopy(self.parameter_dictionary)
-            temporary_parameter_dictionary['general']['algorithm_selected'] = "rwg"
-
-            env_name = temporary_parameter_dictionary['general']['environment']
-            num_agents = temporary_parameter_dictionary['environment'][env_name]['num_agents']
-            temporary_parameter_dictionary['algorithm']['agent_population_size'] = num_agents
-
-            temporary_parameter_dictionary['algorithm']['rwg']['sampling_distribution'] = "normal"
-            temporary_parameter_dictionary['algorithm']['rwg']['normal']['mean'] = 0
-            temporary_parameter_dictionary['algorithm']['rwg']['normal']['std'] = 1
-
-            # Write mini-rwg parameters to file
-            temporary_parameter_file = f"temporary_parameter_file_{temporary_parameter_dictionary['general']['seed']}.json"
-            f = open(temporary_parameter_file, "w")
-            dictionary_string = json.dumps(temporary_parameter_dictionary, indent=4)
-            f.write(dictionary_string)
-            f.close()
-
-            # Generate seed genome
-            temporary_calculator = FitnessCalculator(temporary_parameter_file)
-            learner = RWGLearner(temporary_calculator)
-            seed_genome, seed_fitness = learner.learn(logging=False)
-
-            # Delete temporary paramter file
-            #os.remove(temporary_parameter_file)
-
-            return seed_genome, seed_fitness
-
     def log(self, genome, genome_fitness, generation, seed_fitness):
         """
         Save the genome model and save fitness and parameters to a results file
@@ -249,7 +134,7 @@ class CentralisedCMALearner(CentralisedLearner):
         @return:
         """
         # Save model
-        model_name = self.generate_model_name(genome_fitness,)
+        model_name = self.generate_model_name(genome_fitness, )
         model_name = f"{model_name}_{generation}"
         self.save_genome(genome, model_name)
 
@@ -270,8 +155,8 @@ class CentralisedCMALearner(CentralisedLearner):
         else:
             results_file = open(results_filename, 'a')
 
-        result_data = Learner.get_core_params_in_model_name(self.parameter_dictionary) + \
-                      CMALearner.get_additional_params_in_model_name(self.parameter_dictionary) + \
+        result_data = CentralisedLearner.get_core_params_in_model_name(self.parameter_dictionary) + \
+                      CentralisedCMALearner.get_additional_params_in_model_name(self.parameter_dictionary) + \
                       [seed_fitness, genome_fitness, model_name]
         results = ",".join([str(element) for element in result_data])
 
@@ -279,18 +164,19 @@ class CentralisedCMALearner(CentralisedLearner):
         results_file.close()
 
     def generate_model_name(self, fitness):
-        return CMALearner.get_model_name_from_dictionary(self.parameter_dictionary, fitness)
+        return CentralisedCMALearner.get_model_name_from_dictionary(self.parameter_dictionary, fitness)
 
     @staticmethod
     def get_model_name_from_dictionary(parameter_dictionary, fitness):
         """
         Create a name string for a model generated using the given parameter file, its rank and fitness value
 
+        @param parameter_dictionary:  Dictionary containing all parameters for the experiment
         @param fitness: Fitness of the model to be saved
         @return: The model name as a string
         """
 
-        parameters_in_name = Learner.get_core_params_in_model_name(parameter_dictionary)
+        parameters_in_name = CentralisedLearner.get_core_params_in_model_name(parameter_dictionary)
         parameters_in_name += CMALearner.get_additional_params_in_model_name(parameter_dictionary)
 
         # Get fitness
@@ -299,38 +185,3 @@ class CentralisedCMALearner(CentralisedLearner):
         # Put all in a string and return
         return "_".join([str(param) for param in parameters_in_name])
 
-    @staticmethod
-    def get_additional_params_in_model_name(parameter_dictionary):
-        """
-        Return the parameters of the model that are specific to CMA-ES
-
-        @param parameter_dictionary: Dictionary containing the desired parameters
-        @return: List of parameter values
-        """
-        parameters_in_name = []
-
-        # Get algorithm params for relevant algorithm
-        parameters_in_name += [parameter_dictionary['algorithm']['agent_population_size']]
-        parameters_in_name += [parameter_dictionary['algorithm']['cma']['sigma']]
-        parameters_in_name += [parameter_dictionary['algorithm']['cma']['generations']]
-        parameters_in_name += [parameter_dictionary['algorithm']['cma']['tolx']]
-        parameters_in_name += [parameter_dictionary['algorithm']['cma']['tolfunhist']]
-
-        return parameters_in_name
-
-    @staticmethod
-    def get_results_headings(parameter_dictionary):
-        """
-        Get a list containing (most) of the columns that will be printed to the results file
-
-        @param parameter_dictionary: Dictionary containing parameter values
-        @return: List of column names
-        """
-        headings = Learner.get_results_headings(parameter_dictionary)
-        headings += ["agent_population_size",
-                     "sigma",
-                     "generations",
-                     "tolx",
-                     "tolfunhist"]
-
-        return headings

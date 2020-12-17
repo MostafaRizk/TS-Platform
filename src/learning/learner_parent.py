@@ -1,7 +1,6 @@
 import json
 from fitness import FitnessCalculator
 from agents.nn_agent_lean import NNAgent
-from operator import add
 
 
 class Learner:
@@ -73,12 +72,14 @@ class Learner:
         # In homogeneous teams, each genome is used for two identical agents
         if self.team_type == "homogeneous":
             for genome in genome_population:
-                agent = self.Agent(self.fitness_calculator.get_observation_size(),
+                for i in range(self.num_agents):
+                    agent = self.Agent(self.fitness_calculator.get_observation_size(),
                                      self.fitness_calculator.get_action_size(), self.parameter_filename, genome)
-                agent_population += [agent]
+                    agent_population += [agent]
 
         elif self.team_type == "heterogeneous":
             # In heterogeneous teams rewarded at the team level, each genome is two concatenated agents
+            # TODO: Accomodate team rewards for decentralised learning
             if self.reward_level == "team":
                 for genome in genome_population:
                     sub_genome_length = int(len(genome) / self.num_agents)
@@ -101,36 +102,6 @@ class Learner:
                     agent_population += [agent]
 
         return agent_population
-
-    def get_genome_fitnesses_from_agent_fitnesses(self, agent_fitness_lists):
-        """
-        Given a list of fitness lists of teams of agents, returns the fitness lists of the genomes they came from, based on the
-        configuration of team type and reward level
-
-        @param agent_fitnesses: A list of fitness lists for each agent in the agent population
-        @return: A list of fitness lists for each genome that the agents came from
-        """
-        genome_fitness_lists = []
-
-        if self.reward_level == "team":
-            for i in range(0, len(agent_fitness_lists) - 1, self.num_agents):
-                team_fitness_list = [0] * len(agent_fitness_lists[i])
-
-                for j in range(self.num_agents):
-                    team_fitness_list = list(map(add, team_fitness_list, agent_fitness_lists[i+j]))
-
-                genome_fitness_lists += [team_fitness_list]
-
-            return genome_fitness_lists
-
-        elif self.reward_level == "individual" and self.team_type == "heterogeneous":
-            return agent_fitness_lists
-
-        else:
-            raise RuntimeError('Homogeneous-Individual configuration not fully supported yet')
-
-    def generate_model_name(self, fitness, agent_rank):
-        pass
 
     def save_genome(self, genome, filename):
         """
@@ -155,7 +126,9 @@ class Learner:
         @return: List of parameter values
         """
         parameters_in_name = []
+
         # Get general params
+        parameters_in_name += [parameter_dictionary['general']['learning_type']]
         parameters_in_name += [parameter_dictionary['general']['algorithm_selected']]
         parameters_in_name += [parameter_dictionary['general']['team_type']]
         parameters_in_name += [parameter_dictionary['general']['reward_level']]
@@ -207,7 +180,8 @@ class Learner:
         @return:
         """
         # TODO: Change the heading so it accommodates other agent types
-        headings = ["algorithm_selected",
+        headings = ["learning_type",
+                    "algorithm_selected",
                     "team_type",
                     "reward_level",
                     "agent_type",
