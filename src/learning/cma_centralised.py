@@ -8,14 +8,14 @@ import numpy as np
 import signal
 
 from fitness import FitnessCalculator
-from learning.learner_parent import Learner
+from learning.learner_centralised import CentralisedLearner
 from glob import glob
 from io import StringIO
 
 from learning.rwg import RWGLearner
 
 
-class CMALearner(Learner):
+class CentralisedCMALearner(CentralisedLearner):
     def __init__(self, calculator):
         super().__init__(calculator)
 
@@ -87,7 +87,7 @@ class CMALearner(Learner):
                 # Calculate latest mean and save as genome file
                 mean = es.x0
                 fitness = -es.result.fbest
-                intermediate_seed_name = CMALearner.get_model_name_from_dictionary(new_dictionary, fitness)
+                intermediate_seed_name = CentralisedCMALearner.get_model_name_from_dictionary(new_dictionary, fitness)
                 self.save_genome(mean, intermediate_seed_name)
 
                 sys.exit()
@@ -184,10 +184,10 @@ class CMALearner(Learner):
             if dictionary_copy['general']['algorithm_selected'] != "partialcma":
                 dictionary_copy['general']['algorithm_selected'] = "rwg"
 
-            # If individual reward, allow seeds that used any number of agents
+            # If individual reward, look for seeds that use just one agent
             if dictionary_copy['general']['reward_level'] == "individual":
                 environment_name = dictionary_copy['general']['environment']
-                dictionary_copy['environment'][environment_name]['num_agents'] = '*'
+                dictionary_copy['environment'][environment_name]['num_agents'] = '1'
 
             # Looks for seedfiles with the same parameters as the current experiment
             parameters_in_name = Learner.get_core_params_in_model_name(dictionary_copy)

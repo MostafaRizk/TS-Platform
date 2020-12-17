@@ -15,8 +15,16 @@ class Learner:
         self.population_size = self.parameter_dictionary['algorithm']['agent_population_size']
         environment_name = self.parameter_dictionary['general']['environment']
         self.num_agents = self.parameter_dictionary['environment'][environment_name]['num_agents']
+        self.learning_type = self.parameter_dictionary['general']['learning_type']
         self.team_type = self.parameter_dictionary['general']['team_type']
         self.reward_level = self.parameter_dictionary['general']['reward_level']
+
+        if self.learning_type == "decentralised":
+            if self.team_type == "homogeneous":
+                raise RuntimeError("Cannot have a decentralised homogeneous team")
+            if self.reward_level == "team":
+                raise RuntimeError("Cannot reward at the team level")
+
         self.genome_length = self.get_genome_length()
         self.Agent = None
 
@@ -46,7 +54,7 @@ class Learner:
 
             # Genomes for heterogeneous teams rewarded at the team level are longer because multiple agent genomes
             # must be concatenated into a larger one
-            if self.parameter_dictionary['general']['team_type'] == "heterogeneous" and \
+            if self.parameter_dictionary['learning_type'] == "centralised" and self.parameter_dictionary['general']['team_type'] == "heterogeneous" and \
                     self.parameter_dictionary['general']['reward_level'] == "team":
                 return num_weights * self.num_agents
             else:
