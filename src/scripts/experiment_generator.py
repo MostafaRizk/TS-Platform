@@ -28,9 +28,9 @@ for i in range(len(core_parameter_filenames)):
     environment_name = parameter_dictionary["general"]["environment"]
 
     num_agents = parameter_dictionary["environment"][environment_name]["num_agents"]
-    parameter_dictionary["algorithm"]["agent_population_size"] = pop_size_for_team[num_agents]
+    #parameter_dictionary["algorithm"]["agent_population_size"] = pop_size_for_team[num_agents]
 
-    num_experiments = num_seeds_for_team[num_agents]
+    num_experiments = 1#num_seeds_for_team[num_agents]
     np_random = np.random.RandomState(1)
     g = open(f"{experiment_directory}/experiments/LIST_cma", "a")
 
