@@ -93,6 +93,7 @@ class SlopeEnv:
         self.agent_positions = [None] * self.num_agents
         self.resource_positions = [None] * self.default_num_resources
         self.resource_carried_by = [[]] * self.default_num_resources
+        self.closest_y_for_resource = [None] * self.default_num_resources # The closest a resource has gotten to the nest
 
         # Step variables
         self.behaviour_map = [self.forward_step, self.backward_step, self.left_step, self.right_step]
@@ -158,6 +159,7 @@ class SlopeEnv:
         self.viewer = None
         self.resource_positions = [None for i in range(self.default_num_resources)]
         self.resource_carried_by = [[] for i in range(self.default_num_resources)]
+        self.closest_y_for_resource = [None for i in range(self.default_num_resources)]
 
         try:
             self.resource_transforms = [rendering.Transform() for i in range(self.default_num_resources)]
@@ -188,6 +190,7 @@ class SlopeEnv:
                 if self.resource_map[y][x] == 0:
                     self.resource_map[y][x] = i + 1
                     self.resource_positions[i] = (x, y)
+                    self.closest_y_for_resource[i] = y
                     resource_placed = True
 
         # Reset variables that were changed during runtime
@@ -300,7 +303,18 @@ class SlopeEnv:
             if self.resource_positions[i] != self.dumping_position and self.get_area_from_position(self.resource_positions[i]) == "SLOPE" and i not in self.has_resource:
                 self.slide_resource(i)
 
-        # If a agent has returned a resource to the nest, the resource is deleted and the agent is rewarded
+            # Reward for travel of each resource
+            distance_travelled_by_resource = self.closest_y_for_resource[i] - self.resource_positions[i][1]
+
+            if distance_travelled_by_resource > 0:
+                reward_for_travel = (self.reward_for_resource / self.arena_constraints["y_max"]) * distance_travelled_by_resource
+
+                for j in range(self.num_agents):
+                    rewards[j] += reward_for_travel / self.num_agents
+
+                self.closest_y_for_resource[i] = self.resource_positions[i][1]
+
+        # If an agent has returned a resource to the nest, the resource is deleted and the agent is rewarded
         for i in range(self.num_agents):
             if self.get_area_from_position(self.agent_positions[i]) == "NEST" and self.has_resource[i] is None and self.agent_positions[i] in self.resource_positions:
                 # Find the resource with the same position as the current agent and get that resource's id
@@ -308,7 +322,8 @@ class SlopeEnv:
 
                 # Reward all agents if a resource is retrieved
                 for j in range(self.num_agents):
-                    rewards[j] += self.reward_for_resource / self.num_agents
+                    reward_for_retrieval = self.reward_for_resource / self.arena_constraints["y_max"]
+                    rewards[j] += reward_for_retrieval / self.num_agents
 
                 self.delete_resource(resource_id)
 
@@ -642,6 +657,7 @@ class SlopeEnv:
                 self.resource_map[y][x] = self.latest_resource_id + 1
                 self.latest_resource_id += 1
                 self.resource_positions += [(x, y)]
+                self.closest_y_for_resource += [y]
                 try:
                     self.resource_transforms += [rendering.Transform()]
                 except:
@@ -662,6 +678,7 @@ class SlopeEnv:
         :return:
         """
         self.resource_positions[resource_id] = self.dumping_position
+        self.closest_y_for_resource[resource_id] = self.dumping_position[1]
         self.current_num_resources -= 1
 
     # Specialisation Metrics ------------------------------------------------------------------------------------------
