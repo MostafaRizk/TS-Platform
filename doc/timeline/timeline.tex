@@ -2,43 +2,117 @@
 \usepackage{graphicx}
 \usepackage{pdfpages}
 \graphicspath{ {./figures/} }
-\title{Timeline to Final Review}
+\title{Neuroevolution of Task Specialisation in Multi-Agent Systems}
 \author{Mostafa Rizk}
+
+\setlength{\parindent}{0pt}
 
 \begin{document}
 
 \maketitle
 
-Following the recommendations of the panel, and in discussion with my supervisors, I have streamlined my research to focus on 3 research questions. The timeline below (Section \ref{timeline}) consists of 4 groups of tasks, one for each research question and one for the literature review, which is ongoing parallel to the other 3 groups. 
-The timeline goes from the last 2 work weeks of 2020 through to the reconvene seminar in April. 
-Work after the seminar will be primarily thesis writeup. 
-Sections \ref{group_1}, \ref{group_2}, \ref{group_3} and \ref{group_4} explain each group of tasks.
-Section \ref{learning} in the appendix contains a clarification of the learning process to aid in understanding some of the tasks.
+\section{Executive Summary}
 
-\section{Group 1- Landscape Analysis}\label{group_1}
+This document explains the motivation for my thesis, outlines my research questions and hypotheses and provides a list of the experiments that will be run to answer these questions.
 
-For this group of tasks, I perform RWG analysis, as described in \cite{oller:AAMAS:2020}  to understand the fitness landscape for the centralised setup. 
-This involves randomly sampling a team of agents (specifically 2 agents) several thousand times, evaluating the team and visualising the distribution of team scores. 
+\section{Introduction}
+
+\subsection{Background \& Motivation}
+
+Multi-agent teams can be used to solve a diverse range of problems such as...
+This research focuses on foraging which is...
+Foraging is of particular interest because it has many real-world analogs like...
+Multi-agent foraging advantageous because...
+Higher performance through cooperation/specialisation
+Challenge of learning/designing
+Neuroevolution (representational power of NN and competitiveness of EAs)
+\\
+
+Evolving specialisation is challenging.
+It has only been achieved a handful of times and is not always straightforward to reproduce.
+Understanding the challenges of evolving specialisation will make it easier for future research to produce it, leverage it for foraging and extend it to other multi-agent tasks.
+
+\subsection{Research Questions}
+
+To better understand how specialisation can be evolved, I investigate the following research question:\\
+
+\textbf{How can effective task specialisation be evolved for multi-agent foraging?}\\
+
+To answer this question, I explore three key areas:  the fitness landscape of task specialisation problems, centralised vs decentralised approaches to evolution and theoretical modelling of specialisation.
+These three areas are explored through the following three sub-questions:\\
+
+\begin{description}
+\item[1] \textbf{What are the fundamental features of the fitness landscape of a task specialisation problem?}\\
+
+Neuroevolution is, fundamentally, an optimisation technique that traverses a landscape and depending on the features of the landscape, different algorithms may be successful.
+For example, landscapes with a smooth gradient benefit from gradient-based approaches while landscapes with no gradient or multiple optima benefit instead from population-based methods or methods that reward diversity or are more exploratory.
+Knowing what these features are for a specialisation problem informs what algorithms researchers can use to traverse the landscape and achieve specialisation.
+
+\item[2] \textbf{When do centralised and decentralised solutions outperform one another in task specialisation problems?}\\
+
+Key to the problem of evolving specialised cooperative teams is the question of centralised vs decentralised learning (Panait and Luke).
+Centralised techniques, theoretically, should be better at finding the best team solution, but they may not scale with team size due to the growing solutions space or be robust to changes in team members.
+Decentralised techniques should scale well as the solution space does not grow, and be robust but they may not find the best team solution.
+Previous works suggests that a decentralised approach is favourable when seeking robustness whereas a centralised one is favourable when seeking cooperation, but this question remains open (Warehouse paper)
+An empirical comparison of these two approaches in terms of scalability, robustness and degree of specialisation can help determine when it might be preferable to use each.
+
+\item[3] \textbf{What is the price of anarchy in task specialisation problems?}\\
+
+While empirical results are valuable, having a theoretical understanding of them helps to generalise findings.
+A theoretical model helps interpret results while the results help to refine the model.
+Evolutionary game theory is commonly used as a modelling tool in the multi-agent domain (references) and provides two useful tools that complement the other two focuses of this research: nash equilibria and the price of anarchy.
+A Nash equilibrium is a set of strategies, for all players in game, such that no player has an incentive to unilaterally deviate.
+If the task specialisation problem is formulated as a game, we can expect the Nash equilibria of that game to correlate to the optima in the fitness landscape.
+This is valuable because the landscape of future specialisation problems can be predicted if they have the same features as a particular game/games.
+The landscape analysis alone only tells the features of this particular implementation of the task specialisation problem.
+The landscape analysis paired with the game theoretic model explaining it, tells the features of other instances of the specialisation problem.\\
+
+The price of anarchy is a measure of how the performance of a socially optimal system, designed by a benevolent dictator, deteriorates when agents can act autonomously to serve their individual interests.
+The socially optimal system can be considered analogous to a centralised solution and a system of self-interested agents can be considered analogous to a decentralised solution.
+If the price of anarchy matches what is observed in the empirical setup, it supports the conclusion that these results will follow for other instances of the task specialisation problem.
+If the price of anarchy does not match, but the model is a correct representation of the problem, then it suggests there are practical issues with implementation that cause a discrepancy.
+
+\end{description}
+
+\section{Landscape Analysis}\label{landscape_analysis}
+
+\textbf{What are the fundamental features of the fitness landscape of a task specialisation problem?}\\
+
+To answer this question, I perform RWG analysis, as proposed in \cite{oller:AAMAS:2020},  to understand the fitness landscape independently of the architecture used to represent agent policies.
+This involves randomly sampling several thousand genomes, where each genome represents the neural networks of a team of two agents, evaluating that team over multiple episodes and visualising the distribution of team scores. 
 I can then make inferences about things like the gradient of the landscape and the presence of local optima.
+Paired with information about each solution's degree of specialisation, I can also make conclusions about how common specialisation is in the landscape and how it correlates to solution quality.\\
+
+I also use dimensionality reduction to reduce the high-dimensional landscape to a 2D representation that maintains the distances between solutions.
+This visualisation allows me to make further inferences about the gradient of the landscape and presence of local optima.
+But it also makes it possible to infer the number of optima and where specialised and/or high-quality solutions are in the landscape relative to non-specialised and/or low-quality solutions.\\
 
 \subsection{Creating a Fitness Gradient}
 
-One possible shortcoming of this part of the research is that the fitness function might be making the problem unnecessarily difficult.\\
+One conclusion of the research so far has been that the landscape of task specialisation problems appears to be very flat and thus difficult to find any solution at all, let alone a specialised one.
+A possible explanation of this outcome is that the fitness function might be making evolution unnecessarily difficult because it only rewards task completion, treating partial success the same as failure.
+If partial successes are rewarded, the landscape could have a smoother gradient, making it easier for evolution to traverse.
+This leads to the following hypothesis:\\
 
-\textbf{Hypothesis 1.1:} Rewarding agents for partial retrieval of the resource will create a smoother fitness gradient that evolution could then take advantage of.\\
+\textbf{Hypothesis 1.1:} Rewarding agents for partial retrieval of the resource will create a smoother fitness gradient.\\
 
-Investigating this hypothesis is the first task in the group.
-I conducted an experiment to test this hypothesis where I repeated the landscape analysis but with incremental rewards.
-The results of this experiment are in Section \ref{smooth_fitness} of the appendix.
+I conducted an experiment to test this hypothesis where I repeated the landscape analysis but with rewards for partial task completion.
+The results showed that partial rewards do indeed create a slight gradient but the landscape is still overwhelmingly flat due to a common problem in the literature known as the bootstrapping problem.
+Section \ref{smooth_fitness} of the appendix describes the details and results of this experiment and concludes in the discussion that the most appropriate way to address the bootstrapping problem in this research is to use the best solution found by RWG as a starting point for evolution, rather than reward partial task completion. This avoids the injection of human bias into the search process and makes the conclusions generalisable to more difficult problem instances.
 
 \subsection{Visualising Specialisation}\label{visualising_specialisation}
 
-I already performed the initial analysis of the landscape, however, the visualisation did not contain any information about how specialised each team was i.e. was a given solution a pair of generalists or a pair of specialists? 
+I already performed the initial analysis of the landscape (Figure \ref{fig:sparse}), however, the visualisation did not contain any information about how specialised each team was i.e. was a given solution a pair of generalists or a pair of specialists? 
 Are the better solutions in the landscape usually specialists? 
-How common are specialist solutions compared to generalist ones? 
-To visualise this information I need a way of measuring the degree of specialisation of a solution, so the second task in this group is to evaluate some candidate metrics and the third is to incorporate the chosen metric into the landscape analysis.\\
+To visualise this information I need a way of measuring the degree of specialisation of a solution, so the second task in this group is to evaluate some candidate metrics and the third is to incorporate the chosen metric into the landscape analysis.
+The hypothesis and experiment are:\\
 
-\textbf{Hypothesis 1.2:} The fittest solutions in the landscape are the specialised ones but they are also rarer than generalist solutions.\\
+\textbf{Hypothesis 1.2:} Specialist solutions outperform generalist ones.\\
+
+\textbf{Experiment 1.2:} Use the chosen specialisation metric to assess all the solutions found by RWG analysis and incorporate them into the plots.
+The most specialised solutions are expected to be at the rightmost of the mean plot and above the generalist ones.
+If this is the case, then it supports the hypothesis.
+If there are generalist solutions that outperform specialist ones, it disproves the hypothesis.
 
 \subsection{Dimensionality Reduction}
 
@@ -62,11 +136,7 @@ Having no slope at all means there should be no benefit from specialisation and 
 
 \textbf{Hypothesis 1.4:} When the slope is flat, no solutions in the landscape will be specialists and when the slope is steep, the specialised solutions will be higher-scoring.\\
 
-\subsection{Optional Tasks}
-
-The two optional tasks are to get a more thorough understanding of the landscape, if time allows, by considering the landscape for the decentralised setup and for a more complex version of the environment.\\
-
-\subsubsection{Decentralised Setup Analysis} 
+\subsection{Decentralised Solutions} 
 
 The current landscape analysis shows the landscape for a centralised algorithm because it plots solutions for the team as a whole. 
 For the decentralised algorithm, the fitness landscape is not static because an agent’s fitness depends on who it is paired with. 
@@ -82,11 +152,9 @@ Does the decentralised algorithm ultimately find the same solutions as the centr
 
 \textbf{Hypothesis 1.5:} Solutions found by the decentralised algorithm will be primarily generalist whereas solutions found by the centralised algorithm will be primarily specialist.\\
 
-\subsubsection{Analysing Complex Environments}
-The current task is relatively simple. 
-How does the landscape change when the task becomes more challenging?
+\section{Centralised vs Decentralised Solutions}\label{centralised_vs_decentralised}
 
-\section{Group 2- Centralised vs Decentralised}\label{group_2}
+\textbf{When do centralised and decentralised solutions outperform one another in task specialisation problems?}\\
 
 Following from the description of the learning process in Appendix Section \ref{learning} :\\
 
@@ -114,7 +182,9 @@ The first task in this group is to do some code fixes to facilitate the experime
 The second task answers Hypothesis 2.2 and the third answers Hypothesis 2.3, while both together answer Hypothesis 2.1 as specialisation can be measured for the solutions in both.
 
 
-\section{Group 3- Price of Anarchy}\label{group_3}
+\section{Theoretical Modelling}\label{theoretical_model}
+
+\textbf{What is the price of anarchy in task specialisation problems?}\\
 
 Theoretically, centralised learning is equivalent to a benevolent dictator that assigns roles to each agent on the team so that the collective solution is socially optimal. 
 Decentralised learning is equivalent to a group of self-interested individuals where each is trying to find what is best for itself and we expect that is less likely to find a socially optimal solution. 
@@ -124,7 +194,7 @@ Calculating the price of anarchy lets us determine how far the team performance 
 
 \textbf{Hypothesis 3.2:} The centralised setup is more likely to find the payoff-dominant Nash equilibrum while the decentralised setup is more likely to find the risk-dominant Nash equilibrium.\\
 
-\section{Group 4- Literature Review}\label{group_4}
+\section{Literature Review}\label{literature}
 
 I have created a spreadsheet to systematically keep track of the literature and ensure my research is supported by a firm knowledge of the field. 
 Throughout the next few months, I will add relevant papers to the spreadsheet as I delve deeper into each research question, doing brief first passes of each to get an overview and deeper second and third passes for any that are especially relevant.
@@ -171,9 +241,15 @@ Centralised learning rewards the team while decentralised learning rewards the i
 
 \section{Creating a Fitness Gradient}\label{smooth_fitness}
 
-\textbf{Hypothesis 1.1:} Rewarding agents for partial retrieval of the resource will create a smoother fitness gradient that evolution could then take advantage of.\\
+\textbf{Hypothesis 1.1:} Rewarding agents for partial retrieval of the resource will create a smoother fitness gradient.\\
 
-I divided the reward for retrieving a resource by the length of the arena and gave agents part of the reward if they moved the resource a single tile closer to the goal.
+This hypothesis is answered by conducting the following experiment:\\
+
+\textbf{Experiment 1.1:} Modify the fitness function such that agents are rewarded for partially retrieving a resource.
+Specifically, divide the reward for retrieving a resource by the length of the arena and give agents part of the reward if they move the resource a single tile closer to the goal.
+Then conduct RWG analysis as described in Section \ref{landscape_analysis} and compare the plots to those produced for the original fitness function.
+If the mean curve of the distribution has a smoother gradient, then the hypothesis is proven.\\
+
 The plots for the original landscape analysis and the analysis with the new fitness function are shown in Figure \ref{fig:sparse} and Figure \ref{fig:incremental} respectively.\\
 
 \begin{figure}[h]
@@ -214,5 +290,23 @@ There are many proposed solutions to solving the bootstrapping problem and they 
 Smoothing the landscape falls under the former category, but this family of techniques has some shortcomings, in particular it reduces the potential for automation and risks the experimenter introducing negative biases.
 Using rwg to find a seed falls under the second category; it has the shortcoming of additional computation, which may not scale well for problems with larger solution spaces, but for those problems there is a wealth of alternative techniques for increasing diversity, such as novelty search.
 In keeping with the spirit of AI, I have chosen to continue using the more challenging fitness function.
+
+\section{List of Hypotheses}
+
+\textbf{Hypothesis 1.1:} Rewarding agents for partial retrieval of the resource will create a smoother fitness gradient.\\
+
+\textbf{Hypothesis 1.2:} Specialist solutions outperform generalist ones.\\
+
+\section{List of Experiments}
+
+\textbf{Experiment 1.1:} Modify the fitness function such that agents are rewarded for partially retrieving a resource.
+Specifically, divide the reward for retrieving a resource by the length of the arena and give agents part of the reward if they move the resource a single tile closer to the goal.
+Then conduct RWG analysis as described in Section \ref{landscape_analysis} and compare the plots to those produced for the original fitness function.
+If the mean curve of the distribution has a smoother gradient, then the hypothesis is proven.\\
+
+\textbf{Experiment 1.2:} Use the chosen specialisation metric to assess all the solutions found by RWG analysis and incorporate them into the plots.
+The most specialised solutions are expected to be at the rightmost of the mean plot and above the generalist ones.
+If this is the case, then it supports the hypothesis.
+If there are generalist solutions that outperform specialist ones, it disproves the hypothesis.\\
 
 \end{document}
