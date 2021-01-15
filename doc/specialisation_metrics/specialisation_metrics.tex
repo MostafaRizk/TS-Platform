@@ -1,0 +1,98 @@
+\documentclass[12pt]{article}
+\usepackage{array}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+
+\title{Measures of Specialisation}
+
+\begin{document}
+
+\maketitle
+
+\section{Metrics from the Literature}
+
+\subsection{Proportion of Items}
+\textbf{Source: }Ferrante et al 2015 \cite{ferrante:PLoSCB:2015} \\\\
+\textbf{Description: } "Proportion of items retrieved by more than one [agent] over the total number of items retrieved".\\\\
+\textbf{Formula: }\\
+%
+\[
+\frac{R_{cooperative}}{R_{total}}
+\]
+where:
+\begin{description}
+\item[$R_{cooperative}$] is Resources retrieved by more than one agent
+\item[$R_{total}$] is Total resources retrieved by the team
+\end{description}
+%
+\textbf{Pros:}
+\begin{itemize}
+\item Simple
+\end{itemize}
+\textbf{Cons:}
+\begin{itemize}
+\item Agents can pick up and drop resources without contributing to their transportation e.g. Go to source, pick up and drop on the spot, transport another resource as a generalist.
+\end{itemize}
+\textbf{Thoughts:}\\
+It's too easy for non-specialist strategies to look like specialisation.
+I think this metric should be avoided if possible.
+
+\subsection{Action Switches}
+\textbf{Source: } Nitschke et al 2012 \cite{nitschke:SEC:2012} \\\\
+\textbf{Description: } "The frequency with which the controller switches between executing distinct motor outputs (actions) during its lifetime".\\\\
+\textbf{Formula: }\\
+%
+\[
+\frac{A}{N}
+\]
+%
+where:
+\begin{description}
+\item[$A$] is Action switches over an episode
+\item[$N$] is Number of possible switches over an episode
+\end{description}
+\textbf{Pros:}
+\begin{itemize}
+\item Calculates an agent's specialisation rather than a team's. Can identify non-specialists on a team.
+\end{itemize}
+\textbf{Cons:}
+\begin{itemize}
+\item Only works if the dropper and collector strategies could be executed with just one action.
+\end{itemize}
+\textbf{Thoughts:}\\
+This could be good if there's a way to adapt it to slope foraging.
+Maybe something like number of area switches?
+A pure collector shouldn't leave the nest and cache and a pure dropper shouldn't leave the source/slope.
+But then, what if 
+
+swap roles but stay specialised as a team
+dropper that goes all the way down the slope, is that still a specialist?
+How do I define specialisation, verbally?
+Is there a way to define specialisation that is not unique to this application?
+Is an agent specialised or is a team?
+
+\subsection{•}
+
+\textbf{Source: } \\\\
+\textbf{Description: } \\\\
+\textbf{Formula: }\\
+%
+%
+\\\\
+\textbf{Pros:}
+\begin{itemize}
+\item 
+\end{itemize}
+\textbf{Cons:}
+\begin{itemize}
+\item 
+\end{itemize}
+\textbf{Thoughts:}\\
+
+\section{Metrics by Me}
+
+\bibliographystyle{ieeetr} 
+\bibliography{references}
+
+\end{document}
+
+
