@@ -36,7 +36,9 @@ where:
 It's too easy for non-specialist strategies to look like specialisation.
 I think this metric should be avoided if possible.
 
-\subsection{Action Switches}
+\subsection{Action Switching}
+
+\subsubsection{Frequency of Action Switches}
 \textbf{Source: } Nitschke et al 2012 \cite{nitschke:SEC:2012} \\\\
 \textbf{Description: } "The frequency with which the controller switches between executing distinct motor outputs (actions) during its lifetime".\\\\
 \textbf{Formula: }\\
@@ -62,13 +64,95 @@ where:
 This could be good if there's a way to adapt it to slope foraging.
 Maybe something like number of area switches?
 A pure collector shouldn't leave the nest and cache and a pure dropper shouldn't leave the source/slope.
-But then, what if 
+But then, what if a dropper goes all the way down the slope before dropping?
+Is it just an inefficient specialist?
+What if a dropper and collector display perfect specialisation,  swap roles mid-episode, then continue displaying perfect specialisation with the reversed roles?
 
-swap roles but stay specialised as a team
-dropper that goes all the way down the slope, is that still a specialist?
-How do I define specialisation, verbally?
-Is there a way to define specialisation that is not unique to this application?
-Is an agent specialised or is a team?
+\subsubsection{Complement of action changes}
+
+\textbf{Source: } Gautrais et al 2002 \cite{gautrais:JTB:2002} \\\\
+\textbf{Description: } Complement of the frequency of an individual changing tasks\\\\
+\textbf{Formula: }\\
+%
+\[
+F_{i} = 1 - 2 C_{i}
+\]
+%
+where:
+\begin{description}
+\item[$i$] is the index of the individual
+\item[$F_{i}$] is the degree of specialisation
+\item[$C_{i}$] is the number of action changes divided by the number of action steps in an episode. 0 is generalist, 1 is specialist.
+\end{description}
+\textbf{Pros:}
+\begin{itemize}
+\item 
+\end{itemize}
+\textbf{Cons:}
+\begin{itemize}
+\item 
+\end{itemize}
+\textbf{Thoughts:} Specialisation of an individual. Not sure if that's what we want.\\
+
+\subsection{Entropy}
+
+\subsubsection{Correlation with Diversity}
+
+\textbf{Source: Li et al \cite{li:AB:2004}} \\\\
+\textbf{Description: The correlation coefficient between diversity and swarm performance.
+Diversity is calculated by running a clustering algorithm on the genomes and calculating the entropy.} \\\\
+\textbf{Formula: }\\
+%
+\[
+S = corrcoef(D;R) \times D
+\]
+%
+where:
+\begin{description}
+\item[$D$] is Diversity, measured using entropy
+\item[$R$] is Team performance
+\end{description}
+\textbf{Pros:}
+\begin{itemize}
+\item General
+\item Based on analysis of metrics in the literature (as at 2004)
+\end{itemize}
+\textbf{Cons:}
+\begin{itemize}
+\item Complicated. 
+\item Computationally expensive? Have to run a clustering algorithm each time.
+\end{itemize}
+\textbf{Thoughts:} I don't fully understand the diversity measure. 
+I don't think you can apply clustering in slope foraging.
+Intentionally decides that specialisation is a team measure not an individual one.
+Intentionally decides that teams are only specialised when they perform well, otherwise it is just diversity.
+\\
+
+\subsubsection{Entropy of activity}
+
+\textbf{Source: }O'Donnell et al 1990 \cite{odonnell:BES:1990} \\\\
+\textbf{Description: }Entropy of an agent's focus on different materials being foraged. Low entropy means an agent is specialised because it focuses on less activities.\\\\
+\textbf{Formula: }\\
+%
+\[
+H(x)=- \sum  p(x)\log_{2}p(x)
+\]
+%
+where:
+\begin{description}
+\item[$p(x)$] is the proportion a forager's effort devoted to a given material($x$)
+\end{description}
+\textbf{Pros:}
+\begin{itemize}
+\item Has theoretical underpinning
+\item Generalisable
+\end{itemize}
+\textbf{Cons:}
+\begin{itemize}
+\item Requires the high level a priori knowledge of what each activity/sub-task is
+\item An individual that does one task and then switches half-way is the same as one that alternates throughout
+\end{itemize}
+\textbf{Thoughts:}\\
 
 \subsection{•}
 
@@ -88,7 +172,59 @@ Is an agent specialised or is a team?
 \end{itemize}
 \textbf{Thoughts:}\\
 
+\subsection{Other}
+
+\subsubsection{Counting actions}
+
+\textbf{Source: } Pini et al 2011 \cite{pini:SI:2011}\\\\
+\textbf{Description: } Count the number of times agents chose to use the corridor (i.e. slope) vs the cache and use that in a bar graph to show which strategies partition (i.e. specialise) vs not. \\\\
+\textbf{Formula: }\\
+N/A
+\\\\
+\textbf{Pros:}
+\begin{itemize}
+\item 
+\end{itemize}
+\textbf{Cons:}
+\begin{itemize}
+\item 
+\end{itemize}
+\textbf{Thoughts:} You could turn this into a metric. Number of times an agent went onto the slope? But doesn't quite work because in the Pini version, a specialist only ever needs to touch the 'slope' once, whereas in mine a dropper has to go on it every time it drops. \\
+
+\subsubsection{Time spent changing role}
+
+\textbf{Source: } Gigliotta et al 2018 \cite{gigliotta:Neurocomputing:2018} \\\\
+\textbf{Description: } Not a metric. But count the number of time steps spent changing roles as an indicator of specialisation.\\\\
+\textbf{Formula: }\\
+N/A
+\\\\
+\textbf{Pros:}
+\begin{itemize}
+\item 
+\end{itemize}
+\textbf{Cons:}
+\begin{itemize}
+\item 
+\end{itemize}
+\textbf{Thoughts:}\\
+
 \section{Metrics by Me}
+
+\begin{itemize}
+\item Number of area transitions
+\item Number of slope-to-cache and cache-to-slope transitions
+\item Time spent on slope
+\end{itemize}
+
+\section{Thoughts on Specialisation}
+
+How do I define specialisation, verbally?
+Is there a way to define specialisation that is not unique to this application?
+Is an agent specialised or is a team?
+An agent is specialised if they perform a behaviour that cannot complete the task alone.
+Does specialisation have to be successful?
+What if an agent performs a behaviour that can't complete the task but is unproductive?
+If specialisation is only specialisation when it succeeds, doesn't that bias the results?
 
 \bibliographystyle{ieeetr} 
 \bibliography{references}

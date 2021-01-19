@@ -33,16 +33,17 @@ Understanding these challenges can make it easier for future research to produce
 
 \subsection{Research Questions}
 
-To better understand how specialisation can be evolved, I investigate the following research question:\\
+To better understand how specialisation can emerge in systems of multiple agents, I investigate the following research question:\\
 
-\textbf{How can effective task specialisation be evolved for multi-agent foraging?}\\
+\textbf{How can effective task specialisation emerge for multi-agent foraging?}\\
 
 To answer this question, I use an experimental framework based on the slope foraging problem used in \cite{ferrante:PLOS_CB:2015} and similar also to \cite{pini:ICSI:2012, pini:Swarm_Intelligence:2011}.
 In this problem, a team of agents must retrieve resources from a source location to a nest.
 The source is located at the top of a slope and the nest is located at the bottom.
 Agents can employ a generalist strategy where they go up the slope, pick up the resource, carry it to the nest and deposit it.
 Agents can alternatively employ a specialist strategy where they cooperate with their team-mates.
-In the specialist strategy some agents are droppers, who go up to the source and drop resources that fall just short of the nest in an area called the cache, and some agents are collectors, who retrieve resources from the cache and deposit them at the nest.
+In the specialist strategy some agents are droppers, who go up to the source and drop resources that fall just short of the nest in an area called the cache, and some agents are collectors, who retrieve resources from the cache and deposit them at the nest.\\
+
 In \cite{pini:ICSI:2012, pini:Swarm_Intelligence:2011,ferrante:PLOS_CB:2015}, specialist teams are shown to score higher than generalists because they take advantage of a quick transportation method (i.e. dropping down the slope rather than carrying).
 I use the slope foraging problem as a test-bed to explore the evolution of specialisation.\\
 
@@ -95,7 +96,7 @@ If the price of anarchy does not match, but the model is a correct representatio
 
 \textbf{What are the fundamental features of the fitness landscape of a task specialisation problem?}\\
 
-To answer this question, I perform RWG analysis, as proposed in \cite{oller:AAMAS:2020}, to understand the fitness landscape independently of the architecture used to represent agent policies.
+To answer this question, I perform RWG analysis, as proposed in \cite{oller:AAMAS:2020}, to understand the fitness landscape independently of the learning algorithm.
 This involves randomly sampling several thousand genomes, where each genome represents the neural networks of a team of two agents, evaluating that team over multiple episodes and visualising the distribution of team scores. 
 I can then make inferences about things like the gradient of the landscape and the presence of local optima.
 Paired with information about each solution's degree of specialisation, I can also make conclusions about how common specialisation is in the landscape and how it correlates to solution quality.\\
@@ -115,9 +116,10 @@ This leads to the following hypothesis:\\
 \textbf{Hypothesis 1.1:} Rewarding agents for partial retrieval of the resource will create a smoother fitness gradient.\\
 
 I conducted an experiment to test this hypothesis where I repeated the landscape analysis but with rewards for partial task completion.
-The results showed that partial rewards do indeed create a slight gradient but the landscape is still overwhelmingly flat due to a common problem in the literature known as the bootstrapping problem, so the hypothesis is rejected.
+The results showed that partial rewards do indeed create a slight gradient but the landscape is still overwhelmingly flat due to a common problem in the literature known as the bootstrapping problem \cite{Silva:EC:2016,Wei:ALR:2019} , so the hypothesis is not supported.
 Section \ref{smooth_fitness} of the appendix describes the details and results of this experiment and concludes in the discussion that the most appropriate way to address the bootstrapping problem, for this research, is to use the best solution found by RWG as a starting point for evolution, rather than reward partial task completion. 
 This avoids the injection of human bias into the search process and makes the conclusions generalisable to more difficult problem instances.
+Additionally, the discussion explains how rewarding partial success could potentially discourage specialisation.
 
 \subsection{Visualising Specialisation}\label{visualising_specialisation}
 
@@ -151,10 +153,10 @@ The hypothesis is:\\
 Apply the chosen dimensionality reduction technique to the dataset.
 Use the chosen specialisation metric to plot the degree of specialisation (in addition to the fitness).\\
 
-If there are indeed two optima, then the hypothesis is supported, otherwise it is rejected.
+If there are indeed two optima, then the hypothesis is supported, otherwise it is not supported.
 If, additionally, the specialist solutions are fitter than the generalist ones, Hypothesis 1.2 is further supported.\\
 
-I have already implemented a version of this and began getting preliminary results.
+I have already implemented a version of this and began getting preliminary results, which can be found in Appendix \ref{sammon}.
 
 \subsection{Analysis of Different Slope Angles}
 
@@ -175,23 +177,23 @@ Thus:\\
 Then perform 30 evolutionary runs, each with a different seed genome and random seed.
 Use the generated data to create RWG analysis plots and perform dimensionality reduction.\\
 
-If there are any specialist solutions found for the 0 slope setting or more than one optima, Hypothesis 1.4.1 is rejected, otherwise it is supported.\\
+If there are any specialist solutions found for the 0 slope setting or more than one optima, Hypothesis 1.4.1 is not supported, otherwise it is supported.\\
 
-If the intermediate slope setting has more or less than two optima, Hypothesis 1.4.2 is rejected, if it has exactly two, it is supported.
-If the two optima for the intermediate setting are both generalist, both specialist or both a mix of the two, Hypothesis 1.4.2 is also rejected.\\
+If the intermediate slope setting has more or less than two optima, Hypothesis 1.4.2 is not supported, if it has exactly two, it is supported.
+If the two optima for the intermediate setting are both generalist, both specialist or both a mix of the two, Hypothesis 1.4.2 is also not supported.\\
 
-If Hypothesis 1.4.2 is supported and the specialist solutions do not outscore the generalist solutions, Hypothesis 1.4.3 is rejected.
-If the specialist solutions outscore the generalist solutions but by a margin that is greater than or approximately equal to the margin for the steep slope, Hypothesis 1.4.3 is rejected.
+If Hypothesis 1.4.2 is supported and the specialist solutions do not outscore the generalist solutions, Hypothesis 1.4.3 is not supported.
+If the specialist solutions outscore the generalist solutions but by a margin that is greater than or approximately equal to the margin for the steep slope, Hypothesis 1.4.3 is not supported.
 If the specialist solutions outscore the generalists by a margin significantly less than the steep slope setting, the hypothesis is supported.\\
 
 \subsection{Decentralised Solutions} 
 
 So far, RWG analysis has been performed but only for teams produced by a centralised algorithm.
-It is not possible to perform a meaningful RWG analysis for decentralised algorithms because each solution is a single agent.
-An individual agent's fitness depends on its team-mates, meaning that the fitness landscape changes and it is not possible to infer its features.
+It is not trivial to perform a meaningful RWG analysis for decentralised algorithms because each solution is a single agent.
+An individual agent's fitness depends on its team-mates, meaning that the fitness landscape changes and it is difficult to infer its features.
 What algorithm should be used to navigate the landscape when using a decentralised approach?\\
 
-One way to gain insight into the fitness landscape for decentralised algorithms is to use dimensionality reduction.
+One way to overcome this issue is to use dimensionality reduction.
 Consider 2-agent teams in the centralised setup.
 A solution in the landscape is the genomes of both agents on the team.
 Consider now a 2-agent team in the decentralised setup.
@@ -213,8 +215,8 @@ Calculate the degree of specialisation of all evolved solutions.
 Concatenate the genomes of all individuals on a team and apply dimensionality reduction to the data.
 Combine the decentralised data with the centralised data and plot on the same plot.\\
 
-If the majority of solutions found by the decentralised algorithm are not generalists, the hypothesis is rejected.
-If the majority of solutions found by the centralised algorithm are not specialists, the hypothesis is also rejected.
+If the majority of solutions found by the decentralised algorithm are not generalists, the hypothesis is not supported.
+If the majority of solutions found by the centralised algorithm are not specialists, the hypothesis is also not supported.
 Otherwise, the hypothesis is supported.
 
 \section{Centralised vs Decentralised Solutions}\label{centralised_vs_decentralised}
@@ -247,13 +249,13 @@ Multi-threading should be implemented to avoid this problem otherwise computatio
 Calculate the specialisation of all evolved solutions.
 Plot the average fitness per agent and team specialisation for teams in each setup. \\
 
-If the average fitness per agent increases or remains the same for the centralised setup, Hypothesis 2.1.1 is rejected, otherwise it is supported.\\
+If the average fitness per agent increases or remains the same for the centralised setup, Hypothesis 2.1.1 is not supported, otherwise it is supported.\\
 
-If the average fitness per agent of decentralised solutions increases, Hypothesis 2.1.2 is rejected, otherwise it is supported.\\
+If the average fitness per agent of decentralised solutions increases, Hypothesis 2.1.2 is not supported, otherwise it is supported.\\
 
-If the centralised solutions contain the same number of specialists (or more) for larger teams, Hypothesis 2.1.3 is rejected, otherwise it is supported.\\
+If the centralised solutions contain the same number of specialists (or more) for larger teams, Hypothesis 2.1.3 is not supported, otherwise it is supported.\\
 
-If the decentralised solutions contain significantly more or fewer specialists, Hypothesis 2.1.4 is rejected, otherwise it is supported.\\
+If the decentralised solutions contain significantly more or fewer specialists, Hypothesis 2.1.4 is not supported, otherwise it is supported.\\
 
 \subsection{Robustness}
 
@@ -279,16 +281,16 @@ Draw one violin for the original team and one for each replacement (a total of f
 The data for each violin includes when each of the two agents was replaced.
 The y-axis shows the fitness and the plots also have a colour scale to show the degree of specialisation.\\
 
-If the average fitness of centralised solutions increases or remains the same, Hypothesis 2.2.1 is rejected, otherwise it is supported.\\
+If the average fitness of centralised solutions increases or remains the same, Hypothesis 2.2.1 is not supported, otherwise it is supported.\\
 
-If the average fitness of decentralised solutions significantly increases, Hypothesis 2.2.2 is rejected.
-If the average fitness of decentralised solutions decreases by a larger margin than the centralised solutions, Hypothesis 2.2.2. is rejected.
+If the average fitness of decentralised solutions significantly increases, Hypothesis 2.2.2 is not supported.
+If the average fitness of decentralised solutions decreases by a larger margin than the centralised solutions, Hypothesis 2.2.2. is not supported.
 Otherwise it is supported.\\
 
-If the team specialisation of the centralised solutions significantly increases or stays the same, Hypothesis 2.2.3 is rejected.
+If the team specialisation of the centralised solutions significantly increases or stays the same, Hypothesis 2.2.3 is not supported.
 Otherwise it is supported.\\
 
-If the team specialisation of the decentralised solutions significantly increases or decreases, Hypothesis 2.2.4 is rejected.
+If the team specialisation of the decentralised solutions significantly increases or decreases, Hypothesis 2.2.4 is not supported.
 Otherwise it is supported.\\
 
 \section{Theoretical Modelling}\label{theoretical_model}
@@ -307,10 +309,10 @@ Calculating the price of anarchy lets us determine how far the team performance 
 Find the nash equilibria and study the learning dynamics.\\
 
 If the game is indeed a stag hunt, i.e it has two Nash equilibria where the payoff-dominant equilibrium corresponds to agents specialising and the risk-dominant equilibrium corresponds to agents defecting and being generalists, then Hypothesis 3.1.1 is supported.
-Otherwise it is rejected.\\
+Otherwise it is not supported.\\
 
 If the socially optimal teams converge to the payoff-dominant equilibrium and the self-interested teams converge to the risk-dominant equilibrium, Hypothesis 3.1.2 is supported.
-Otherwise it is rejected.\\
+Otherwise it is not supported.\\
 
 \section{Timeline} \label{timeline}
 
@@ -412,6 +414,24 @@ There are many proposed solutions to solving the bootstrapping problem and they 
 Smoothing the landscape falls under the former category, but this family of techniques has some shortcomings, in particular it reduces the potential for automation and risks the experimenter introducing negative biases.
 Using rwg to find a seed falls under the second category; it has the shortcoming of additional computation, which may not scale well for problems with larger solution spaces, but for those problems there is a wealth of alternative techniques for increasing diversity, such as novelty search.
 In keeping with the spirit of AI, I have chosen to continue using the more challenging fitness function.
+
+\section{Dimensionality Reduction}\label{sammon}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.0\textwidth]{sammon.png}
+\caption{Sammon Mapping of Landscape}
+\label{fig:sammon}
+\end{figure}
+
+The algorithm I use to perform dimensionality reduction creates an initial 2D mapping of the genomes and calculates the error of that mapping using Sammon's error function. 
+It then uses iterative gradient descent to minimise the error. 
+The plot in Figure \ref{fig:sammon} includes the best 500 and worst 500 genomes from the rwg analysis in Figure \ref{fig:sparse} along with the best evolved team genomes and the best evolved individual genomes. 
+For the individual genomes, I concatenated two identical copies and doubled their score so that I can put them in the same landscape.\\
+
+Preliminary results show that there indeed appear to be two optima, which supports Hypothesis 1.3.
+One of the optima has a higher score while the other has a lower score.
+Anecdotally, the scores observed for the green optima are usually only seen for teams of specialists, however a specialisation metric is still needed to verify this empirically.\\
 
 \section{List of Hypotheses}
 
