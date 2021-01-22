@@ -2,6 +2,20 @@
 \usepackage{graphicx}
 \graphicspath{ {./figures/} }
 
+\makeatletter
+\def\thickhline{%
+  \noalign{\ifnum0=`}\fi\hrule \@height \thickarrayrulewidth \futurelet
+   \reserved@a\@xthickhline}
+\def\@xthickhline{\ifx\reserved@a\thickhline
+               \vskip\doublerulesep
+               \vskip-\thickarrayrulewidth
+             \fi
+      \ifnum0=`{\fi}}
+\makeatother
+
+\newlength{\thickarrayrulewidth}
+\setlength{\thickarrayrulewidth}{4\arrayrulewidth}
+
 \title{Final Report:\\ Neuroevolution of Task Specialisaiton for Multi-Agent Systems}
 \author{Mostafa Rizk}
 
@@ -92,9 +106,133 @@ The most specialised solutions are expected to be at the rightmost of the mean p
 If this is the case, then it supports the hypothesis.
 If there are generalist solutions that outperform specialist ones, it disproves the hypothesis.
 
+\subsubsection{Specialisation in the Literature}
+
+To quantitatively measure specialisation, it is important to first define what specialisation is.
+For the purpose of this research, specialisation is when a team of agents cooperate, by performing different roles, to accomplish the task more effectively than a team of generalist (i.e. independent) agents.
+Agents cooperating by doing the same role, e.g. carrying a resource together, is not considered specialisation.
+Agents performing different roles that do not provide an advantage over a generalist team (e.g. one agent doing a generalist strategy and another agent being stationary) is also not considered specialisation.\\
+
+This research is only concerned with tasks where specialisation improves performance and how to effectively evolve specialisation for those tasks.
+In real-world applications, we may not know a priori what the specialist solution to the problem is, but for the slope foraging problem, we know that it involves a subset of agents dropping resources from the top of the slope and the rest of the agents collecting the dropped resources from the cache.
+Therefore, our metric must be one that indicates these dropper and collector behaviours are being enacted to retrieve resources.\\
+
+The way specialisation is measured in the literature uses one or more of the following:\\
+
+Strategy switches\\
+
+Nitschke et al \cite{nitschke:SEC:2012} count times strategy was switched over all possible switches. Less switches means more specialised.
+Gautrais et al \cite{gautrais:JTB:2002} do the same but take the complement.
+Gigliotta  et al \cite{gigliotta:Neurocomputing:2018} counts time spent changing strategies.
+Pini et al \cite{pini:SI:2011, pini:ICSI:2012} use an analog of Ferrante et al's slope foraging \cite{ferrante:PLoSCB:2015}, where there is a source and a nest and agents can either take a long corridor to the nest or place items in a cache that transports them to the other side, where their team-mates take them to the nest.
+They count the number of times the cache was chosen instead of the corridor as an indicator of the degree of specialisation.\\
+
+These are not easily applicable to this slope foraging implementation because it uses low-level actions, whereas they assume agents can directly choose a high-level strategy. 
+Agents changing from "go forward" to "go backward" doesn't tell much about specialisation. But if agent actions were just "do dropper behaviour", "do collector behaviour" and "do generalist behaviour", it would be more feasible to use measures like these works. Some measures also look at specialisation of the individual rather than the team, which is not as meaningful for slope foraging.\\
+
+Diversity\\
+
+Li et al \cite{li:AB:2004} group agent genotypes into clusters and use Shannon's entropy to measure the diversity of the team. Each cluster is believed to be a specialist strategy. Specialisation is defined as "the part of diversity that is demanded for better performance" so a diverse team is only specialised if their diversity is correlated to improved performance. Li et al  then look at diversity and performance through the learning process and calculate their correlation coefficient as a measure for the degree of specialisation of the final strategy(?)\\
+
+This is computationally expensive because it requires data on team performance throughout all of the learning process and requires integration over all algorithm configurations (?). Additionally, since the authors use a PFSM, genotypic diversity implies phenotypic diversity (?). Using a neural network, different genotypes might still have the same behaviour. Since then, work has been done on diversity-based search algorithms. That literature uses behaviour characterisation to describe the behaviour being done. Agents could be clustered according to this, but diversity does not necessarily indicate specialisation or cooperation. More recent work by Gomes et al \cite{gomes:IEEETR:2017} use co-evolution to evolve heterogeneous cooperative teams, they count the number of different agents or populations. Populations with similar behaviours are merged so all agents on the team are different, but again, this does not necessarily indicate that the team has specialised.  \\
+
+O'Donnell and Jeanne \cite{odonnell:BES:1990} calculate the entropy of an individual agent, specifically the proportions of its time spent doing different activities (i.e. the diversity of resources it gathers). They use it directly as the degree of specialisation. This runs into the same problem as before, where the metric is difficult to apply to slope foraging because agents do not choose high-level strategies. In addition the metric is for individuals and does not apply to this context because agents only gather one type of resource. Balch?\\
+
+Resource retrieval\\
+
+Ferrante et al \cite{ferrante:PLoSCB:2015} have a comparatively simple metric. They count the proportion of resources retrieved cooperatively over the total resources retrieved. This is independent of whether actions are high or low level and doesn't need the full evolutionary history. It is designed for slope foraging so is appropriate, though it has shortcomings.  Cooperative retrieval simply means a resource was picked up by two or more agents before being delivered. An agent could pick up and drop the resource at the source and a generalist could come to collect it and that would count as a specialist strategy. Technically, this is still a dropper-collector strategy, but it does not capture the type of dropper-collector strategy that improves performance.\\
+
+Additionally, it does not account for 'hitch-hikers' i.e. agents doing nothing while the rest of the team retrieves all resources cooperatively. Since the Ferrante setup is homogeneous (i.e. all agents have the same policy), it is unlikely that some would cooperate while others hitch-hike, but since this research considers heterogeneous teams, hitch-hikers are more likely to be encountered, so the specialisation metric should distinguish between teams that have a hitch-hiker and teams that don't. It also can't distinguish teams where a dropper and collector swap roles part-way. This is unlikely to occur, though. In short, the Ferrante metric's main shortcoming is that it does not distinguish \textit{imperfect} specialists.
+
 \subsubsection{Choosing a Metric}
 
+Based on a review of techniques in the literature, the metric used by \cite{ferrante:PLoSCB:2015} is the most appropriate. However, to overcome its shortcomings, I propose to add two new terms to the formula. Ferrante et al measure a term I will refer to as the \textit{cooperation rate} or:\\
+%
+\[ 
+R_{coop} = \frac{N_{coop}}{N_{total}}
+\]
+where:
+\begin{description}
+\item[$N_{coop}$] is The number of resources retrieved cooperatively (i.e. picked up by at least 2 agents before being delivered to the nest)
+\item[$N_{total}$] is The total number of resources retrieved by the team
+\end{description}
+%
+To account for instances of imperfect specialisation where agents cooperatively retrieve a resource but drop or collect it in the wrong place, I introduce the \textit{efficient cooperation rate}:
+%
+\[ 
+R_{coop}' = \frac{N_{coop}'}{N_{total}}
+\]
+where:
+\begin{description}
+\item[$N_{spec}$] is The number of resources retrieved using efficient cooperation (i.e. the resource was dropped on the slope, picked up from the cache and the agents that dropped and picked up were different)
+\end{description}
+%
+To capture the spectrum of specialisation, I take the average of the two terms:
+%
+\[ 
+R_{spec} = \frac{R_{coop} + R_{coop}'}{2}
+\]
+%
+To detect "hitch-hikers", I also introduce the \textit{agent participation}:
+%
+\[ 
+P = \frac{A_{active}}{A_{total}}
+\]
+where:
+\begin{description}
+\item[$A_{active}$] is The number of agents that participated in the retrieval of at least one resource
+\item[$A_{total}$] is The total number of agents on the team
+\end{description}
+%
+The final measure of degree of specialisation is then:
+%
+\[ 
+S = R_{spec} \times P
+\]
+%
+One shortcoming of this metric is that it does not detect role-switching. For example, a team composed of a dropper and a collector but halfway through, the dropper becomes the collector and vice versa. Role-switching can be detected by observing the variance of an agent's y-coordinate in the arena. A dropper or collector that remains in their role throughout runtime will move at most 1 tile in either y direction, so they will have a low variance. An dropper that changes roles will have a high variance, akin to a generalist. The average y-variance of a team indicates role-switching and, to an extent, specialisation. The average variance could potentially be used to measure specialisation on its own, though it would not detect hitch-hikers or even just teams that are completely stationary. For this reason, and to avoid over-complicating the metric, I only use the variance as an additional measure to check for role-switching.
+
 \subsubsection{Results}
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Team Strategy} & \boldmath${R_{coop}}$ & \boldmath$R_{coop}'$ & \boldmath$R_{spec}$\\
+\thickhline
+Dropper + Collector & & & \\
+\hline
+Generalist + Generalist & & & \\
+\hline
+Imperfect Dropper + Generalist & & & \\
+\hline
+Dropper + Collector + Hitch-hiker & & & \\
+\hline
+Swapper + Swapper & & & \\
+\hline
+Lazy Generalist + Lazy Generalist & & & \\
+\hline
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Team Strategy} & \boldmath${R_{coop}} \times P$ & \boldmath$R_{coop}' \times P$ & \boldmath$R_{spec} \times P$\\
+\thickhline
+Dropper + Collector & & & \\
+\hline
+Generalist + Generalist & & & \\
+\hline
+Imperfect Dropper + Generalist & & & \\
+\hline
+Dropper + Collector + Hitch-hiker & & & \\
+\hline
+Swapper + Swapper & & & \\
+\hline
+Lazy Generalist + Lazy Generalist & & & \\
+\hline
+\end{tabular}
+\end{center}
 
 \subsection{Dimensionality Reduction}
 
