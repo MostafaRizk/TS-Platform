@@ -93,6 +93,15 @@ class SlopeEnv:
         self.agent_positions = [None] * self.num_agents
         self.resource_positions = [None] * self.default_num_resources
         self.resource_carried_by = [[]] * self.default_num_resources
+        self.resource_history = []
+        for i in range(self.default_num_resources):
+            new_dict = {"dropped_on_slope": False, # True/False (False unless the resource was dropped on the slope once)
+                                  "dropper_index": -1, # index of agent that dropped the resource on the slope
+                                  "collected_from_cache": False, # True/False (The last time it was picked up, was it picked up on the cache?)
+                                  "collector_index": -1 # index of agent who last picked it up on the cache (if the resource is delivered, this will also be the agent that delivers it)
+                                  }
+            self.resource_history += [new_dict]
+
 
         # Step variables
         self.behaviour_map = [self.forward_step, self.backward_step, self.left_step, self.right_step]
@@ -158,6 +167,16 @@ class SlopeEnv:
         self.viewer = None
         self.resource_positions = [None for i in range(self.default_num_resources)]
         self.resource_carried_by = [[] for i in range(self.default_num_resources)]
+        self.resource_history = []
+        for i in range(self.default_num_resources):
+            new_dict = {"dropped_on_slope": False,  # True/False (False unless the agent was dropped on the slope once)
+                        "dropper_index": -1,  # index of agent that last dropped the resource
+                        "collected_from_cache": False,
+                        # True/False (The last time it was picked up, was it picked up on the cache?)
+                        "collector_index": -1
+                        # index of agent who last picked it up on the cache (if the resource is delivered, this will also be the agent that delivers it)
+                        }
+            self.resource_history += [new_dict]
 
         try:
             self.resource_transforms = [rendering.Transform() for i in range(self.default_num_resources)]
@@ -286,6 +305,12 @@ class SlopeEnv:
                     if self.has_resource[j] == i:
                         if self.action_name[agent_actions[j]] == "DROP":
                             self.drop_resource(j)
+
+                            # If agent/resource is on slope, update resource history
+                            if self.get_area_from_position(self.resource_positions[i]) == "SLOPE":
+                                self.resource_history[i]["dropped_on_slope"] = True
+                                self.resource_history[i]["dropper_index"] = j
+
                         else:
                             self.pickup_or_hold_resource(j, i)
 
@@ -295,6 +320,11 @@ class SlopeEnv:
                     if self.has_resource[j] is None and i not in self.has_resource:
                         if self.action_name[agent_actions[j]] == "PICKUP":
                             self.pickup_or_hold_resource(j, i)
+
+                            # If resource is on the cache, update resource history
+                            if self.get_area_from_position(self.resource_positions[i]) == "CACHE":
+                                self.resource_history[i]["collected_from_cache"] = True
+                                self.resource_history[i]["collector_index"] = j
 
             # If a resource is on the slope and not in the possession of a agent, it slides
             if self.resource_positions[i] != self.dumping_position and self.get_area_from_position(self.resource_positions[i]) == "SLOPE" and i not in self.has_resource:
@@ -647,6 +677,11 @@ class SlopeEnv:
                 except:
                     pass
                 self.resource_carried_by += [[]]
+                new_dict = {"dropped_on_slope": False,
+                            "dropper_index": -1,
+                            "collected_from_cache": False,
+                            "collector_index": -1}
+                self.resource_history += [new_dict]
                 resource_placed = True
                 self.current_num_resources += 1
                 try:
@@ -671,20 +706,40 @@ class SlopeEnv:
         Of all the retrieved resources, what proportion were carried by multiple agents
         :return: Float denoting degree of specialisation
         """
-        resources_retrieved_by_many = 0
+        n_coop = 0 # Resources retrieved with cooperation (i.e. picked up by at least 2 agents before being delivered to the nest)
+        r_coop = 0
+
+        n_coop_eff = 0 # Resources retrieved with efficient cooperation (i.e. the resource was dropped on the slope, picked up from the cache and the agents that dropped and picked up were different)
+        r_coop_eff = 0
+
+        r_spec = 0
+        participation = 0
         total_resources_retrieved = 0
+        agent_participated = [False for i in range(self.num_agents)]
 
         for i in range(len(self.resource_positions)):
             if self.resource_positions[i] == self.dumping_position:
                 total_resources_retrieved += 1
 
                 if len(self.resource_carried_by[i]) > 1:
-                    resources_retrieved_by_many += 1
+                    n_coop += 1
+
+                # Mark all agents that participated in the retrieval of any resource
+                for agent_index in range(len(self.resource_carried_by[i])):
+                    agent_participated[agent_index] = True
+
+
+                if self.resource_history[i]["dropped_on_slope"] and self.resource_history[i]["collected_from_cache"] and \
+                    (self.resource_history[i]["dropper_index"] != self.resource_history[i]["collector_index"]):
+                    n_coop_eff += 1
 
         if total_resources_retrieved != 0:
-            return resources_retrieved_by_many / total_resources_retrieved
-        else:
-            return 0.0
+            r_coop = n_coop / total_resources_retrieved
+            r_coop_eff = n_coop_eff / total_resources_retrieved
+            r_spec = (r_coop + r_coop_eff) / 2
+            participation = sum(agent_participated) / self.num_agents
+
+        return [r_coop, r_coop_eff, r_spec, r_coop * participation, r_coop_eff * participation, r_spec * participation]
 
     # Rendering Functions ---------------------------------------------------------------------------------------------
     def draw_arena_segment(self, top, bottom, rgb_tuple):

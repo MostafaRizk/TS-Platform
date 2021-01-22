@@ -119,7 +119,7 @@ Therefore, our metric must be one that indicates these dropper and collector beh
 
 The way specialisation is measured in the literature uses one or more of the following:\\
 
-Strategy switches\\
+\textbf{Strategy switches}\\
 
 Nitschke et al \cite{nitschke:SEC:2012} count times strategy was switched over all possible switches. Less switches means more specialised.
 Gautrais et al \cite{gautrais:JTB:2002} do the same but take the complement.
@@ -130,7 +130,7 @@ They count the number of times the cache was chosen instead of the corridor as a
 These are not easily applicable to this slope foraging implementation because it uses low-level actions, whereas they assume agents can directly choose a high-level strategy. 
 Agents changing from "go forward" to "go backward" doesn't tell much about specialisation. But if agent actions were just "do dropper behaviour", "do collector behaviour" and "do generalist behaviour", it would be more feasible to use measures like these works. Some measures also look at specialisation of the individual rather than the team, which is not as meaningful for slope foraging.\\
 
-Diversity\\
+\textbf{Diversity and Entropy}\\
 
 Li et al \cite{li:AB:2004} group agent genotypes into clusters and use Shannon's entropy to measure the diversity of the team. Each cluster is believed to be a specialist strategy. Specialisation is defined as "the part of diversity that is demanded for better performance" so a diverse team is only specialised if their diversity is correlated to improved performance. Li et al  then look at diversity and performance through the learning process and calculate their correlation coefficient as a measure for the degree of specialisation of the final strategy(?)\\
 
@@ -138,7 +138,7 @@ This is computationally expensive because it requires data on team performance t
 
 O'Donnell and Jeanne \cite{odonnell:BES:1990} calculate the entropy of an individual agent, specifically the proportions of its time spent doing different activities (i.e. the diversity of resources it gathers). They use it directly as the degree of specialisation. This runs into the same problem as before, where the metric is difficult to apply to slope foraging because agents do not choose high-level strategies. In addition the metric is for individuals and does not apply to this context because agents only gather one type of resource. Balch?\\
 
-Resource retrieval\\
+\textbf{Resource retrieval}\\
 
 Ferrante et al \cite{ferrante:PLoSCB:2015} have a comparatively simple metric. They count the proportion of resources retrieved cooperatively over the total resources retrieved. This is independent of whether actions are high or low level and doesn't need the full evolutionary history. It is designed for slope foraging so is appropriate, though it has shortcomings.  Cooperative retrieval simply means a resource was picked up by two or more agents before being delivered. An agent could pick up and drop the resource at the source and a generalist could come to collect it and that would count as a specialist strategy. Technically, this is still a dropper-collector strategy, but it does not capture the type of dropper-collector strategy that improves performance.\\
 
@@ -199,11 +199,11 @@ One shortcoming of this metric is that it does not detect role-switching. For ex
 \hline
 \textbf{Team Strategy} & \boldmath${R_{coop}}$ & \boldmath$R_{coop}'$ & \boldmath$R_{spec}$\\
 \thickhline
-Dropper + Collector & & & \\
+Dropper + Collector & 1.0 & 1.0 & 1.0 \\
 \hline
-Generalist + Generalist & & & \\
+Generalist + Generalist & 0.0 & 0.0 & 0.0 \\
 \hline
-Imperfect Dropper + Generalist & & & \\
+Inefficient Dropper + Collector & & & \\
 \hline
 Dropper + Collector + Hitch-hiker & & & \\
 \hline
@@ -219,11 +219,11 @@ Lazy Generalist + Lazy Generalist & & & \\
 \hline
 \textbf{Team Strategy} & \boldmath${R_{coop}} \times P$ & \boldmath$R_{coop}' \times P$ & \boldmath$R_{spec} \times P$\\
 \thickhline
-Dropper + Collector & & & \\
+Dropper + Collector & 1.0 & 1.0 & 1.0 \\
 \hline
-Generalist + Generalist & & & \\
+Generalist + Generalist & 0.0 & 0.0 & 0.0 \\
 \hline
-Imperfect Dropper + Generalist & & & \\
+Inefficient Dropper + Collector & & & \\
 \hline
 Dropper + Collector + Hitch-hiker & & & \\
 \hline
