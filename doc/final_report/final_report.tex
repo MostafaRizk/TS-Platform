@@ -237,11 +237,10 @@ Lazy Generalist + Lazy Generalist & & & \\
 \subsection{Dimensionality Reduction}
 
 The neural networks used to solve the Slope Foraging problem have hundreds of weights, meaning that the fitness landscape has just as many dimensions and is consequently very difficult to visualise.
-Reducing the dimensionality of the problem to two or three dimensions makes visualisation possible and gives many valuable insights into the features of the landscape, especially if combined with a specialisation metric.
+Reducing the dimensionality of the problem to two dimensions (with a third dimension for fitness values) makes visualisation possible and gives many valuable insights into the features of the landscape, especially if combined with a specialisation metric.
 How far apart are specialist and generalist solutions in the landscape?
 How many optima are there?
 What trajectory does evolution take through the landscape?
-There are many techniques to choose from \cite{veerapen:GPEM:2018} and further consideration is necessary before choosing one, but Sammon mapping \cite{sammon:IEEETR:1969} is currently the preferred method due to its ability to preserve the relative distances between solutions and its use in other agent-based and neuroevolution studies \cite{kim:GECCO:2003, risi:AB:2010}.
 
 The hypothesis is:\\
 
@@ -254,21 +253,46 @@ Use the chosen specialisation metric to plot the degree of specialisation (in ad
 If there are indeed two optima, then the hypothesis is supported, otherwise it is not supported.
 If, additionally, the specialist solutions are fitter than the generalist ones, Hypothesis 1.2 is further supported.\\
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=1.0\textwidth]{sammon.png}
-\caption{Sammon Mapping of Landscape}
-\label{fig:sammon}
-\end{figure}
+\subsubsection{Choosing a Dimensionality Reduction Algorithm}
 
-The algorithm I use to perform dimensionality reduction creates an initial 2D mapping of the genomes and calculates the error of that mapping using Sammon's error function. 
-It then uses iterative gradient descent to minimise the error. 
-The plot in Figure \ref{fig:sammon} includes the best 500 and worst 500 genomes from the rwg analysis in Figure \ref{fig:sparse} along with the best evolved team genomes and the best evolved individual genomes. 
-For the individual genomes, I concatenated two identical copies and doubled their score so that I can put them in the same landscape.\\
+In \cite{veerapen:GPEM:2018}, the authors use local optima networks [citation for LONs] to represent optima and t-SNE algorithm \cite{vanDerMaaten:JMLR:2008} for dimensionality reduction.
+But this technique only works for discrete problems.
+In \cite{adair:GECCO:2019} the authors adapt LONs to continuous landscapes as a proof of concept, though they mention that the resulting  visualisation is highly dependant on the sampling method.
+
+Sammon mapping \cite{sammon:IEEETR:1969} has been used for genetic algorithms  \cite{kim:GECCO:2003} and neuroevolution \cite{risi:AB:2010, silva:EC:2015} in the past.
+It has often been chosen due to its ability to preserve relative distances between genomes in the reduced representation.
+
+More recent work in the neuroevolution literature, though, \cite{wang:GECCO:2018, risi:GECCO:2019} uses t-SNE \cite{vanDerMaaten:JMLR:2008}.
+
+The t-SNE algorithm was designed, in part, to overcome the "crowding" problem often faced by "local techniques for multidimensional scaling", where "the area of the two-dimensional map that is available to accommodate moderately distant datapoints will not be nearly large enough compared with the area available to accommodate nearby datapoint" so datapoints with small distances between them, if modelled accurately, means the moderately distant points are too far away and the spaces between clusters are too small, resulting in datapoints from different clusters all crowding together \cite{vanDerMaaten:JMLR:2008}.
+
+Though \cite{wang:GECCO:2018} visualises the space of behaviour characterisations (i.e. the space of phenotypes) rather than the fitness landscape (the space of genotypes).
+Additionally, their objective is to visualise the evolutionary trajectory rather than gain an understanding of the fitness landscape.
+Similarly, \cite{risi:GECCO:2019} use t-SNE to compress the observation space rather than the genotype space.
+
+Recent work recommends using Latin Hypercube Sampling (LHS) in continuous spaces "to prevent over- sampling of the centre of the search space" \cite{ochoa:GECCO:2019}.
+LHS may also be better for high-dimensional spaces  \cite{contreras:ICBMTA:2020}
+
+Based on the literature, I have chosen to use t-SNE with latin hypercube sampling. For the purposes of this study, I only need to identify how specialist and generalist solutions relate to one another. Local Optima Networks, adapted to continuous landscapes, could be used for a more thorough analysis of the landscape, but is not strictly necessary and given that it is an emerging area of research, it is worthy of a research project unto itself and so is left for future work.
+
+
+\subsubsection{Results}
+
+The algorithm I use to perform dimensionality reduction reduces the landscape to two dimensions.
+I then add a third dimension for visualising the fitness as height and I use colour to indicate the degree of specialisation.
+The plot in Figure \ref{fig:tsne} includes the best 500 and worst 500 genomes from the rwg analysis in Figure \ref{fig:sparse} along with some genomes evolved using a centralised learner and single-population coevolution.
+In the case of single population coevolution, only one genome is evolved, so I concatenated two identical copies of those genomes and doubled their score so that I can put them in the same landscape.\\
 
 Preliminary results show that there indeed appear to be two optima, which supports Hypothesis 1.3.
 One of the optima has a higher score while the other has a lower score.
 Anecdotally, the scores observed for the green optima are usually only seen for teams of specialists, however a specialisation metric is still needed to verify this empirically.\\
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.0\textwidth]{tsne.png}
+\caption{Reduced Fitness Landscape}
+\label{fig:tsne}
+\end{figure}
 
 \subsection{Analysis of Different Slope Angles}
 

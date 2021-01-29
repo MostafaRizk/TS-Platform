@@ -14,19 +14,20 @@ evolved_genomes_results_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platfo
 results_file = os.path.join(evolved_genomes_results_directory,"results_final.csv")
 
 # Create data file
-specialisation_file = "specialisation_final.csv"  # os.path.join(evolved_genomes_results_directory,"specialisation_final.csv")
+specialisation_file = "specialisation_final_practice.csv"  # os.path.join(evolved_genomes_results_directory,"specialisation_final.csv")
 f = open(specialisation_file, "a")
 #f.write(f"Model Name,R_coop,R_coop_eff,R_spec,R_coop x P,R_coop_eff x P,R_spec x P,Model Directory\n")
 f.write("\n")
 
+'''
 # Get rwg genome data
 g = open(rwg_genomes_file, "r")
 rwg_data = g.read().strip().split("\n")
 g.close()
-rwg_indices = [20]
+rwg_indices = [i for i in range(len(rwg_data))]
 rwg_fitness_calculator = FitnessCalculator(rwg_parameter_file)
 
-'''
+
 for index in rwg_indices:
     row = rwg_data[index]
     full_genome = [float(element) for element in row.split(",")[0:-N_episodes]]
@@ -43,8 +44,8 @@ for index in rwg_indices:
     specialisation_measures = np.mean(np.array(results["specialisation_list"]), axis=0)
     f.write(",".join([str(index)] + [str(measure) for measure in specialisation_measures] + [rwg_genomes_file]) + "\n")
 '''
-
-for generation in [500]:
+''''''
+for generation in [100, 200, 300, 400, 500, 600, 700, 800, 900]:
     results_file = os.path.join(evolved_genomes_results_directory,f"results_{generation}.csv")
 
     # Load all evolved genomes into pandas dataframe
@@ -96,5 +97,6 @@ for generation in [500]:
                                                            render_mode="human")
             specialisation_measures = np.mean(np.array(results["specialisation_list"]), axis=0)
             f.write(",".join([row["model_name"]] + [str(measure) for measure in specialisation_measures] + [evolved_genomes_results_directory]) + "\n")
+
 
 f.close()

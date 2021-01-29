@@ -5,6 +5,8 @@ import os
 
 from helpers import sammon
 from mpl_toolkits import mplot3d
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 
 rwg_genomes_file = "../sammon_testing_rwg.csv"
 f = open(rwg_genomes_file, "r")
@@ -14,11 +16,11 @@ min_score = -20000
 max_score = 200000
 matrix = []
 scores = []
-rwg_indices = [i for i in range(10)] + [i for i in range(-10,0)]
+rwg_indices = [i for i in range(500)] + [i for i in range(-500,0)]
 
 evolved_genomes_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_11_24_magic_plot_combined_new_seed/results"
 
-specialisation_file = "specialisation_final.csv"
+specialisation_file = "specialisation_final_practice.csv"
 specialisation_data = pd.read_csv(specialisation_file)
 spec_score_keys = ["R_coop", "R_coop_eff", "R_spec", "R_coop x P", "R_coop_eff x P", "R_spec x P"]
 spec_scores = {}
@@ -97,10 +99,20 @@ for generation in ["final"]:
 
 scores = np.array(scores)
 
+# Do dimensionality reduction using sammon mapping
 # By default, sammon returns a 2-dim array and the error E
+'''
 [new_data, error] = sammon.sammon(np.array(matrix), n=2)
 x = new_data[:, 0]
 y = new_data[:, 1]
+'''
+
+# Do dimensionality reduction using t-SNE
+tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=1000)
+tsne_results = tsne.fit_transform(np.array(matrix))
+x = tsne_results[:,0]
+y = tsne_results[:,1]
+
 z = scores
 
 rwg_start_index = 0
@@ -117,14 +129,14 @@ for i in range(1,7):
     #sc = plt.scatter(x, y, c=scores, vmin=min_score, vmax=max_score, cmap=cm)
     p = ax.scatter3D(x[rwg_start_index : team_start_index], y[rwg_start_index : team_start_index], z[rwg_start_index : team_start_index], c=spec_scores[key][rwg_start_index : team_start_index], vmin=0, vmax=1, cmap=cm, label="Rwg genomes")
     p = ax.scatter3D(x[team_start_index : ind_start_index], y[team_start_index : ind_start_index], z[team_start_index : ind_start_index], c=spec_scores[key][team_start_index : ind_start_index], vmin=0, vmax=1, cmap=cm, label="Team Genomes")
-    #ax.scatter3D(x[ind_start_index:], y[ind_start_index:], z[ind_start_index:], marker='X', c=scores[ind_start_index:], vmin=min_score, vmax=max_score, cmap=cm, label="Individual Genomes")
+    p = ax.scatter3D(x[ind_start_index:], y[ind_start_index:], z[ind_start_index:], c=spec_scores[key][ind_start_index:], vmin=0, vmax=1, cmap=cm, label="Individual Genomes")
     fig.colorbar(p)
     plt.title(key)
 
 #ax.colorbar()
 plt.suptitle("3D Mapping of Fitness Landscape")
 #fig.legend(loc="lower left")
-plt.savefig("sammon_3D.png")
-#plt.show()
+#plt.savefig("t-SNE_v3.png")
+plt.show()
 
 
