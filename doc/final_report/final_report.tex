@@ -273,7 +273,23 @@ Similarly, \cite{risi:GECCO:2019} use t-SNE to compress the observation space ra
 Recent work recommends using Latin Hypercube Sampling (LHS) in continuous spaces "to prevent over- sampling of the centre of the search space" \cite{ochoa:GECCO:2019}.
 LHS may also be better for high-dimensional spaces  \cite{contreras:ICBMTA:2020}
 
+LHS divides the cumulative distribution function of each variable (in this case, each neural network weight) into bins equal to the number of samples \cite{helton:RESS:2003}.
+It takes one sample from each bin and does the same for each weight.
+The samples for each weight are then combined randomly to form a genome.
+
 Based on the literature, I have chosen to use t-SNE with latin hypercube sampling. For the purposes of this study, I only need to identify how specialist and generalist solutions relate to one another. Local Optima Networks, adapted to continuous landscapes, could be used for a more thorough analysis of the landscape, but is not strictly necessary and given that it is an emerging area of research, it is worthy of a research project unto itself and so is left for future work.
+
+In LHS, sampled values must be within a certain range.
+I chose this range by taking 60 evolved team genomes and plotting the distribution of values for each genome, shown in Figure \ref{fig:weight_distribution}.
+According to the plot, all weights fall in the (-6,6) range, so I chose this as the range for LHS.
+The importance of choosing a range is discussed in \cite{oller:AAMAS:2020} where the authors state that the "the bounds of the distribution (be there hard bounds as in the case of uniform distributions, or soft bounds as with the variance of a Gaussian) define the tested value range for the weights, which may be critical depending on application and network size". 
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.0\textwidth]{weight_distribution.png}
+\caption{Distribution of weights in evolved genomes}
+\label{fig:weight_distribution}
+\end{figure}
 
 
 \subsubsection{Results}

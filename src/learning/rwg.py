@@ -3,6 +3,7 @@ import numpy as np
 from learning.learner_parent import Learner
 from scipy.stats import multivariate_normal
 from operator import add
+from helpers.lhs import LHS
 
 
 class RWGLearner(Learner):
@@ -110,6 +111,10 @@ class RWGLearner(Learner):
         elif self.parameter_dictionary['algorithm']['rwg']['sampling_distribution'] == "uniform":
             genome_population = self.sample_from_uniform(num_genomes)
 
+        # Sample genomes from a latin hypercube
+        elif self.parameter_dictionary['algorithm']['rwg']['sampling_distribution'] == "lhs":
+            genome_population = self.sample_from_latin_hypercube(num_genomes)
+
         if num_genomes == 1:
             genome_population = np.array([genome_population])
 
@@ -141,10 +146,37 @@ class RWGLearner(Learner):
         max = self.parameter_dictionary['algorithm']['rwg']['uniform']['max']
         seed = self.parameter_dictionary['general']['seed']
 
+        if max <= min:
+            raise RuntimeError("Max should be greater than min when sampling")
+
         min_array = np.full((1, self.genome_length), min)
         max_array = np.full((1, self.genome_length), max)
         random_state = np.random.RandomState(seed)
         return random_state.uniform(min_array, max_array, (num_genomes, self.genome_length))
+
+    def sample_from_latin_hypercube(self, num_genomes):
+        """
+        Perform latin hypercube sampling (LHS)
+
+        @param num_genomes: Number of genomes to sample
+        @return: Sampled genomes
+        """
+
+        # Weight range should be (-6,6) but LHS samples (0,1)
+        # Multiply by 12 and subtract 6 to adjust the range
+
+        seed = self.parameter_dictionary['general']['seed']
+        sampler = LHS(seed)
+
+        min = self.parameter_dictionary['algorithm']['rwg']['lhs']['min']
+        max = self.parameter_dictionary['algorithm']['rwg']['lhs']['max']
+
+        if max <= min:
+            raise RuntimeError("Max should be greater than min when sampling")
+
+        range = max - min
+
+        return (range * sampler.lhs(self.genome_length, samples=num_genomes)) + min
 
     def log_all_genomes(self, genomes, genome_fitness_list):
         assert len(genomes) == len(genome_fitness_list), "List of genomes and list of fitnesses are unequal"

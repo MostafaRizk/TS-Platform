@@ -2,7 +2,7 @@
     "general": {
         "algorithm_selected": "rwg",
         "team_type": "heterogeneous",
-        "reward_level": "individual",
+        "reward_level": "team",
         "agent_type": "nn",
         "environment": "slope",
         "seed": 1
@@ -37,9 +37,9 @@
         }
     },
     "algorithm": {
-        "agent_population_size": 1000,
+        "agent_population_size": 100,
         "rwg": {
-            "sampling_distribution": "normal",
+            "sampling_distribution": "lhs",
             "normal": {
                 "mean": 0,
                 "std": 1
@@ -47,6 +47,10 @@
             "uniform": {
                 "min": -3,
                 "max": 3
+            },
+            "lhs": {
+                "min": -6,
+                "max": 6
             }
         },
         "cma": {

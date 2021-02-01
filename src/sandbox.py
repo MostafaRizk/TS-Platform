@@ -1,28 +1,26 @@
-import json
-import numpy as np
+import matplotlib.pyplot as plt
+import os
+import pandas as pd
 
-from fitness import FitnessCalculator
-from agents.hardcoded.generalist import HardcodedGeneralistAgent
-from agents.hardcoded.dropper import HardcodedDropperAgent
-from agents.hardcoded.collector import HardcodedCollectorAgent
-from agents.hardcoded.hitchhiker import HardcodedHitchhikerAgent
+from helpers.lhs import LHS
 
-specialisation_list = []
+num_weights = 4
+num_samples = 10
 
-for seed in range(1):
-    parameter_filename = "default_parameters.json"
-    parameter_dictionary = json.loads(open(parameter_filename).read())
-    parameter_dictionary['general']['seed'] = seed
-    f = open(parameter_filename, "w")
-    dictionary_string = json.dumps(parameter_dictionary, indent=4)
-    f.write(dictionary_string)
-    f.close()
-    fitness_calculator = FitnessCalculator(parameter_filename)
+sampler = LHS(2)
+samples = (12*sampler.lhs(num_weights, samples=num_samples)) - 6
 
-    agent_1 = HardcodedDropperAgent()
-    agent_2 = HardcodedCollectorAgent()
-    agent_3 = HardcodedHitchhikerAgent()
-    results = fitness_calculator.calculate_fitness(agent_list=[agent_1, agent_2, agent_3], render=True, time_delay=0.1, measure_specialisation=True, logging=False, logfilename=None, render_mode="human")
-    specialisation_list += results["specialisation_list"]
+print(samples)
 
-print(np.mean(np.array(specialisation_list), axis=0))
+"""
+[[-4.29555864  2.81979154  4.99475832  5.64090282]
+ [-0.17522965  1.91609437 -2.17867216 -4.05687484]
+ [ 2.66436745  5.49600501 -5.34040503  4.06427118]
+ [ 1.35259197 -5.96888852 -2.8546394  -5.47761313]
+ [ 0.60629531 -1.78370625  1.4712144  -2.96502949]
+ [-3.24041439  0.07834381  2.96134498  0.1158371 ]
+ [ 4.36848807 -4.40359821  0.51374679 -1.10442543]
+ [ 5.75236495 -0.6069158  -4.55442164 -1.45759782]
+ [-5.47680612 -3.27980727  4.20628406  1.32833482]
+ [-2.23850407  4.1796838  -0.18412622  2.64209187]]
+"""
