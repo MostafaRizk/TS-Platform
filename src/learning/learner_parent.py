@@ -23,6 +23,12 @@ class Learner:
         if self.parameter_dictionary['general']['agent_type'] == "nn":
             self.Agent = NNAgent
 
+        # Will specialisation be computed?
+        if self.parameter_dictionary['general']['calculate_specialisation'] == "True":
+            self.calculate_specialisation = True
+        elif self.parameter_dictionary['general']['calculate_specialisation'] == "False":
+            self.calculate_specialisation = False
+
     def learn(self, logging):
         pass
 

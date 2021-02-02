@@ -5,6 +5,7 @@
         "reward_level": "team",
         "agent_type": "nn",
         "environment": "slope",
+        "calculate_specialisation": "True",
         "seed": 0
     },
     "environment": {

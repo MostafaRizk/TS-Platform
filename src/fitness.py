@@ -34,7 +34,7 @@ class FitnessCalculator:
 
         self.num_episodes = self.parameter_dictionary['environment']['slope']['num_episodes']
 
-    def calculate_fitness_of_agent_population(self, population):
+    def calculate_fitness_of_agent_population(self, population, calculate_specialisation):
         """
         Takes a population of Agent objects, places each group in a team and calculates the fitnesses of each
 
@@ -45,16 +45,21 @@ class FitnessCalculator:
         assert len(population) % self.num_agents == 0, "Population needs to be divisible by the number of agents per team"
 
         fitnesses = []
+        specialisations = []
         agents_per_team = self.num_agents
 
         for i in range(0, len(population), agents_per_team):
             agent_list = [population[i+j] for j in range(0, agents_per_team)]
-            fitness_dict = self.calculate_fitness(agent_list)
-            fitness_matrix = fitness_dict['fitness_matrix']
+            results_dict = self.calculate_fitness(agent_list, measure_specialisation=calculate_specialisation)
+            fitness_matrix = results_dict['fitness_matrix']
+
+            # Specialisation of the team calculated through several measures. List of lists. One list of measures for each episode
+            specialisation_measures = results_dict["specialisation_list"]
 
             fitnesses += fitness_matrix
+            specialisations += [specialisation_measures]
 
-        return fitnesses
+        return fitnesses, specialisations
 
     def calculate_fitness(self, agent_list, render=False, time_delay=0, measure_specialisation=False,
                           logging=False, logfilename=None, render_mode="human"):

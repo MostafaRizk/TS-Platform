@@ -29,7 +29,7 @@ class RWGLearner(Learner):
         agent_population = self.convert_genomes_to_agents(genome_population)
 
         # Get fitnesses of agents
-        agent_fitness_lists = self.fitness_calculator.calculate_fitness_of_agent_population(agent_population)
+        agent_fitness_lists, team_specialisations = self.fitness_calculator.calculate_fitness_of_agent_population(agent_population, self.calculate_specialisation)
         agent_fitness_average = [np.mean(fitness_list) for fitness_list in agent_fitness_lists]
 
         best_genome = None
@@ -79,7 +79,7 @@ class RWGLearner(Learner):
 
             # Log all generated genomes and their fitnesses in one file
             genome_fitness_lists = self.get_genome_fitnesses_from_agent_fitnesses(agent_fitness_lists)
-            self.log_all_genomes(genome_population, genome_fitness_lists)
+            self.log_all_genomes(genome_population, genome_fitness_lists, team_specialisations)
 
         return best_genome, best_fitness
 
@@ -178,8 +178,9 @@ class RWGLearner(Learner):
 
         return (range * sampler.lhs(self.genome_length, samples=num_genomes)) + min
 
-    def log_all_genomes(self, genomes, genome_fitness_list):
+    def log_all_genomes(self, genomes, genome_fitness_list, team_specialisation_list):
         assert len(genomes) == len(genome_fitness_list), "List of genomes and list of fitnesses are unequal"
+        assert len(genome_fitness_list) == len(team_specialisation_list), "Number of specialisation measures does not match number of teams"
 
         parameters_in_name = ["all_genomes"]
         parameters_in_name += Learner.get_core_params_in_model_name(self.parameter_dictionary)
@@ -193,7 +194,13 @@ class RWGLearner(Learner):
             genome = genomes[i]
             fitness_list = genome_fitness_list[i]
 
-            genome_str = str(genome.tolist()).strip("[]") + "," + ",".join(str(fitness) for fitness in fitness_list) + "\n"
+            # For each episode, there's a list of specialisation measures. All together in a bigger list
+            specialisations = team_specialisation_list[i] # np.mean(np.array(team_specialisation_list[i]), axis=0)
+
+            genome_str = str(genome.tolist()).strip("[]") + "," + \
+                         ",".join(str(fitness) for fitness in fitness_list) + \
+                         ",".join([str(episode_specs).strip("[]") for episode_specs in specialisations]) + \
+                         "\n"
             f.write(genome_str)
 
         f.close()

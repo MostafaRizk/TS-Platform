@@ -5,6 +5,7 @@
         "reward_level": "team",
         "agent_type": "nn",
         "environment": "slope",
+        "calculate_specialisation": "True",
         "seed": 1
     },
     "environment": {
@@ -37,7 +38,7 @@
         }
     },
     "algorithm": {
-        "agent_population_size": 100,
+        "agent_population_size": 10,
         "rwg": {
             "sampling_distribution": "lhs",
             "normal": {
