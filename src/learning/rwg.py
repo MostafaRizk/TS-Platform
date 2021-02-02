@@ -198,7 +198,7 @@ class RWGLearner(Learner):
             specialisations = team_specialisation_list[i] # np.mean(np.array(team_specialisation_list[i]), axis=0)
 
             genome_str = str(genome.tolist()).strip("[]") + "," + \
-                         ",".join(str(fitness) for fitness in fitness_list) + \
+                         ",".join(str(fitness) for fitness in fitness_list) + "," + \
                          ",".join([str(episode_specs).strip("[]") for episode_specs in specialisations]) + \
                          "\n"
             f.write(genome_str)

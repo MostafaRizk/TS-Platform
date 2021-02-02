@@ -8,7 +8,7 @@ from mpl_toolkits import mplot3d
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 
-rwg_genomes_file = "../sammon_testing_rwg.csv"
+rwg_genomes_file = "../all_genomes_rwg_heterogeneous_team_nn_slope_1_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_2000_lhs_-6_6_.csv"
 f = open(rwg_genomes_file, "r")
 rwg_data = f.read().strip().split("\n")
 N_episodes = 20
@@ -31,15 +31,30 @@ num_rwg = 0
 num_team = 0
 num_ind = 0
 
+# Number of scores (fitness and specialisation)
+num_spec_scores = len(spec_score_keys)*N_episodes
+num_scores = N_episodes + num_spec_scores
+
+
 # Get rwg data
 for index in rwg_indices:
     row = rwg_data[index]
-    genome = [float(element) for element in row.split(",")[0:-N_episodes]]
-    episode_scores = [float(score) for score in row.split(",")[-N_episodes:]]
+    genome = [float(element) for element in row.split(",")[0:-num_scores]]
+    episode_scores = [float(score) for score in row.split(",")[-num_scores:-num_spec_scores]]
+
+    # Make a list of lists. For each specialisation metric, there is a list of scores for all episodes
+    raw_spec_scores = row.split(",")[-num_spec_scores:]
+    raw_spec_scores = [[float(raw_spec_scores[i+j]) for i in range(0, len(raw_spec_scores), len(spec_score_keys))] for j in range(len(spec_score_keys))]
+
+    # Take the average of all the episodes for each metric and store them in the dictionary
+    for i in range(len(spec_score_keys)):
+        spec_scores[spec_score_keys[i]] += [np.mean(raw_spec_scores[i])]
+
     mean_score = np.mean(episode_scores)
     matrix += [genome]
     scores += [mean_score]
 
+    '''
     # Find row in spec dataframe with matching index and filename
     matching_rows = specialisation_data.loc[ (specialisation_data['Model Name'] == str(index)) & (specialisation_data['Model Directory'] == rwg_genomes_file) ]
 
@@ -50,7 +65,7 @@ for index in rwg_indices:
     for index, row in matching_rows.iterrows():
         for key in spec_scores.keys():
             spec_scores[key] += [row[key]]
-
+    '''
 
     num_rwg += 1
 
