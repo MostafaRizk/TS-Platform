@@ -238,4 +238,8 @@ class RWGLearner(Learner):
             parameters_in_name += [parameter_dictionary['algorithm']['rwg']['uniform']['min']]
             parameters_in_name += [parameter_dictionary['algorithm']['rwg']['uniform']['max']]
 
+        elif sampling_distribution == "lhs":
+            parameters_in_name += [parameter_dictionary['algorithm']['rwg']['lhs']['min']]
+            parameters_in_name += [parameter_dictionary['algorithm']['rwg']['lhs']['max']]
+
         return parameters_in_name
