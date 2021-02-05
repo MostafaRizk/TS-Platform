@@ -1,5 +1,6 @@
 import json
 import sys
+import os
 
 import numpy as np
 
@@ -8,6 +9,7 @@ from learning.learner_parent import Learner
 from glob import glob
 
 # Generate CMA experiments
+'''
 experiment_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_12_09_unique_seeds"
 
 core_parameter_filenames = [
@@ -52,7 +54,31 @@ for i in range(len(core_parameter_filenames)):
         g.write(f"python3 experiment.py --parameters {filename}\n")
 
     g.close()
+'''
 
+# Generate rwg experiments
+
+og_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_02_specialisation_version_of_oller/experiments"
+experiment_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_05_RWG_all_slopes/experiments"
+os.chdir(og_directory)
+# for each json file in normal directory
+json_files = glob(f'*.json')
+g = open(f"{experiment_directory}/LIST_rwg", "w")
+for speed in [4, 0, 2]:
+    for param_file in json_files:
+        # Get parameter dict
+        parameter_dictionary = json.loads(open(param_file).read())
+        parameter_dictionary["environment"]["slope"]["sliding_speed"] = speed
+        parameters_in_filename = []
+        parameters_in_filename += Learner.get_core_params_in_model_name(parameter_dictionary)
+        filename = f"slope_{speed}_" + param_file
+        f = open(f"{experiment_directory}/{filename}", "w")
+        dictionary_string = json.dumps(parameter_dictionary, indent=4)
+        f.write(dictionary_string)
+        f.close()
+        g.write(f"python3 experiment.py --parameters {filename}\n")
+
+g.close()
 
 
 

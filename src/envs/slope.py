@@ -319,12 +319,12 @@ class SlopeEnv:
                 if self.resource_in_range(j, i):
                     if self.has_resource[j] is None and i not in self.has_resource:
                         if self.action_name[agent_actions[j]] == "PICKUP":
-                            self.pickup_or_hold_resource(j, i)
-
                             # If resource is on the cache, update resource history
                             if self.get_area_from_position(self.resource_positions[i]) == "CACHE":
                                 self.resource_history[i]["collected_from_cache"] = True
                                 self.resource_history[i]["collector_index"] = j
+
+                            self.pickup_or_hold_resource(j, i)
 
             # If a resource is on the slope and not in the possession of a agent, it slides
             if self.resource_positions[i] != self.dumping_position and self.get_area_from_position(self.resource_positions[i]) == "SLOPE" and i not in self.has_resource:
