@@ -1,13 +1,20 @@
 import os
+import argparse
 
 from scripts.benchmarking import BenchmarkPlotter
 from glob import glob
 
-csv_files = glob(f'result_files/*.csv')
+parser = argparse.ArgumentParser(description='Generate RWG Analysis Plots')
+parser.add_argument('--genome_directory', action="store", dest="genome_directory")
+genome_directory = parser.parse_args().genome_directory
+
+os.chdir(genome_directory)
+csv_files = glob(f'*.csv')
 experiments = []
 
 for filename in csv_files:
-    shortened_name = filename.split("/")[1].strip(".csv")
+    items_in_shortened_name = filename.strip(".csv").split("_")[-10:-6]
+    shortened_name = "_".join([str(item) for item in items_in_shortened_name])
     experiments += [(shortened_name, filename)]
 original_dir = os.getcwd()
 
@@ -23,5 +30,5 @@ for experiment in experiments:
     #                              mean_lim=(0, 50), var_lim=(0, 15), dist_lim=(1, 100))
 
     plotter.save_all_sample_stats(
-        N_bins=[-20000, -10000, 0, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000, 110000, 120000],
-                                  mean_lim=(-20000, 120000), var_lim=(0, 60000), dist_lim=(10**-1, 10000))
+        N_bins=[-20000, -10000, 0, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000, 110000, 120000, 130000, 140000],
+                                  mean_lim=(-20000, 140000), var_lim=(0, 60000), dist_lim=(10**-1, 10000))

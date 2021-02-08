@@ -19,6 +19,8 @@ class BenchmarkPlotter:
         self.dt_str = "" #datetime.now().strftime('%d-%m-%Y_%H-%M-%S')
         self.genomes_file = genomes_file
 
+        self.spec_score_keys = ["R_coop", "R_coop_eff", "R_spec", "R_coop x P", "R_coop_eff x P", "R_spec x P"]
+
         #### Plot params
         self.plot_pt_alpha = 0.2
         self.plot_label_params = {
@@ -39,8 +41,15 @@ class BenchmarkPlotter:
         all_scores = []
 
         # List of scores in all episodes (simulation runs) for each sample (genome)
-        # 50,000 lists of length 5, in my case
+        # 50,000 lists of length 20, in my case
         all_trials = []
+
+        # Parameters for logging specialisation
+        all_spec_scores = {}
+        all_spec_trials = {}
+        for key in self.spec_score_keys:
+            all_spec_scores[key] = []
+            all_spec_trials[key] = []
 
         # Weights of
         best_weights = []
@@ -57,12 +66,15 @@ class BenchmarkPlotter:
         f = open(self.genomes_file, "r")
         data = f.read().strip().split("\n")
 
-        best_weights = np.array([float(element) for element in data[0].split(",")[0:-N_episodes]])
-        best_score = np.mean([float(episode_score) for episode_score in data[0].split(",")[-N_episodes:]])
+        num_spec_scores = len(self.spec_score_keys) * N_episodes
+        num_scores = N_episodes + num_spec_scores
+
+        best_weights = np.array([float(element) for element in data[0].split(",")[0:-num_scores]])
+        best_score = np.mean([float(episode_score) for episode_score in data[0].split(",")[-num_scores:-num_spec_scores]])
 
         for row in data:
-            genome = np.array([float(element) for element in row.split(",")[0:-N_episodes]])
-            episode_scores = [float(score) for score in row.split(",")[-N_episodes:]]
+            genome = np.array([float(element) for element in row.split(",")[0:-num_scores]])
+            episode_scores = [float(score) for score in row.split(",")[-num_scores:-num_spec_scores]]
             mean_score = np.mean(episode_scores)
             all_scores += [mean_score]
 
@@ -72,6 +84,16 @@ class BenchmarkPlotter:
 
             best_scores += [best_score]
             all_trials += [episode_scores]
+
+            # Make a list of lists. For each specialisation metric, there is a list of scores for all episodes
+            raw_spec_scores = row.split(",")[-num_spec_scores:]
+            raw_spec_scores = [[float(raw_spec_scores[i + j]) for i in range(0, len(raw_spec_scores), len(self.spec_score_keys))] for j in range(len(self.spec_score_keys))]
+
+            # Take the average of all the episodes for each specialisation metric and store them in all_spec_scores
+            # Store the unaveraged scores in all_spec_trials
+            for i in range(len(self.spec_score_keys)):
+                all_spec_scores[self.spec_score_keys[i]] += [np.mean(raw_spec_scores[i])]
+                all_spec_trials[self.spec_score_keys[i]] += [raw_spec_scores[i]]
 
             L0 = sum([np.sum(w) for w in genome]) / len(genome)
             L1 = sum([np.abs(w).sum() for w in genome]) / len(genome)
@@ -88,6 +110,8 @@ class BenchmarkPlotter:
             'all_scores': all_scores,
             'all_trials': all_trials,
             'best_weights': [bw.tolist() for bw in best_weights],
+            'all_spec_scores': all_spec_scores,
+            'all_spec_trials': all_spec_trials,
             'L0_weights': L0_weights,
             'L1_weights': L1_weights,
             'L2_weights': L2_weights,
@@ -150,6 +174,7 @@ class BenchmarkPlotter:
 
         ###################### In mean order, with all trials
 
+        '''
         all_trials = sample_dict['all_trials']
         all_trials = sorted(all_trials, key=lambda x: np.mean(x))
 
@@ -173,6 +198,53 @@ class BenchmarkPlotter:
 
         plt.plot(*all_trials_below.transpose(), 'o', color='tomato', alpha=self.plot_pt_alpha, markersize=3)
         plt.plot(*all_trials_above.transpose(), 'o', color='mediumseagreen', alpha=self.plot_pt_alpha, markersize=3)
+        plt.plot(all_trials_mean, color='black')
+
+        plt.xlabel('Sorted by $R_a(n)$', **self.plot_label_params)
+        plt.ylabel('$S_{a,n,e}$ and $M_{a,n}$', **self.plot_label_params)
+
+        plt.xticks(**self.plot_tick_params)
+        plt.yticks(**self.plot_tick_params)
+
+        # plt.legend()
+        plt.title(f'{self.env_name}', **self.plot_title_params)
+        plt.tight_layout()
+        plt.savefig(os.path.join(self.run_dir, '{}_score_trials_ordered_{}.png'.format(self.env_name, self.dt_str)))
+        '''
+
+        ###################### In mean order, with all trials AND specialisation overlayed
+
+        # For coloring by specialisation scores
+
+        spec_metric_key = None
+
+        if kwargs.get('spec_metric_key', None) is None:
+            raise RuntimeError("No specialisation metric passed")
+        else:
+            spec_metric_key = kwargs.get('spec_metric_key', None)
+
+        all_trials = sample_dict['all_trials']
+        all_spec_trials = sample_dict['all_spec_trials'][spec_metric_key]
+
+        all_spec_trials = [x for (y, x) in sorted(zip(all_trials, all_spec_trials), key=lambda pair: np.mean(pair[0]))]
+        all_trials = sorted(all_trials, key=lambda x: np.mean(x))
+
+        all_trials_mean = np.mean(all_trials, axis=1)
+
+        all_trials_indexed = [[[i, y] for y in x] for i, x in enumerate(all_trials)]
+        all_trials_indexed = np.array(all_trials_indexed).reshape((-1, 2))
+
+        all_spec_trials_indexed = [[[i, y] for y in x] for i, x in enumerate(all_spec_trials)]
+        all_spec_trials_indexed = np.array(all_spec_trials_indexed).reshape((-1, 2))
+
+        plt.close('all')
+
+        if kwargs.get('mean_lim', None) is not None:
+            lims = kwargs.get('mean_lim', None)
+            plt.ylim(lims[0], lims[1])
+
+        cm = plt.cm.get_cmap('RdYlGn')
+        plt.plot(all_trials_indexed.transpose(), 'o', c=all_spec_trials_indexed.transpose(), vmin=0, vmax=1, cmap=cm, alpha=self.plot_pt_alpha, markersize=3)
         plt.plot(all_trials_mean, color='black')
 
         plt.xlabel('Sorted by $R_a(n)$', **self.plot_label_params)
@@ -464,10 +536,12 @@ class BenchmarkPlotter:
         """
 
         sample_dict = self.load_dictionary_from_file(num_samples=50000, num_episodes=5)
-        # self.save_sample_dict(sample_dict)
+        self.save_sample_dict(sample_dict)
 
         if kwargs.get('save_plots', True):
-            self.plot_scores(sample_dict, **kwargs)
+            for key in self.spec_score_keys:
+                self.plot_scores(sample_dict, spec_metric_key=key, **kwargs)
+
             self.plot_all_trial_stats(sample_dict, **kwargs)
             self.plot_sample_histogram(sample_dict['all_scores'], 'Mean sample score',
                                        f'{self.env_name}_all_scores_dist_{self.dt_str}.png', plot_log=True, **kwargs)

@@ -141,8 +141,8 @@ ind_start_index = team_start_index + num_team
 
 fig = plt.figure(figsize=(19, 9))
 
-for i in range(1,7):
-    ax = fig.add_subplot(2, 3, i, projection='3d')
+for i in range(1,4):
+    ax = fig.add_subplot(1, 3, i, projection='3d')
     cm = plt.cm.get_cmap('RdYlGn')
     key = spec_score_keys[i-1]
 
