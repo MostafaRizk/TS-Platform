@@ -5,4 +5,3 @@ Learning Benchmarks with Random Weight Guessing". RNN_multilayer is a generalisa
 Github repo: https://github.com/declanoller/rwg-benchmark
 Paper: https://arxiv.org/abs/2004.07707
 """
-__all__ = ["FFNN_multilayer", "RNN1L", "RNN_multilayer"]

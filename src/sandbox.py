@@ -1,3 +1,4 @@
-from scripts.benchmarking import plot_envs_vs_NN_arch
+import sys
 
-print("Hello")
+for p in sys.path:
+    print(p)
