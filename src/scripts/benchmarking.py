@@ -536,7 +536,7 @@ class BenchmarkPlotter:
         if 'best_weights' in sample_dict_copy.keys():
             sample_dict_copy.pop('best_weights')
 
-        fname = f'{self.genomes_file.strip(".csv")}_stats.json'
+        fname = f'{self.genomes_file.strip(".csv")}stats.json'
         # Save distributions to file
 
         with open(fname, 'w+') as f:
