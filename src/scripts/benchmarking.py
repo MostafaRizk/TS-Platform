@@ -611,7 +611,7 @@ def walk_multi_dir(results_dir, bias, params_dict_list, **kwargs):
             elif len(csv_files) < 1:
                 raise RuntimeError("No csv files with same parameters")
 
-            genomes_file = os.path.join(results_dir, csv_files[0])
+            genomes_file = csv_files[0] #os.path.join(results_dir, csv_files[0])
             experiment_name = get_experiment_name_from_filename(genomes_file)
 
             if kwargs.get('num_samples', None) is None:
