@@ -9,6 +9,7 @@ import copy
 from pylab import legend
 from glob import glob
 
+from scripts.benchmarking import plot_envs_vs_NN_arch
 
 def plot_hardcoded_fitness(results_file, graph_file):
     data = pd.read_csv(results_file)
@@ -350,4 +351,5 @@ def get_seeds_to_rerun(original_experiment_directory, combined_seed_dict):
 
 #plot_evolution_fitness("../../results/2020_11_06_2-agents_slope_comparison/results/results_final.csv", "slope_vs_no_slope.png")
 
-plot_evolution_history()
+#plot_evolution_history()
+print("Hello")

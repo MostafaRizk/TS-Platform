@@ -3,18 +3,22 @@ Repurposes and modifies code from https://github.com/declanoller/rwg-benchmark/ 
 genomes
 """
 
+import matplotlib.colors as colours
 import matplotlib.pyplot as plt
 import os
 import numpy as np
-from datetime import datetime
 import json
+import cv2
+
+from datetime import datetime
+from glob import glob
 
 
 class BenchmarkPlotter:
     def __init__(self, env_name, genomes_file):
         self.env_name = env_name
         self.run_dir = env_name
-        os.mkdir(self.run_dir)
+        #os.mkdir(self.run_dir) # Uncomment if creating individual rather than combined plots
 
         self.dt_str = "" #datetime.now().strftime('%d-%m-%Y_%H-%M-%S')
         self.genomes_file = genomes_file
@@ -231,6 +235,10 @@ class BenchmarkPlotter:
 
         all_trials_mean = np.mean(all_trials, axis=1)
 
+        # [ [   [x1, score], [x1, score], [x1,score]    ],
+        #                     ...
+        #   [   [xn, score], [xn, score], [xn,score]    ],
+        # ]
         all_trials_indexed = [[[i, y] for y in x] for i, x in enumerate(all_trials)]
         all_trials_indexed = np.array(all_trials_indexed).reshape((-1, 2))
 
@@ -244,7 +252,13 @@ class BenchmarkPlotter:
             plt.ylim(lims[0], lims[1])
 
         cm = plt.cm.get_cmap('RdYlGn')
-        plt.plot(all_trials_indexed.transpose(), 'o', c=all_spec_trials_indexed.transpose(), vmin=0, vmax=1, cmap=cm, alpha=self.plot_pt_alpha, markersize=3)
+        norm = colours.Normalize(vmin=0, vmax=1)
+        m = plt.cm.ScalarMappable(norm=norm, cmap=cm)
+
+        for score_tuple, spec_tuple in zip(all_trials_indexed, all_spec_trials_indexed):
+            colour = m.to_rgba(spec_tuple[1])
+            plt.plot(score_tuple[0], score_tuple[1], 'o', color=colour, alpha=self.plot_pt_alpha, markersize=3)
+
         plt.plot(all_trials_mean, color='black')
 
         plt.xlabel('Sorted by $R_a(n)$', **self.plot_label_params)
@@ -256,7 +270,7 @@ class BenchmarkPlotter:
         # plt.legend()
         plt.title(f'{self.env_name}', **self.plot_title_params)
         plt.tight_layout()
-        plt.savefig(os.path.join(self.run_dir, '{}_score_trials_ordered_{}.png'.format(self.env_name, self.dt_str)))
+        plt.savefig(os.path.join(self.run_dir, '{}_score_trials_ordered_{}.png'.format(self.env_name, spec_metric_key)))
 
     def plot_all_trial_stats(self, sample_dict, **kwargs):
 
@@ -522,7 +536,7 @@ class BenchmarkPlotter:
         if 'best_weights' in sample_dict_copy.keys():
             sample_dict_copy.pop('best_weights')
 
-        fname = os.path.join(self.run_dir, 'sample_stats.json')
+        fname = f'{self.genomes_file.strip(".csv")}_stats.json'
         # Save distributions to file
 
         with open(fname, 'w+') as f:
@@ -534,16 +548,360 @@ class BenchmarkPlotter:
         function.
 
         """
+        if kwargs.get('num_samples', None) is None:
+            raise RuntimeError("Number of samples not passed")
+        else:
+            num_samples = kwargs.get('num_samples', None)
 
-        sample_dict = self.load_dictionary_from_file(num_samples=50000, num_episodes=5)
+        if kwargs.get('num_episodes', None) is None:
+            raise RuntimeError("Number of episodes not passed")
+        else:
+            num_episodes = kwargs.get('num_episodes', None)
+
+        sample_dict = self.load_dictionary_from_file(num_samples=num_samples, num_episodes=num_episodes)
         self.save_sample_dict(sample_dict)
 
         if kwargs.get('save_plots', True):
-            for key in self.spec_score_keys:
+            for key in self.spec_score_keys[:3]:
                 self.plot_scores(sample_dict, spec_metric_key=key, **kwargs)
 
             self.plot_all_trial_stats(sample_dict, **kwargs)
-            self.plot_sample_histogram(sample_dict['all_scores'], 'Mean sample score',
-                                       f'{self.env_name}_all_scores_dist_{self.dt_str}.png', plot_log=True, **kwargs)
+            self.plot_sample_histogram(sample_dict['all_scores'], 'Mean sample score', f'{self.env_name}_all_scores_dist_{self.dt_str}.png', plot_log=True, **kwargs)
             #self.plot_weight_stats(sample_dict)
             #self.plot_score_percentiles(sample_dict)
+
+def get_experiment_name_from_filename(filename):
+    items_in_shortened_name = filename.strip(".csv").split("_")[-10:-6]
+    shortened_name = "_".join([str(item) for item in items_in_shortened_name])
+    return shortened_name
+
+def arch_dict_to_label(arch_dict):
+    label = '{} HL'.format(arch_dict['N_hidden_layers'])
+    if 'N_hidden_units' in arch_dict.keys():
+        label += ', {} HU'.format(arch_dict['N_hidden_units'])
+
+    return label
+
+def walk_multi_dir(results_dir, bias, params_dict_list, **kwargs):
+    if kwargs.get('spec_metric_key', None) is None:
+        raise RuntimeError("No specialisation metric passed")
+    else:
+        spec_metric_key = kwargs.get('spec_metric_key', None)
+
+    params_results_dict_list = []
+    for params_dict in params_dict_list:
+
+        stat_file_prefix = f'all_genomes_rwg_heterogeneous_team_nn_slope*{params_dict["NN"].lower()}_{bias}_{params_dict["N_hidden_layers"]}_{params_dict["N_hidden_units"]}'
+        regex_string = f'{results_dir}/{stat_file_prefix}_*_stats.json'
+        stat_files = glob(regex_string)
+
+        if len(stat_files) > 1:
+            raise RuntimeError('Too many json files with same parameters')
+
+        elif len(stat_files) == 1:
+            with open(stat_files[0], 'r') as f:
+                sample_stats = json.load(f)
+
+        elif len(stat_files) < 1:
+            regex_string = f'{results_dir}/{stat_file_prefix}*csv'
+            csv_files = glob(regex_string)
+
+            if len(csv_files) > 1:
+                raise RuntimeError("Too many csv files with same parameters")
+            elif len(csv_files) < 1:
+                raise RuntimeError("No csv files with same parameters")
+
+            genomes_file = os.path.join(results_dir, csv_files[0])
+            experiment_name = get_experiment_name_from_filename(genomes_file)
+
+            if kwargs.get('num_samples', None) is None:
+                raise RuntimeError("Number of samples not passed")
+            else:
+                num_samples = kwargs.get('num_samples', None)
+
+            if kwargs.get('num_episodes', None) is None:
+                raise RuntimeError("Number of episodes not passed")
+            else:
+                num_episodes = kwargs.get('num_episodes', None)
+
+            plotter = BenchmarkPlotter(experiment_name, genomes_file)
+            sample_stats = plotter.load_dictionary_from_file(num_samples=num_samples, num_episodes=num_episodes)
+            plotter.save_sample_dict(sample_stats)
+
+        all_trials = np.array(sample_stats['all_trials'])
+        all_trials_mean = np.mean(all_trials, axis=1)
+        all_spec_trials = sample_stats['all_spec_trials'][spec_metric_key]
+        params_results = params_dict.copy()
+        params_results['best_score'] = np.max(all_trials_mean)
+        params_results['percentile_99.9'] = np.percentile(all_trials_mean, 99.9)
+        params_results['all_trials'] = all_trials
+        params_results['all_spec_trials'] = all_spec_trials
+        if 'total_runtime' in sample_stats.keys():
+            params_results['total_runtime'] = sample_stats['total_runtime']
+        params_results_dict_list.append(params_results)
+
+    # pp.pprint(params_results_dict_list)
+    return params_results_dict_list
+
+def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
+    '''
+    For plotting a nx5 grid of envs on one axis, and NN arch's used to
+    solve them on the other axis.
+    '''
+
+    results_dir = os.path.join(parent_dir, 'results')
+    analysis_dir = os.path.join(parent_dir, 'analysis')
+    figures_dir = os.path.join(analysis_dir, f'combined_plots_{bias}')
+
+    if not os.path.exists(figures_dir):
+        os.mkdir(figures_dir)
+
+    if kwargs.get('spec_metric_key', None) is None:
+        raise RuntimeError("No specialisation metric passed")
+    else:
+        spec_metric_key = kwargs.get('spec_metric_key', None)
+
+    print(f'Making plots for {spec_metric_key}')
+
+    envs_list = [
+        'SlopeForaging-FFNN',
+        'SlopeForaging-RNN'
+    ]
+
+    env_name_title_dict = {
+        'SlopeForaging-FFNN': f'SlopeForaging\n(FFNN)',
+        'SlopeForaging-RNN': f'SlopeForaging\n(RNN)'
+    }
+
+    '''{
+        'N_hidden_layers' : 1,
+        'N_hidden_units' : 2
+    },
+    '''
+    arch_dict_list = [
+        {
+            'N_hidden_layers': 0,
+            'N_hidden_units': 0
+        },
+
+        {
+            'N_hidden_layers': 1,
+            'N_hidden_units': 4
+        },
+        {
+            'N_hidden_layers': 2,
+            'N_hidden_units': 4
+        },
+    ]
+
+    params_dict_list = []
+
+    for env in envs_list:
+        for arch_dict in arch_dict_list:
+            params_dict = arch_dict.copy()
+            params_dict['env_name'] = env
+            params_dict['NN'] = env.split('-')[1]
+            params_dict_list.append(params_dict)
+
+    walk_dict_list = walk_multi_dir(results_dir, bias, params_dict_list, **kwargs)
+
+    env_arch_score_dict = {}
+    env_arch_spec_score_dict = {}
+    for w_dict in walk_dict_list:
+
+        env_arch_list = [w_dict['env_name'], w_dict['N_hidden_layers']]
+        if 'N_hidden_units' in w_dict.keys():
+            env_arch_list.append(w_dict['N_hidden_units'])
+
+        env_arch_tuple = tuple(env_arch_list)
+        print(env_arch_tuple)
+        env_arch_score_dict[env_arch_tuple] = w_dict['all_trials']
+        env_arch_spec_score_dict[env_arch_tuple] = w_dict['all_spec_trials']
+
+    unit_plot_w = 2.7
+    unit_plot_h = 0.55 * unit_plot_w
+
+    grid_fig_size = (unit_plot_w * len(envs_list), unit_plot_h * len(arch_dict_list))
+    plot_pt_alpha = 0.1
+    plot_label_params = {
+        'fontsize': 13
+    }
+    plot_ylabel_params = {
+        'fontsize': 12
+    }
+    plot_tick_params = {
+        'axis': 'both',
+        'labelsize': 16
+    }
+    plot_title_params = {
+        'fontsize': 12
+    }
+
+    print('\nPlotting big combo plot...')
+
+    w_space = 0
+    fig_height = 8
+    adjust_kwargs = {
+        'bottom': 0.12,
+        'right': 0.98,
+        'top': 0.99
+    }
+    part_1_w = fig_height / 1.0
+    part_2_w = (3 / 4.0) * part_1_w * 1.0
+    plot_tick_params = {
+        'axis': 'both',
+        'labelsize': 6,
+        'which': 'major',
+        'pad': 0
+
+    }
+
+    ############################# First part
+    plt.close('all')
+    N_row = len(envs_list)
+    N_col = len(arch_dict_list)
+    fig, axes = plt.subplots(N_row, N_col, sharex='all', sharey='row',
+                             gridspec_kw={'hspace': 0, 'wspace': w_space}, figsize=(part_1_w, fig_height))
+
+    ###################### plot main episode/mean plots
+    for i, env_name in enumerate(envs_list):
+        for j, arch_dict in enumerate(arch_dict_list):
+
+            env_arch_tuple = (env_name, *list(arch_dict.values()))
+            print(f'Plotting mean and trials of {env_arch_tuple}...')
+            scores = env_arch_score_dict[env_arch_tuple][:10000]
+            spec_scores = env_arch_spec_score_dict[env_arch_tuple][:10000]
+
+            all_spec_trials = [x for (y, x) in sorted(zip(scores, spec_scores), key=lambda pair: np.mean(pair[0]))]
+            all_trials = sorted(scores, key=lambda x: np.mean(x))
+
+            all_trials_mean = np.mean(all_trials, axis=1)
+
+            # For coloring by all episode scores
+            all_trials_indexed = [[[i, y] for y in x] for i, x in enumerate(all_trials)]
+            all_trials_indexed = np.array(all_trials_indexed).reshape((-1, 2))
+
+            all_spec_trials_indexed = [[[i, y] for y in x] for i, x in enumerate(all_spec_trials)]
+            all_spec_trials_indexed = np.array(all_spec_trials_indexed).reshape((-1, 2))
+
+            if kwargs.get('mean_lim', None) is None:
+                raise RuntimeError("Did not specify y-limits for mean plot")
+
+            lims = kwargs.get('mean_lim', None)
+            axes[i][j].set_ylim(lims[0], lims[1])
+
+            cm = plt.cm.get_cmap('RdYlGn')
+            norm = colours.Normalize(vmin=0, vmax=1)
+            m = plt.cm.ScalarMappable(norm=norm, cmap=cm)
+
+            for score_tuple, spec_tuple in zip(all_trials_indexed, all_spec_trials_indexed):
+                colour = m.to_rgba(spec_tuple[1])
+                axes[i][j].plot(score_tuple[0], score_tuple[1], 'o', color=colour, alpha=plot_pt_alpha, markersize=3)
+
+            axes[i][j].plot(all_trials_mean, color='black')
+
+            axes[i][j].tick_params(**plot_tick_params)
+
+            # arch_dict_to_label(arch_dict)
+            if i == len(envs_list) - 1:
+                axes[i][j].set_xlabel('$R_a(n)$,\n\n' + arch_dict_to_label(arch_dict), **plot_label_params)
+            if j == 0:
+                axes[i][j].set_ylabel(env_name_title_dict[env_name] + '\n\n$S_{a,n,e}$ and $M_{a,n}$', **plot_label_params)
+
+    plt.subplots_adjust(left=0.2, **adjust_kwargs)
+    print('Plotting part 1 png...')
+    part_1_path = os.path.join(figures_dir, f'combo_part1_{spec_metric_key}.png')
+    plt.savefig(part_1_path, dpi=300)
+
+    ################################ second part
+    plt.close('all')
+    N_row = len(envs_list)
+    N_col = 2
+    fig, axes = plt.subplots(N_row, N_col, sharex=False, sharey=False, gridspec_kw={'hspace': 0, 'wspace': 0.23}, figsize=(part_2_w, fig_height))
+
+    ######################### Plot variance for 2HL4HU
+    j = 0
+    for i, env_name in enumerate(envs_list):
+        arch_dict = {
+            'N_hidden_layers': 2,
+            'N_hidden_units': 4
+        }
+        env_arch_tuple = (env_name, *list(arch_dict.values()))
+        print(f'Plotting mean and trials of {env_arch_tuple}...')
+        scores = env_arch_score_dict[env_arch_tuple][:10000]
+
+        all_trials = sorted(scores, key=lambda x: np.mean(x))
+        all_trials_mean = np.mean(all_trials, axis=1)
+        all_trials_std = np.std(all_trials, axis=1)
+
+        if kwargs.get('var_lim', None) is None:
+            raise RuntimeError("Did not specify y-limits for variance plot")
+
+        lims = kwargs.get('var_lim', None)
+        axes[i][j].set_ylim(lims[0], lims[1])
+
+        if kwargs.get('mean_lim', None) is None:
+            raise RuntimeError("Did not specify x-limits for variance plot")
+
+        lims = kwargs.get('mean_lim', None)
+        axes[i][j].set_xlim(lims[0], lims[1])
+
+        axes[i][j].tick_params(**plot_tick_params)
+        axes[i][j].tick_params(axis='x', labelsize=0)
+
+        axes[i][j].plot(all_trials_mean, all_trials_std, 'o', color='mediumorchid', alpha=plot_pt_alpha,
+                        markersize=3)
+
+        # axes[i][j].set_xlabel('$M_{a,n}$', **plot_label_params)
+        axes[i][j].set_ylabel('$V_{a,n}$', **plot_label_params)
+        if i == len(envs_list) - 1:
+            axes[i][j].set_xlabel('$M_{a,n}$\n\n' + arch_dict_to_label(arch_dict), **plot_label_params)
+
+        # axes[i][j].label_outer()
+
+    ##################################### Plot histograms for 2HL4HU
+    j = 1
+    for i, env_name in enumerate(envs_list):
+        arch_dict = {
+            'N_hidden_layers': 2,
+            'N_hidden_units': 4
+        }
+        env_arch_tuple = (env_name, *list(arch_dict.values()))
+        print(f'Plotting mean and trials of {env_arch_tuple}...')
+        scores = env_arch_score_dict[env_arch_tuple][:10000]
+
+        all_trials = sorted(scores, key=lambda x: np.mean(x))
+        all_trials_mean = np.mean(all_trials, axis=1)
+
+        if kwargs.get('dist_lim', None) is None:
+            raise RuntimeError("Did not specify y-limits for histogram")
+
+        lims = kwargs.get('dist_lim', None)
+        axes[i][j].set_ylim(lims[0], lims[1])
+
+        if kwargs.get('N_bins', None) is None:
+            raise RuntimeError("Did not specify bins for histogram")
+
+        axes[i][j].hist(all_trials_mean, color='dodgerblue', edgecolor='gray', log=True,
+                        bins=kwargs.get('N_bins', None))
+        axes[i][j].tick_params(**plot_tick_params)
+        axes[i][j].tick_params(axis='x', labelsize=0)
+
+        axes[i][j].set_ylabel('', **plot_label_params)
+        if i == len(envs_list) - 1:
+            axes[i][j].set_xlabel('$M_{a,n}$\n\n' + arch_dict_to_label(arch_dict), **plot_label_params)
+
+        # axes[i][j].label_outer()
+
+    # plt.tight_layout()
+    plt.subplots_adjust(left=0.2, **adjust_kwargs)
+    print('Plotting part 2 png...')
+    part_2_path = os.path.join(figures_dir, f'combo_part2_{spec_metric_key}.png')
+    plt.savefig(part_2_path, dpi=300)
+
+    # Save combined plots
+    im1 = cv2.imread(part_1_path)
+    im2 = cv2.imread(part_2_path)
+    combined_path = os.path.join(figures_dir, f'combo_full_{spec_metric_key}.png')
+    combined_plot = cv2.hconcat([im1, im2])
+    cv2.imwrite(combined_path, combined_plot)

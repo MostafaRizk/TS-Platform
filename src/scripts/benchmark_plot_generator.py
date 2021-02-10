@@ -2,6 +2,7 @@ import os
 import argparse
 
 from scripts.benchmarking import BenchmarkPlotter
+from scripts.benchmarking import get_experiment_name_from_filename
 from glob import glob
 
 parser = argparse.ArgumentParser(description='Generate RWG Analysis Plots')
@@ -13,9 +14,9 @@ csv_files = glob(f'*.csv')
 experiments = []
 
 for filename in csv_files:
-    items_in_shortened_name = filename.strip(".csv").split("_")[-10:-6]
-    shortened_name = "_".join([str(item) for item in items_in_shortened_name])
+    shortened_name = get_experiment_name_from_filename(filename)
     experiments += [(shortened_name, filename)]
+
 original_dir = os.getcwd()
 
 for experiment in experiments:
@@ -23,12 +24,6 @@ for experiment in experiments:
     experiment_filename = experiment[1]
 
     plotter = BenchmarkPlotter(experiment_name, experiment_filename)
-    #plotter.save_all_sample_stats(N_bins=[-5000, 0, 5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000],
-    #                              mean_lim=(-3000, 50000), var_lim=(0, 15000), dist_lim=(1, 100000))
-    #plotter.save_all_sample_stats(
-    #    N_bins=[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50],
-    #                              mean_lim=(0, 50), var_lim=(0, 15), dist_lim=(1, 100))
-
     plotter.save_all_sample_stats(
-        N_bins=[-20000, -10000, 0, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000, 110000, 120000, 130000, 140000],
-                                  mean_lim=(-20000, 140000), var_lim=(0, 60000), dist_lim=(10**-1, 10000))
+        N_bins=[-20000, -10000, 0, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000, 110000, 120000, 130000, 140000, 150000, 160000, 170000, 180000, 190000, 200000],
+                                  mean_lim=(-20000, 200000), var_lim=(0, 60000), dist_lim=(10**-1, 10000))

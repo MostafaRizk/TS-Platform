@@ -1,1 +1,1 @@
-__all__ = ["agents", "envs", "helpers", "learning"]
+__all__ = ["agents", "envs", "helpers", "learning", "scripts"]
