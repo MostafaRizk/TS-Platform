@@ -8,17 +8,10 @@ from mpl_toolkits import mplot3d
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 
-class DimensionalityReducer:
-    def __init__(self):
-        pass
-
-    def generate_plot(self):
-        pass
-
-
 #rwg_genomes_files = ["rwg_with_spec.csv"] #+ [f"extra_rwg_{i}.csv" for i in range(6,7)]
 #rwg_genomes_files = [f"extra_rwg_{i}.csv" for i in range(3,4)]
-rwg_genomes_files = ["rwg_lhs_5.csv"]
+#rwg_genomes_files = ["rwg_lhs_5.csv"]
+rwg_genomes_files = ["lhs_new_spec.csv"]
 
 rwg_data = []
 for rwg_genomes_file in rwg_genomes_files:
@@ -59,14 +52,32 @@ for index in rwg_indices:
     raw_spec_scores = row.split(",")[-num_spec_scores:]
     raw_spec_scores = [[float(raw_spec_scores[i+j]) for i in range(0, len(raw_spec_scores), len(spec_score_keys))] for j in range(len(spec_score_keys))]
 
+    '''
+    max_episode_index = None
+    max_score = float('-Inf')
+
+    for i in range(len(episode_scores)):
+        if episode_scores[i] > max_score:
+            max_score = episode_scores[i]
+            max_episode_index = i
+
+    # Take the max of all episodes for each metric and store them in the dictionary
+    
+    for i in range(len(spec_score_keys)):
+        spec_scores[spec_score_keys[i]] += [raw_spec_scores[i][max_episode_index]]
+    
+    scores += [max_score]
+    '''
+
     # Take the average of all the episodes for each metric and store them in the dictionary
+    ''''''
     for i in range(len(spec_score_keys)):
         spec_scores[spec_score_keys[i]] += [np.mean(raw_spec_scores[i])]
 
     mean_score = np.mean(episode_scores)
-    matrix += [genome]
     scores += [mean_score]
 
+    matrix += [genome]
     num_rwg += 1
 
 # Get evolved data
@@ -139,12 +150,12 @@ rwg_start_index = 0
 team_start_index = 0 + num_rwg
 ind_start_index = team_start_index + num_team
 
-fig = plt.figure(figsize=(19, 9))
+fig = plt.figure(figsize=(19, 4.5))
 
-for i in range(1,4):
-    ax = fig.add_subplot(1, 3, i, projection='3d')
+for col in range(1, 4):
+    ax = fig.add_subplot(1, 3, col, projection='3d')
     cm = plt.cm.get_cmap('RdYlGn')
-    key = spec_score_keys[i-1]
+    key = spec_score_keys[col-1]
 
     p = ax.scatter3D(x[rwg_start_index : team_start_index], y[rwg_start_index : team_start_index], z[rwg_start_index : team_start_index], c=spec_scores[key][rwg_start_index : team_start_index], vmin=0, vmax=1, cmap=cm, label="Rwg genomes")
     p = ax.scatter3D(x[team_start_index : ind_start_index], y[team_start_index : ind_start_index], z[team_start_index : ind_start_index], c=spec_scores[key][team_start_index : ind_start_index], vmin=0, vmax=1, cmap=cm, label="Team Genomes")
@@ -155,7 +166,8 @@ for i in range(1,4):
 #ax.colorbar()
 plt.suptitle("3D Mapping of Fitness Landscape")
 #fig.legend(loc="lower left")
-plt.savefig(f"tsne_new_spec_lhs_5_60_samples.png")
+#plt.savefig(f"tsne_new_spec_lhs_5_60_samples.png")
+plt.savefig(f"tsne_lhs_mean_episode.png")
 #plt.show()
 
 
