@@ -42,7 +42,7 @@ elif parameter_dictionary["general"]["algorithm_selected"] == "cma_with_seeding"
     # Copy environment parameters from cma to rwg
     rwg_parameter_dictionary["environment"] = copy.deepcopy(parameter_dictionary["environment"])
 
-    if rwg_parameter_dictionary["general"] == "individual":
+    if rwg_parameter_dictionary["general"]["reward_level"] == "individual":
         environment_name = rwg_parameter_dictionary["general"]["environment"]
         rwg_parameter_dictionary["environment"][environment_name]["num_agents"] = 1
 

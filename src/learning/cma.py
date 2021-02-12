@@ -115,7 +115,7 @@ class CMALearner(Learner):
             agent_population = self.convert_genomes_to_agents(genome_population)
 
             # Get fitnesses of agents
-            agent_fitness_lists = self.fitness_calculator.calculate_fitness_of_agent_population(agent_population)
+            agent_fitness_lists, team_specialisations = self.fitness_calculator.calculate_fitness_of_agent_population(agent_population, self.calculate_specialisation)
 
             # Convert agent fitnesses into genome fitnesses
             genome_fitness_lists = self.get_genome_fitnesses_from_agent_fitnesses(agent_fitness_lists)
