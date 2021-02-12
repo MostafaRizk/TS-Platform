@@ -1,16 +1,16 @@
 {
     "general": {
-        "algorithm_selected": "cma_with_seeding",
+        "algorithm_selected": "rwg",
         "team_type": "heterogeneous",
-        "reward_level": "individual",
+        "reward_level": "team",
         "agent_type": "nn",
         "environment": "slope",
         "calculate_specialisation": "True",
-        "seed": 0
+        "seed": 1
     },
     "environment": {
         "slope": {
-            "num_agents": 2,
+            "num_agents": 1,
             "num_resources": 4,
             "sensor_range": 1,
             "sliding_speed": 4,
@@ -38,7 +38,7 @@
         }
     },
     "algorithm": {
-        "agent_population_size": 100,
+        "agent_population_size": 1000,
         "rwg": {
             "sampling_distribution": "normal",
             "normal": {
@@ -48,15 +48,17 @@
             "uniform": {
                 "min": -3,
                 "max": 3
+            },
+            "lhs": {
+                "min": -6,
+                "max": 6
             }
         },
         "cma": {
             "sigma": 0.2,
             "generations": 1000,
             "tolx": 0.001,
-            "tolfunhist": 0.0,
-            "tolflatfitness": 1000,
-            "tolfun": 0.0,
+            "tolfunhist": 200.0,
             "logging_rate": 20,
             "seeding_required": "True"
         }

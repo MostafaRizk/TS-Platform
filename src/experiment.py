@@ -26,7 +26,13 @@ elif parameter_dictionary["general"]["algorithm_selected"] == "cma" or \
 elif parameter_dictionary["general"]["algorithm_selected"] == "cma_with_seeding":
 
     # Load default rwg parameters
-    default_rwg_parameter_filename = 'default_rwg_parameters.json'
+    default_rwg_parameter_filename = None
+
+    if parameter_dictionary["general"]["reward_level"] == "team":
+        default_rwg_parameter_filename = 'default_rwg_parameters_team.json'
+    elif parameter_dictionary["general"]["reward_level"] == "individual":
+        default_rwg_parameter_filename = 'default_rwg_parameters_individual.json'
+
     rwg_parameter_dictionary = json.loads(open(default_rwg_parameter_filename).read())
 
     # Copy general parameters from cma to rwg
