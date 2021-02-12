@@ -10,7 +10,7 @@
     },
     "environment": {
         "slope": {
-            "num_agents": 2,
+            "num_agents": 1,
             "num_resources": 4,
             "sensor_range": 1,
             "sliding_speed": 4,
@@ -38,9 +38,9 @@
         }
     },
     "algorithm": {
-        "agent_population_size": 10,
+        "agent_population_size": 1000,
         "rwg": {
-            "sampling_distribution": "lhs",
+            "sampling_distribution": "normal",
             "normal": {
                 "mean": 0,
                 "std": 1

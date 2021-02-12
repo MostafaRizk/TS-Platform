@@ -150,24 +150,37 @@ rwg_start_index = 0
 team_start_index = 0 + num_rwg
 ind_start_index = team_start_index + num_team
 
-fig = plt.figure(figsize=(19, 4.5))
+fig = plt.figure(figsize=(19, 9))
 
-for col in range(1, 4):
-    ax = fig.add_subplot(1, 3, col, projection='3d')
-    cm = plt.cm.get_cmap('RdYlGn')
-    key = spec_score_keys[col-1]
+num_cols = 3
 
-    p = ax.scatter3D(x[rwg_start_index : team_start_index], y[rwg_start_index : team_start_index], z[rwg_start_index : team_start_index], c=spec_scores[key][rwg_start_index : team_start_index], vmin=0, vmax=1, cmap=cm, label="Rwg genomes")
-    p = ax.scatter3D(x[team_start_index : ind_start_index], y[team_start_index : ind_start_index], z[team_start_index : ind_start_index], c=spec_scores[key][team_start_index : ind_start_index], vmin=0, vmax=1, cmap=cm, label="Team Genomes")
-    p = ax.scatter3D(x[ind_start_index:], y[ind_start_index:], z[ind_start_index:], c=spec_scores[key][ind_start_index:], vmin=0, vmax=1, cmap=cm, label="Individual Genomes")
-    fig.colorbar(p)
-    plt.title(key)
+for row in range(1, 4):
+    for col in range(1, num_cols+1):
+        plot = ((row-1) * num_cols) + col
+
+        ax = fig.add_subplot(3, 3, plot, projection='3d')
+        cm = plt.cm.get_cmap('RdYlGn')
+        key = spec_score_keys[col-1]
+        plot_name = f"RWG ({key})"
+
+        p = ax.scatter3D(x[rwg_start_index : team_start_index], y[rwg_start_index : team_start_index], z[rwg_start_index : team_start_index], c=spec_scores[key][rwg_start_index : team_start_index], vmin=0, vmax=1, cmap=cm, label="Rwg genomes")
+
+        if row == 2 or row == 3:
+            p = ax.scatter3D(x[team_start_index : ind_start_index], y[team_start_index : ind_start_index], z[team_start_index : ind_start_index], c=spec_scores[key][team_start_index : ind_start_index], vmin=0, vmax=1, cmap=cm, label="Team Genomes")
+            plot_name = f"RWG + Teams ({key})"
+
+        if row == 3:
+            p = ax.scatter3D(x[ind_start_index:], y[ind_start_index:], z[ind_start_index:], c=spec_scores[key][ind_start_index:], vmin=0, vmax=1, cmap=cm, label="Individual Genomes")
+            plot_name = f"RWG + Teams + Individuals ({key})"
+
+        fig.colorbar(p)
+        plt.title(plot_name)
 
 #ax.colorbar()
 plt.suptitle("3D Mapping of Fitness Landscape")
 #fig.legend(loc="lower left")
 #plt.savefig(f"tsne_new_spec_lhs_5_60_samples.png")
-plt.savefig(f"tsne_lhs_mean_episode.png")
+plt.savefig(f"tsne_lhs_all_variants.png")
 #plt.show()
 
 
