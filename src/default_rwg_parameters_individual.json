@@ -2,7 +2,7 @@
     "general": {
         "algorithm_selected": "rwg",
         "team_type": "heterogeneous",
-        "reward_level": "team",
+        "reward_level": "individual",
         "agent_type": "nn",
         "environment": "slope",
         "calculate_specialisation": "True",
