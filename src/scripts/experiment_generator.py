@@ -10,7 +10,7 @@ from glob import glob
 
 # Generate CMA experiments
 ''''''
-experiment_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_12_evo_for_diff_slopes"
+experiment_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_15_LHS_and_evo_for_smooth_fitness"
 
 core_parameter_filenames = [
     '../default_parameters.json'
