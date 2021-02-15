@@ -179,11 +179,14 @@ class CMALearner(Learner):
         """
 
         if self.parameter_dictionary['algorithm']['cma']['seeding_required'] == "True" or \
-                self.parameter_dictionary['algorithm'] == "cma_with_seeding":
+                self.parameter_dictionary['algorithm'] == "cma_with_seeding" or \
+                self.parameter_dictionary['algorithm'] == "partialcma":
             dictionary_copy = copy.deepcopy(self.parameter_dictionary)
 
             if dictionary_copy['general']['algorithm_selected'] != "partialcma":
                 dictionary_copy['general']['algorithm_selected'] = "rwg"
+            else:
+                dictionary_copy['general']['algorithm_selected'] = "cma"
 
             # If individual reward, allow seeds that used any number of agents
             if dictionary_copy['general']['reward_level'] == "individual":
