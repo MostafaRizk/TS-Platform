@@ -165,4 +165,4 @@ def create_results_from_models(results_folder, start_generation, step_size, num_
 # fix_results(results_folder="../../results/2020_11_08_2_agents_with varied_episodes/results_final.csv", start_generation=20, num_generations=1000, step_size=20)
 
 
-create_results_from_models("../../results/2020_12_09_unique_seeds", start_generation=20, step_size=20, num_generations=1000)
+create_results_from_models("../../results/2021_02_12_evo_for_diff_slopes", start_generation=20, step_size=20, num_generations=1000)

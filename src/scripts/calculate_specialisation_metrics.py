@@ -7,7 +7,7 @@ from agents.nn_agent_lean import NNAgent
 from scipy.stats import multivariate_normal
 
 rwg_parameter_file = "rnn_no-bias_1HL_4HU_tanh.json"
-rwg_genomes_file = "rwg_with_spec.csv"
+rwg_genomes_file = "data/plots/rwg_with_spec.csv"
 N_episodes = 20
 
 evolved_genomes_parameters_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_11_24_magic_plot_combined_new_seed/experiments"
@@ -15,7 +15,7 @@ evolved_genomes_results_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platfo
 results_file = os.path.join(evolved_genomes_results_directory,"results_final.csv")
 
 # Create data file
-specialisation_file = "specialisation_equal_samples.csv"  # os.path.join(evolved_genomes_results_directory,"specialisation_final.csv")
+specialisation_file = "data/plots/specialisation_equal_samples.csv"  # os.path.join(evolved_genomes_results_directory,"specialisation_final.csv")
 f = open(specialisation_file, "w")
 f.write(f"Model Name,Team Fitness,R_coop,R_coop_eff,R_spec,R_coop x P,R_coop_eff x P,R_spec x P,Model Directory\n")
 #f.write("\n")

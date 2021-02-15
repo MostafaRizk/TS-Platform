@@ -57,5 +57,5 @@ def plot_weight_distribution(results_file, graph_file):
 evolved_genomes_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_11_24_magic_plot_combined_new_seed/results"
 generation = "final"
 results_file = os.path.join(evolved_genomes_directory, f"results_{generation}.csv")
-graph_file = "weight_distribution.png"
+graph_file = "data/plots/weight_distribution.png"
 plot_weight_distribution(results_file, graph_file)

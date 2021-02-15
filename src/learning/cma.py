@@ -20,7 +20,8 @@ class CMALearner(Learner):
         super().__init__(calculator)
 
         if self.parameter_dictionary['general']['algorithm_selected'] != "cma" and \
-                self.parameter_dictionary['general']['algorithm_selected'] != "cma_with_seeding":
+                self.parameter_dictionary['general']['algorithm_selected'] != "cma_with_seeding" and \
+                self.parameter_dictionary['general']['algorithm_selected'] != "partialcma":
             raise RuntimeError(f"Cannot run cma. Parameters request "
                                f"{self.parameter_dictionary['general']['algorithm_selected']}")
 

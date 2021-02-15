@@ -26,7 +26,7 @@ rwg_indices = [i for i in range(60)] + [i for i in range(-60,0)]
 
 evolved_genomes_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_11_24_magic_plot_combined_new_seed/results"
 
-specialisation_file = "specialisation_equal_samples.csv"
+specialisation_file = "data/plots/specialisation_equal_samples.csv"
 specialisation_data = pd.read_csv(specialisation_file)
 spec_score_keys = ["R_coop", "R_coop_eff", "R_spec", "R_coop x P", "R_coop_eff x P", "R_spec x P"]
 spec_scores = {}
