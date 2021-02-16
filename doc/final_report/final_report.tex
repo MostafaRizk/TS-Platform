@@ -1,5 +1,6 @@
 \documentclass[12pt]{article}
 \usepackage{graphicx}
+\usepackage{tabu}
 \graphicspath{ {./figures/} }
 
 \makeatletter
@@ -31,82 +32,43 @@
 
 \textbf{What are the fundamental features of the fitness landscape of a task specialisation problem?}\\
 
-\subsection{Creating a Fitness Gradient}
+\subsection{Visualising Specialisation in the Landscape}
 
-One conclusion of the research so far has been that the landscape of task specialisation problems appears to be very flat and thus difficult to find any solution at all, let alone a specialised one.
-If a flat fitness landscape is inherent to task specialisation problems, then this is significant because it implies that algorithms that are highly exploratory should be used, as they are with similar problems \cite{oller:AAMAS:2020}.
-However, it is also possible that the fitness function might be making evolution unnecessarily difficult because it only rewards task completion, treating partial success the same as failure.
-If partial successes are rewarded, the landscape could have a smoother gradient, making it easier for evolution to traverse.
-This leads to the following hypothesis:\\
+\subsubsection{The Landscape}
 
-\textbf{Hypothesis 1.1:} Rewarding agents for partial retrieval of the resource will create a smoother fitness gradient.\\
+To understand the landscape, I use RWG Analysis as proposed by \cite{oller:AAMAS:2020}.
+This approach is relevant to my problem as it is intended for the analysis of agent-based reinforcement learning problems that use neural networks.
+Oller et al use the RWG (random weight guessing) algorithm which works by randomly sampling solutions from a distribution.
+A neural network-based agent that solves a task can be represented as a string of weights.
+Similarly, a team can be represented by a string of weights for each team member.
+Every such string is a solution (or genome).
+We can obtain a random solution by sampling from a distribution.
+If a large enough number of solutions are sampled (several thousand) and each one is evaluated for several episodes, we can gain an understanding of how difficult the problem is by visualising the distribution.
+By comparing different neural network architectures, we can also study how the architecture affects the problem difficulty.
+While not a direct observation of the fitness landscape, it gives insight into the difficulty, modality and presence of plateaus by showing how common good solutions are and whether or not the sorted solutions have a gradient of improvement.
+Oller et al apply their technique to known problems in the reinforcement learning domain, making it possible to contextualise the SlopeForaging problem in relation to those problems.\\
 
-This hypothesis is answered by conducting the following experiment:\\
-
-\textbf{Experiment 1.1- RWG Analysis with Modified Fitness:}  Modify the fitness function such that agents are rewarded for partially retrieving a resource.
-Specifically, divide the reward for retrieving a resource by the length of the arena and give agents part of the reward if they move the resource a single tile closer to the goal.
-Then conduct RWG analysis as described in \cite{oller:AAMAS:2020} and compare the plots to those produced for the original fitness function.\\
-
-If the mean curve of the distribution has a smoother gradient, then the hypothesis is supported.\\
-
-The plots for the original landscape analysis and the analysis with the new fitness function are shown in Figure \ref{fig:sparse} and Figure \ref{fig:incremental} respectively.\\
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=1.0\textwidth]{sparse_rewards.png}
-\caption{RWG Analysis with the original fitness function}
-\label{fig:sparse}
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{experiment_1.1/oller_cropped.png}
+	\caption{RWG analysis of OpenAI Gym benchmarks (reproduced from \cite{oller:AAMAS:2020})}
+	\label{fig:oller}
 \end{figure}
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=1.0\textwidth]{incremental_rewards.png}
-\caption{RWG Analysis with incremental rewards}
-\label{fig:incremental}
-\end{figure}
+In Fig \ref{fig:oller}, each row represents a known problem, selected from the OpenAI Gym Benchmarks.
+The first three columns show different neural network architectures used by the agent (feed-forward neural networks with 0, 1 and 2 hidden layers, respectively).
+In each of those columns, the plot shows 10,000 randomly sampled solutions, each dot representing 1 of 20 episodes for that sample, sorted in order of their score, showing that for some problems, like Pendulum, solutions can be incrementally improved, meaning there is a gradient that a search algorithm can follow.
+However, for other problems such as MountainCar, most solutions perform equally poorly with only a few being successful.
+For this class of problem, Oller et al suggest using algorithms that are highly exploratory since there is no gradient to follow.
+The last two columns show the variance of the sorted solutions and the number of solutions that fall into each score range.
+For example, for MountainCar, there is low variance for low-scoring solutions and most solutions fall into the leftmost bucket, corresponding to low scores.\\
 
-Looking at the 6 mean plots in Figure \ref{fig:incremental} compared to Figure \ref{fig:sparse}, we see that with incremental rewards, the solutions do in fact form more of a gradient towards the right end of the plot, in particular for RNNs (bottom row). 
-This means that a lot of the solutions in the landscape are partially successful at retrieving resources. 
-However, the landscape is still largely flat. 
-This is presumably because most solutions in the landscape don't even get to the point of picking up a resource from the source.\\ 
+\subsubsection{Specialisation}
 
-Thus the answer to Hypothesis 1.1 is:\\
-
-\textbf{Answer 1.1:} Rewarding agents for partial retrieval of the resource creates a smoother fitness gradient, but the landscape is still largely flat.\\
-
-In order to further smooth the fitness landscape there would need to be rewards for partial progress up the slope, but the problem with this is that it is likely to disincentivise the collector behaviour in evolution.
-Why would an agent stay at the nest and collect resource when they are rewarded for going up the slope? 
-Additionally, while this problem is simple enough to smooth the fitness gradient in this way, such smoothing may not be possible for other more complex problems.
-The purpose of this research is to understand how to use AI to find good solutions with minimal (if any) human intervention.\\
-
-Moreover, the flatness of the landscape is, to some extent, inherent to this task.
-This is a problem common in evolutionary computation known as the bootstrapping problem \cite{Silva:EC:2016, Wei:ALR:2019}.
-Bootstrapping is "when the task is too demanding for the fitness function to apply any meaningful selection pressure on a randomly generated population of initial candidate solutions" \cite{Silva:EC:2016}.
-The bootstrapping problem often occurs when the goal behaviour is complex relative to the very simple available actions \cite{Wei:ALR:2019}.
-For this problem, the available actions are primitives like 'move forward one tile' and 'move backward one tile'.
-When putting together sequences of these actions, most sequences will obviously not be very successful.\\
-
-There are many proposed solutions to solving the bootstrapping problem and they fall under the broad categories of inserting human knowledge into the learning process or increasing the diversity of solutions \cite{Silva:EC:2016}.
-Smoothing the landscape falls under the former category, but this family of techniques has some shortcomings, in particular it reduces the potential for automation and risks the experimenter introducing negative biases.
-Using rwg to find a seed falls under the second category; it has the shortcoming of additional computation, which may not scale well for problems with larger solution spaces, but for those problems there is a wealth of alternative techniques for increasing diversity, such as novelty search.
-In keeping with the spirit of AI, I have chosen to continue using the more challenging fitness function.
-
-\subsection{Visualising Specialisation}
-
-I already performed the initial analysis of the landscape (Figure \ref{fig:sparse}), however, the visualisation did not contain any information about how specialised each team was i.e. was a given solution a pair of generalists or a pair of specialists? 
+However, one shortcoming of RWG analysis is that it was not give insight into the degree of specialisation of the discovered solutions.
+Is a given solution a pair of generalists or a pair of specialists? 
 Are the better solutions in the landscape usually specialists? 
-To visualise this information I need a way of measuring the degree of specialisation of a solution, so the second task in this group is to evaluate some candidate metrics and the third is to incorporate the chosen metric into the landscape analysis.
-The hypothesis and experiment are:\\
-
-\textbf{Hypothesis 1.2:} Specialist solutions outperform generalist ones.\\
-
-\textbf{Experiment 1.2- Specialisation Plots of RWG Analysis:}  Use the chosen specialisation metric to assess all the solutions found by RWG analysis and incorporate them into the plots.\\
-
-The most specialised solutions are expected to be at the rightmost of the mean plot and above the generalist ones.
-If this is the case, then it supports the hypothesis.
-If there are generalist solutions that outperform specialist ones, it disproves the hypothesis.
-
-\subsubsection{Specialisation in the Literature}
+To visualise this information I first need a way of measuring the degree of specialisation of a solution, I can then overlay this on the landscape plots.\\
 
 To quantitatively measure specialisation, it is important to first define what specialisation is.
 For the purpose of this research, specialisation is when a team of agents cooperate, by performing different roles, to accomplish the task more effectively than a team of generalist (i.e. independent) agents.
@@ -192,7 +154,7 @@ S = R_{spec} \times P
 %
 One shortcoming of this metric is that it does not detect role-switching. For example, a team composed of a dropper and a collector but halfway through, the dropper becomes the collector and vice versa. Role-switching can be detected by observing the variance of an agent's y-coordinate in the arena. A dropper or collector that remains in their role throughout runtime will move at most 1 tile in either y direction, so they will have a low variance. An dropper that changes roles will have a high variance, akin to a generalist. The average y-variance of a team indicates role-switching and, to an extent, specialisation. The average variance could potentially be used to measure specialisation on its own, though it would not detect hitch-hikers or even just teams that are completely stationary. For this reason, and to avoid over-complicating the metric, I only use the variance as an additional measure to check for role-switching.
 
-\subsubsection{Results}
+\subsubsection{Assessing the metric}
 
 \begin{center}
 \begin{tabular}{|c|c|c|c|}
@@ -234,10 +196,246 @@ Lazy Generalist + Lazy Generalist & & & \\
 \end{tabular}
 \end{center}
 
+\subsection{Experiments}
+
+Now, with a landscape analysis method and a means of quantifying specialisation, this brings us to the first hypothesis and experiment.\\
+
+\textbf{Hypothesis 1.1:} Specialist solutions outperform generalist ones.\\
+
+\textbf{Experiment 1.1- Specialisation Plots of RWG Analysis:}  Use the chosen specialisation metric to assess all the solutions found by RWG analysis and incorporate them into the plots.\\
+
+The most specialised solutions are expected to be at the rightmost of the mean plot and above the generalist ones.
+If this is the case, then it supports the hypothesis.
+If there are generalist solutions that outperform specialist ones, it disproves the hypothesis.\\
+
+To analyse the SlopeForaging problem, I used the same method as Oller et al \cite{oller:AAMAS:2020}, comparing the same 3 architectures: a feedforward neural network (FFNN) with no hidden layers, one with 1 hidden layer composed of 4 hidden units and one with 2 hidden layers also composed of 4 hidden units.
+As in  \cite{oller:AAMAS:2020} I ran experiments with and without a bias neuron and found performance to be better without bias.
+All networks use tanh activation.
+For each architecture, I sample 10,000 genomes, where each genome contains weights for two neural networks, one for each agent on the team.
+For each sampled genome, I run 20 episodes of the simulation.
+I use a normal distribution with mean 0 and unit variance.
+Other distributions can be used instead of a normal one but this is the one that proved most effective in my experiments and those of Oller et al.
+Degree of specialisation is measured on a scale from 0 to 1 with 0 scores being represented as red and 1 scores represented as green and scores in between falling on the spectrum between those colours.\\
+
+\subsubsection{Results- Landscape}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.0\textwidth]{experiment_1.1/slope_4_no_spec.png}
+\caption{RWG Analysis without overlayed specialisation}
+\label{fig:slope_4_no_spec}
+\end{figure}
+
+Looking at Figure \ref{fig:slope_4_no_spec} in comparison with the Gym benchmarks in Figure \ref{fig:oller}, we can immediately see that the SlopeForaging task is more difficult than all the standard Gym benchmarks.
+The mean score is below zero for all architectures and the distribution histogram for the architecture with two hidden layers shows that all episodes indeed receive negative scores.
+This holds whether or not there is a bias neuron as seen in Figure \ref{fig:slope_4_bias} in the appendix.
+The same architectures that can successfully solve the Gym benchmarks appear to be insufficient to solve the SlopeForaging problem, indicating that this problem is more difficult than all of Gym's classic control benchmarks.\\
+
+When we observe the failed controllers to see where they go wrong, we see them carrying out repetitive unproductive behaviours or oscillating between states.
+For example, an agent at the nest might choose to do a pickup action, despite there being no resource in range.
+Since there is no resource in range, the state won't change and the agent's observation will be the same at the next time step and it will do the same action again, repeating itself until the final time step.
+Another agent might move forward when in the nest and move backward when in the cache, oscillating between two states until the end of the episode.\\
+
+Using a FFNN means that if an agent makes a particular observation, they will perform the same action every time they make that observation, meaning it is easy for agents to get stuck.
+A recurrent neural network (RNN) performs an action based on the observation as well as the last action, so if the observation is the same at time $t$ as it was at $t-1$ then an agent can, in principle, do a different action than the one it did at $t-1$ as that one obviously did not change the state.
+Consider the previously mentioned agent that does a pickup action with no resources nearby and makes the same observation at the following time step.
+An FFNN-based agent will, by necessity, do that same action again.
+An RNN-based agent might do a different action because while the observation is the same, the action it did at $t-1$ may not be.
+Of course, there is a chance the network will have the same output for that observation regardless of what the action at $t-1$ was, but the chance of that happening is less than it is for an FFNN, for which it is a certainty.\\
+
+I repeated the experiments with an RNN, with the same combinations of hidden layers and bias.
+The RNN achieves much higher scores than the FFNN.
+Similar to the FFNN experiments, most samples score poorly, but in contrast, we see that top ranked episodes receive non-negative scores, which are only possible if resources are successfully retrieved by the agents.
+The mean curve has a spike at the far right, which gets more pronounced as more hidden layers are added.
+We also see in the distribution histogram that there are samples whose mean scores fall into higher ranking buckets.
+Much like Oller et al \cite{oller:AAMAS:2020} networks with no bias neuron outperform those with a bias neuron.
+Most interestingly, we see that some episodes score above 100,000.
+To get a sense of the scores a good team should be able to achieve, I hardcoded both generalist and specialist behaviours and averaged their scores over 30 episodes, varying the random seed.
+The top scoring sample gets very close to the performance of the best human-implemented solution.
+Thus, the SlopeForaging problem is simple enough that RWG with a relatively small neural network is enough to find one or two successful solutions.
+That said, SlopeForaging is more difficult than all its counterparts among the Gym classic control benchmarks, commonly used to test state of the art reinforcement learning algorithms \cite{oller:AAMAS:2020}\\
+
+Looking at the plots in Figure \ref{fig:oller}, the environment most similar to SlopeForaging is MountainCar \cite{MountainCar}.
+The mean curve is flat with a sharp spike at the end and the distribution histogram has most samples fall in the leftmost bucket, with fewer and fewer falling into the higher ranking buckets.
+The reason most solutions score very poorly is because both the SlopeForaging and MountainCar environments have sparse rewards.
+In the case of MountainCar, an agent must reach the top of the mountain to receive a score better than -200 and there are no rewards for partially successful intermediate behaviours. 
+An agent that never moves is equivalent to one that stops just short of the goal. 
+In SlopeForaging, an agent that travels up the slope, picks up a resource, carries it to the bottom of the slope and drops it just short of the nest is equivalent to an agent that oscillates back and forth between two tiles. 
+A non-negative score can only be achieved if a resource is fully retrieved and there are no rewards for partially successful intermediate behaviours, so the core task of the environment cannot be learned incrementally.\\
+
+\begin{figure}
+	\centering
+	\includegraphics[width=1.1\textwidth]{experiment_1.1/acrobot.png}
+	\caption{RWG analysis of Acrobot using an FFNN}
+	\label{fig:acrobot}
+\end{figure}
+
+Acrobot is another benchmark problem with a sparse reward.
+The goal of Acrobot is to swing the agent's arm up to a certain height within the allotted time.
+An agent that swings very close to that height is equivalent to one that does nothing.
+However, for Acrobot in Figure \ref{fig:acrobot}, there is a clearly visible gradient in the mean plot.
+This is because within the set of agents that complete the task, some complete it faster.
+The same applies to MountainCar and SlopeForaging.
+Within the set of agents that go up the mountain in MountainCar, some do it faster.
+Within the set of agent teams that can retrieve a resource, some retrieve more.
+So those mean plots also have a gradient, but a very faint one.
+Oller et al suggest that for environments with a large plateau and sharp spike in their mean curve, such as MountainCar, highly exploratory algorithms are likely the best choice, rather than gradient-based ones.
+In later sections, this research uses CMA-ES (as described in Section \ref{evolutionary_algorithm}) in part because it is gradient-free.\\
+
+While SlopeForaging is similar to MountainCar and, to a lesser extent, Acrobot, the challenge posed by SlopeForaging is much more significant:
+
+\begin{itemize}
+
+\item \textit{The task is multi-agent}- A minimum of two agents are needed to complete the task in the most effective way (i.e. cooperation) and because there is a non-cooperative solution to the problem, there are two stable equilibria that a learning algorithm can find.
+
+\item \textit{The environment is stochastic} In a single agent environment, an agent's actions are the only thing that affect the state.
+In a multi-agent environment, the state is also dependent on the other agent(s), which means the environment is effectively stochastic.
+There can also be stochasticity in where new resources spawn, but only if the source has several empty spaces, which is not the case in our experiments.
+
+\item \textit{The environment is partially observable}- Agents can only sense 1 tile in any direction (unless this parameter is changed).
+An agent can never truly know how its actions affect the state and oftentimes the state can change in ways that are relevant to an agent but the agent cannot detect it.
+Memory can help overcome this difficulty, which is likely why the RNN architecture is more successful.
+
+\item \textit{The observation and action spaces are larger}- Looking at the observation and action spaces of all environments in Table \ref{tab:environment_comparison} it's immediately apparent that SlopeForaging dwarfs all of its counterparts
+Even the simplest FFNN with no hidden layers or bias would require 14x6=84 weights per agent (168 for a team of two unique agents) compared to ((2+1)x4) + ((4+1)x4) + ((4+1)x3) = 47 for the most complex controller used by Oller et al to solve MountainCar or (4+1)x4) + ((4+1)x4) + ((4+1)x3) = 55 for Acrobot.
+The minimum weights required for each environment are enumerated in Table \ref{tab:weight_comparison}.
+
+\end{itemize}
+
+\begin{table}
+\begin{center}
+\begin{tabu}{ |c|c|c|c|c| } 
+ \hline
+ Environment Name & Observation Space & Action Space & Observability & Reward Density \\
+ \tabucline[1.5pt]{-}
+ MountainCarContinuous & Box(2) & Box(1) & Full & Sparse \\
+ \hline
+ CartPole & Box(4) & Discrete(2) & Full & Dense \\
+ \hline
+ MountainCar & Box(2) & Discrete(3) & Full & Sparse \\
+ \hline
+ Pendulum & Box(3) & Box(1) & Full & Dense \\
+ \hline
+ Acrobot & Box(4) & Discrete(3) & Full & Sparse \\
+ \hline
+ SlopeForaging & MultiBinary(14) & Discrete(6) & Partial & Sparse \\
+ \hline
+\end{tabu}
+\end{center}	
+\caption{\label{tab:environment_comparison} Difficulty of each environment}
+\end{table}
+
+\begin{table}
+\begin{center}
+\begin{tabu}{ |c|c| } 
+ \hline
+ Environment Name & Minimum Number of Weights \\
+ \tabucline[1.5pt]{-}
+ MountainCarContinuous & 2 \\
+ \hline
+ CartPole & 8 \\
+ \hline
+ MountainCar & 6 \\
+ \hline
+ Pendulum & 3 \\
+ \hline
+ Acrobot & 12 \\
+ \hline
+ SlopeForaging & 168 \\
+ \hline
+\end{tabu}
+\end{center}	
+\caption{\label{tab:weight_comparison} Number of weights required for the smallest possible network}
+\end{table}
+
+\subsubsection{Results- Specialisation}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.0\textwidth]{experiment_1.1/slope_4.png}
+\caption{RWG Analysis with overlayed specialisation}
+\label{fig:slope_4}
+\end{figure}
+
+In Figure \ref{fig:slope_4} we see the same plots as before but with the $R_{spec}$ measure of specialisation overlayed.
+The points on the plot are overwhelmingly red (i.e. generalist) with the majority of the green points being on the far right but a few being scattered farther left.
+This tells us that not all specialist solutions are high-performing, some achieve low scores.
+Observing one such team with low fitness but high specialisation, the video shows that all the resources they retrieve are retrieved in a specialised way.
+But they retrieve very few resources and the dropper agent spends a lot of time moving up and down the slope ineffectively.
+This not only lowers the fitness, but in fact makes it even lower than a team that does nothing because going up the slope incurs a greater cost (-13) than moving aimlessly in the cache (-1) and moving down the slope (-0.2) is not enough to offset that cost.
+This is why there are some specialists among the worst performing genomes.
+However, what is also significant is that none of the top-scoring episodes are generalists.
+This suggests that while specialisation does not guarantee good performance, it may only be possible to achieve the highest scores using specialist strategies.\\
+
+So Hypothesis 1.1 is partially supported:\\
+
+\textbf{Answer 1.1:} Not all specialists are high-scoring, but the best solutions are always specialists.\\
+
+\subsection{Creating a Fitness Gradient}
+
+So far, the landscape of the slope foraging problem appears to be very flat, making it difficult to find any solution at all, let alone a specialised one.
+If a flat fitness landscape is inherent to task specialisation problems, then this is significant because it implies that algorithms that are highly exploratory should be used, as they are with similar problems \cite{oller:AAMAS:2020}.
+However, it is also possible that the fitness function might be making evolution unnecessarily difficult because it only rewards task completion, treating partial success the same as failure.
+If partial successes are rewarded, the landscape could have a smoother gradient, making it easier for evolution to traverse.
+This leads to the following hypothesis:\\
+
+\textbf{Hypothesis 1.2:} Rewarding agents for partial retrieval of the resource will create a smoother fitness gradient.\\
+
+This hypothesis is answered by conducting the following experiment:\\
+
+\textbf{Experiment 1.2- RWG Analysis with Modified Fitness:}  Modify the fitness function such that agents are rewarded for partially retrieving a resource.
+Specifically, divide the reward for retrieving a resource by the length of the arena and give agents part of the reward if they move the resource a single tile closer to the goal.
+Then conduct RWG analysis and compare the plots to those produced for the original fitness function.\\
+
+If the mean curve of the distribution has a smoother gradient, then the hypothesis is supported.\\
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.0\textwidth]{experiment_1.2/smooth_fitness.png}
+\caption{RWG Analysis with incremental rewards}
+\label{fig:incremental}
+\end{figure}
+
+Looking at the 6 mean plots in Figure \ref{fig:incremental} compared to Figure \ref{fig:slope_4}, we see that with incremental rewards, the solutions do in fact form more of a gradient towards the right end of the plot, in particular for RNNs (bottom row). 
+This means that a lot of the solutions in the landscape are partially successful at retrieving resources. 
+However, the landscape is still largely flat. 
+This is presumably because most solutions in the landscape don't even get to the point of picking up a resource from the source.\\ 
+
+Also interesting is that the plot appears to be mostly red, meaning the solutions are predominantly generalists.
+This is not to say there are no specialists.
+Rather, any team that brings resources back very close to the nest but doesn't quite deliver them would have received a negative score under the other reward structure, but now it has a positive reward, creating the gradient we see in Figure \ref{fig:incremental}.
+However, all our specialisation metrics are dependent on resources being fully retrieved.
+If a dropper drops the resource, bringing it close to the nest, it gets points for the distance the resource travelled, but if the other agent doesn't deliver that resource to the nest, or picks it up but doesn't take it to the nest, the specialisation metric counts that as a generalist team.
+This is a shortcoming of the metric.
+Fixing this would mean either using a different type of metric entirely or adjusting the current metrics so that they count how many resources were picked up by multiple agents (regardless of whether or not they were delivered).\\
+
+*TODO: Generate the results files for this and observe the behaviour of high-scoring generalists (i.e. Visualise the highest scoring team with specialisation 0*
+
+Thus the answer to Hypothesis 1.2 is:\\
+
+\textbf{Answer 1.2:} Rewarding agents for partial retrieval of the resource creates a smoother fitness gradient, but the landscape is still largely flat.\\
+
+In order to further smooth the fitness landscape there would need to be rewards for partial progress up the slope, but the problem with this is that it is likely to disincentivise the collector behaviour in evolution.
+Why would an agent stay at the nest and collect resource when they are rewarded for going up the slope? 
+Additionally, while this problem is simple enough to smooth the fitness gradient in this way, such smoothing may not be possible for other more complex problems.
+The purpose of this research is to understand how to use AI to find good solutions with minimal (if any) human intervention.\\
+
+Moreover, the flatness of the landscape is, to some extent, inherent to this task.
+This is a problem common in evolutionary computation known as the bootstrapping problem \cite{Silva:EC:2016, Wei:ALR:2019}.
+Bootstrapping is "when the task is too demanding for the fitness function to apply any meaningful selection pressure on a randomly generated population of initial candidate solutions" \cite{Silva:EC:2016}.
+The bootstrapping problem often occurs when the goal behaviour is complex relative to the very simple available actions \cite{Wei:ALR:2019}.
+For this problem, the available actions are primitives like 'move forward one tile' and 'move backward one tile'.
+When putting together sequences of these actions, most sequences will obviously not be very successful.\\
+
+There are many proposed solutions to solving the bootstrapping problem and they fall under the broad categories of inserting human knowledge into the learning process or increasing the diversity of solutions \cite{Silva:EC:2016}.
+Smoothing the landscape falls under the former category, but this family of techniques has some shortcomings, in particular it reduces the potential for automation and risks the experimenter introducing negative biases.
+Using rwg to find a seed falls under the second category; it has the shortcoming of additional computation, which may not scale well for problems with larger solution spaces, but for those problems there is a wealth of alternative techniques for increasing diversity, such as novelty search.
+In keeping with the spirit of AI, I have chosen to continue using the more challenging fitness function.
+
 \subsection{Dimensionality Reduction}
 
 The neural networks used to solve the Slope Foraging problem have hundreds of weights, meaning that the fitness landscape has just as many dimensions and is consequently very difficult to visualise.
-Reducing the dimensionality of the problem to two dimensions (with a third dimension for fitness values) makes visualisation possible and gives many valuable insights into the features of the landscape, especially if combined with a specialisation metric.
+Reducing the dimensionality of the problem to two dimensions (with a third dimension for fitness values) makes visualisation possible and gives many valuable insights into the features of the landscape, especially if the data-points are coloured according to the degree of specialisation.
 How far apart are specialist and generalist solutions in the landscape?
 How many optima are there?
 What trajectory does evolution take through the landscape?
@@ -281,31 +479,46 @@ Based on the literature, I have chosen to use t-SNE with latin hypercube samplin
 
 In LHS, sampled values must be within a certain range.
 I chose this range by taking 60 evolved team genomes and plotting the distribution of values for each genome, shown in Figure \ref{fig:weight_distribution}.
-According to the plot, all weights fall in the (-6,6) range, so I chose this as the range for LHS.
+According to the plot, all weights fall in the (-6,6) range.
+I tried sampling from this range as well as 5 others, decreasing it by 1 from each side each time. 
+Ultimately, I obtained the best results using range (-5,5).
 The importance of choosing a range is discussed in \cite{oller:AAMAS:2020} where the authors state that the "the bounds of the distribution (be there hard bounds as in the case of uniform distributions, or soft bounds as with the variance of a Gaussian) define the tested value range for the weights, which may be critical depending on application and network size". 
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=1.0\textwidth]{weight_distribution.png}
+\includegraphics[width=1.0\textwidth]{experiment_1.3/weight_distribution.png}
 \caption{Distribution of weights in evolved genomes}
 \label{fig:weight_distribution}
 \end{figure}
-
 
 \subsubsection{Results}
 
 The algorithm I use to perform dimensionality reduction reduces the landscape to two dimensions.
 I then add a third dimension for visualising the fitness as height and I use colour to indicate the degree of specialisation.
-The plot in Figure \ref{fig:tsne} includes the best 500 and worst 500 genomes from the rwg analysis in Figure \ref{fig:sparse} along with some genomes evolved using a centralised learner and single-population coevolution.
-In the case of single population coevolution, only one genome is evolved, so I concatenated two identical copies of those genomes and doubled their score so that I can put them in the same landscape.\\
+The plot in Figure \ref{fig:tsne} includes the best 60 and worst 60 genomes from lhs sampling with a range of (-5,5), along with 60 evolved genomes.
+There are only 120 rwg data-points so that there are not too many more random genomes than evolved genomes, which biases the dimensionality reduction and does not appropriately measure the landscape.
+High-scoring and low-scoring random genomes are chosen to represent a range of solution in the landscape.
+30 of the evolved genomes were evolved using a centralised learner and re-evaluated to calculate their specialisation.
+The other 30 genomes were evolved using single-population co-evolution.
+Importantly, single-population co-evolution only outputs a single individual.
+If that individual is copied to form a team of two, the individual often does not perform as well with its clone as it did with the agents it was paired with during evolution.
+It is not clear why this is.
+Instead, I create a normal distribution where the mean is the individual genome and the variance is the sigma from the last generation of CMA-ES divided by 10 and sample two agents to create a team.
+Sigma needs to be divided by 10, otherwise solutions are low-quality, suggesting that particular peak in the landscape is very narrow.
+The plots in Figure \ref{fig:tsne} show the dimensionality reduction with just the rwg data, rwg and teams evolved using a centralised approach, and finally one with all data points.
+The plots also use three different specialisation metrics.
+t-SNE uses a perplexity value of 40 and 1000 iterations, with the rest of the parameters being the default from the scikit-learn implementation of t-SNE.\\
 
-Preliminary results show that there indeed appear to be two optima, which supports Hypothesis 1.3.
-One of the optima has a higher score while the other has a lower score.
-Anecdotally, the scores observed for the green optima are usually only seen for teams of specialists, however a specialisation metric is still needed to verify this empirically.\\
+The results show that there indeed appear to be two optima.
+One of the optima has a higher score while the other has a lower score .
+The high-scoring optima is mainly specialists and the low-scoring one is mainly generalists.
+The hypothesis is thus, supported.\\
+
+\textbf{Answer 1.3:} There are two optima in the landscape, one composed of specialist solutions and one composed of generalist solutions.\\
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=1.0\textwidth]{tsne.png}
+\includegraphics[width=1.0\textwidth]{experiment_1.3/tsne_lhs_all_variants.png}
 \caption{Reduced Fitness Landscape}
 \label{fig:tsne}
 \end{figure}
@@ -389,7 +602,11 @@ Find the nash equilibria and study the learning dynamics.\\
 \begin{description}
 \item[1] \textbf{What are the fundamental features of the fitness landscape of a task specialisation problem?}\\
 
-\textbf{Answer 1.1:} Rewarding agents for partial retrieval of the resource creates a smoother fitness gradient, but the landscape is still largely flat.\\
+\textbf{Answer 1.1:} Not all specialists are high-scoring, but the best solutions are always specialists.\\
+
+\textbf{Answer 1.2:} Rewarding agents for partial retrieval of the resource creates a smoother fitness gradient, but the landscape is still largely flat.\\
+
+\textbf{Answer 1.3:} There are two optima in the landscape, one composed of specialist solutions and one composed of generalist solutions.\\
 
 \item[2] \textbf{When do centralised and decentralised solutions outperform one another in task specialisation problems?}\\
 
@@ -397,7 +614,17 @@ Find the nash equilibria and study the learning dynamics.\\
 
 \item[3] \textbf{What is the price of anarchy in task specialisation problems?}\\
 
+\section{Additional Plots}
 
+\subsection{Landscape Analysis}
+
+\subsubsection{Experiment 1.1}
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.0\textwidth]{figures/experiment_1.1/slope_4_bias.png}
+\caption{RWG Analysis with bias neuron for slope 4, using $R_{spec}$ metric}
+\label{fig:slope_4_bias}
+\end{figure}
 
 \end{description}
 

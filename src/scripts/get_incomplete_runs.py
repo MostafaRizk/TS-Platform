@@ -5,7 +5,7 @@ import json
 from glob import glob
 from learning.cma import CMALearner
 from learning.learner_parent import Learner
-from shutil import copyfile
+from shutil import copyfile, move
 
 
 def get_incomplete_runs(old_directory, new_directory):
@@ -69,6 +69,13 @@ def get_incomplete_runs(old_directory, new_directory):
 
     g.close()
 
+def rename_as_cma(directory):
+    npy_files = glob(f'{directory}/*npy')
+
+    for file in npy_files:
+        newfilename = "cma_heterogeneous_" + "_".join(str(param) for param in file.split("/")[-1].split("_")[1:])
+        newfile = os.path.join(directory, newfilename)
+        move(file, newfile)
 
 results_path = "../../results/"
 old_results_folder = "2021_02_12_evo_for_diff_slopes"
@@ -77,4 +84,5 @@ new_experiments_folder = "2021_02_15_partial_cma_for_incomplete_diff_slope_runs"
 old_directory = os.path.join(results_path, old_results_folder)
 new_directory = os.path.join(results_path, new_experiments_folder)
 
-get_incomplete_runs(old_directory, new_directory)
+#get_incomplete_runs(old_directory, new_directory)
+#rename_as_cma(os.path.join(new_directory, "experiments"))

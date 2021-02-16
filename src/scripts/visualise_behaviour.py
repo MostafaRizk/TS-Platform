@@ -8,6 +8,8 @@ from agents.nn_agent_lean import NNAgent
 #from scripts.video_generator import get_video_from_model
 from scipy.stats import multivariate_normal
 
+
+'''
 evolved_genomes_parameters_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_11_24_magic_plot_combined_new_seed/experiments"
 evolved_genomes_results_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_11_24_magic_plot_combined_new_seed/results"
 
@@ -24,6 +26,7 @@ model_name = "cma_heterogeneous_individual_nn_slope_2942995347_2_4_1_4_8_4_1_3_7
 model_file = os.path.join(evolved_genomes_results_directory, model_name)
 #model_name = "cma_heterogeneous_individual_nn_slope_491264_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_5_rnn_False_1_4_tanh_100_0.2_1000_0.001_200.0_60938.0_final.npy"
 #model_file = os.path.join(other_result_dir, model_name)
+'''
 
 '''
 full_genome = np.load(model_file)
@@ -51,7 +54,7 @@ results = fitness_calculator.calculate_fitness(agent_list=[agent_1, agent_2], re
 specialisation_measures = np.mean(np.array(results["specialisation_list"]), axis=0)'''
 
 # Sample 2 individuals
-''''''
+'''
 mean_array = np.load(model_file)
 std = None
 
@@ -83,7 +86,7 @@ results = fitness_calculator.calculate_fitness(agent_list=[agent_1, agent_2], re
                                                measure_specialisation=True, logging=False, logfilename=None,
                                                render_mode="human")
 specialisation_measures = np.mean(np.array(results["specialisation_list"]), axis=0)
-
+'''
 
 # Get one team
 '''
@@ -100,9 +103,6 @@ results = fitness_calculator.calculate_fitness(agent_list=[agent_1, agent_2], re
                                                render_mode="human")
 specialisation_measures = np.mean(np.array(results["specialisation_list"]), axis=0)
 '''
-print(results["fitness_matrix"])
-print(results["specialisation_list"])
-print(specialisation_measures)
 
 '''
 parameter_dictionary = json.loads(open(parameter_filename).read())
