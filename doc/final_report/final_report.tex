@@ -409,7 +409,11 @@ If a dropper drops the resource, bringing it close to the nest, it gets points f
 This is a shortcoming of the metric.
 Fixing this would mean either using a different type of metric entirely or adjusting the current metrics so that they count how many resources were picked up by multiple agents (regardless of whether or not they were delivered).\\
 
-*TODO: Generate the results files for this and observe the behaviour of high-scoring generalists (i.e. Visualise the highest scoring team with specialisation 0*
+Instead, it is easier to select a team with high fitness and a specialisation score of 0 and visualise its behaviour.
+Doing this, we discover that the earlier prediction was in fact true.
+One agent behaves as a dropper, getting rewards for bringing the resource closer to the nest and reducing costs by not repeatedly going up the slope.
+The other agent stays still and does not retrieve any of the dropped resources.
+This is enough to get a very high score, but is not counted as specialisation by the metric.
 
 Thus the answer to Hypothesis 1.2 is:\\
 
@@ -525,7 +529,14 @@ The hypothesis is thus, supported.\\
 
 \subsection{Analysis of Different Slope Angles}
 
-\textbf{Hypothesis 1.4.1:} When the slope is flat, there will only be one optima of generalists and no specialist solutions.\\
+For the Slope Foraging task, the slope is what provides evolutionary pressure for specialisation to emerge.
+Having no slope at all means there should be no benefit from specialisation and no pressure for it to evolve.
+Changing the slope angle changes how beneficial specialisation is. 
+Experiments so far have only focused on one slope setting, so further experiments are needed to examine an environment with no slope and an environment with intermediate slope.
+
+Thus:\\
+
+\textbf{Hypothesis 1.4.1:} When the slope is flat, there will only be one optimum of generalists and no specialist solutions.\\
 
 \textbf{Hypothesis 1.4.2:} An intermediate slope will have two optima (one specialist and one generalist).\\
 
@@ -534,6 +545,47 @@ The hypothesis is thus, supported.\\
 \textbf{Experiment 1.4- RWG with Different Slope Angles:} Repeat RWG, as it was done for previous experiments, but with no slope and intermediate slope.
 Then perform 30 evolutionary runs, each with a different seed genome and random seed.
 Use the generated data to create RWG analysis plots and perform dimensionality reduction.\\
+
+If there are any specialist solutions found for the 0 slope setting or more than one optimum, Hypothesis 1.4.1 is not supported, otherwise it is supported.\\
+
+If the intermediate slope setting has more or less than two optima, Hypothesis 1.4.2 is not supported, if it has exactly two, it is supported.
+If the two optima for the intermediate setting are both generalist, both specialist or both a mix of the two, Hypothesis 1.4.2 is also not supported.\\
+
+If Hypothesis 1.4.2 is supported and the specialist solutions do not outscore the generalist solutions, Hypothesis 1.4.3 is not supported.
+If the specialist solutions outscore the generalist solutions but by a margin that is greater than or approximately equal to the margin for the steep slope, Hypothesis 1.4.3 is not supported.
+If the specialist solutions outscore the generalists by a margin significantly less than the steep slope setting, the hypothesis is supported.\\
+
+\subsubsection{Results}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.0\textwidth]{experiment_1.4/slope_0.png}
+\caption{RWG Analysis for sliding speed 0}
+\label{fig:slope_0_rwg}
+\end{figure}
+
+We see in Figure \ref{fig:slope_0_rwg} that for a sliding speed of 0 (i.e. flat slope) all solutions fall into the lowest bucket, with no episodes exceeding a score of 50,000.
+Additionally, there are no visible green data points, suggesting that none of the discovered solutions are specialists.
+
+*Watch video of the fittest behaviour and the most specialised behaviour from rwg normal*
+
+For additional clarity, I applied the same dimensionality reduction technique as in the previous section (including performing latin hypercube sampling and 60 evolutionary runs).
+The results in Figure \ref{fig:tsne_slope_0} provide additional support for these findings.
+In the top row, there are no green data points in the two rightmost plots, but a single light green data point in the leftmost plot.
+The $R_{coop}$ metric counts any cooperative transportation as specialisation whereas the $R_{coop_eff}$ and $R_{spec}$ metrics prioritise behaviours that drop on the slope and pick up on the cache, so there appears to be no specialisation.\\
+
+Adding in the data-points from evolution, we see a single optimum emerge with the majority of solutions being generalists.
+When we observe the behaviour of the green data-points we see
+
+*Watch video of most specialised evolved solutions for slope 0*
+
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.0\textwidth]{experiment_1.4/tsne_lhs_all_variants_slope_0.png}
+\caption{Reduced Fitness Landscape for sliding speed 0}
+\label{fig:tsne_slope_0}
+\end{figure}
 
 \subsection{Decentralised Solutions} 
 

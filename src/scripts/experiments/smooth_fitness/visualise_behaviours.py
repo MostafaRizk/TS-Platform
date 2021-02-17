@@ -8,19 +8,19 @@ from fitness import FitnessCalculator
 from agents.nn_agent_lean import NNAgent
 
 # Load all genomes from csv
-file_path = "slope_4_2HL_no-bias_sorted.csv"
-parameter_filename = "slope_4_rnn_no-bias_2HL_4HU_tanh.json"
+file_path = "2HL_no-bias_sorted.csv"
+parameter_filename = "rnn_no-bias_2HL_4HU_tanh.json"
 rwg_data = []
 f = open(file_path, "r")
 rwg_data += f.read().strip().split("\n")
 N_episodes = 20
 spec_score_keys = ["R_coop", "R_coop_eff", "R_spec", "R_coop x P", "R_coop_eff x P", "R_spec x P"]
-rwg_indices = [i for i in range(-2000, 0)]  # This assumes the genomes are already sorted by mean fitness
+rwg_indices = [i for i in range(100)]  # This assumes the genomes are already sorted by mean fitness
 num_spec_scores = len(spec_score_keys)*N_episodes
 num_scores = N_episodes + num_spec_scores
 
-# Get the most specialised solution in the bottom 2000
-max_spec = 0
+# Get the least specialised solution in the top 100
+min_spec = 1
 mean_fitness = None
 genome_to_vis = None
 fitness_list = None
@@ -38,15 +38,19 @@ for index in rwg_indices:
     rspec_index = spec_score_keys.index("R_spec")
     avg_spec = np.mean(raw_spec_scores[rspec_index])
 
-    if avg_spec > max_spec:
-        max_spec = avg_spec
+    if avg_spec < min_spec:
+        min_spec = avg_spec
         genome_to_vis = genome
         fitness_list = episode_scores
         mean_fitness = np.mean(fitness_list)
         spec_list = raw_spec_scores[rspec_index]
 
+        # Exit loop if 0 spec is found
+        if avg_spec == 0:
+            break
+
 # Visualise
-print(max_spec)
+print(min_spec)
 print(spec_list)
 print(mean_fitness)
 print(fitness_list)

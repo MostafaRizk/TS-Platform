@@ -1,3 +1,7 @@
+'''
+Calculates the specialisation metrics for genomes in the given results folder
+'''
+
 import numpy as np
 import os
 import pandas as pd
@@ -5,20 +9,22 @@ import pandas as pd
 from fitness import FitnessCalculator
 from agents.nn_agent_lean import NNAgent
 from scipy.stats import multivariate_normal
+from glob import glob
 
-rwg_parameter_file = "rnn_no-bias_1HL_4HU_tanh.json"
-rwg_genomes_file = "data/plots/rwg_with_spec.csv"
-N_episodes = 20
+evolved_genomes_parameters_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_17_cma_for_diff_slopes_combined/experiments"
+evolved_genomes_results_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_17_cma_for_diff_slopes_combined/results"
+results_file = os.path.join(evolved_genomes_results_directory, "results_final.csv")
 
-evolved_genomes_parameters_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_11_24_magic_plot_combined_new_seed/experiments"
-evolved_genomes_results_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_11_24_magic_plot_combined_new_seed/results"
-results_file = os.path.join(evolved_genomes_results_directory,"results_final.csv")
+num_agents = 2
+sliding_speed = 2
 
 # Create data file
-specialisation_file = "data/plots/specialisation_equal_samples.csv"  # os.path.join(evolved_genomes_results_directory,"specialisation_final.csv")
+specialisation_file = f"specialisation_different_slopes_{sliding_speed}.csv"
 f = open(specialisation_file, "w")
 f.write(f"Model Name,Team Fitness,R_coop,R_coop_eff,R_spec,R_coop x P,R_coop_eff x P,R_spec x P,Model Directory\n")
 #f.write("\n")
+
+
 
 ''''''
 for generation in ["final"]:
@@ -31,12 +37,18 @@ for generation in ["final"]:
     # For each genome
     for index, row in evolved_data.iterrows():
         ''''''
+
         # Check if it has team reward and 2 agents
-        if row["reward_level"] == "team" and row["num_agents"] == 2:
+        if row["reward_level"] == "team" and row["num_agents"] == num_agents and row["sliding_speed"] == sliding_speed:
             # Get genome from corresponding model file
             model_file = os.path.join(evolved_genomes_results_directory, row["model_name"])
 
-            parameter_filename = os.path.join(evolved_genomes_parameters_directory, "_".join(row["model_name"].split("_")[:-2]) + ".json")
+            # Use this line if the evolutionary run also did seeding
+            parameter_filename = os.path.join(evolved_genomes_parameters_directory, "cma_with_seeding_" + "_".join(row["model_name"].split("/")[-1].split("_")[1:-2]) + ".json")
+
+            # Use this line if the evolutionary run did not use seeding
+            #parameter_filename = os.path.join(evolved_genomes_parameters_directory, "_".join(row["model_name"].split("_")[:-2]) + ".json")
+
             fitness_calculator = FitnessCalculator(parameter_filename)
 
             full_genome = np.load(model_file)
@@ -60,17 +72,31 @@ for generation in ["final"]:
 
         ''''''
         # Duplicate genome if it has an individual reward
-        if row["reward_level"] == "individual" and row["num_agents"] == 2:
+        if row["reward_level"] == "individual" and row["num_agents"] == num_agents and row["sliding_speed"] == sliding_speed:
             # Get genome from corresponding model file
             model_file = os.path.join(evolved_genomes_results_directory, row["model_name"])
 
-            parameter_filename = os.path.join(evolved_genomes_parameters_directory, "_".join(row["model_name"].split("_")[:-2]) + ".json")
+            # Use this line if the evolutionary run also did seeding
+            parameter_filename = os.path.join(evolved_genomes_parameters_directory, "cma_with_seeding_" + "_".join(row["model_name"].split("/")[-1].split("_")[1:-2]) + ".json")
+
+            # Use this line if the evolutionary run did not use seeding
+            # parameter_filename = os.path.join(evolved_genomes_parameters_directory, "_".join(row["model_name"].split("_")[:-2]) + ".json")
+
             fitness_calculator = FitnessCalculator(parameter_filename)
 
             mean_array = np.load(model_file)
             variance = None
 
-            log_file = os.path.join(evolved_genomes_results_directory, "_".join(row["model_name"].split("_")[:-1]) + ".log")
+            name_substring = "_".join(str(param) for param in row["model_name"].split("/")[-1].split("_")[1:-2])
+            regex_string = f'{evolved_genomes_results_directory}/cma_with_seeding_*{name_substring}*.log'
+            log_files = glob(regex_string)
+
+            if len(log_files) > 1 or len(log_files) < 1:
+                raise RuntimeError("Inappropriate number of log files")
+
+            log_file = log_files[0]
+            #log_file = os.path.join(evolved_genomes_results_directory, "_".join(row["model_name"].split("_")[:-1]) + ".log")
+
             g = open(log_file, "r")
             log_data = g.read().strip().split("\n")
             g.close()

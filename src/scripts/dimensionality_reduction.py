@@ -8,10 +8,12 @@ from mpl_toolkits import mplot3d
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 
+sliding_speed = 2
+
 #rwg_genomes_files = ["rwg_with_spec.csv"] #+ [f"extra_rwg_{i}.csv" for i in range(6,7)]
 #rwg_genomes_files = [f"extra_rwg_{i}.csv" for i in range(3,4)]
 #rwg_genomes_files = ["rwg_lhs_5.csv"]
-rwg_genomes_files = ["lhs_new_spec.csv"]
+rwg_genomes_files = [f"/Users/mostafa/Documents/Code/PhD/TS-Platform/src/scripts/experiments/different_slopes/lhs_slope_{sliding_speed}.csv"]
 
 rwg_data = []
 for rwg_genomes_file in rwg_genomes_files:
@@ -24,9 +26,9 @@ matrix = []
 scores = []
 rwg_indices = [i for i in range(60)] + [i for i in range(-60,0)]
 
-evolved_genomes_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_11_24_magic_plot_combined_new_seed/results"
+evolved_genomes_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_17_cma_for_diff_slopes_combined/results"
 
-specialisation_file = "data/plots/specialisation_equal_samples.csv"
+specialisation_file = f"/Users/mostafa/Documents/Code/PhD/TS-Platform/src/scripts/experiments/different_slopes/specialisation_different_slopes_{sliding_speed}.csv"
 specialisation_data = pd.read_csv(specialisation_file)
 spec_score_keys = ["R_coop", "R_coop_eff", "R_spec", "R_coop x P", "R_coop_eff x P", "R_spec x P"]
 spec_scores = {}
@@ -88,7 +90,7 @@ for generation in ["final"]:
     # For each genome
     for index, row in evolved_data.iterrows():
         # Check if it has team reward and 2 agents
-        if row["reward_level"] == "team" and row["num_agents"] == 2:
+        if row["reward_level"] == "team" and row["num_agents"] == 2 and row["sliding_speed"] == sliding_speed:
             # Get genome from corresponding model file
             model_file = os.path.join(evolved_genomes_directory, row["model_name"])
             genome = np.load(model_file)
@@ -99,7 +101,7 @@ for generation in ["final"]:
 
         ''''''
         # Duplicate genome if it has an individual reward
-        if row["reward_level"] == "individual" and row["num_agents"] == 2:
+        if row["reward_level"] == "individual" and row["num_agents"] == 2 and row["sliding_speed"] == sliding_speed:
             # Get genome from corresponding model file
             model_file = os.path.join(evolved_genomes_directory, row["model_name"])
             genome = np.load(model_file)
@@ -108,7 +110,7 @@ for generation in ["final"]:
 
             num_ind += 1
 
-        if row["num_agents"] == 2:
+        if row["num_agents"] == 2 and row["sliding_speed"] == sliding_speed:
             # Find row in spec dataframe with matching index and filename
             matching_rows = specialisation_data.loc[(specialisation_data['Model Name'] == row["model_name"]) & (specialisation_data['Model Directory'] == evolved_genomes_directory)]
 
@@ -180,7 +182,7 @@ for row in range(1, 4):
 plt.suptitle("3D Mapping of Fitness Landscape")
 #fig.legend(loc="lower left")
 #plt.savefig(f"tsne_new_spec_lhs_5_60_samples.png")
-plt.savefig(f"tsne_lhs_all_variants.png")
+plt.savefig(f"tsne_lhs_all_variants_slope_{sliding_speed}.png")
 #plt.show()
 
 

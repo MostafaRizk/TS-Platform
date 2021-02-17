@@ -87,12 +87,11 @@ def get_seed_file(results_folder, parameter_list):
     @return:
     """
     # Get pre and post seed params for model
-    og_dir = os.getcwd()
-    print(og_dir)
-    seed_folder = f'{results_folder}/results'
-    os.chdir(seed_folder)
-    parameter_list[0] = "rwg"
-    parameter_list = [parameter_list[0]] + parameter_list[3:27]
+    seed_folder = os.path.join(results_folder, 'results')
+    if parameter_list[1] != "with":
+        parameter_list = ["rwg"] + parameter_list[1:27]
+    else:
+        parameter_list = ["rwg"] + parameter_list[3:27]
 
     # If individual reward, allow seeds that used any number of agents
     if parameter_list[2] == "individual":
@@ -101,9 +100,7 @@ def get_seed_file(results_folder, parameter_list):
     # Get list of all seed files with matching parameters
     seedfile_prefix = "_".join([str(param) for param in parameter_list])
     seedfile_extension = ".npy"
-    possible_seedfiles = glob(f'{seedfile_prefix}*{seedfile_extension}')
-
-    os.chdir(og_dir)
+    possible_seedfiles = glob(f'{seed_folder}/{seedfile_prefix}*{seedfile_extension}')
 
     # Return seed_file name but throw error if there's more than one
     if len(possible_seedfiles) == 0:
@@ -122,17 +119,17 @@ def create_results_from_models(results_folder, start_generation, step_size, num_
     @param results_folder:
     @return:
     """
-    new_path = f'{results_folder}/results'
-    os.chdir(new_path)
+    new_path = os.path.join(results_folder, 'results')
     generation_list = [i for i in range(start_generation, num_generations+step_size, step_size)]
     generation_list += ["final"]
 
     for generation in generation_list:
+        print(f"Doing results for generation {generation}")
         # Get list of all final models
-        model_files = glob(f'cma*_{generation}.npy')
+        model_files = glob(f'{new_path}/cma*_{generation}.npy')
 
         # Create final results file
-        results_file = f'results_{generation}.csv'
+        results_file = os.path.join(new_path, f'results_{generation}.csv')
         f = open(results_file, 'w')
 
         # Write header
@@ -142,10 +139,9 @@ def create_results_from_models(results_folder, start_generation, step_size, num_
 
         # For every model, extract parameters and convert to a comma separated list
         for model_name in model_files:
-            parameter_list = model_name.split("_")[0:-2]
+            parameter_list = model_name.split("/")[-1].split("_")[0:-2]
             fitness = model_name.split("_")[-2]
-            path_to_results = f'../'
-            seed_file = get_seed_file(path_to_results, parameter_list)
+            seed_file = get_seed_file(results_folder, parameter_list)
             seed_fitness = seed_file.split("_")[-1].strip(".npy")
 
             # Log parameters and score to results file
@@ -165,4 +161,4 @@ def create_results_from_models(results_folder, start_generation, step_size, num_
 # fix_results(results_folder="../../results/2020_11_08_2_agents_with varied_episodes/results_final.csv", start_generation=20, num_generations=1000, step_size=20)
 
 
-create_results_from_models("../../results/2021_02_12_evo_for_diff_slopes", start_generation=20, step_size=20, num_generations=1000)
+create_results_from_models("/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_17_cma_for_diff_slopes_combined", start_generation=20, step_size=20, num_generations=1000)
