@@ -7,6 +7,7 @@ from fitness import FitnessCalculator
 from agents.nn_agent_lean import NNAgent
 #from scripts.video_generator import get_video_from_model
 from scipy.stats import multivariate_normal
+from glob import glob
 
 
 '''
@@ -293,3 +294,51 @@ for index, row in evolved_data.iterrows():
 
 f.close()
 '''
+
+def sample_individual(path_to_genome):
+    model_name = path_to_genome.split("/")[-1]
+    main_folder = "/".join(str(param) for param in path_to_genome.split("/")[:-2])
+    experiments_folder = os.path.join(main_folder, "experiments")
+    results_folder = os.path.join(main_folder, "results")
+
+    parameter_filename = os.path.join(experiments_folder, "cma_with_seeding_" + "_".join(model_name.split("/")[-1].split("_")[1:-2]) + ".json")
+    fitness_calculator = FitnessCalculator(parameter_filename)
+
+    mean_array = np.load(path_to_genome)
+    variance = None
+
+    name_substring = "_".join(str(param) for param in model_name.split("/")[-1].split("_")[1:-2])
+    regex_string = f'{results_folder}/cma_with_seeding_*{name_substring}*.log'
+    log_files = glob(regex_string)
+
+    if len(log_files) > 1 or len(log_files) < 1:
+        raise RuntimeError("Inappropriate number of log files")
+
+    log_file = log_files[0]
+    g = open(log_file, "r")
+    log_data = g.read().strip().split("\n")
+    g.close()
+
+    # If last line starts with Best, get line before
+    flag = True
+    i = -1
+    while flag:
+        if log_data[i].startswith("Best"):
+            variance = float(log_data[i - 1].strip().split()[4]) / 10
+            flag = False
+        else:
+            i -= 1
+
+    # 1000 100000 -1.998880000000000e+04 2.4e+00 4.46e-02  4e-02  5e-02 526:49.5
+    seed = int(model_name.split("/")[-1].split("_")[5])
+
+    random_variable = multivariate_normal(mean=mean_array, cov=np.identity(len(mean_array)) * variance)
+    team = random_variable.rvs(2, seed)
+    agent_1 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_filename, team[0])
+    agent_2 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_filename, team[1])
+    results = fitness_calculator.calculate_fitness(agent_list=[agent_1, agent_2], render=True, time_delay=0.1,
+                                                   measure_specialisation=True, logging=False, logfilename=None,
+                                                   render_mode="human")
+
+path = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_17_cma_for_diff_slopes_combined/results/cma_heterogeneous_individual_nn_slope_550290314_2_4_1_0_8_4_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_1000_0.001_0.0_13926.0_final.npy"
+sample_individual(path)

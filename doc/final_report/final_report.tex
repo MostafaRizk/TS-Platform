@@ -566,19 +566,12 @@ If the specialist solutions outscore the generalists by a margin significantly l
 
 We see in Figure \ref{fig:slope_0_rwg} that for a sliding speed of 0 (i.e. flat slope) all solutions fall into the lowest bucket, with no episodes exceeding a score of 50,000.
 Additionally, there are no visible green data points, suggesting that none of the discovered solutions are specialists.
-
-*Watch video of the fittest behaviour and the most specialised behaviour from rwg normal*
+The fittest genome is a generalist (where one of the agents does nothing) and the most specialised in the top 100 is a team where an agent picks up a resource another agent dropped, but because there is no slope, resources don't slide when dropped.\\
 
 For additional clarity, I applied the same dimensionality reduction technique as in the previous section (including performing latin hypercube sampling and 60 evolutionary runs).
 The results in Figure \ref{fig:tsne_slope_0} provide additional support for these findings.
 In the top row, there are no green data points in the two rightmost plots, but a single light green data point in the leftmost plot.
 The $R_{coop}$ metric counts any cooperative transportation as specialisation whereas the $R_{coop_eff}$ and $R_{spec}$ metrics prioritise behaviours that drop on the slope and pick up on the cache, so there appears to be no specialisation.\\
-
-Adding in the data-points from evolution, we see a single optimum emerge with the majority of solutions being generalists.
-When we observe the behaviour of the green data-points we see
-
-*Watch video of most specialised evolved solutions for slope 0*
-
 
 \begin{figure}[h]
 \centering
@@ -586,6 +579,29 @@ When we observe the behaviour of the green data-points we see
 \caption{Reduced Fitness Landscape for sliding speed 0}
 \label{fig:tsne_slope_0}
 \end{figure}
+
+Adding in the data-points from evolution, we see a single optimum emerge with the majority of solutions being generalists.
+When we observe the behaviour of the green data-points we see one agent dropping repeatedly on the slope then dropping on the cache.
+The other agent picks up from the cache, so it is counted as specialisation, even by $R_{spec}$.\\
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.0\textwidth]{experiment_1.4/slope_2.png}
+\caption{RWG Analysis for sliding speed 2}
+\label{fig:slope_2_rwg}
+\end{figure}
+
+In Figure \ref{fig:slope_2_rwg} we can see there are more green points and they achieve a higher score.
+Observation of the behaviour confirms that they are specialists dropping and collecting as in the setup with sliding speed 4.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.0\textwidth]{experiment_1.4/tsne_lhs_all_variants_slope_2.png}
+\caption{Reduced Fitness Landscape for sliding speed 2}
+\label{fig:tsne_slope_2}
+\end{figure}
+
+The dimensionality plot in Figure \ref{fig:tsne_slope_2} is more unusual
 
 \subsection{Decentralised Solutions} 
 
