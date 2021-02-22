@@ -20,7 +20,8 @@ class CMALearner(Learner):
         super().__init__(calculator)
 
         if self.parameter_dictionary['general']['algorithm_selected'] != "cma" and \
-                self.parameter_dictionary['general']['algorithm_selected'] != "cma_with_seeding":
+                self.parameter_dictionary['general']['algorithm_selected'] != "cma_with_seeding" and \
+                self.parameter_dictionary['general']['algorithm_selected'] != "partialcma":
             raise RuntimeError(f"Cannot run cma. Parameters request "
                                f"{self.parameter_dictionary['general']['algorithm_selected']}")
 
@@ -178,11 +179,14 @@ class CMALearner(Learner):
         """
 
         if self.parameter_dictionary['algorithm']['cma']['seeding_required'] == "True" or \
-                self.parameter_dictionary['algorithm'] == "cma_with_seeding":
+                self.parameter_dictionary['algorithm'] == "cma_with_seeding" or \
+                self.parameter_dictionary['algorithm'] == "partialcma":
             dictionary_copy = copy.deepcopy(self.parameter_dictionary)
 
             if dictionary_copy['general']['algorithm_selected'] != "partialcma":
                 dictionary_copy['general']['algorithm_selected'] = "rwg"
+            else:
+                dictionary_copy['general']['algorithm_selected'] = "cma"
 
             # If individual reward, allow seeds that used any number of agents
             if dictionary_copy['general']['reward_level'] == "individual":
