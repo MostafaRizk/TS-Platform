@@ -77,6 +77,14 @@ def rename_as_cma(directory):
         newfile = os.path.join(directory, newfilename)
         move(file, newfile)
 
+def fix_mistake(directory):
+    npy_files = glob(f'{directory}/*npy')
+
+    for file in npy_files:
+        newfilename = "cma_heterogeneous_" + "_".join(str(param) for param in file.split("/")[-1].split("_")[5:])
+        newfile = os.path.join(directory, newfilename)
+        move(file, newfile)
+
 results_path = "../../results/"
 old_results_folder = "2021_02_17_LHS_and_evo_for_smooth_fitness"
 new_experiments_folder = "2021_02_22_partial_cma_for_incomplete_smooth_runs"
@@ -84,5 +92,6 @@ new_experiments_folder = "2021_02_22_partial_cma_for_incomplete_smooth_runs"
 old_directory = os.path.join(results_path, old_results_folder)
 new_directory = os.path.join(results_path, new_experiments_folder)
 
-get_incomplete_runs(old_directory, new_directory)
-rename_as_cma(os.path.join(new_directory, "experiments"))
+#get_incomplete_runs(old_directory, new_directory)
+#rename_as_cma(os.path.join(new_directory, "experiments"))
+fix_mistake(os.path.join(new_directory, "experiments"))
