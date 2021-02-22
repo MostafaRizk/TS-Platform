@@ -78,11 +78,11 @@ def rename_as_cma(directory):
         move(file, newfile)
 
 results_path = "../../results/"
-old_results_folder = "2021_02_12_evo_for_diff_slopes"
-new_experiments_folder = "2021_02_15_partial_cma_for_incomplete_diff_slope_runs"
+old_results_folder = "2021_02_17_LHS_and_evo_for_smooth_fitness"
+new_experiments_folder = "2021_02_22_partial_cma_for_incomplete_smooth_runs"
 
 old_directory = os.path.join(results_path, old_results_folder)
 new_directory = os.path.join(results_path, new_experiments_folder)
 
-#get_incomplete_runs(old_directory, new_directory)
-#rename_as_cma(os.path.join(new_directory, "experiments"))
+get_incomplete_runs(old_directory, new_directory)
+rename_as_cma(os.path.join(new_directory, "experiments"))
