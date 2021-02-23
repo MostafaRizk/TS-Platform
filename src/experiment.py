@@ -5,7 +5,8 @@ import json
 from fitness import FitnessCalculator
 from learning.learner_parent import Learner
 from learning.rwg import RWGLearner
-from learning.cma import CMALearner
+from learning.cma_centralised import CentralisedCMALearner
+from learning.cma_decentralised import DecentralisedCMALearner
 
 parser = argparse.ArgumentParser(description='Run an experiment')
 parser.add_argument('--parameters', action="store", dest="parameter_filename")
@@ -20,8 +21,14 @@ if parameter_dictionary["general"]["algorithm_selected"] == "rwg":
 
 elif parameter_dictionary["general"]["algorithm_selected"] == "cma" or \
         parameter_dictionary["general"]["algorithm_selected"] == "partialcma":
-    learner = CMALearner(fitness_calculator)
-    genome, fitness = learner.learn()
+
+    if parameter_dictionary["general"]["learning_type"] == "centralised":
+        learner = CentralisedCMALearner(fitness_calculator)
+        genome, fitness = learner.learn()
+
+    elif parameter_dictionary["general"]["learning_type"] == "decentralised":
+        learner = DecentralisedCMALearner(fitness_calculator)
+        genomes, fitnesses = learner.learn()
 
 elif parameter_dictionary["general"]["algorithm_selected"] == "cma_with_seeding":
 
@@ -38,6 +45,9 @@ elif parameter_dictionary["general"]["algorithm_selected"] == "cma_with_seeding"
     # Copy general parameters from cma to rwg
     rwg_parameter_dictionary["general"] = copy.deepcopy(parameter_dictionary["general"])
     rwg_parameter_dictionary["general"]["algorithm_selected"] = "rwg"
+
+    if parameter_dictionary["general"]["learning_type"] == "decentralised":
+        rwg_parameter_dictionary["general"]["learning_type"] = "centralised"
 
     # Copy environment parameters from cma to rwg
     rwg_parameter_dictionary["environment"] = copy.deepcopy(parameter_dictionary["environment"])
@@ -64,8 +74,13 @@ elif parameter_dictionary["general"]["algorithm_selected"] == "cma_with_seeding"
     genome1, fitness1 = learner1.learn()
 
     # Learning
-    learner2 = CMALearner(fitness_calculator)
-    genome2, fitness2 = learner2.learn()
+    if parameter_dictionary["general"]["learning_type"] == "centralised":
+        learner2 = CentralisedCMALearner(fitness_calculator)
+        genome2, fitness2 = learner2.learn()
+
+    elif parameter_dictionary["general"]["learning_type"] == "decentralised":
+        learner2 = DecentralisedCMALearner(fitness_calculator)
+        genomes, fitnesses = learner2.learn()
 
 
 

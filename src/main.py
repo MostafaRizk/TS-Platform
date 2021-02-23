@@ -1,10 +1,5 @@
 import argparse
 from fitness import FitnessCalculator
-from learning.rwg import RWGLearner
-from learning.cma import CMALearner
-from agents.hardcoded.generalist import HardcodedGeneralistAgent
-from agents.hardcoded.dropper import HardcodedDropperAgent
-from agents.hardcoded.collector import HardcodedCollectorAgent
 
 '''
 parser = argparse.ArgumentParser(description='Run an experiment')

@@ -3,7 +3,7 @@ import pandas as pd
 import json
 
 from glob import glob
-from learning.cma import CMALearner
+from learning.cma_parent import CMALearner
 from learning.learner_parent import Learner
 from shutil import copyfile, move
 
