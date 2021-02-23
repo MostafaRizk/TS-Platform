@@ -3,10 +3,10 @@
         "learning_type": "centralised",
         "algorithm_selected": "cma_with_seeding",
         "team_type": "heterogeneous",
-        "reward_level": "individual",
+        "reward_level": "team",
         "agent_type": "nn",
         "environment": "slope",
-        "calculate_specialisation": "True",
+        "calculate_specialisation": "False",
         "seed": 0
     },
     "environment": {

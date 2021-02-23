@@ -5,6 +5,7 @@ import copy
 import sys
 import os
 import numpy as np
+import ray
 
 from fitness import FitnessCalculator
 from learning.learner_decentralised import DecentralisedLearner
@@ -14,6 +15,37 @@ from io import StringIO
 
 from learning.rwg import RWGLearner
 
+@ray.remote
+def learn_in_parallel(learner, index, fitness_calculator, insert_representative_genomes_in_population, remove_representative_fitnesses, convert_genomes_to_agents, calculate_specialisation):
+    new_learner = copy.deepcopy(learner)
+
+    # Get population of genomes to be used this generation
+    genome_population = new_learner.ask()
+
+    # Convert genomes to agents
+    extended_genome_population = insert_representative_genomes_in_population(genome_population, index)
+    agent_population = convert_genomes_to_agents(extended_genome_population)
+
+    # Get fitnesses of genomes (same as fitnesses of agents)
+    genome_fitness_lists, team_specialisations = fitness_calculator.calculate_fitness_of_agent_population(agent_population, calculate_specialisation)
+
+    # Remove fitness values of the representative agents of the other populations
+    genome_fitness_lists = remove_representative_fitnesses(genome_fitness_lists)
+    genome_fitness_average = [np.mean(fitness_list) for fitness_list in genome_fitness_lists]
+
+    # Update the algorithm with the new fitness evaluations
+    # CMA minimises fitness so we negate the fitness values
+    new_learner.tell(genome_population, [-f for f in genome_fitness_average])
+
+    # Update representative agent
+    best_genome = learner.result[0]
+    best_fitness = -learner.result[1]
+
+    return new_learner, best_genome, best_fitness
+
+@ray.remote
+def empty_task():
+    return None
 
 class DecentralisedCMALearner(DecentralisedLearner, CMALearner):
     def __init__(self, calculator):
@@ -52,43 +84,36 @@ class DecentralisedCMALearner(DecentralisedLearner, CMALearner):
             stopping_reasons += [None]
             best_fitnesses += [None]
 
+        ray.init(num_cpus=self.num_agents)
+
         for generation in range(self.parameter_dictionary['algorithm']['cma']['generations']):
+            parallel_threads = []
+
             for index, learner in enumerate(learners):
                 if not learner.stop():
-                    # Get population of genomes to be used this generation
-                    genome_population = learner.ask()
+                    parallel_threads += [learn_in_parallel.remote(learner, index, self.fitness_calculator, self.insert_representative_genomes_in_population, self.remove_representative_fitnesses, self.convert_genomes_to_agents, self.calculate_specialisation)]
 
-                    # Convert genomes to agents
-                    extended_genome_population = self.insert_representative_genomes_in_population(genome_population, index)
-                    agent_population = self.convert_genomes_to_agents(extended_genome_population)
+                elif not stopping_reasons[index]:
+                    # Log reason for stopping
+                    parallel_threads += [empty_task()]
+                    stopping_reasons[index] = [learner.stop()]
+                    print(stopping_reasons[index])
 
-                    # Get fitnesses of genomes (same as fitnesses of agents)
-                    genome_fitness_lists, team_specialisations = self.fitness_calculator.calculate_fitness_of_agent_population(agent_population, self.calculate_specialisation)
+            parallel_results = ray.get(parallel_threads)
 
-                    # Remove fitness values of the representative agents of the other populations
-                    genome_fitness_lists = self.remove_representative_fitnesses(genome_fitness_lists)
-                    genome_fitness_average = [np.mean(fitness_list) for fitness_list in genome_fitness_lists]
+            for index in range(len(learners)):
+                if parallel_results[index]:
+                    updated_learner, best_genome, best_fitness = parallel_results[index]
 
-                    # Update the algorithm with the new fitness evaluations
-                    # CMA minimises fitness so we negate the fitness values
-                    learner.tell(genome_population, [-f for f in genome_fitness_average])
-
-                    # Update representative agent
-                    best_genome = learner.result[0]
-                    best_fitness = -learner.result[1]
-                    self.representative_genomes[index] = best_genome
+                    learners[index] = updated_learner
                     best_fitnesses[index] = best_fitness
+                    self.representative_genomes[index] = best_genome
 
                     # Log best genome for this learner
                     if generation % self.logging_rate == 0:
                         self.log(best_genome, best_fitness, generation, seed_fitness, index)
 
-                    learner.disp()
-
-                elif not stopping_reasons[index]:
-                    # Log reason for stopping
-                    stopping_reasons[index] = [learner.stop()]
-                    print(stopping_reasons[index])
+                    updated_learner.disp()
 
         # Print fitness of best representative from each population
         print(f"Best fitnesses are {best_fitnesses}")
