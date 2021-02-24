@@ -340,5 +340,43 @@ def sample_individual(path_to_genome):
                                                    measure_specialisation=True, logging=False, logfilename=None,
                                                    render_mode="human")
 
-path = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_17_cma_for_diff_slopes_combined/results/cma_heterogeneous_individual_nn_slope_550290314_2_4_1_0_8_4_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_1000_0.001_0.0_13926.0_final.npy"
-sample_individual(path)
+def visualise_decentralised():
+    agent_1_path = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_23_decentralised_test/results/decentralised_cma_with_seeding_heterogeneous_individual_nn_slope_1_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_100_0.001_0.0_0_59324.79999999987_final.npy"
+    agent_2_path = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_23_decentralised_test/results/decentralised_cma_with_seeding_heterogeneous_individual_nn_slope_1_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_100_0.001_0.0_1_60900.0_final.npy"
+    parameter_filename = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_23_decentralised_test/experiments/decentralised_test.json"
+    fitness_calculator = FitnessCalculator(parameter_filename)
+
+    genome_1 = np.load(agent_1_path)
+    genome_2 = np.load(agent_2_path)
+    agent_1 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
+                      parameter_filename, genome_1)
+    agent_2 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
+                      parameter_filename, genome_2)
+    results = fitness_calculator.calculate_fitness(agent_list=[agent_1, agent_2], render=False, time_delay=0,
+                                                   measure_specialisation=True, logging=False, logfilename=None,
+                                                   render_mode="human")
+    print(results)
+
+def visualise_centralised():
+    team_path = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_23_decentralised_test/results/centralised_cma_with_seeding_heterogeneous_team_nn_slope_1_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_100_0.001_0.0_33848.09000000001_final.npy"
+    parameter_filename = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_23_decentralised_test/experiments/centralised_test.json"
+    fitness_calculator = FitnessCalculator(parameter_filename)
+
+    full_genome = np.load(team_path)
+    mid = int(len(full_genome) / 2)
+    genome_part_1 = full_genome[0:mid]
+    genome_part_2 = full_genome[mid:]
+    agent_1 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
+                      parameter_filename, genome_part_1)
+    agent_2 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
+                      parameter_filename, genome_part_2)
+    results = fitness_calculator.calculate_fitness(agent_list=[agent_1, agent_2], render=False, time_delay=0,
+                                                   measure_specialisation=True, logging=False, logfilename=None,
+                                                   render_mode="human")
+    print(results)
+
+
+
+#path = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_23_decentralised_test/results/decentralised_cma_with_seeding_heterogeneous_individual_nn_slope_1_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_100_0.001_0.0_0_59324.79999999987_final.npy"
+#visualise_decentralised()
+visualise_centralised()
