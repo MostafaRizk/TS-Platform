@@ -2,6 +2,7 @@ import os
 import numpy as np
 import json
 import pandas as pd
+import time
 
 from fitness import FitnessCalculator
 from agents.nn_agent_lean import NNAgent
@@ -341,9 +342,9 @@ def sample_individual(path_to_genome):
                                                    render_mode="human")
 
 def visualise_decentralised():
-    agent_1_path = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_23_decentralised_test/results/decentralised_cma_with_seeding_heterogeneous_individual_nn_slope_1_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_100_0.001_0.0_0_59324.79999999987_final.npy"
-    agent_2_path = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_23_decentralised_test/results/decentralised_cma_with_seeding_heterogeneous_individual_nn_slope_1_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_100_0.001_0.0_1_60900.0_final.npy"
-    parameter_filename = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_23_decentralised_test/experiments/decentralised_test.json"
+    agent_1_path = "/home/mriz9/Code/TS-Platform/results/2021_02_23_decentralised_test/results/decentralised_cma_with_seeding_heterogeneous_individual_nn_slope_1_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_100_0.001_0.0_0_59324.79999999987_final.npy"
+    agent_2_path = "/home/mriz9/Code/TS-Platform/results/2021_02_23_decentralised_test/results/decentralised_cma_with_seeding_heterogeneous_individual_nn_slope_1_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_100_0.001_0.0_1_60900.0_final.npy"
+    parameter_filename = "/home/mriz9/Code/TS-Platform/results/2021_02_23_decentralised_test/experiments/decentralised_test.json"
     fitness_calculator = FitnessCalculator(parameter_filename)
 
     genome_1 = np.load(agent_1_path)
@@ -355,11 +356,13 @@ def visualise_decentralised():
     results = fitness_calculator.calculate_fitness(agent_list=[agent_1, agent_2], render=False, time_delay=0,
                                                    measure_specialisation=True, logging=False, logfilename=None,
                                                    render_mode="human")
-    print(results)
+    #print(results)
+    team_score = np.mean([results['fitness_matrix'][0][i] + results['fitness_matrix'][1][i] for i in range(len(results['fitness_matrix']))])
+    print(team_score)
 
 def visualise_centralised():
-    team_path = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_23_decentralised_test/results/centralised_cma_with_seeding_heterogeneous_team_nn_slope_1_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_100_0.001_0.0_33848.09000000001_final.npy"
-    parameter_filename = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_23_decentralised_test/experiments/centralised_test.json"
+    team_path = "/home/mriz9/Code/TS-Platform/results/2021_02_23_decentralised_test/results/centralised_cma_with_seeding_heterogeneous_team_nn_slope_1_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_100_0.001_0.0_33848.09000000001_final.npy"
+    parameter_filename = "/home/mriz9/Code/TS-Platform/results/2021_02_23_decentralised_test/experiments/centralised_test.json"
     fitness_calculator = FitnessCalculator(parameter_filename)
 
     full_genome = np.load(team_path)
@@ -373,10 +376,20 @@ def visualise_centralised():
     results = fitness_calculator.calculate_fitness(agent_list=[agent_1, agent_2], render=False, time_delay=0,
                                                    measure_specialisation=True, logging=False, logfilename=None,
                                                    render_mode="human")
-    print(results)
+    #print(results)
+    team_score = np.mean([results['fitness_matrix'][0][i] + results['fitness_matrix'][1][i] for i in
+                          range(len(results['fitness_matrix']))])
+    print(team_score)
 
 
 
 #path = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_23_decentralised_test/results/decentralised_cma_with_seeding_heterogeneous_individual_nn_slope_1_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_100_0.001_0.0_0_59324.79999999987_final.npy"
-#visualise_decentralised()
+start = time.perf_counter()
 visualise_centralised()
+stop = time.perf_counter()
+print(f"Centralised takes {stop-start}")
+
+start = time.perf_counter()
+visualise_decentralised()
+stop = time.perf_counter()
+print(f"Decentralised takes {stop-start}")
