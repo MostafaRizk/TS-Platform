@@ -353,7 +353,7 @@ def visualise_decentralised():
                       parameter_filename, genome_1)
     agent_2 = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
                       parameter_filename, genome_2)
-    results = fitness_calculator.calculate_fitness(agent_list=[agent_1, agent_2], render=False, time_delay=0,
+    results = fitness_calculator.calculate_fitness(agent_list=[agent_1, agent_2], render=True, time_delay=0.1,
                                                    measure_specialisation=True, logging=False, logfilename=None,
                                                    render_mode="human")
     #print(results)

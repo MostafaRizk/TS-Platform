@@ -1,9 +1,10 @@
-import ray
+#import ray
 import time
 
 from copy import deepcopy
 
 
+'''
 @ray.remote
 def parallel_learning(representatives, generations, index):
     other = [1, 0]
@@ -97,11 +98,11 @@ class DummyLearner3:
         return self.representatives
 
 
-parallel_learner = DummyLearner()
+#parallel_learner = DummyLearner()
 #parallel_learner = DummyLearner2()
-results = parallel_learner.learn()
+#results = parallel_learner.learn()
 #serial_learner = DummyLearner3()
 #results = serial_learner.learn()
-print(results)
-
-
+#print(results)
+'''
+from helpers import rendering
