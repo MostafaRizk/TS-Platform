@@ -93,7 +93,7 @@ class SlopeEnv:
 
         self.agent_positions = [None] * self.num_agents
         self.resource_positions = [None] * self.max_resources
-        self.resource_carried_by = [[] for i in range(self.default_num_resources)]
+        self.resource_carried_by = [[False for i in range(self.num_agents)] for j in range(self.max_resources)]
         self.resource_history = [{"dropped_on_slope": False, # True/False (False unless the resource was dropped on the slope once)
                                   "dropper_index": -1, # index of agent that dropped the resource on the slope
                                   "collected_from_cache": False, # True/False (The last time it was picked up, was it picked up on the cache?)
@@ -164,7 +164,7 @@ class SlopeEnv:
 
         self.viewer = None
         self.resource_positions = [None] * self.max_resources
-        self.resource_carried_by = [[] for i in range(self.default_num_resources)]
+        self.resource_carried_by = [[False for i in range(self.num_agents)] for j in range(self.max_resources)]
         self.resource_history = [
             {"dropped_on_slope": False,  # True/False (False unless the resource was dropped on the slope once)
              "dropper_index": -1,  # index of agent that dropped the resource on the slope
@@ -631,8 +631,8 @@ class SlopeEnv:
         """
         resource_id = self.has_resource[agent_id]
 
-        if agent_id not in self.resource_carried_by[resource_id]:
-            self.resource_carried_by[resource_id] += [agent_id]
+        if not self.resource_carried_by[resource_id][agent_id]:
+            self.resource_carried_by[resource_id][agent_id] = True
 
         self.has_resource[agent_id] = None
 
@@ -672,7 +672,6 @@ class SlopeEnv:
                     self.resource_transforms += [rendering.Transform()]
                 except:
                     pass
-                self.resource_carried_by += [[]]
                 resource_placed = True
                 self.current_num_resources += 1
                 try:
@@ -712,11 +711,11 @@ class SlopeEnv:
             if self.resource_positions[i] == self.dumping_position:
                 total_resources_retrieved += 1
 
-                if len(self.resource_carried_by[i]) > 1:
+                if sum(self.resource_carried_by[i]) > 1:
                     n_coop += 1
 
                 # Mark all agents that participated in the retrieval of any resource
-                for agent_index in range(len(self.resource_carried_by[i])):
+                for agent_index in range(sum(self.resource_carried_by[i])):
                     agent_participated[agent_index] = True
 
                 if self.resource_history[i]["dropped_on_slope"] and self.resource_history[i]["collected_from_cache"] and \
