@@ -92,12 +92,13 @@ class SlopeEnv:
             pass
 
         self.agent_positions = [None] * self.num_agents
-        self.resource_positions = [None] * self.max_resources
+        self.resources_in_arena = {}
         self.resource_carried_by = [[False for i in range(self.num_agents)] for j in range(self.max_resources)]
         self.resource_history = [{"dropped_on_slope": False, # True/False (False unless the resource was dropped on the slope once)
                                   "dropper_index": -1, # index of agent that dropped the resource on the slope
                                   "collected_from_cache": False, # True/False (The last time it was picked up, was it picked up on the cache?)
-                                  "collector_index": -1 # index of agent who last picked it up on the cache (if the resource is delivered, this will also be the agent that delivers it)
+                                  "collector_index": -1, # index of agent who last picked it up on the cache (if the resource is delivered, this will also be the agent that delivers it)
+                                  "retrieved": False # Was the resource retrieved
                                   } for i in range(self.max_resources)]
 
 
@@ -163,15 +164,14 @@ class SlopeEnv:
             pass
 
         self.viewer = None
-        self.resource_positions = [None] * self.max_resources
+        self.resources_in_arena = {}
         self.resource_carried_by = [[False for i in range(self.num_agents)] for j in range(self.max_resources)]
         self.resource_history = [
-            {"dropped_on_slope": False,  # True/False (False unless the resource was dropped on the slope once)
-             "dropper_index": -1,  # index of agent that dropped the resource on the slope
+            {"dropped_on_slope": False,
+             "dropper_index": -1,
              "collected_from_cache": False,
-             # True/False (The last time it was picked up, was it picked up on the cache?)
-             "collector_index": -1
-             # index of agent who last picked it up on the cache (if the resource is delivered, this will also be the agent that delivers it)
+             "collector_index": -1,
+             "retrieved": False
              } for i in range(self.max_resources)]
 
         try:
@@ -202,7 +202,7 @@ class SlopeEnv:
                 x, y = self.generate_resource_position()
                 if self.resource_map[y][x] == 0:
                     self.resource_map[y][x] = i + 1
-                    self.resource_positions[i] = (x, y)
+                    self.resources_in_arena[i] = (x, y)
                     resource_placed = True
 
         # Reset variables that were changed during runtime
@@ -263,9 +263,8 @@ class SlopeEnv:
             self.agent_map[position[1]][position[0]] = 0
 
         # The resources' old positions are wiped out
-        for position in self.resource_positions[0:self.latest_resource_id+1]:
-            if position != self.dumping_position:
-                self.resource_map[position[1]][position[0]] = 0
+        for index,position in self.resources_in_arena.items():
+            self.resource_map[position[1]][position[0]] = 0
 
     def update_agent_positions(self, old_agent_positions):
         """
@@ -294,49 +293,51 @@ class SlopeEnv:
         @param rewards: List of rewards for each agent
         @return: Updated list of rewards for each agent
         """
-        for i in range(self.latest_resource_id+1):
+        resources_to_delete = {}
+
+        for resource_id, resource_position in self.resources_in_arena.items():
             for j in range(len(old_agent_positions)):
                 # Move resources with the agents carrying them or drop them
-                if self.resource_positions[i] == old_agent_positions[j]:
-                    if self.has_resource[j] == i:
+                if resource_position == old_agent_positions[j]:
+                    if self.has_resource[j] == resource_id:
                         if self.action_name[agent_actions[j]] == "DROP":
                             self.drop_resource(j)
 
                             # If agent/resource is on slope, update resource history
-                            if self.get_area_from_position(self.resource_positions[i]) == "SLOPE":
-                                self.resource_history[i]["dropped_on_slope"] = True
-                                self.resource_history[i]["dropper_index"] = j
+                            if self.get_area_from_position(resource_position) == "SLOPE":
+                                self.resource_history[resource_id]["dropped_on_slope"] = True
+                                self.resource_history[resource_id]["dropper_index"] = j
+
+                            # If an agent has returned a resource to the nest, the resource is deleted and all agents
+                            # are rewarded
+                            if self.get_area_from_position(resource_position) == "NEST":
+                                resources_to_delete[resource_id] = resource_id
 
                         else:
-                            self.pickup_or_hold_resource(j, i)
+                            self.pickup_or_hold_resource(j, resource_id)
 
                 # Ensure that a resource that is in range of an agent now gets picked up if the agent is
                 # doing a pickup action and no other agent is carrying the resource
-                if self.resource_in_range(j, i):
-                    if self.has_resource[j] is None and i not in self.has_resource:
+                if self.resource_in_range(j, resource_id):
+                    if self.has_resource[j] is None and resource_id not in self.has_resource:
                         if self.action_name[agent_actions[j]] == "PICKUP":
                             # If resource is on the cache, update resource history
-                            if self.get_area_from_position(self.resource_positions[i]) == "CACHE":
-                                self.resource_history[i]["collected_from_cache"] = True
-                                self.resource_history[i]["collector_index"] = j
+                            if self.get_area_from_position(resource_position) == "CACHE":
+                                self.resource_history[resource_id]["collected_from_cache"] = True
+                                self.resource_history[resource_id]["collector_index"] = j
 
-                            self.pickup_or_hold_resource(j, i)
+                            self.pickup_or_hold_resource(j, resource_id)
 
             # If a resource is on the slope and not in the possession of a agent, it slides
-            if self.resource_positions[i] != self.dumping_position and self.get_area_from_position(self.resource_positions[i]) == "SLOPE" and i not in self.has_resource:
-                self.slide_resource(i)
+            if self.get_area_from_position(resource_position) == "SLOPE" and resource_id not in self.has_resource:
+                self.slide_resource(resource_id)
 
-        # If a agent has returned a resource to the nest, the resource is deleted and the agent is rewarded
-        for i in range(self.num_agents):
-            if self.get_area_from_position(self.agent_positions[i]) == "NEST" and self.has_resource[i] is None and self.agent_positions[i] in self.resource_positions:
-                # Find the resource with the same position as the current agent and get that resource's id
-                resource_id = self.resource_positions.index(self.agent_positions[i])
+        for resource_id in resources_to_delete:
+            for k in range(self.num_agents):
+                rewards[k] += self.reward_for_resource / self.num_agents
 
-                # Reward all agents if a resource is retrieved
-                for j in range(self.num_agents):
-                    rewards[j] += self.reward_for_resource / self.num_agents
-
-                self.delete_resource(resource_id)
+            self.delete_resource(resource_id)
+            self.resource_history[resource_id]["retrieved"] = True
 
         return rewards
 
@@ -348,9 +349,9 @@ class SlopeEnv:
         num_resources_at_source = 0
 
         # Spawn a new resource any time the number of resources at the source decreases below the default threshold
-        for position in self.resource_positions[0:self.latest_resource_id+1]:
+        for resource_id, resource_position in self.resources_in_arena.items():
             try:
-                if self.get_area_from_position(position) == "SOURCE":
+                if self.get_area_from_position(resource_position) == "SOURCE":
                     num_resources_at_source += 1
             except ValueError:
                 pass
@@ -366,9 +367,8 @@ class SlopeEnv:
                 self.spawn_resource()
 
         # Update the state with the new resource positions
-        for i in range(self.latest_resource_id+1):
-            if self.resource_positions[i] != self.dumping_position:
-                self.resource_map[self.resource_positions[i][1]][self.resource_positions[i][0]] = i + 1
+        for resource_id, resource_position in self.resources_in_arena.items():
+            self.resource_map[resource_position[1]][resource_position[0]] = resource_id + 1
 
     # Initialisers ----------------------------------------------------------------------------------------------------
     def generate_arena(self):
@@ -545,8 +545,8 @@ class SlopeEnv:
         """
         for y in range(int(self.source_size)):
             for x in range(self.arena_constraints["x_max"]):
-                if self.resource_map[int(self.source_start) + y][x] == 0 and (
-                x, int(self.source_start) + y) not in self.resource_positions:
+                if self.resource_map[int(self.source_start) + y][x] == 0 and \
+                        (x, int(self.source_start) + y) not in self.resources_in_arena.values():
                     return False
 
         return True
@@ -559,7 +559,7 @@ class SlopeEnv:
         @return: Boolean denoting whether the resource is in range of the agent
         """
         agent_pos = self.agent_positions[agent_index]
-        res_pos = self.resource_positions[resource_index]
+        res_pos = self.resources_in_arena[resource_index]
 
         if agent_pos[0] - self.sensor_range <= res_pos[0] <= agent_pos[0] + self.sensor_range and\
             agent_pos[1] - self.sensor_range <= res_pos[1] <= agent_pos[1] + self.sensor_range:
@@ -617,10 +617,10 @@ class SlopeEnv:
         Lets a agent pick up or hold a resource. I.e. the position of the resource is updated to match that of the
         agent that has picked it up or is holding it. Ensures that the agent is marked as having that resource.
         :param agent_id: Index of the agent in self.agent_positions
-        :param resource_id: Index of the resource in self.resource_positions
+        :param resource_id: Index of the resource in self.resources_in_arena
         :return:
         """
-        self.resource_positions[resource_id] = self.agent_positions[agent_id]
+        self.resources_in_arena[resource_id] = self.agent_positions[agent_id]
         self.has_resource[agent_id] = resource_id
 
     def drop_resource(self, agent_id):
@@ -644,11 +644,11 @@ class SlopeEnv:
         :return:
         """
 
-        new_x = self.resource_positions[resource_id][0]
-        new_y = max(self.resource_positions[resource_id][1] - self.sliding_speed,
+        new_x = self.resources_in_arena[resource_id][0]
+        new_y = max(self.resources_in_arena[resource_id][1] - self.sliding_speed,
                     self.cache_start)
 
-        self.resource_positions[resource_id] = (new_x, new_y)
+        self.resources_in_arena[resource_id] = (new_x, new_y)
 
     def spawn_resource(self):
         """
@@ -664,10 +664,10 @@ class SlopeEnv:
 
         while not resource_placed:
             x, y = self.generate_resource_position()
-            if self.resource_map[y][x] == 0 and (x, y) not in self.resource_positions:
+            if self.resource_map[y][x] == 0 and (x, y) not in self.resources_in_arena.values():
                 self.resource_map[y][x] = self.latest_resource_id + 1
                 self.latest_resource_id += 1
-                self.resource_positions[self.latest_resource_id] = (x, y)
+                self.resources_in_arena[self.latest_resource_id] = (x, y)
                 try:
                     self.resource_transforms += [rendering.Transform()]
                 except:
@@ -686,7 +686,7 @@ class SlopeEnv:
         :param resource_id:
         :return:
         """
-        self.resource_positions[resource_id] = self.dumping_position
+        del self.resources_in_arena[resource_id]
         self.current_num_resources -= 1
 
     # Specialisation Metrics ------------------------------------------------------------------------------------------
@@ -708,7 +708,7 @@ class SlopeEnv:
         agent_participated = [False for i in range(self.num_agents)]
 
         for i in range(self.latest_resource_id+1):
-            if self.resource_positions[i] == self.dumping_position:
+            if self.resource_history[i]["retrieved"]:
                 total_resources_retrieved += 1
 
                 if sum(self.resource_carried_by[i]) > 1:
@@ -861,10 +861,10 @@ class SlopeEnv:
                 (self.agent_positions[i][1] - self.arena_constraints["y_min"] + 0.5) * self.scale)
 
         # Set position of resource(s)
-        for i in range(self.latest_resource_id+1):
-            self.resource_transforms[i].set_translation(
-                (self.resource_positions[i][0] - self.arena_constraints["x_min"] + 0.5) * self.scale,
-                (self.resource_positions[i][1] - self.arena_constraints["y_min"] + 0.5) * self.scale)
+        for resource_id,resource_position in self.resources_in_arena.items():
+            self.resource_transforms[resource_id].set_translation(
+                (resource_position[0] - self.arena_constraints["x_min"] + 0.5) * self.scale,
+                (resource_position[1] - self.arena_constraints["y_min"] + 0.5) * self.scale)
 
         return self.viewer.render(return_rgb_array=mode == 'rgb_array')
 
