@@ -30,8 +30,8 @@ class FitnessCalculator:
         self.random_seed = self.parameter_dictionary['general']['seed']
         self.np_random = np.random.RandomState(self.random_seed)
 
+        #TODO: Upgrade this to work with other environments
         self.episode_length = self.parameter_dictionary['environment']['slope']['episode_length']
-
         self.num_episodes = self.parameter_dictionary['environment']['slope']['num_episodes']
 
     def calculate_fitness_of_agent_population(self, population, calculate_specialisation):

@@ -19,9 +19,7 @@ class CMALearner(Learner):
     def __init__(self, calculator):
         super().__init__(calculator)
 
-        if self.parameter_dictionary['general']['algorithm_selected'] != "cma" and \
-                self.parameter_dictionary['general']['algorithm_selected'] != "cma_with_seeding" and \
-                self.parameter_dictionary['general']['algorithm_selected'] != "partialcma":
+        if self.parameter_dictionary['general']['algorithm_selected'] != "cma":
             raise RuntimeError(f"Cannot run cma. Parameters request "
                                f"{self.parameter_dictionary['general']['algorithm_selected']}")
 
@@ -36,15 +34,15 @@ class CMALearner(Learner):
         @return: Genome and its fitness
         """
 
-        if self.parameter_dictionary['algorithm']['cma']['seeding_required'] == "True" or \
-                self.parameter_dictionary['algorithm'] == "cma_with_seeding" or \
-                self.parameter_dictionary['algorithm'] == "partialcma":
+        if self.parameter_dictionary['algorithm']['cma']['seeding_required'] == "True":
             dictionary_copy = copy.deepcopy(self.parameter_dictionary)
 
-            if dictionary_copy['general']['algorithm_selected'] != "partialcma":
+            if dictionary_copy['algorithm']['cma']['partial'] == "False":
                 dictionary_copy['general']['algorithm_selected'] = "rwg"
-            else:
+            elif dictionary_copy['algorithm']['cma']['partial'] == "True":
                 dictionary_copy['general']['algorithm_selected'] = "cma"
+            else:
+                raise RuntimeError("The value for partial cma is neither True nor False")
 
             # If individual reward, look for seeds that use just one agent
             # TODO: Should the agent learn in an environment with multiple other agents?
@@ -122,6 +120,8 @@ class CMALearner(Learner):
         parameters_in_name += [parameter_dictionary['algorithm']['cma']['generations']]
         parameters_in_name += [parameter_dictionary['algorithm']['cma']['tolx']]
         parameters_in_name += [parameter_dictionary['algorithm']['cma']['tolfunhist']]
+        parameters_in_name += [parameter_dictionary['algorithm']['cma']['tolflatfitness']]
+        parameters_in_name += [parameter_dictionary['algorithm']['cma']['tolfun']]
 
         return parameters_in_name
 
@@ -138,6 +138,8 @@ class CMALearner(Learner):
                      "sigma",
                      "generations",
                      "tolx",
-                     "tolfunhist"]
+                     "tolfunhist",
+                     "tolflatfitness"
+                     "tolfun"]
 
         return headings

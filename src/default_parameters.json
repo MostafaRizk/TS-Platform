@@ -1,7 +1,7 @@
 {
     "general": {
         "learning_type": "centralised",
-        "algorithm_selected": "cma_with_seeding",
+        "algorithm_selected": "cma",
         "team_type": "heterogeneous",
         "reward_level": "team",
         "agent_type": "nn",
@@ -59,7 +59,9 @@
             "tolflatfitness": 1000,
             "tolfun": 0.0,
             "logging_rate": 20,
-            "seeding_required": "True"
+            "seeding_required": "True",
+            "seeding_included": "True",
+            "partial": "False"
         }
     }
 }
