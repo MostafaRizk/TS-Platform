@@ -10,35 +10,29 @@ from glob import glob
 
 # Generate CMA experiments
 ''''''
-experiment_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_15_LHS_and_evo_for_smooth_fitness"
+experiment_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_26_centralised_vs_decentralised_starter"
 
-core_parameter_filenames = [
-    '../default_parameters.json'
-    ]
+core_parameter_filename = '../default_parameters.json'
 
-num_agents_in_setup = [2]
-pop_size_for_team = [-1, -1, 100, -1, 100, -1, 120, -1, 160, -1, 100]
-num_seeds_for_team = [-1, -1, 30, -1, 60, -1, 75, -1, 75, -1, 150]
+learning_type = "decentralised"
+reward_level = "individual"
+list_file_name = "LIST_decentralised_4"
 
-for i in range(len(core_parameter_filenames)):
-    parameter_dictionary = json.loads(open(core_parameter_filenames[i]).read())
+num_agents_in_setup = [4]
+pop_size_for_team = {2: 100, 4: 100, 6: 120, 8: 160, 10: 100}
+num_seeds_for_team = {2: 30, 4: 60, 6: 75, 8: 75, 10: 150}
 
-    # If using rwg json instead of default_parameters
-    parameter_dictionary["general"]["algorithm_selected"] = "cma_with_seeding"
-    parameter_dictionary["algorithm"]["cma"]["generations"] = 1000
-
+for num_agents in num_agents_in_setup:
+    parameter_dictionary = json.loads(open(core_parameter_filename).read())
     environment_name = parameter_dictionary["general"]["environment"]
-
-    # If individual
-    if parameter_dictionary["general"]["reward_level"] == "individual":
-        parameter_dictionary["environment"][environment_name]["num_agents"] = num_agents_in_setup[i]
-
-    num_agents = parameter_dictionary["environment"][environment_name]["num_agents"]
+    parameter_dictionary["general"]["reward_level"] = reward_level
+    parameter_dictionary["environment"][environment_name]["num_agents"] = num_agents
     parameter_dictionary["algorithm"]["agent_population_size"] = pop_size_for_team[num_agents]
+    parameter_dictionary["general"]["learning_type"] = learning_type
 
     num_experiments = num_seeds_for_team[num_agents]
     np_random = np.random.RandomState(1)
-    g = open(f"{experiment_directory}/experiments/LIST_cma", "a")
+    g = open(f"{experiment_directory}/experiments/{list_file_name}", "a")
 
     for i in range(num_experiments):
         new_seed = np_random.randint(low=1, high=2**32-1)
