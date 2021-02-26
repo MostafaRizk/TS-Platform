@@ -68,7 +68,13 @@ class SlopeEnv:
         self.max_resources = 150 * self.num_agents  # Based on the observation that a good team of 2 can collect 100-200
         self.current_num_resources = self.default_num_resources
         self.latest_resource_id = self.default_num_resources - 1
-        self.dumping_position = (-10, -10)
+        if parameter_dictionary['environment']['slope']['incremental_rewards'] == "True":
+            self.incremental_rewards = True
+        elif parameter_dictionary['environment']['slope']['incremental_rewards'] == "False":
+            self.incremental_rewards = False
+        else:
+            raise RuntimeError("Incremental rewards is not set to True or False")
+            raise RuntimeError("Incremental rewards is not set to True or False")
 
         # Rendering constants
         self.scale = 50  # Scale for rendering
@@ -94,6 +100,7 @@ class SlopeEnv:
         self.agent_positions = [None] * self.num_agents
         self.resources_in_arena = {}
         self.resource_carried_by = [[False for i in range(self.num_agents)] for j in range(self.max_resources)]
+        self.closest_y_for_resource = {}
         self.resource_history = [{"dropped_on_slope": False, # True/False (False unless the resource was dropped on the slope once)
                                   "dropper_index": -1, # index of agent that dropped the resource on the slope
                                   "collected_from_cache": False, # True/False (The last time it was picked up, was it picked up on the cache?)
@@ -166,6 +173,7 @@ class SlopeEnv:
         self.viewer = None
         self.resources_in_arena = {}
         self.resource_carried_by = [[False for i in range(self.num_agents)] for j in range(self.max_resources)]
+        self.closest_y_for_resource = {}
         self.resource_history = [
             {"dropped_on_slope": False,
              "dropper_index": -1,
@@ -203,6 +211,7 @@ class SlopeEnv:
                 if self.resource_map[y][x] == 0:
                     self.resource_map[y][x] = i + 1
                     self.resources_in_arena[i] = (x, y)
+                    self.closest_y_for_resource[i] = y
                     resource_placed = True
 
         # Reset variables that were changed during runtime
@@ -332,9 +341,24 @@ class SlopeEnv:
             if self.get_area_from_position(resource_position) == "SLOPE" and resource_id not in self.has_resource:
                 self.slide_resource(resource_id)
 
+            if self.incremental_rewards:
+                distance_travelled_by_resource = self.closest_y_for_resource[resource_id] - self.resource_positions[resource_id][1]
+
+                if distance_travelled_by_resource > 0:
+                    reward_for_travel = (self.reward_for_resource / self.arena_constraints["y_max"]) * distance_travelled_by_resource
+
+                    for j in range(self.num_agents):
+                        rewards[j] += reward_for_travel / self.num_agents
+
+                    self.closest_y_for_resource[resource_id] = self.resource_positions[resource_id][1]
+
         for resource_id in resources_to_delete:
             for k in range(self.num_agents):
-                rewards[k] += self.reward_for_resource / self.num_agents
+                if self.incremental_rewards:
+                    reward_for_retrieval = self.reward_for_resource / self.arena_constraints["y_max"]
+                    rewards[k] += reward_for_retrieval / self.num_agents
+                else:
+                    rewards[k] += self.reward_for_resource / self.num_agents
 
             self.delete_resource(resource_id)
             self.resource_history[resource_id]["retrieved"] = True
@@ -668,6 +692,7 @@ class SlopeEnv:
                 self.resource_map[y][x] = self.latest_resource_id + 1
                 self.latest_resource_id += 1
                 self.resources_in_arena[self.latest_resource_id] = (x, y)
+                self.closest_y_for_resource[self.latest_resource_id] = y
                 try:
                     self.resource_transforms += [rendering.Transform()]
                 except:
@@ -687,6 +712,7 @@ class SlopeEnv:
         :return:
         """
         del self.resources_in_arena[resource_id]
+        del self.closest_y_for_resource[resource_id]
         self.current_num_resources -= 1
 
     # Specialisation Metrics ------------------------------------------------------------------------------------------

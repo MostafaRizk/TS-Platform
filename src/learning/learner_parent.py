@@ -190,6 +190,7 @@ class Learner:
         parameters_in_name += [parameter_dictionary['environment']['slope']['resource_reward']]
         parameters_in_name += [parameter_dictionary['environment']['slope']['episode_length']]
         parameters_in_name += [parameter_dictionary['environment']['slope']['num_episodes']]
+        parameters_in_name += [parameter_dictionary['environment']['slope']['incremental_rewards']]
 
         # Get agent params for relevant agent type
         agent_type = parameter_dictionary['general']['agent_type']
@@ -240,6 +241,7 @@ class Learner:
                     "resource_reward",
                     "episode_length",
                     "num_episodes",
+                    "incremental_rewards",
                     "architecture",
                     "bias",
                     "hidden_layers",
