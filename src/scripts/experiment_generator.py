@@ -10,17 +10,17 @@ from glob import glob
 
 # Generate CMA experiments
 ''''''
-experiment_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_26_centralised_vs_decentralised_starter"
 
+# Parameters to adjust before running
+experiment_directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_03_01_centralised_vs_decentralised_equal_games"
 core_parameter_filename = '../default_parameters.json'
-
-learning_type = "decentralised"
+learning_type = "centralised"
 reward_level = "individual"
-list_file_name = "LIST_decentralised_4"
+list_file_name = "LIST_single_pop"
+num_agents_in_setup = [2, 4]
 
-num_agents_in_setup = [4]
-pop_size_for_team = {2: 100, 4: 100, 6: 120, 8: 160, 10: 100}
-num_seeds_for_team = {2: 30, 4: 60, 6: 75, 8: 75, 10: 150}
+pop_size_for_team = {2: 100, 4: 160, 6: 180, 8: 320, 10: 500}
+num_seeds_for_team = {2: 60, 4: 75, 6: 100, 8: 75, 10: 60}
 
 for num_agents in num_agents_in_setup:
     parameter_dictionary = json.loads(open(core_parameter_filename).read())

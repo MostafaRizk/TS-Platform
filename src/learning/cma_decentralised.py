@@ -65,7 +65,7 @@ class DecentralisedCMALearner(DecentralisedLearner, CMALearner):
 
         options = {'seed': self.parameter_dictionary['general']['seed'],
                    'maxiter': self.parameter_dictionary['algorithm']['cma']['generations'],
-                   'popsize': self.parameter_dictionary['algorithm']['agent_population_size']/self.num_agents,
+                   'popsize': self.parameter_dictionary['algorithm']['agent_population_size']//(self.num_agents**2),
                    'tolx': self.parameter_dictionary['algorithm']['cma']['tolx'],
                    'tolfunhist': self.parameter_dictionary['algorithm']['cma']['tolfunhist'],
                    'tolflatfitness': self.parameter_dictionary['algorithm']['cma']['tolflatfitness'],

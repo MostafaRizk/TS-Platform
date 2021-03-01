@@ -65,7 +65,7 @@ class SlopeEnv:
         # Other constants and variables
         self.num_agents = parameter_dictionary['environment']['slope']['num_agents']
         self.default_num_resources = parameter_dictionary['environment']['slope']['num_resources']
-        self.max_resources = 150 * self.num_agents  # Based on the observation that a good team of 2 can collect 100-200
+        self.max_resources = self.episode_length * self.num_agents  # It is impossible to collect this many resources
         self.current_num_resources = self.default_num_resources
         self.latest_resource_id = self.default_num_resources - 1
         if parameter_dictionary['environment']['slope']['incremental_rewards'] == "True":
