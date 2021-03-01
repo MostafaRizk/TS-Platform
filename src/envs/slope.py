@@ -65,6 +65,7 @@ class SlopeEnv:
         # Other constants and variables
         self.num_agents = parameter_dictionary['environment']['slope']['num_agents']
         self.default_num_resources = parameter_dictionary['environment']['slope']['num_resources']
+        self.episode_length = parameter_dictionary['environment']['slope']['episode_length']
         self.max_resources = self.episode_length * self.num_agents  # It is impossible to collect this many resources
         self.current_num_resources = self.default_num_resources
         self.latest_resource_id = self.default_num_resources - 1
