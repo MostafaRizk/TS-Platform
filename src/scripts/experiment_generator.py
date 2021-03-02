@@ -11,7 +11,7 @@ from glob import glob
 
 def generate_cma_experiments(experiment_directory, core_parameter_filename, learning_type, reward_level, list_file_name, num_agents_in_setup):
     num_agents_in_setup = [int(num) for num in num_agents_in_setup.strip('[]').split(',')]
-    pop_size_for_team = {2: 240, 4: 480, 6: 720, 8: 960, 10: 1200}
+    pop_size_for_team = {2: 100, 4: 200, 6: 300, 8: 400, 10: 500}
     num_seeds_for_team = 30
 
     for num_agents in num_agents_in_setup:
