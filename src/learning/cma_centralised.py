@@ -5,7 +5,7 @@ import copy
 import sys
 import os
 import numpy as np
-import signal
+import ray
 
 from fitness import FitnessCalculator
 from learning.learner_centralised import CentralisedLearner
@@ -14,6 +14,11 @@ from glob import glob
 from io import StringIO
 
 from learning.rwg import RWGLearner
+
+
+@ray.remote
+def learn_in_parallel(fitness_calculator, agent_pop, spec_flag):
+    return fitness_calculator.calculate_fitness_of_agent_population(agent_pop, spec_flag)
 
 
 class CentralisedCMALearner(CentralisedLearner, CMALearner):
@@ -43,6 +48,11 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
         # Initialise cma with a mean genome and sigma
         seed_genome, seed_fitness = self.get_seed_genome()
         es = cma.CMAEvolutionStrategy(seed_genome, self.parameter_dictionary['algorithm']['cma']['sigma'], options)
+        num_threads = self.num_agents
+        ray.init(num_cpus=num_threads)
+
+        if self.parameter_dictionary["algorithm"]["agent_population_size"] % num_threads != 0:
+            raise RuntimeError("Agent population is not divisible by the number of parallel threads")
 
         # Learning loop
         while not es.stop():
@@ -65,9 +75,22 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
 
             # Convert genomes to agents
             agent_population = self.convert_genomes_to_agents(genome_population)
+            agent_pop_size = len(agent_population)
+            parallel_threads = []
 
-            # Get fitnesses of agents
-            agent_fitness_lists, team_specialisations = self.fitness_calculator.calculate_fitness_of_agent_population(agent_population, self.calculate_specialisation)
+            for i in range(0, num_threads+1):
+                start = i * (agent_pop_size//num_threads)
+                end = (i+1) * (agent_pop_size//num_threads)
+                mini_pop = agent_population[start:end]
+                parallel_threads += [learn_in_parallel.remote(self.fitness_calculator, mini_pop, self.calculate_specialisation)]
+
+            parallel_results = ray.get(parallel_threads)
+            agent_fitness_lists = []
+            #team_specialisations = []
+
+            for element in parallel_results:
+                agent_fitness_lists += element[0]
+                #team_specialisations += element[1]
 
             # Convert agent fitnesses into genome fitnesses
             genome_fitness_lists = self.get_genome_fitnesses_from_agent_fitnesses(agent_fitness_lists)
