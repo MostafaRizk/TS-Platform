@@ -11,26 +11,18 @@ from glob import glob
 
 def generate_cma_experiments(experiment_directory, core_parameter_filename, learning_type, reward_level, list_file_name, num_agents_in_setup):
     num_agents_in_setup = [int(num) for num in num_agents_in_setup.strip('[]').split(',')]
-
-    pop_size_for_team = {
-                            "centralised": {2: 100, 4: 100, 6: 120, 8: 160, 10: 100},
-                            "decentralised": {2: 100, 4: 160, 6: 180, 8: 320, 10: 500}
-                         }
-
-    num_seeds_for_team = {
-                            "centralised": {2: 60, 4: 120, 6: 150, 8: 150, 10: 300},
-                            "decentralised": {2: 60, 4: 75, 6: 100, 8: 75, 10: 60}
-                        }
+    pop_size_for_team = {2: 240, 4: 480, 6: 720, 8: 960, 10: 1200}
+    num_seeds_for_team = 30
 
     for num_agents in num_agents_in_setup:
         parameter_dictionary = json.loads(open(core_parameter_filename).read())
         environment_name = parameter_dictionary["general"]["environment"]
         parameter_dictionary["general"]["reward_level"] = reward_level
         parameter_dictionary["environment"][environment_name]["num_agents"] = num_agents
-        parameter_dictionary["algorithm"]["agent_population_size"] = pop_size_for_team[learning_type][num_agents]
+        parameter_dictionary["algorithm"]["agent_population_size"] = pop_size_for_team[num_agents]
         parameter_dictionary["general"]["learning_type"] = learning_type
 
-        num_experiments = num_seeds_for_team[learning_type][num_agents]
+        num_experiments = num_seeds_for_team
         np_random = np.random.RandomState(1)
         g = open(f"{experiment_directory}/experiments/{list_file_name}", "a")
 
