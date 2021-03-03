@@ -40,7 +40,7 @@
         }
     },
     "algorithm": {
-        "agent_population_size": 100,
+        "agent_population_size": 1000,
         "rwg": {
             "sampling_distribution": "normal",
             "normal": {
