@@ -76,12 +76,19 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
             # Convert genomes to agents
             agent_population = self.convert_genomes_to_agents(genome_population)
             agent_pop_size = len(agent_population)
+            remainder_agents = agent_pop_size % (self.num_agents**2)
+            divisible_pop_size = agent_pop_size - remainder_agents
             parallel_threads = []
 
             for i in range(0, num_threads+1):
-                start = i * (agent_pop_size//num_threads)
-                end = (i+1) * (agent_pop_size//num_threads)
+                start = i * (divisible_pop_size//num_threads)
+                end = (i+1) * (divisible_pop_size//num_threads)
                 mini_pop = agent_population[start:end]
+
+                # Makes sure that each core gets a population that can be divided into teams of size self.num_agents
+                if i == num_threads and remainder_agents != 0:
+                    mini_pop += agent_population[end:end+remainder_agents]
+
                 parallel_threads += [learn_in_parallel.remote(self.fitness_calculator, mini_pop, self.calculate_specialisation)]
 
             parallel_results = ray.get(parallel_threads)
