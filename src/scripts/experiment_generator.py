@@ -9,9 +9,19 @@ from learning.cma_parent import CMALearner
 from learning.learner_parent import Learner
 from glob import glob
 
-def generate_cma_experiments(experiment_directory, core_parameter_filename, learning_type, reward_level, list_file_name, num_agents_in_setup):
+
+def generate_cma_experiments(experiment_directory, core_parameter_filename, learning_type, reward_level, list_file_name, num_agents_in_setup, holding_constant):
     num_agents_in_setup = [int(num) for num in num_agents_in_setup.strip('[]').split(',')]
-    pop_size_for_team = {2: 240, 4: 480, 6: 720, 8: 960, 10: 1200}
+    if holding_constant == "games_per_run":
+        pop_size_for_team = {
+                                "centralised": {2: 240, 4: 480, 6: 720, 8: 960, 10: 1200},
+                                "decentralised": {2: 120, 4: 120, 6: 120, 8: 120, 10: 120}
+                             }
+    elif holding_constant == "games_per_learner":
+        pop_size_for_team = {
+            "centralised": {2: 100, 4: 200, 6: 300, 8: 400, 10: 500},
+            "decentralised": {2: 100, 4: 200, 6: 300, 8: 400, 10: 500}
+        }
     num_seeds_for_team = 30
 
     for num_agents in num_agents_in_setup:
@@ -19,7 +29,7 @@ def generate_cma_experiments(experiment_directory, core_parameter_filename, lear
         environment_name = parameter_dictionary["general"]["environment"]
         parameter_dictionary["general"]["reward_level"] = reward_level
         parameter_dictionary["environment"][environment_name]["num_agents"] = num_agents
-        parameter_dictionary["algorithm"]["agent_population_size"] = pop_size_for_team[num_agents]
+        parameter_dictionary["algorithm"]["agent_population_size"] = pop_size_for_team[learning_type][num_agents]
         parameter_dictionary["general"]["learning_type"] = learning_type
 
         num_experiments = num_seeds_for_team
@@ -49,6 +59,7 @@ parser.add_argument('--learning_type', action="store", dest="learning_type")
 parser.add_argument('--reward_level', action="store", dest="reward_level")
 parser.add_argument('--list_file_name', action="store", dest="list_file_name")
 parser.add_argument('--num_agents_in_setup', action="store", dest="num_agents_in_setup")
+parser.add_argument('--holding_constant', action="store", dest="holding_constant")
 
 experiment_directory = parser.parse_args().experiment_directory
 core_parameter_filename = parser.parse_args().core_parameter_filename
@@ -56,7 +67,8 @@ learning_type = parser.parse_args().learning_type
 reward_level = parser.parse_args().reward_level
 list_file_name = parser.parse_args().list_file_name
 num_agents_in_setup = parser.parse_args().num_agents_in_setup
-generate_cma_experiments(experiment_directory, core_parameter_filename, learning_type, reward_level, list_file_name, num_agents_in_setup)
+holding_constant = parser.parse_args().holding_constant
+generate_cma_experiments(experiment_directory, core_parameter_filename, learning_type, reward_level, list_file_name, num_agents_in_setup, holding_constant)
 
 # Generate rwg experiments
 
