@@ -1,34 +1,28 @@
+from collections import Counter
+import os
+import sys
+import time
 import ray
 
-class FitnessDummy:
-    def __init__(self):
-        pass
+num_cpus = int(sys.argv[1])
 
-    def calc_fit(self, x):
-        return x
+ray.init(address=os.environ["ip_head"])
+
+print("Nodes in the Ray cluster:")
+print(ray.nodes())
+
 
 @ray.remote
-def learn_in_parallel(fitness_calc, x):
-    return fitness_calc.calc_fit(x)
-
-class LearnerDummy:
-    def __init__(self):
-        self.fitness_calc = FitnessDummy()
-
-    def learn(self):
-        ray.init(num_cpus=2)
-        parallel_threads = []
-
-        for i in range(2):
-            parallel_threads += [learn_in_parallel.remote(self.fitness_calc, i)]
-
-        parallel_results = ray.get(parallel_threads)
-
-        return parallel_results
-
-dummy = LearnerDummy()
-results = dummy.learn()
-print(results)
+def f():
+    time.sleep(1)
+    return ray.services.get_node_ip_address()
 
 
-
+# The following takes one second (assuming that
+# ray was able to access all of the allocated nodes).
+for i in range(60):
+    start = time.time()
+    ip_addresses = ray.get([f.remote() for _ in range(num_cpus)])
+    print(Counter(ip_addresses))
+    end = time.time()
+    print(end - start)
