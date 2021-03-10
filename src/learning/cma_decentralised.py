@@ -84,7 +84,7 @@ class DecentralisedCMALearner(DecentralisedLearner, CMALearner):
             stopping_reasons += [None]
             best_fitnesses += [None]
 
-        ray.init(address=os.environ["ip_head"])
+        #ray.init(address=os.environ["ip_head"])
 
         for generation in range(self.parameter_dictionary['algorithm']['cma']['generations']):
             parallel_threads = []

@@ -1,28 +1,14 @@
-from collections import Counter
-import os
-import sys
-import time
-import ray
-
-num_cpus = int(sys.argv[1])
-
-ray.init(address=os.environ["ip_head"])
-
-print("Nodes in the Ray cluster:")
-print(ray.nodes())
+from experiment import run_experiment
 
 
-@ray.remote
-def f():
-    time.sleep(1)
-    return ray.services.get_node_ip_address()
+experiment_list = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_03_02_equal_games_per_learner/LIST_tester_local"
+command_list = open(experiment_list, 'r').read().strip().split("\n")
 
+parameters = []
+for command in command_list:
+    print(command)
+    param = command.split(" ")[-1]
+    print(param)
+    parameters += [param]
 
-# The following takes one second (assuming that
-# ray was able to access all of the allocated nodes).
-for i in range(60):
-    start = time.time()
-    ip_addresses = ray.get([f.remote() for _ in range(num_cpus)])
-    print(Counter(ip_addresses))
-    end = time.time()
-    print(end - start)
+run_experiment(parameters[0])

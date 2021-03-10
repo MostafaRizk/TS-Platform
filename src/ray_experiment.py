@@ -14,7 +14,7 @@ parser.add_argument('--experiment_list', action="store", dest="experiment_list")
 experiment_list = parser.parse_args().experiment_list
 
 ray.init(address=os.environ["ip_head"])
-command_list = open(experiment_list, 'r').read().split("\n")
+command_list = open(experiment_list, 'r').read().strip().split("\n")
 
 parameters = []
 for command in command_list:

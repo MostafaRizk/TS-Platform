@@ -49,7 +49,7 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
         seed_genome, seed_fitness = self.get_seed_genome()
         es = cma.CMAEvolutionStrategy(seed_genome, self.parameter_dictionary['algorithm']['cma']['sigma'], options)
         num_threads = self.num_agents
-        ray.init(address=os.environ["ip_head"])
+        #ray.init(address=os.environ["ip_head"])
 
         if self.parameter_dictionary["algorithm"]["agent_population_size"] % num_threads != 0:
             raise RuntimeError("Agent population is not divisible by the number of parallel threads")
