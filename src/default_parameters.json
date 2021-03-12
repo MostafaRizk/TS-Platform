@@ -59,7 +59,7 @@
             "tolfunhist": 0.0,
             "tolflatfitness": 1000,
             "tolfun": 0.0,
-            "logging_rate": 20,
+            "logging_rate": 50,
             "seeding_required": "True",
             "seeding_included": "True",
             "partial": "False"

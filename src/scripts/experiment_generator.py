@@ -10,8 +10,11 @@ from learning.learner_parent import Learner
 from glob import glob
 
 
-def generate_cma_experiments(experiment_directory, core_parameter_filename, learning_type, reward_level, list_file_name, num_agents_in_setup, holding_constant):
+def generate_cma_experiments(experiment_directory, core_parameter_filename, learning_type, reward_level, list_file_name, num_agents_in_setup, holding_constant, num_seeds_for_team, generator_seed):
     num_agents_in_setup = [int(num) for num in num_agents_in_setup.strip('[]').split(',')]
+    num_seeds_for_team = int(num_seeds_for_team)
+    generator_seed = int(generator_seed)
+
     if holding_constant == "games_per_run":
         pop_size_for_team = {
                                 "centralised": {2: 240, 4: 480, 6: 720, 8: 960, 10: 1200},
@@ -22,7 +25,6 @@ def generate_cma_experiments(experiment_directory, core_parameter_filename, lear
             "centralised": {2: 100, 4: 200, 6: 300, 8: 400, 10: 500},
             "decentralised": {2: 100, 4: 200, 6: 300, 8: 400, 10: 500}
         }
-    num_seeds_for_team = 30
 
     for num_agents in num_agents_in_setup:
         parameter_dictionary = json.loads(open(core_parameter_filename).read())
@@ -33,7 +35,7 @@ def generate_cma_experiments(experiment_directory, core_parameter_filename, lear
         parameter_dictionary["general"]["learning_type"] = learning_type
 
         num_experiments = num_seeds_for_team
-        np_random = np.random.RandomState(1)
+        np_random = np.random.RandomState(generator_seed)
         g = open(f"{experiment_directory}/experiments/{list_file_name}", "a")
 
         for i in range(num_experiments):
@@ -60,6 +62,8 @@ parser.add_argument('--reward_level', action="store", dest="reward_level")
 parser.add_argument('--list_file_name', action="store", dest="list_file_name")
 parser.add_argument('--num_agents_in_setup', action="store", dest="num_agents_in_setup")
 parser.add_argument('--holding_constant', action="store", dest="holding_constant")
+parser.add_argument('--num_seeds_for_team', action="store", dest="num_seeds_for_team")
+parser.add_argument('--generator_seed', action="store", dest="generator_seed")
 
 experiment_directory = parser.parse_args().experiment_directory
 core_parameter_filename = parser.parse_args().core_parameter_filename
@@ -68,7 +72,9 @@ reward_level = parser.parse_args().reward_level
 list_file_name = parser.parse_args().list_file_name
 num_agents_in_setup = parser.parse_args().num_agents_in_setup
 holding_constant = parser.parse_args().holding_constant
-generate_cma_experiments(experiment_directory, core_parameter_filename, learning_type, reward_level, list_file_name, num_agents_in_setup, holding_constant)
+num_seeds_for_team = parser.parse_args().num_seeds_for_team
+generator_seed = parser.parse_args().generator_seed
+generate_cma_experiments(experiment_directory, core_parameter_filename, learning_type, reward_level, list_file_name, num_agents_in_setup, holding_constant, num_seeds_for_team, generator_seed)
 
 # Generate rwg experiments
 

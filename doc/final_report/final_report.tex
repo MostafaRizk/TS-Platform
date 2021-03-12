@@ -614,6 +614,14 @@ Combine the decentralised data with the centralised data and plot on the same pl
 
 \section{Centralised vs Decentralised Solutions}
 
+\subsection{Background}
+
+In centralised learning, the entire team policy is learned by one learning process.
+In decentralised learning, each agent's policy is learned separately but concurrently (coevolution).
+In one-population coevolution, learning is centralised but it has some of the same game theoretic properties as decentralised learning.
+
+
+
 \textbf{When do centralised and decentralised solutions outperform one another in task specialisation problems?}\\
 
 \subsection{Scalability}
@@ -664,6 +672,39 @@ Find the nash equilibria and study the learning dynamics.\\
 \bibliography{references}
 
 \appendix
+
+\section{The Learning Process}\label{learning}
+
+Here "learning" refers to evolution.\\
+
+Each agent is controlled by its own neural network. 
+The network encodes the agent’s behaviour i.e. it encodes a function that maps from local observations to actions. 
+The neural network architecture is fixed, but the weights are changed throughout the learning process.\\
+
+\subsection{Centralised}
+
+In the centralised setup, a learning algorithm creates a population of solutions. 
+A solution is a sequence of neural network weights for the network of each agent on the team. 
+For example, if a network has 50 weights and there are 4 agents, the solution has a length of 200. 
+Each part of the solution is assigned to a random agent. 
+The agents then carry out several episodes, starting from random positions at the nest each episode and acting for a fixed number of time steps. 
+The score is calculated at the end of each episode and it is the sum of rewards for all resources gathered by the team minus the costs paid by all agents. 
+The average score over all episodes is calculated and used to create a new population of solutions. 
+This repeats until the algorithm terminates.\\
+
+\subsection{Decentralised}
+
+The decentralised setup has changed since the seminar and now uses a technique called cooperative coevolution. 
+In cooperative coevolution, rather than one evolutionary process learning a combined solution for the entire team, each agent on the team has its own evolutionary process learning a solution for only itself. 
+For example, if there are 4 agents, there are 4 evolutionary processes running concurrently. 
+At generation $i$, each of the 4 processes creates a population of solutions for its agent, where a solution is the weights of a single agent’s neural network. 
+The score of a solution at generation i is calculated by pairing it with the best solutions from each of the other 3 agents’ evolutionary processes at generation $i-1$. 
+The score is for that single agent’s performance; it is the team reward (total resources collected) divided by the number of agents (regardless of their contribution) minus the cost incurred by that particular agent.\\
+
+\subsection{Difference}
+
+The difference between centralised and decentralised is that a centralised algorithm uses one learning process to learn a solution for the entire team whereas the decentralised algorithm uses multiple concurrent learning processes to learn solutions for each agent independently that are then combined. 
+Centralised learning rewards the team while decentralised learning rewards the individual.\\
 
 \section{Summary of Results}
 

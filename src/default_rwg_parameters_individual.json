@@ -40,7 +40,7 @@
         }
     },
     "algorithm": {
-        "agent_population_size": 10,
+        "agent_population_size": 1000,
         "rwg": {
             "sampling_distribution": "normal",
             "normal": {
@@ -61,7 +61,7 @@
             "generations": 1000,
             "tolx": 0.001,
             "tolfunhist": 200.0,
-            "logging_rate": 20,
+            "logging_rate": 50,
             "seeding_required": "True"
         }
     }
