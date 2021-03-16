@@ -25,8 +25,8 @@
             "downward_cost_factor": 0.2,
             "carry_factor": 2,
             "resource_reward": 1000,
-            "episode_length": 500,
-            "num_episodes": 20,
+            "episode_length": 100,
+            "num_episodes": 5,
             "incremental_rewards": "False"
         }
     },

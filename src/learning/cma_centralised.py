@@ -101,7 +101,7 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
                     #team_specialisations += element[1]
 
             else:
-                agent_fitness_lists = self.fitness_calculator.calculate_fitness_of_agent_population(agent_population, self.calculate_specialisation)
+                agent_fitness_lists, team_specialisations = self.fitness_calculator.calculate_fitness_of_agent_population(agent_population, self.calculate_specialisation)
 
             # Convert agent fitnesses into genome fitnesses
             genome_fitness_lists = self.get_genome_fitnesses_from_agent_fitnesses(agent_fitness_lists)
