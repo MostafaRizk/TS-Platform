@@ -15,8 +15,9 @@ from io import StringIO
 
 from learning.rwg import RWGLearner
 
+
 @ray.remote
-def learn_in_parallel(learner, index, fitness_calculator, insert_representative_genomes_in_population, remove_representative_fitnesses, convert_genomes_to_agents, calculate_specialisation):
+def learn_agent(learner, index, fitness_calculator, insert_representative_genomes_in_population, remove_representative_fitnesses, convert_genomes_to_agents, calculate_specialisation):
     new_learner = copy.deepcopy(learner)
 
     # Get population of genomes to be used this generation
@@ -43,9 +44,11 @@ def learn_in_parallel(learner, index, fitness_calculator, insert_representative_
 
     return new_learner, best_genome, best_fitness
 
+
 @ray.remote
 def empty_task():
     return None
+
 
 class DecentralisedCMALearner(DecentralisedLearner, CMALearner):
     def __init__(self, calculator):
@@ -84,36 +87,52 @@ class DecentralisedCMALearner(DecentralisedLearner, CMALearner):
             stopping_reasons += [None]
             best_fitnesses += [None]
 
-        #ray.init(address=os.environ["ip_head"])
-
         for generation in range(self.parameter_dictionary['algorithm']['cma']['generations']):
-            parallel_threads = []
 
-            for index, learner in enumerate(learners):
-                if not learner.stop():
-                    parallel_threads += [learn_in_parallel.remote(learner, index, self.fitness_calculator, self.insert_representative_genomes_in_population, self.remove_representative_fitnesses, self.convert_genomes_to_agents, self.calculate_specialisation)]
+            if self.multithreading:
+                parallel_threads = []
 
-                elif not stopping_reasons[index]:
-                    # Log reason for stopping
-                    parallel_threads += [empty_task()]
-                    stopping_reasons[index] = [learner.stop()]
-                    print(stopping_reasons[index])
+                for index, learner in enumerate(learners):
+                    if not learner.stop():
+                        parallel_threads += [learn_agent.remote(learner, index, self.fitness_calculator, self.insert_representative_genomes_in_population, self.remove_representative_fitnesses, self.convert_genomes_to_agents, self.calculate_specialisation)]
 
-            parallel_results = ray.get(parallel_threads)
+                    elif not stopping_reasons[index]:
+                        # Log reason for stopping
+                        parallel_threads += [empty_task.remote()]
+                        stopping_reasons[index] = [learner.stop()]
+                        print(stopping_reasons[index])
 
-            for index in range(len(learners)):
-                if parallel_results[index]:
-                    updated_learner, best_genome, best_fitness = parallel_results[index]
+                parallel_results = ray.get(parallel_threads)
 
-                    learners[index] = updated_learner
-                    best_fitnesses[index] = best_fitness
-                    self.representative_genomes[index] = best_genome
+                for index in range(len(learners)):
+                    if parallel_results[index]:
+                        updated_learner, best_genome, best_fitness = parallel_results[index]
 
-                    # Log best genome for this learner
-                    if generation % self.logging_rate == 0:
-                        self.log(best_genome, best_fitness, generation, seed_fitness, index)
+                        learners[index] = updated_learner
+                        best_fitnesses[index] = best_fitness
+                        self.representative_genomes[index] = best_genome
 
-                    updated_learner.disp()
+                        # Log best genome for this learner
+                        if generation % self.logging_rate == 0:
+                            self.log(best_genome, best_fitness, generation, seed_fitness, index)
+
+                        updated_learner.disp()
+
+            else:
+                for index, learner in enumerate(learners):
+                    if not learner.stop():
+                        learners[index], self.representative_genomes[index], best_fitnesses[index] = learn_agent(learner, index, self.fitness_calculator, self.insert_representative_genomes_in_population, self.remove_representative_fitnesses, self.convert_genomes_to_agents, self.calculate_specialisation)
+
+                        # Log best genome for this learner
+                        if generation % self.logging_rate == 0:
+                            self.log(self.representative_genomes[index], best_fitnesses[index], generation, seed_fitness, index)
+
+                        learner.disp()
+
+                    elif not stopping_reasons[index]:
+                        # Log reason for stopping
+                        stopping_reasons[index] = [learner.stop()]
+                        print(stopping_reasons[index])
 
         # Print fitness of best representative from each population
         print(f"Best fitnesses are {best_fitnesses}")
@@ -124,7 +143,7 @@ class DecentralisedCMALearner(DecentralisedLearner, CMALearner):
             self.log(self.representative_genomes[i], best_fitnesses[i], "final", seed_fitness, i)
 
         # Log evolution details to file
-        # TODO: Modify this to have separate log for each learner
+        # TODO: Modify this to have separate log for each learner?
         team_fitness = sum(best_fitnesses)
         model_name = self.generate_model_name(team_fitness, 'all')
         log_file_name = model_name + ".log"

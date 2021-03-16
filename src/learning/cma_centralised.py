@@ -49,7 +49,6 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
         seed_genome, seed_fitness = self.get_seed_genome()
         es = cma.CMAEvolutionStrategy(seed_genome, self.parameter_dictionary['algorithm']['cma']['sigma'], options)
         num_threads = self.num_agents
-        #ray.init(address=os.environ["ip_head"])
 
         if self.parameter_dictionary["algorithm"]["agent_population_size"] % num_threads != 0:
             raise RuntimeError("Agent population is not divisible by the number of parallel threads")
@@ -76,28 +75,33 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
             # Convert genomes to agents
             agent_population = self.convert_genomes_to_agents(genome_population)
             agent_pop_size = len(agent_population)
-            remainder_agents = agent_pop_size % (self.num_agents**2)
-            divisible_pop_size = agent_pop_size - remainder_agents
-            parallel_threads = []
-
-            for i in range(0, num_threads+1):
-                start = i * (divisible_pop_size//num_threads)
-                end = (i+1) * (divisible_pop_size//num_threads)
-                mini_pop = agent_population[start:end]
-
-                # Makes sure that each core gets a population that can be divided into teams of size self.num_agents
-                if i == num_threads and remainder_agents != 0:
-                    mini_pop += agent_population[end:end+remainder_agents]
-
-                parallel_threads += [learn_in_parallel.remote(self.fitness_calculator, mini_pop, self.calculate_specialisation)]
-
-            parallel_results = ray.get(parallel_threads)
             agent_fitness_lists = []
-            #team_specialisations = []
 
-            for element in parallel_results:
-                agent_fitness_lists += element[0]
-                #team_specialisations += element[1]
+            if self.multithreading:
+                remainder_agents = agent_pop_size % (self.num_agents**2)
+                divisible_pop_size = agent_pop_size - remainder_agents
+                parallel_threads = []
+
+                for i in range(0, num_threads+1):
+                    start = i * (divisible_pop_size//num_threads)
+                    end = (i+1) * (divisible_pop_size//num_threads)
+                    mini_pop = agent_population[start:end]
+
+                    # Makes sure that each core gets a population that can be divided into teams of size self.num_agents
+                    if i == num_threads and remainder_agents != 0:
+                        mini_pop += agent_population[end:end+remainder_agents]
+
+                    parallel_threads += [learn_in_parallel.remote(self.fitness_calculator, mini_pop, self.calculate_specialisation)]
+
+                parallel_results = ray.get(parallel_threads)
+                #team_specialisations = []
+
+                for element in parallel_results:
+                    agent_fitness_lists += element[0]
+                    #team_specialisations += element[1]
+
+            else:
+                agent_fitness_lists = self.fitness_calculator.calculate_fitness_of_agent_population(agent_population, self.calculate_specialisation)
 
             # Convert agent fitnesses into genome fitnesses
             genome_fitness_lists = self.get_genome_fitnesses_from_agent_fitnesses(agent_fitness_lists)

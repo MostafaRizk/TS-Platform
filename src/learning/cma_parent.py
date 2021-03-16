@@ -23,6 +23,14 @@ class CMALearner(Learner):
             raise RuntimeError(f"Cannot run cma. Parameters request "
                                f"{self.parameter_dictionary['general']['algorithm_selected']}")
 
+        if self.parameter_dictionary['algorithm']['cma']['multithreading'] == "True":
+            self.multithreading = True
+        elif self.parameter_dictionary['algorithm']['cma']['multithreading'] == "False":
+            self.multithreading = False
+        else:
+            self.multithreading = False
+            raise RuntimeWarning("Multithreading setting not specified in parameters, defaulting to False (i.e. sequential execution)")
+
         # Log every x many generations
         self.logging_rate = self.parameter_dictionary['algorithm']['cma']['logging_rate']
 

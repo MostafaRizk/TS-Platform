@@ -617,14 +617,22 @@ Combine the decentralised data with the centralised data and plot on the same pl
 \subsection{Background}
 
 In centralised learning, the entire team policy is learned by one learning process.
-In decentralised learning, each agent's policy is learned separately but concurrently (coevolution).
-In one-population coevolution, learning is centralised but it has some of the same game theoretic properties as decentralised learning.
-
-
+In decentralised learning, each agent's policy is learned separately but concurrently (cooperative co-evolution).
+In one-population coevolution, learning is centralised but it has some of the same game theoretic properties as decentralised learning.\\
 
 \textbf{When do centralised and decentralised solutions outperform one another in task specialisation problems?}\\
 
 \subsection{Scalability}
+
+For centralised learning, since it is searching for a team solution, the search space grows rapidly as the number of agents increases, so we can expect learning to find worse solutions for larger teams. 
+These solutions should be less fit and it can also be expected that it will be more difficult to find specialisation, if those solutions are indeed fitter.
+Since the decentralised approach is not expected to find specialisation in the first place, that is expected to continue for larger teams.\\
+
+For decentralised learning, the space of solutions remains the same for each agent, when the team size increases, however, there are more concurrent learning processes. 
+An agent’s score depends on many other agents executing unknown strategies in its environment, and all those strategies affect one another, so the increased noise may also make it difficult to find good solutions for larger teams.
+The time taken by the evolutionary process is not considered in the comparison.
+However, it is worth noting that the decentralised approach will likely have a slower wall-time if the evolutionary processes are not run in parallel, since evolution must be run once for each agent.
+Multi-threading should be implemented to avoid this problem otherwise computation time will scale linearly with the number of agents on the team.\\
 
 \textbf{Hypothesis 2.1.1:} If evolution is run with larger team sizes, the fitness of centralised solutions will decrease.\\
 
@@ -639,6 +647,10 @@ Calculate the specialisation of all evolved solutions.
 Plot the average fitness per agent and team specialisation for teams in each setup. \\
 
 \subsection{Robustness}
+
+Decentralised learning should find the safest strategy for an agent, i.e. a generalist strategy. This strategy is successful regardless of the strategies of its team-mates. If an agent is evaluated with new team-mates it has never been paired with before, it should still perform reasonably well. \\
+
+Conversely, an agent from the centralised setup is part of a larger solution. It is likely specialised. We can expect that if the agent is paired with new team-mates, the team performance will suffer. 
 
 \textbf{Hypothesis 2.2.1:} When evolved teams have team-members replaced, the average fitness per agent decreases for centralised teams.\\
 

@@ -25,7 +25,7 @@
             "downward_cost_factor": 0.2,
             "carry_factor": 2,
             "resource_reward": 1000,
-            "episode_length": 500,
+            "episode_length": 100,
             "num_episodes": 5,
             "incremental_rewards": "False"
         }
@@ -62,7 +62,8 @@
             "logging_rate": 50,
             "seeding_required": "True",
             "seeding_included": "True",
-            "partial": "False"
+            "partial": "False",
+            "multithreading": "False"
         }
     }
 }
