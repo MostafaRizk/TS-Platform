@@ -90,6 +90,7 @@ class FitnessCalculator:
         specialisation_list = []
         agent_copies = [copy.deepcopy(agent) for agent in agent_list]
         video_frames = []
+        self.env.reset_rng()
 
         # Create logging file if logging
         if logging:
@@ -109,7 +110,7 @@ class FitnessCalculator:
 
             # Initialise variables
             agent_action_matrix = [[-1]*self.episode_length for i in range(len(agent_list))]
-            current_epsiode_reward_matrix = [[0]*self.episode_length for i in range(len(agent_list))]
+            current_episode_reward_matrix = [[0]*self.episode_length for i in range(len(agent_list))]
 
             # Do 1 run of the simulation
             for t in range(self.episode_length):
@@ -130,7 +131,7 @@ class FitnessCalculator:
                 # Calculate how much of the rewards go to each agent type
                 for i in range(len(rewards)):
                     fitness_matrix[i][episode] += rewards[i]
-                    current_epsiode_reward_matrix[i][t] = rewards[i]
+                    current_episode_reward_matrix[i][t] = rewards[i]
 
                 if time_delay > 0:
                     time.sleep(time_delay)
@@ -146,7 +147,7 @@ class FitnessCalculator:
                 #for agent_action_list in agent_action_matrix:
                 #    action_string = ','.join(str(action) for action in agent_action_list) + '\n'
                 #    file_reader.write(action_string)
-                for reward_list in current_epsiode_reward_matrix:
+                for reward_list in current_episode_reward_matrix:
                     reward_string = ','.join(str(reward) for reward in reward_list) + '\n'
                     file_reader.write(reward_string)
 

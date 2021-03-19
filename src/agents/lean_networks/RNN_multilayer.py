@@ -7,14 +7,14 @@ Implementation of a multilayer RNN that extends RNN1L
 
 class RNN_multilayer:
     def __init__(self, N_inputs, N_outputs, **kwargs):
-        act_fn = kwargs.get('act_fn', 'tanh')
-        random_dist = kwargs.get('random_dist', 'normal')
-        use_bias = kwargs.get('use_bias', True)
+        act_fn = kwargs.get('act_fn')
+        random_dist = kwargs.get('random_dist')
+        use_bias = kwargs.get('use_bias')
 
         self.N_inputs = N_inputs
         self.N_outputs = N_outputs
-        self.N_hidden_layers = kwargs.get('N_hidden_layers', 1)
-        self.N_hidden_units = kwargs.get('N_hidden_units', N_inputs)
+        self.N_hidden_layers = kwargs.get('N_hidden_layers')
+        self.N_hidden_units = kwargs.get('N_hidden_units')
 
         # MUST DO THIS BEFORE INIT_WEIGHTS!
         random_dists = ['normal', 'uniform']
@@ -25,6 +25,9 @@ class RNN_multilayer:
         use_bias_options = [True, False]
         assert use_bias in use_bias_options, 'Must supply True or False to use_bias!'
         self.use_bias = use_bias
+        self.random_seed = kwargs.get('seed')
+
+        self.np_random = np.random.RandomState(self.random_seed)
 
         self.init_weights()
 
@@ -95,9 +98,9 @@ class RNN_multilayer:
             mat_output_size = self.N_hidden_units
 
             if self.random_dist == 'normal':
-                mat = np.random.randn(mat_output_size, mat_input_size)
+                mat = self.np_random.randn(mat_output_size, mat_input_size)
             elif self.random_dist == 'uniform':
-                mat = np.random.uniform(-1.0, 1.0, (mat_output_size, mat_input_size))
+                mat = self.np_random.uniform(-1.0, 1.0, (mat_output_size, mat_input_size))
             else:
                 raise
 
@@ -114,7 +117,7 @@ class RNN_multilayer:
                 mat_input_size += 1
 
         # And for the last layer:
-        self.weights_matrix.append(np.random.randn(self.N_outputs, mat_input_size)) #TODO: Shouldn't this be dependent on random distribution?
+        self.weights_matrix.append(self.np_random.randn(self.N_outputs, mat_input_size)) #TODO: Shouldn't this be dependent on random distribution?
         self.w_mat_shapes = [w.shape for w in self.weights_matrix]
         self.w_mat_lens = [len(w.flatten()) for w in self.weights_matrix]
         self.N_weights = sum(self.w_mat_lens)

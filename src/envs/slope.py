@@ -592,6 +592,9 @@ class SlopeEnv:
         else:
             return False
 
+    def reset_rng(self):
+        self.np_random = np.random.RandomState(self.seed_value)
+
     # Actions ---------------------------------------------------------------------------------------------------------
     def forward_step(self, agent_id):
         """

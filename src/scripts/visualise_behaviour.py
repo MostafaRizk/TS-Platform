@@ -372,8 +372,8 @@ def visualise_centralised():
     team_path = "/home/mriz9/Code/TS-Platform/results/2021_02_23_decentralised_test/results/centralised_cma_with_seeding_heterogeneous_team_nn_slope_1_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_100_0.001_0.0_33848.09000000001_final.npy"
     parameter_filename = "/home/mriz9/Code/TS-Platform/results/2021_02_23_decentralised_test/experiments/centralised_test.json"
     '''
-    team_path = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_23_decentralised_test/results/centralised_cma_with_seeding_heterogeneous_team_nn_slope_1_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_20_rnn_False_1_4_tanh_100_0.2_100_0.001_0.0_33848.09000000001_final.npy"
-    parameter_filename = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_02_23_decentralised_test/experiments/centralised_test.json"
+    team_path = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_03_16_equal_games_per_learner_sequential/results/centralised_cma_heterogeneous_team_nn_slope_491264_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_100_5_False_rnn_False_1_4_tanh_100_0.2_1000_0.001_0.0_1000_0.0_10735.8_final.npy"
+    parameter_filename = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_03_16_equal_games_per_learner_sequential/experiments/centralised_cma_heterogeneous_team_nn_slope_491264_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_100_5_False_rnn_False_1_4_tanh_100_0.2_1000_0.001_0.0_1000_0.0.json"
     fitness_calculator = FitnessCalculator(parameter_filename)
 
     full_genome = np.load(team_path)
@@ -390,7 +390,10 @@ def visualise_centralised():
     #print(results)
     team_score = np.mean([results['fitness_matrix'][0][i] + results['fitness_matrix'][1][i] for i in
                           range(len(results['fitness_matrix']))])
+    metric_index = 2  # R_spec
+    specialisation = np.mean([spec[metric_index] for spec in results['specialisation_list']])
     print(team_score)
+    print(specialisation)
 
 
 
@@ -400,7 +403,7 @@ visualise_centralised()
 stop = time.perf_counter()
 print(f"Centralised takes {stop-start}")
 
-start = time.perf_counter()
-visualise_decentralised()
-stop = time.perf_counter()
-print(f"Decentralised takes {stop-start}")
+#start = time.perf_counter()
+#visualise_decentralised()
+#stop = time.perf_counter()
+#print(f"Decentralised takes {stop-start}")

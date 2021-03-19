@@ -31,6 +31,8 @@ def generate_cma_experiments(experiment_directory, core_parameter_filename, lear
         environment_name = parameter_dictionary["general"]["environment"]
         parameter_dictionary["general"]["reward_level"] = reward_level
         parameter_dictionary["environment"][environment_name]["num_agents"] = num_agents
+        parameter_dictionary["environment"][environment_name]["arena_width"] = num_agents * 2
+        parameter_dictionary["environment"][environment_name]["num_resources"] = num_agents * 2
         parameter_dictionary["algorithm"]["agent_population_size"] = pop_size_for_team[learning_type][num_agents]
         parameter_dictionary["general"]["learning_type"] = learning_type
 

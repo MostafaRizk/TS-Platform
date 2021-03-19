@@ -29,18 +29,17 @@ class NNAgent(Agent):
 
         # Create neural network and random number generator
         self.net = None
+        self.random_seed = self.parameter_dictionary['general']['seed']
 
         if self.parameter_dictionary['agent']['nn']['architecture'] == "rnn":
             self.net = RNN_multilayer(N_inputs=observation_size, N_outputs=action_size, act_fn=activation_function,
                                       use_bias=self.bias, N_hidden_layers=self.num_hidden_layers,
-                                      N_hidden_units=self.num_hidden_units)
+                                      N_hidden_units=self.num_hidden_units, random_dist="normal", seed=self.random_seed)
 
         elif self.parameter_dictionary['agent']['nn']['architecture'] == "ffnn":
             self.net = FFNN_multilayer(N_inputs=observation_size, N_outputs=action_size, act_fn=activation_function,
                                       use_bias=self.bias, N_hidden_layers=self.num_hidden_layers,
-                                      N_hidden_units=self.num_hidden_units)
-
-        self.np_random = np.random.RandomState(self.parameter_dictionary['general']['seed'])
+                                      N_hidden_units=self.num_hidden_units, random_dist="normal", seed=self.random_seed)
 
         # Set weights if possible
         if genome is None:
