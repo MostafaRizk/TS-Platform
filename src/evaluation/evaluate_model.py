@@ -9,6 +9,7 @@ import json
 
 from fitness import FitnessCalculator
 from agents.nn_agent_lean import NNAgent
+from operator import add
 
 
 def evaluate_model(model_path, rendering, time_delay=0):
@@ -45,8 +46,16 @@ def evaluate_model(model_path, rendering, time_delay=0):
                                                        measure_specialisation=True, logging=False, logfilename=None,
                                                        render_mode="human")
 
-        team_score = np.mean([sum([results['fitness_matrix'][agent][i] for agent in range(num_agents)]) for i in
-                              range(len(results['fitness_matrix']))])
+        team_fitness_list = [0] * len(results['fitness_matrix'][0])
+
+        for j in range(num_agents):
+            team_fitness_list = list(map(add, team_fitness_list, results['fitness_matrix'][j]))
+
+        team_score = np.mean(team_fitness_list)
+
+        '''team_score = np.mean([sum([results['fitness_matrix'][agent][i] for agent in range(num_agents)]) for i in
+                              range(len(results['fitness_matrix']))])'''
+
         metric_index = 2  # R_spec
         specialisation = np.mean([spec[metric_index] for spec in results['specialisation_list']])
         print(f"Team score: {team_score}")
