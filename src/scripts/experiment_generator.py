@@ -38,7 +38,7 @@ def generate_cma_experiments(experiment_directory, core_parameter_filename, lear
 
         num_experiments = num_seeds_for_team
         np_random = np.random.RandomState(generator_seed)
-        g = open(f"{experiment_directory}/experiments/{list_file_name}", "a")
+        g = open(f"{experiment_directory}/data/{list_file_name}", "a")
 
         for i in range(num_experiments):
             new_seed = np_random.randint(low=1, high=2**32-1)
@@ -47,7 +47,7 @@ def generate_cma_experiments(experiment_directory, core_parameter_filename, lear
             parameters_in_filename += Learner.get_core_params_in_model_name(parameter_dictionary)
             parameters_in_filename += CMALearner.get_additional_params_in_model_name(parameter_dictionary)
             filename = "_".join([str(param) for param in parameters_in_filename]) + ".json"
-            f = open(f"{experiment_directory}/experiments/{filename}", "w")
+            f = open(f"{experiment_directory}/data/{filename}", "w")
             dictionary_string = json.dumps(parameter_dictionary, indent=4)
             f.write(dictionary_string)
             f.close()
