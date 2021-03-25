@@ -13,8 +13,8 @@ from operator import add
 from glob import glob
 
 
-#def evaluate_model(model_path, episodes, rendering="False", time_delay=0):
-def evaluate_model(model_path, rendering="False", time_delay=0):
+def evaluate_model(model_path, episodes, rendering, time_delay):
+    #def evaluate_model(model_path, rendering="False", time_delay=0):
     if rendering == "True":
         rendering = True
     else:
@@ -50,14 +50,23 @@ def evaluate_model(model_path, rendering="False", time_delay=0):
         parameter_filename = "_".join(parameter_list) + ".json"
         agent_index = "None"
 
-    #parameter_filename = "_".join(model_filename.split("_")[:-2]) + ".json"
     parameter_path = os.path.join(data_directory, parameter_filename)
-    fitness_calculator = FitnessCalculator(parameter_path)
     parameter_dictionary = json.loads(open(parameter_path).read())
-
     environment = parameter_dictionary["general"]["environment"]
     num_agents = parameter_dictionary["environment"][environment]["num_agents"]
     agent_list = []
+
+    if episodes and parameter_dictionary["environment"][environment]["num_episodes"] != episodes:
+        parameter_dictionary["environment"][environment]["num_episodes"] = episodes
+        new_parameter_path = os.path.join(data_directory, "temp.json")
+        f = open(new_parameter_path, "w")
+        dictionary_string = json.dumps(parameter_dictionary, indent=4)
+        f.write(dictionary_string)
+        f.close()
+        fitness_calculator = FitnessCalculator(new_parameter_path)
+
+    else:
+        fitness_calculator = FitnessCalculator(parameter_path)
 
     if parameter_dictionary["general"]["learning_type"] == "centralised" and \
             parameter_dictionary["general"]["reward_level"] == "team":
@@ -112,9 +121,10 @@ def evaluate_model(model_path, rendering="False", time_delay=0):
     metric_index = 2  # R_spec
     specialisation = np.mean([spec[metric_index] for spec in results['specialisation_list']])
 
-    #print(agent_scores)
-    #print(team_score)
-    #print(specialisation)
+    print(results['fitness_matrix'])
+    print(agent_scores)
+    print(team_score)
+    print(specialisation)
 
     return agent_scores, specialisation
 
@@ -122,13 +132,13 @@ def evaluate_model(model_path, rendering="False", time_delay=0):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Evaluate models')
     parser.add_argument('--model_path', action="store")
-    #parser.add_argument('--episodes', action="store")
+    parser.add_argument('--episodes', action="store")
     parser.add_argument('--rendering', action="store")
     parser.add_argument('--time_delay', action="store")
     model_path = parser.parse_args().model_path
-    #episodes = int(parser.parse_args().episodes)
+    episodes = int(parser.parse_args().episodes)
     rendering = parser.parse_args().rendering
     time_delay = parser.parse_args().time_delay
 
-    #evaluate_model(model_path, episodes, rendering, time_delay)
-    evaluate_model(model_path, rendering, time_delay)
+    evaluate_model(model_path, episodes, rendering, time_delay)
+    #evaluate_model(model_path, rendering, time_delay)
