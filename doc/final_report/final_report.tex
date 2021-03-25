@@ -1,6 +1,7 @@
 \documentclass[12pt]{article}
 \usepackage{graphicx}
 \usepackage{tabu}
+\usepackage{makecell}
 \graphicspath{ {./figures/} }
 
 \makeatletter
@@ -17,7 +18,7 @@
 \newlength{\thickarrayrulewidth}
 \setlength{\thickarrayrulewidth}{4\arrayrulewidth}
 
-\title{Final Report:\\ Neuroevolution of Task Specialisaiton for Multi-Agent Systems}
+\title{Final Report:\\ Neuroevolution of Task Specialisation for Multi-Agent Systems}
 \author{Mostafa Rizk}
 
 \setlength{\parindent}{0pt}
@@ -27,6 +28,85 @@
 \maketitle
 
 \section{Introduction}
+
+\subsection{Background \& Motivation}
+
+Multi-agent teams can be used to solve a diverse range of problems such as foraging, collective construction, area coverage and collective manipulation \cite{hamann:Springer:2018,bayindir:neuro:2016,brambilla:SI:2013}.
+This research focuses on foraging, when a group of agents must locate and transport resources from one location to another \cite{hamann:Springer:2018,bayindir:neuro:2016,brambilla:SI:2013}, usually a base or nest.
+Foraging is of particular interest because it has many real-world analogs, especially in robotics, such as search and rescue \cite{hamann:Springer:2018,bayindir:neuro:2016,brambilla:SI:2013, khamis:Springer:2015}, humanitarian demining \cite{bayindir:neuro:2016,brambilla:SI:2013, khamis:Springer:2015}, hazardous waste cleanup \cite{bayindir:neuro:2016} or planetary exploration \cite{bayindir:neuro:2016}. 
+Multi-agent foraging is advantageous over single-agent foraging because agents can improve team performance by working in parallel \cite{khamis:Springer:2015, ericksen:SSCI:2017} or by cooperating and specialising in different sub-tasks \cite{ferrante:PLOS_CB:2015, pini:Swarm_Intelligence:2011, pini:ICSI:2012}, which promises even greater performance.\\
+
+Learning multiple agent policies that collectively achieve a team objective is challenging, however \cite{trianni:SCI:2008,francesca:SI:2014}.
+Neuroevolution is a promising technique to address this challenge that applies evolutionary algorithms to neural networks to learn policies \cite{stanley:Nature:2019} .
+Neural networks have shown state of the art performance in several domains \cite{marcus:arXiv:2018:deep}, including on agent-based problems \cite{marcus:arXiv:2018:innateness}, in part due to their high representational power \cite{such:arXiv:2017}.
+Rather than mapping an action to each individual state, like Q-tables, neural networks are able to generalise, making problems with large state spaces much more feasible to solve \cite{such:arXiv:2017}.
+Evolutionary algorithms have also had much success, showing comparable or superior performance to state of the art reinforcement learning algorithms \cite{such:arXiv:2017, salimans:arXiv:2017}.
+Neuroevolution has the additonal benefit of being highly parallelisable \cite{salimans:arXiv:2017} and introduces the possibility of using techniques from the literature such as novelty search \cite{lehman:Springer:2011, gomes:SI:2013, gomes:EC:2017}, architecture search \cite{elsken:arXiv:2018, wistuba:arXiv:2019} and others to solve more challenging problems \cite{stanley:Nature:2019}.\\
+
+Evolving specialisation has only been done in a few studies \cite{ferrante:PLOS_CB:2015, nitschke:SEC:2012}, though, with most studies opting for less automated approaches \cite{hamann:Springer:2018}.
+While these studies evolved specialisation successfully, their results are difficult to reproduce and it is not clear what the core challenges of evolving specialisation are.
+Understanding these challenges can make it easier for future research to produce specialisation, leverage it for foraging and extend it to other multi-agent tasks.
+
+\subsection{Research Questions}
+
+To better understand how specialisation can emerge in systems of multiple agents, I investigate the following research question:\\
+
+\textbf{How can effective task specialisation emerge for multi-agent foraging?}\\
+
+To answer this question, I use an experimental framework based on the slope foraging problem used in \cite{ferrante:PLOS_CB:2015} and similar also to \cite{pini:ICSI:2012, pini:SI:2011}.
+In this problem, a team of agents must retrieve resources from a source location to a nest.
+The source is located at the top of a slope and the nest is located at the bottom.
+Agents can employ a generalist strategy where they go up the slope, pick up the resource, carry it to the nest and deposit it.
+Agents can alternatively employ a specialist strategy where they cooperate with their team-mates.
+In the specialist strategy some agents are droppers, who go up to the source and drop resources that fall just short of the nest in an area called the cache, and some agents are collectors, who retrieve resources from the cache and deposit them at the nest.\\
+
+In \cite{pini:ICSI:2012, pini:SI:2011,ferrante:PLOS_CB:2015}, specialist teams are shown to score higher than generalists because they take advantage of a quick transportation method (i.e. dropping down the slope rather than carrying).
+I use the slope foraging problem as a test-bed to explore the evolution of specialisation.\\
+
+I look at three key areas to answer the main research question: the fitness landscape of task specialisation problems, centralised vs decentralised approaches to evolution and theoretical modelling of specialisation.
+These three areas are explored through the following three sub-questions:\\
+
+\begin{description}
+\item[1] \textbf{What are the fundamental features of the fitness landscape of a task specialisation problem?}\\
+
+Neuroevolution is, fundamentally, an optimisation technique that traverses a landscape and depending on the features of the landscape, different algorithms may be successful.
+For example, landscapes with a smooth gradient benefit from gradient-based approaches while landscapes with no gradient or multiple optima benefit instead from population-based methods or methods that reward diversity or are more exploratory \cite{oller:AAMAS:2020}.
+Knowing what these features are for a specialisation problem informs what algorithms researchers can use to traverse the landscape and achieve specialisation.
+
+\item[2] \textbf{When do centralised and decentralised solutions outperform one another in task specialisation problems?}\\
+
+Key to the problem of evolving specialised cooperative teams is the question of centralised vs decentralised evolution \cite{panait:AAMAS:2005}.
+Centralised evolution uses one evolutionary process to evolve a solution for the entire team \cite{panait:AAMAS:2005}.
+Decentralised evolution (cooperative coevolution) uses multiple concurrent evolutionary processes, where each process evolves the solution for an individual agent at the same time as the others are evolving \cite{panait:AAMAS:2005}.
+Centralised vs decentralised evolution is explained in more detail in Section \ref{learning} of the Appendix.\\
+
+Centralised techniques, theoretically, should be better at finding the best team solution i.e. the team that cooperates most efficiently, but these techniques may not scale with team size because the solution space grows very quickly \cite{panait:AAMAS:2005}.
+Additionally, teams evolved using this approach may not be robust to changes in the individual team members; that is, their cooperative strategy will not work if one of the cooperators is replaced \cite{panait:AAMAS:2005}.\\
+
+Decentralised techniques should scale well because each evolutionary process is only looking for a single agent's solution, regardless of the size of the team, so the solution space does not change \cite{panait:AAMAS:2005}.
+These techniques should also be robust because throughout each agent's evolutionary process, it never knows what other agents it will be paired with, so the evolved solution should work well regardless of what the other agents on the team do \cite{panait:AAMAS:2005}.\\
+
+Previous works suggests that a decentralised approach is favourable when seeking robustness whereas a centralised one is favourable when seeking cooperation \cite{wiegand:GECCO:2006}, but a thorough analysis has yet to be performed. 
+Moreover, the question of how centralised and decentralised systems compare in general, is still an open one \cite{vanLon:AAMAS:2017}.
+An empirical comparison of these two approaches in terms of scalability, robustness and degree of specialisation can help determine when it might be preferable to use each approach.
+
+\item[3] \textbf{What is the price of anarchy in task specialisation problems?}\\
+
+While empirical results are valuable, having a theoretical understanding of them helps to generalise findings.
+A theoretical model helps interpret results while the results help to refine the model.
+Evolutionary game theory is commonly used as a modelling tool in the multi-agent domain \cite{panait:AAMAS:2005, wiegand:GECCO:2006, lanctot:NeurIPS:2017} and provides two useful measures that complement the other two focuses of this research: Nash equilibria \cite{hofbauer:BAMS:2003} and the price of anarchy \cite{koutsoupias:ASTACS:1999}.
+A Nash equilibrium is a set of strategies, for all players in game, such that no player has an incentive to unilaterally deviate.
+If the task specialisation problem is formulated as a game, we can expect the Nash equilibria of that game to correlate to the optima in the fitness landscape.
+This is valuable because the landscape of future specialisation problems can be predicted if they have the same features as a particular game/games.
+The landscape analysis alone only tells the features of this particular implementation of the task specialisation problem.
+The landscape analysis paired with the game theoretic model explaining it, tells the features of other instances of the specialisation problem.\\
+
+The price of anarchy is a measure of how the performance of a socially optimal system, designed by a benevolent dictator, deteriorates when agents can act autonomously to serve their individual interests.
+The socially optimal system can be considered analogous to a centralised solution and a system of self-interested agents can be considered analogous to a decentralised solution.
+If the price of anarchy matches what is observed in the empirical setup, it supports the conclusion that these results will follow for other instances of the task specialisation problem.
+If the price of anarchy does not match, but the model is a correct representation of the problem, then it suggests there are practical issues with implementation that cause a discrepancy.
+
+\end{description}
 
 \section{Landscape Analysis}
 
@@ -616,6 +696,28 @@ Combine the decentralised data with the centralised data and plot on the same pl
 
 \subsection{Background}
 
+
+
+---
+
+Key to the problem of evolving specialised cooperative teams is the question of centralised vs decentralised evolution \cite{panait:AAMAS:2005}.
+Centralised evolution uses one evolutionary process to evolve a solution for the entire team \cite{panait:AAMAS:2005}.
+Decentralised evolution (cooperative coevolution) uses multiple concurrent evolutionary processes, where each process evolves the solution for an individual agent at the same time as the others are evolving \cite{panait:AAMAS:2005}.
+Centralised vs decentralised evolution is explained in more detail in Section \ref{learning} of the Appendix.\\
+
+Centralised techniques, theoretically, should be better at finding the best team solution i.e. the team that cooperates most efficiently, but these techniques may not scale with team size because the solution space grows very quickly \cite{panait:AAMAS:2005}.
+Additionally, teams evolved using this approach may not be robust to changes in the individual team members; that is, their cooperative strategy will not work if one of the cooperators is replaced \cite{panait:AAMAS:2005}.\\
+
+Decentralised techniques should scale well because each evolutionary process is only looking for a single agent's solution, regardless of the size of the team, so the solution space does not change \cite{panait:AAMAS:2005}.
+These techniques should also be robust because throughout each agent's evolutionary process, it never knows what other agents it will be paired with, so the evolved solution should work well regardless of what the other agents on the team do \cite{panait:AAMAS:2005}.\\
+
+Previous works suggests that a decentralised approach is favourable when seeking robustness whereas a centralised one is favourable when seeking cooperation \cite{wiegand:GECCO:2006}, but a thorough analysis has yet to be performed. 
+Moreover, the question of how centralised and decentralised systems compare in general, is still an open one \cite{vanLon:AAMAS:2017}.
+An empirical comparison of these two approaches in terms of scalability, robustness and degree of specialisation can help determine when it might be preferable to use each approach.
+
+
+---
+
 In centralised learning, the entire team policy is learned by one learning process.
 In decentralised learning, each agent's policy is learned separately but concurrently (cooperative co-evolution).
 In one-population coevolution, learning is centralised but it has some of the same game theoretic properties as decentralised learning.\\
@@ -679,6 +781,76 @@ The y-axis shows the fitness and the plots also have a colour scale to show the 
 
 \textbf{Experiment 3.1- Game-theoretic Modelling:} Formulate a game that models the experimental setup. 
 Find the nash equilibria and study the learning dynamics.\\
+
+The pay-off matrix for the game with a slope is as follows:
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+  & \textbf{Generalist} & \textbf{Dropper} & \textbf{Collector}& \textbf{Novice}\\
+\thickhline
+\textbf{Generalist} & \textbf{$(g,g)$} & $(g, f)$ & $(g,b)$ & $(g,f)$ \\
+\hline
+\textbf{Dropper} & $(f,g)$ & $(f,f)$ & \textbf{$(e,e)$} & $(f,f)$ \\
+\hline
+\textbf{Collector} & $(b,g)$ & \textbf{$(e,e)$} & $(b,b)$ & $(b,f)$ \\
+\hline
+\textbf{Novice} & $(f,g)$ & $(f,f)$ & $(f,b)$ & $(f,f)$ \\
+\hline
+\end{tabular}
+\end{center}
+
+There are two Nash equilibria (reflected across the diagonal because the matrix is symmetric).
+Pay-offs are $e > g > 0 > b > f$.
+Novices, and droppers without a collector, receive a pay-off of $f$ because they pay the cost of going up the slope and possibly wandering around the source.
+This is more costly than simply waiting in the nest or wandering around the cache.
+\\
+
+The pay-off matrix for the game without a slope is as follows:
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+  & \textbf{Generalist} & \textbf{Dropper} & \textbf{Collector}& \textbf{Novice}\\
+\thickhline
+\textbf{Generalist} & \textbf{$(g,g)$} & $(g, b)$ & $(g,b)$ & $(g,b)$ \\
+\hline
+\textbf{Dropper} & $(b,g)$ & $(b,b)$ & $(b,b)$ & $(b,b)$ \\
+\hline
+\textbf{Collector} & $(b,g)$ & $(b,b)$ & $(b,b)$ & $(b,b)$ \\
+\hline
+\textbf{Novice} & $(b,g)$ & $(b,b)$ & $(b,b)$ & $(b,b)$ \\
+\hline
+\end{tabular}
+\end{center}
+
+There is only one Nash equilibrium because when there is no slope, a dropped resource cannot go anywhere so droppers achieve nothing by dropping and collectors achieve nothing by waiting for a resource to drop.
+Additionally, since there is no slope, droppers and novices do not pay an extra cost for travelling to the source so they are no better or worse than a novice.\\
+
+These two pay-off matrices can be combined as follows:
+
+$s \theta(s) A + (1-\theta(s)) B $\\
+$g - sc$
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+  & \textbf{Generalist} & \textbf{Dropper} & \textbf{Collector}& \textbf{Novice}\\
+\thickhline
+\textbf{Generalist} & \makecell{ $g - sc$, \\ $g - sc$ } & \makecell{$g - sc$, \\ $s \theta(s) f + (1-\theta(s)) b$} & $(g - sc,b)$ & $(g - sc,s \theta(s) f + (1-\theta(s)) b)$ \\
+\hline
+\textbf{Dropper} & \makecell{$s \theta(s) f + (1-\theta(s)) b$, \\ $g - sc$} & $(s \theta(s) f + (1-\theta(s)) b,s \theta(s) f + (1-\theta(s)) b)$ & $(s \theta(s) e + (1-\theta(s)) b,s \theta(s) e + (1-\theta(s)) b)$ & $(s \theta(s) f + (1-\theta(s)) b,s \theta(s) f + (1-\theta(s)) b)$ \\
+\hline
+\textbf{Collector} & \makecell{$b$, \\ $g - sc$} & $(s \theta(s) e + (1-\theta(s)) b,s \theta(s) e + (1-\theta(s)) b)$ & $(b,b)$ & $(b,s \theta(s) f + (1-\theta(s)) b)$ \\
+\hline
+\textbf{Novice} & \makecell{$s \theta(s) f + (1-\theta(s)) b$, \\ $g - sc$} & $(s \theta(s) f + (1-\theta(s)) b,(s \theta(s) f + (1-\theta(s)) b)$ & $(s \theta(s) f + (1-\theta(s)) b,b)$ & $(s \theta(s) f + (1-\theta(s)) b,(s \theta(s) f + (1-\theta(s)) b$ \\
+\hline
+\end{tabular}
+\end{center}
+
+The step function $\theta(s)$ satisfies $\theta(s=0) = 0$ and $\theta(s>0)=1$ where $s$ is variable representing the magnitude of the slope.
+$c$ is a cost paid by generalists for going up a non-zero slope which we multiply by $s$ to show that the cost is greater when the slope is greater.
+
 
 \bibliographystyle{ieeetr}
 \bibliography{references}
