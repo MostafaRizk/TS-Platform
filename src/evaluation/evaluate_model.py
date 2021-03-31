@@ -13,7 +13,7 @@ from operator import add
 from glob import glob
 
 
-def evaluate_model(model_path, episodes, rendering, time_delay):
+def evaluate_model(model_path, episodes, rendering=None, time_delay=None):
     #def evaluate_model(model_path, rendering="False", time_delay=0):
     if rendering == "True":
         rendering = True
@@ -121,10 +121,10 @@ def evaluate_model(model_path, episodes, rendering, time_delay):
     metric_index = 2  # R_spec
     specialisation = np.mean([spec[metric_index] for spec in results['specialisation_list']])
 
-    print(results['fitness_matrix'])
-    print(agent_scores)
-    print(team_score)
-    print(specialisation)
+    #print(results['fitness_matrix'])
+    #print(agent_scores)
+    #print(team_score)
+    #print(specialisation)
 
     return agent_scores, specialisation
 

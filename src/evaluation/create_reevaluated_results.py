@@ -9,7 +9,7 @@ from evaluation.evaluate_model import evaluate_model
 from evaluation.create_results_from_models import get_seed_file
 
 
-def create_reevaluated_results(path_to_data_folder, generation):
+def create_reevaluated_results(path_to_data_folder, generation, episodes=None):
     # TODO: Modify to avoid repetition of other function
     # Get list of models
     model_files = glob(f'{path_to_data_folder}/*cma*_{generation}.npy')  # TODO: Allow different algorithms
@@ -31,7 +31,10 @@ def create_reevaluated_results(path_to_data_folder, generation):
 
     # Get list of agent_scores for each
     for model_path in model_files:
-        agent_scores, specialisation = evaluate_model(model_path)
+        if not episodes:
+            agent_scores, specialisation = evaluate_model(model_path)
+        else:
+            agent_scores, specialisation = evaluate_model(model_path, int(episodes))
 
         learning_type = model_path.split("/")[-1].split("_")[0]
         if learning_type == "centralised":
@@ -53,7 +56,12 @@ def create_reevaluated_results(path_to_data_folder, generation):
         parameter_path = os.path.join(path_to_data_folder, parameter_filename)
         parameter_dictionary = json.loads(open(parameter_path).read())
         seed_file = get_seed_file(path_to_data_folder, parameter_dictionary)
-        seed_scores, seed_specialisation = evaluate_model(seed_file)
+
+        if not episodes:
+            seed_scores, seed_specialisation = evaluate_model(seed_file)
+        else:
+            seed_scores, seed_specialisation = evaluate_model(seed_file, int(episodes))
+
         seed_fitness = str(np.sum(seed_scores))
 
         # Log centralised and one-pop once
@@ -96,8 +104,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Reevaluate models and save to file')
     parser.add_argument('--data_path', action="store")
     parser.add_argument('--generation', action="store")
+    parser.add_argument('--episodes', action="store")
 
     data_path = parser.parse_args().data_path
     generation = parser.parse_args().generation
+    episodes = parser.parse_args().episodes
 
-    create_reevaluated_results(data_path, generation)
+    create_reevaluated_results(data_path, generation, episodes)

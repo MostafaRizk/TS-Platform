@@ -95,8 +95,8 @@ if __name__ == "__main__":
     parser.add_argument('--num_generations', action="store")
 
     data_path = parser.parse_args().data_path
-    start_generation = parser.parse_args().start_generation
-    step_size = parser.parse_args().step_size
-    num_generations = parser.parse_args().num_generations
+    start_generation = int(parser.parse_args().start_generation)
+    step_size = int(parser.parse_args().step_size)
+    num_generations = int(parser.parse_args().num_generations)
 
     create_results_from_models(data_path, start_generation, step_size, num_generations)

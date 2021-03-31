@@ -696,8 +696,6 @@ Combine the decentralised data with the centralised data and plot on the same pl
 
 \subsection{Background}
 
-
-
 ---
 
 Key to the problem of evolving specialised cooperative teams is the question of centralised vs decentralised evolution \cite{panait:AAMAS:2005}.
@@ -747,6 +745,68 @@ Multi-threading should be implemented to avoid this problem otherwise computatio
 \textbf{Experiment 2.1- Evolution with Larger Teams:} Do 30 evolutionary runs (centralised and decentralised) for teams of 4, 6, 8 and 10 agents.
 Calculate the specialisation of all evolved solutions.
 Plot the average fitness per agent and team specialisation for teams in each setup. \\
+
+\subsubsection{Results}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.0\textwidth]{experiment_2.1/preliminary_magic_plot_reevaluated.png}
+\caption{Scalability of Setups- Fitness}
+\label{fig:preliminary_magic_plot}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.0\textwidth]{experiment_2.1/preliminary_magic_plot_reevaluated_spec.png}
+\caption{Scalability of Setups- Specialisation}
+\label{fig:preliminary_magic_plot_spec}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.0\textwidth]{experiment_2.1/preliminary_magic_plot_distributions.png}
+\caption{Distribution of Fitness Values}
+\label{fig:preliminary_magic_plot_distribution}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.0\textwidth]{experiment_2.1/preliminary_magic_plot_distributions_spec.png}
+\caption{Distribution of Specialisation Values}
+\label{fig:preliminary_magic_plot_distribution_spec}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.0\textwidth]{experiment_2.1/preliminary_evolutionary_history.png}
+\caption{Evolutionary History}
+\label{fig:preliminary_evo_history}
+\end{figure}
+
+In the first set of experiments, it initially appears that the centralised setup finds more specialised solutions, on average (Fig \ref{fig:preliminary_magic_plot_spec}.
+In Fig \ref{fig:preliminary_magic_plot}, looking only at 2 and 4 agent teams it appears that the centralised solutions have the highest for small teams but that score rapidly decreases when teams get bigger.
+Looking only at these two data-points, it looks as though the 3 setups are approaching an inflection point where the decentralised and one-pop setups will outperform centralised setups at scale, however instead the rate of decline changes for all the setups.
+Looking at these plots, the error bars (which denote standard mean error) are very large and in the case of 4 agents, all setups have almost the same score.
+Visualising these distributions in Figures \ref{fig:preliminary_magic_plot_distribution} and \ref{fig:preliminary_magic_plot_distribution_spec}, we see that the variance among results is tremendous.
+This is not an issue of running evolution for too short a time, because all runs converge, some very long before the end of evolution as we see in Figure \ref{fig:preliminary_evo_history}.
+It is also not an issue of random seed quality, because many evolutionary runs with poor seeds achieved high final scores while many runs with better seeds did not achieve better scores then their counterparts.
+This suggests that the landscape is deceptive and CMA's outcome is highly dependent on where it starts.\\
+
+Oller et al \cite{oller:AAMAS:2020} recommend algorithms "strong in exploration" for landscapes like the slope foraging one.
+I use CMA because it is gradientless, however, a gradientless algorithm is not necessarily an exploratory one. 
+Genetic algorithms are population-based but novelty search was still developed for them to promote exploration because their built-in exploration was insufficient. 
+In my prior experiments, CMA was unsuccessful when used without seeding. 
+The fact that seeding/bootstrapping is necessary at all is a demonstration that it is not able to sufficiently explore the landscape on its own.
+To heed the recommendation of Oller et al, I investigated quality-diversity (QD) algorithms which combine measures of fitness and novelty to find solutions that meet the objective but also explore a large swath of the landscape.
+Conti et al \cite{conti:NeurIPS:2018} combine quality diversity with Natural Evolution Strategies (NES) for reinforcement learning tasks and show that they outperform NES when the landscape is deceptive. 
+Fontaine et al \cite{fontaine:GECCO:2020} combine MAP-Elites with CMA-ES and show that it outperforms both parent algorithms by leveraging the exploration of quality diversity and the optimisation power of CMA, which is state of the art for continuous optimisation, but they only use it for very simple tasks. 
+Gomes et al \cite{gomes:EC:2017} used a combination of novelty and fitness for cooperative coevolution and investigated some interesting questions that only arise when applying novelty to multi-agent domains like designing behaviour characterisation/measuring novelty for an entire team versus individuals. 
+This is an extension of a question that has existed for many years in the field regarding credit assignment.\\
+
+Quality diversity  also has a very interesting potential application for discovering specialisation. 
+QD techniques operate by adding novel solutions to an archive. 
+In centralised learning, the archive would contain all the different team behaviours. In decentralised or one-pop learning, the archive would contain all the different individual behaviours. 
+Among them could be all the different components required for a team of specialists. 
 
 \subsection{Robustness}
 

@@ -272,7 +272,7 @@ def plot_fitness_comparison(results_file, graph_file):
         for tick in ax.yaxis.get_major_ticks():
             tick.label.set_fontsize(12)
 
-        # Plot data
+    # Plot data
     slope_centralised_fitnesses = []
     for seed in results["Centralised"]:
         slope_centralised_fitnesses += [results["Centralised"][seed]]

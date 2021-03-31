@@ -5,8 +5,9 @@ import argparse
 
 from scipy import stats
 
+setups = ["Centralised", "Decentralised", "One-pop"]
 
-def plot_scalability(path_to_results, graph_file_name, plot_type, max_agents, showing="fitness"):
+def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, showing="fitness"):
     # Prepare data lists
     x = [i for i in range(2, max_agents+2, 2)]
     y_centralised = []
@@ -51,9 +52,19 @@ def plot_scalability(path_to_results, graph_file_name, plot_type, max_agents, sh
         elif showing == "specialisation":
             results[key][seed] = row["specialisation"]
 
+    scores = {"Centralised-2": [],
+               "Centralised-4": [],
+               "Centralised-6": [],
+               "Decentralised-2": [],
+               "Decentralised-4": [],
+               "Decentralised-6": [],
+               "One-pop-2": [],
+               "One-pop-4": [],
+               "One-pop-6": []
+               }
+
     for num_agents in range(2, max_agents+2, 2):
-        for setup in ["Centralised", "Decentralised", "One-pop"]:
-            score = []
+        for setup in setups:
             key = f"{setup}-{num_agents}"
 
             for seed in results[key]:
@@ -63,11 +74,11 @@ def plot_scalability(path_to_results, graph_file_name, plot_type, max_agents, sh
                     else:
                         fitness = results[key][seed]
 
-                    score += [fitness]
+                    scores[key] += [fitness]
 
                 elif showing == "specialisation":
                     specialisation = results[key][seed]
-                    score += [specialisation]
+                    scores[key] += [specialisation]
 
             if setup == "Centralised":
                 y = y_centralised
@@ -82,22 +93,23 @@ def plot_scalability(path_to_results, graph_file_name, plot_type, max_agents, sh
                 yerr = yerr_onepop
 
             if plot_type == "mean":
-                y += [np.mean(score)]
-                yerr += [np.std(score)]
+                y += [np.mean(scores[key])]
+                yerr += [np.std(scores[key])]
             elif plot_type == "max":
-                y += [np.max(score)]
+                y += [np.max(scores[key])]
             elif plot_type == "median":
-                y += [np.median(score)]
+                y += [np.median(scores[key])]
             elif plot_type == "no_variance":
-                y += [np.mean(score)]
+                y += [np.mean(scores[key])]
             elif plot_type == "error":
-                y += [np.mean(score)]
-                yerr += [stats.sem(score)]
+                y += [np.mean(scores[key])]
+                yerr += [stats.sem(scores[key])]
 
     for key in results:
         print(f"{key}: {len(results[key])}")
 
     # Plot
+    '''
     fig1, ax1 = plt.subplots(figsize=(12, 8))
     ax1.set_title(f'Scalability of Evolved {showing.capitalize()} with Number of Agents', fontsize=20)
     if showing == "fitness":
@@ -125,7 +137,50 @@ def plot_scalability(path_to_results, graph_file_name, plot_type, max_agents, sh
         plt.plot(x, y_onepop, label="One-pop")
 
     plt.legend(loc='upper right', fontsize=16)
-    plt.savefig(graph_file_name)
+    plt.savefig(path_to_graph)
+    '''
+
+    def set_axis_style(ax, labels):
+        ax.get_xaxis().set_tick_params(direction='out')
+        ax.xaxis.set_ticks_position('bottom')
+        ax.set_xticks(np.arange(1, len(labels) + 1))
+        ax.set_xticklabels(labels, fontsize=12)
+        ax.set_xlim(0.25, len(labels) + 0.75)
+        for tick in ax.yaxis.get_major_ticks():
+            tick.label.set_fontsize(12)
+
+    #fig = plt.figure(figsize=(19, 9))
+    fig, axs = plt.subplots(1, 3, sharey=True, figsize=(19,9))
+    num_cols = 3
+
+    for col,ax in enumerate(axs):
+
+        if showing == "fitness":
+            ax.set_ylim(-2000, 15000)
+            ax.set_ylabel("Fitness per Agent")
+        elif showing == "specialisation":
+            ax.set_ylim(-0.2, 1.2)
+            ax.set_ylabel("Team Specialisation")
+
+        num_agents = (col+1) * 2
+        parts = ax.violinplot([scores[f"{setup}-{num_agents}"] for setup in setups])
+
+        for id,pc in enumerate(parts['bodies']):
+            if setups[id] == "Centralised":
+                pc.set_color('red')
+            elif setups[id] == "Decentralised":
+                pc.set_color('blue')
+            elif setups[id] == "One-pop":
+                pc.set_color('green')
+
+        for pc in ('cbars', 'cmins', 'cmaxes'):
+            parts[pc].set_color('black')
+
+        set_axis_style(ax, setups)
+        ax.set_title(f"{num_agents} Agents")
+
+    plt.suptitle(f"{showing.capitalize()} Distribution")
+    plt.savefig(path_to_graph)
 
 
 if __name__ == "__main__":
