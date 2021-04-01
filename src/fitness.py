@@ -91,6 +91,7 @@ class FitnessCalculator:
         agent_copies = [copy.deepcopy(agent) for agent in agent_list]
         video_frames = []
         self.env.reset_rng()
+        behaviour_characterisations = [None]*self.num_episodes
 
         # Create logging file if logging
         if logging:
@@ -143,6 +144,8 @@ class FitnessCalculator:
             if measure_specialisation:
                 specialisation_list += [self.env.calculate_ferrante_specialisation()]
 
+            behaviour_characterisations[episode] = self.env.get_behaviour_characterisation()
+
             if logging:
                 #for agent_action_list in agent_action_matrix:
                 #    action_string = ','.join(str(action) for action in agent_action_list) + '\n'
@@ -154,7 +157,7 @@ class FitnessCalculator:
         if logging:
             file_reader.close()
 
-        return {"fitness_matrix": fitness_matrix, "specialisation_list": specialisation_list, "video_frames": video_frames}
+        return {"fitness_matrix": fitness_matrix, "specialisation_list": specialisation_list, "video_frames": video_frames, "behaviour_characterisation_list": behaviour_characterisations}
 
     # Helpers ---------------------------------------------------------------------------------------------------------
 

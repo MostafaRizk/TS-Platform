@@ -76,6 +76,7 @@ class SlopeEnv:
         else:
             raise RuntimeError("Incremental rewards is not set to True or False")
             raise RuntimeError("Incremental rewards is not set to True or False")
+        self.avg_y_for_agent = [0] * self.num_agents
 
         # Rendering constants
         self.scale = 50  # Scale for rendering
@@ -218,6 +219,7 @@ class SlopeEnv:
         # Reset variables that were changed during runtime
         self.has_resource = [None] * self.num_agents
         self.current_num_resources = self.default_num_resources
+        self.avg_y_for_agent = [0] * self.num_agents
 
         return self.get_agent_observations()
 
@@ -294,6 +296,9 @@ class SlopeEnv:
             self.agent_map[agent_collision_positions[i][1]][agent_collision_positions[i][0]] = i + 1
 
         self.agent_positions = agent_collision_positions
+
+        for i in range(self.num_agents):
+            self.avg_y_for_agent[i] += self.agent_positions[i][1] / self.episode_length
 
     def update_resource_positions(self, agent_actions, old_agent_positions, rewards):
         """
@@ -537,6 +542,9 @@ class SlopeEnv:
 
     def get_action_size(self):
         return self.action_space_size
+
+    def get_behaviour_characterisation(self):
+        return self.avg_y_for_agent
 
     # Helpers ---------------------------------------------------------------------------------------------------------
     def get_area_from_position(self, position):
