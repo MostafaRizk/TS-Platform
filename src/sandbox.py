@@ -19,8 +19,8 @@ parameter_dictionary = json.loads(open(param_file).read())
 num_agents = 2
 num_actions = 6
 episode_length = 100
-num_generations = 50
-pop_size = 200
+num_generations = 5000
+pop_size = 100
 fitness_calculator = FitnessCalculator(param_file)
 genome_length = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), param_file).get_num_weights() * num_agents
 
