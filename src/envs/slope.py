@@ -77,6 +77,8 @@ class SlopeEnv:
             raise RuntimeError("Incremental rewards is not set to True or False")
             raise RuntimeError("Incremental rewards is not set to True or False")
         self.avg_y_for_agent = [0] * self.num_agents
+        self.action_history = [[0 for i in range(self.episode_length)] for j in range(self.num_agents)]
+        self.time_step = 0
 
         # Rendering constants
         self.scale = 50  # Scale for rendering
@@ -220,6 +222,8 @@ class SlopeEnv:
         self.has_resource = [None] * self.num_agents
         self.current_num_resources = self.default_num_resources
         self.avg_y_for_agent = [0] * self.num_agents
+        self.action_history = [[0 for i in range(self.episode_length)] for j in range(self.num_agents)]
+        self.time_step = 0
 
         return self.get_agent_observations()
 
@@ -262,6 +266,10 @@ class SlopeEnv:
             # Negative reward for dropping/picking up but is not affected by resource weight
             else:
                 rewards[i] -= self.base_cost
+
+            self.action_history[i][self.time_step] = agent_actions[i]
+
+        self.time_step += 1
 
         return rewards
 
@@ -543,8 +551,11 @@ class SlopeEnv:
     def get_action_size(self):
         return self.action_space_size
 
-    def get_behaviour_characterisation(self):
+    def get_avg_y_for_agent(self):
         return self.avg_y_for_agent
+
+    def get_action_history(self):
+        return self.action_history
 
     # Helpers ---------------------------------------------------------------------------------------------------------
     def get_area_from_position(self, position):
@@ -767,6 +778,34 @@ class SlopeEnv:
             participation = sum(agent_participated) / self.num_agents
 
         return [r_coop, r_coop_eff, r_spec, r_coop * participation, r_coop_eff * participation, r_spec * participation]
+
+    # Calculate behaviour characterisation
+    def get_behaviour_characterisation(self):
+        bc_measure = "total_action_count"
+
+        if bc_measure == "avg_y":
+            return self.avg_y_for_agent
+
+        elif bc_measure == "action_count":
+            action_count = [[0 for i in range(self.action_space_size)] for j in range(self.num_agents)]
+
+            for agent in range(self.num_agents):
+                for t in range(self.episode_length):
+                    action = self.action_history[agent][t]
+                    action_count[agent][action] += 1
+
+            return action_count
+
+        elif bc_measure == "total_action_count":
+            total_action_count = [0]*self.action_space_size
+
+            for agent in range(self.num_agents):
+                for t in range(self.episode_length):
+                    action = self.action_history[agent][t]
+                    total_action_count[action] += 1
+
+            return total_action_count
+
 
     # Rendering Functions ---------------------------------------------------------------------------------------------
     def draw_arena_segment(self, top, bottom, rgb_tuple):
