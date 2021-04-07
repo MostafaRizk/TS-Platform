@@ -1,0 +1,16 @@
+{
+  "e": 6,
+  "g": 5,
+  "b": -0.5,
+  "f": -2,
+  "c": 0.25,
+  "s": 4,
+  "total_time": 100,
+  "dt": 0.1,
+  "initial_distribution": {
+    "Novice": 0.05,
+    "Generalist": 0.05,
+    "Dropper": 0.45,
+    "Collector": 0.45
+  }
+}

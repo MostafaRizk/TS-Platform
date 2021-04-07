@@ -2,6 +2,8 @@
 \usepackage{graphicx}
 \usepackage{tabu}
 \usepackage{makecell}
+\usepackage{blindtext}
+\usepackage{tabularx}
 \graphicspath{ {./figures/} }
 
 \makeatletter
@@ -893,7 +895,8 @@ $s \theta(s) A + (1-\theta(s)) B $\\
 $g - sc$
 
 \begin{center}
-\begin{tabular}{|c|c|c|c|c|}
+\noindent\makebox[\textwidth]{%
+\begin{tabularx}{1.5\textwidth}{|X|X|X|X|X|}
 \hline
   & \textbf{Generalist} & \textbf{Dropper} & \textbf{Collector}& \textbf{Novice}\\
 \thickhline
@@ -921,7 +924,7 @@ $g - sc$
 & \makecell{$s \theta(s) f + (1-\theta(s)) b$, \\ $b$} 
 & \makecell{$s \theta(s) f + (1-\theta(s)) b$, \\ $(s \theta(s) f + (1-\theta(s)) b$} \\
 \hline
-\end{tabular}
+\end{tabularx}}
 \end{center}
 
 The step function $\theta(s)$ satisfies $\theta(s=0) = 0$ and $\theta(s>0)=1$ where $s$ is variable representing the magnitude of the slope.
