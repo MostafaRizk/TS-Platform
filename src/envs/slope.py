@@ -79,6 +79,7 @@ class SlopeEnv:
         self.avg_y_for_agent = [0] * self.num_agents
         self.action_history = [[0 for i in range(self.episode_length)] for j in range(self.num_agents)]
         self.time_step = 0
+        self.bc_measure = parameter_dictionary['environment']['slope']['bc_measure']
 
         # Rendering constants
         self.scale = 50  # Scale for rendering
@@ -781,12 +782,10 @@ class SlopeEnv:
 
     # Calculate behaviour characterisation
     def get_behaviour_characterisation(self):
-        bc_measure = "total_action_count"
-
-        if bc_measure == "avg_y":
+        if self.bc_measure == "avg_y":
             return self.avg_y_for_agent
 
-        elif bc_measure == "action_count":
+        elif self.bc_measure == "action_count":
             action_count = [[0 for i in range(self.action_space_size)] for j in range(self.num_agents)]
 
             for agent in range(self.num_agents):
@@ -796,7 +795,7 @@ class SlopeEnv:
 
             return action_count
 
-        elif bc_measure == "total_action_count":
+        elif self.bc_measure == "total_action_count":
             total_action_count = [0]*self.action_space_size
 
             for agent in range(self.num_agents):

@@ -123,8 +123,8 @@ def evaluate_model(model_path, episodes, rendering=None, time_delay=None):
 
     #print(results['fitness_matrix'])
     #print(agent_scores)
-    #print(team_score)
-    #print(specialisation)
+    print(team_score)
+    print(specialisation)
 
     return agent_scores, specialisation
 

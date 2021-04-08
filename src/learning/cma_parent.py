@@ -18,21 +18,23 @@ from learning.rwg import RWGLearner
 class CMALearner(Learner):
     def __init__(self, calculator):
         super().__init__(calculator)
+        self.algorithm = self.parameter_dictionary['general']['algorithm_selected']
 
-        if self.parameter_dictionary['general']['algorithm_selected'] != "cma":
-            raise RuntimeError(f"Cannot run cma. Parameters request "
+        if self.parameter_dictionary['general']['algorithm_selected'] != "cma" and \
+                self.parameter_dictionary['general']['algorithm_selected'] != "cma-me":
+            raise RuntimeError(f"Cannot run cma or cma-me. Parameters request "
                                f"{self.parameter_dictionary['general']['algorithm_selected']}")
 
-        if self.parameter_dictionary['algorithm']['cma']['multithreading'] == "True":
+        if self.parameter_dictionary['algorithm'][self.algorithm]['multithreading'] == "True":
             self.multithreading = True
-        elif self.parameter_dictionary['algorithm']['cma']['multithreading'] == "False":
+        elif self.parameter_dictionary['algorithm'][self.algorithm]['multithreading'] == "False":
             self.multithreading = False
         else:
             self.multithreading = False
             raise RuntimeWarning("Multithreading setting not specified in parameters, defaulting to False (i.e. sequential execution)")
 
         # Log every x many generations
-        self.logging_rate = self.parameter_dictionary['algorithm']['cma']['logging_rate']
+        self.logging_rate = self.parameter_dictionary['algorithm'][self.algorithm]['logging_rate']
 
     def get_seed_genome(self):
         """
@@ -42,12 +44,12 @@ class CMALearner(Learner):
         @return: Genome and its fitness
         """
 
-        if self.parameter_dictionary['algorithm']['cma']['seeding_required'] == "True":
+        if self.parameter_dictionary['algorithm'][self.algorithm]['seeding_required'] == "True":
             dictionary_copy = copy.deepcopy(self.parameter_dictionary)
 
-            if dictionary_copy['algorithm']['cma']['partial'] == "False":
+            if dictionary_copy['algorithm'][self.algorithm]['partial'] == "False":
                 dictionary_copy['general']['algorithm_selected'] = "rwg"
-            elif dictionary_copy['algorithm']['cma']['partial'] == "True":
+            elif dictionary_copy['algorithm'][self.algorithm]['partial'] == "True":
                 dictionary_copy['general']['algorithm_selected'] = "cma"
             else:
                 raise RuntimeError("The value for partial cma is neither True nor False")
@@ -123,13 +125,21 @@ class CMALearner(Learner):
         parameters_in_name = []
 
         # Get algorithm params for relevant algorithm
+        algorithm = parameter_dictionary['general']['algorithm_selected']
+        if not (algorithm == "cma" or algorithm == "cma-me"):
+            raise RuntimeError("Algorithm must be CMA or CMA-ME")
+
         parameters_in_name += [parameter_dictionary['algorithm']['agent_population_size']]
-        parameters_in_name += [parameter_dictionary['algorithm']['cma']['sigma']]
-        parameters_in_name += [parameter_dictionary['algorithm']['cma']['generations']]
-        parameters_in_name += [parameter_dictionary['algorithm']['cma']['tolx']]
-        parameters_in_name += [parameter_dictionary['algorithm']['cma']['tolfunhist']]
-        parameters_in_name += [parameter_dictionary['algorithm']['cma']['tolflatfitness']]
-        parameters_in_name += [parameter_dictionary['algorithm']['cma']['tolfun']]
+        parameters_in_name += [parameter_dictionary['algorithm'][algorithm]['sigma']]
+        parameters_in_name += [parameter_dictionary['algorithm'][algorithm]['generations']]
+        parameters_in_name += [parameter_dictionary['algorithm'][algorithm]['tolx']]
+        parameters_in_name += [parameter_dictionary['algorithm'][algorithm]['tolfunhist']]
+        parameters_in_name += [parameter_dictionary['algorithm'][algorithm]['tolflatfitness']]
+        parameters_in_name += [parameter_dictionary['algorithm'][algorithm]['tolfun']]
+
+        if algorithm == "cma-me":
+            environment = parameter_dictionary['general']['environment']
+            parameters_in_name += [parameter_dictionary['environment'][environment]['bc_measure']]
 
         return parameters_in_name
 
@@ -149,5 +159,12 @@ class CMALearner(Learner):
                      "tolfunhist",
                      "tolflatfitness"
                      "tolfun"]
+
+        algorithm = parameter_dictionary['general']['algorithm_selected']
+        if not (algorithm == "cma" or algorithm == "cma-me"):
+            raise RuntimeError("Algorithm must be CMA or CMA-ME")
+
+        if algorithm == "cma-me":
+            headings += ["bc_measure"]
 
         return headings

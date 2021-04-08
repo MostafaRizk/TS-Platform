@@ -46,6 +46,7 @@ class FitnessCalculator:
 
         fitnesses = []
         specialisations = []
+        behaviour_characterisations = []
         agents_per_team = self.num_agents
 
         for i in range(0, len(population), agents_per_team):
@@ -58,8 +59,9 @@ class FitnessCalculator:
 
             fitnesses += fitness_matrix
             specialisations += [specialisation_measures]
+            behaviour_characterisations += [results_dict["behaviour_characterisation_list"]]
 
-        return fitnesses, specialisations
+        return fitnesses, specialisations, behaviour_characterisations
 
     def calculate_fitness(self, agent_list, render=False, time_delay=0, measure_specialisation=False,
                           logging=False, logfilename=None, render_mode="human"):

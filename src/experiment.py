@@ -7,19 +7,21 @@ from learning.learner_parent import Learner
 from learning.rwg import RWGLearner
 from learning.cma_centralised import CentralisedCMALearner
 from learning.cma_decentralised import DecentralisedCMALearner
+from learning.cma_me_centralised import CentralisedCMAMELearner
 
 
 def run_experiment(parameter_filename):
     parameter_dictionary = json.loads(open(parameter_filename).read())
     fitness_calculator = FitnessCalculator(parameter_filename)
+    algorithm = parameter_dictionary["general"]["algorithm_selected"]
 
-    if parameter_dictionary["general"]["algorithm_selected"] == "rwg":
+    if algorithm == "rwg":
         learner = RWGLearner(fitness_calculator)
         genome, fitness = learner.learn()
 
-    elif parameter_dictionary["general"]["algorithm_selected"] == "cma":
+    elif algorithm == "cma" or algorithm == "cma-me":
 
-        if parameter_dictionary["algorithm"]["cma"]["seeding_included"] == "True":
+        if parameter_dictionary["algorithm"][algorithm]["seeding_included"] == "True":
             # Load default rwg parameters
             default_rwg_parameter_filename = 'default_rwg_parameters_individual.json'
             rwg_parameter_dictionary = json.loads(open(default_rwg_parameter_filename).read())
@@ -62,19 +64,35 @@ def run_experiment(parameter_filename):
 
             # Learning
             if parameter_dictionary["general"]["learning_type"] == "centralised":
-                learner2 = CentralisedCMALearner(fitness_calculator)
+                if algorithm == "cma":
+                    learner2 = CentralisedCMALearner(fitness_calculator)
+                elif algorithm == "cma-me":
+                    learner2 = CentralisedCMAMELearner(fitness_calculator)
+
                 genome2, fitness2 = learner2.learn()
 
             elif parameter_dictionary["general"]["learning_type"] == "decentralised":
-                learner2 = DecentralisedCMALearner(fitness_calculator)
+                if algorithm == "cma":
+                    learner2 = DecentralisedCMALearner(fitness_calculator)
+                elif algorithm == "cma-me":
+                    raise RuntimeError("Decentralised learning not supported for CMA-ME yet")
+
                 genomes, fitnesses = learner2.learn()
         else:
             if parameter_dictionary["general"]["learning_type"] == "centralised":
-                learner = CentralisedCMALearner(fitness_calculator)
+                if algorithm == "cma":
+                    learner = CentralisedCMALearner(fitness_calculator)
+                elif algorithm == "cma-me":
+                    learner = CentralisedCMAMELearner(fitness_calculator)
+
                 genome, fitness = learner.learn()
 
             elif parameter_dictionary["general"]["learning_type"] == "decentralised":
-                learner = DecentralisedCMALearner(fitness_calculator)
+                if algorithm == "cma":
+                    learner = DecentralisedCMALearner(fitness_calculator)
+                elif algorithm == "cma-me":
+                    raise RuntimeError("Decentralised learning not supported for CMA-ME yet")
+
                 genomes, fitnesses = learner.learn()
 
 

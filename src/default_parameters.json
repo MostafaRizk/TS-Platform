@@ -1,7 +1,7 @@
 {
     "general": {
         "learning_type": "centralised",
-        "algorithm_selected": "cma",
+        "algorithm_selected": "cma-me",
         "team_type": "heterogeneous",
         "reward_level": "team",
         "agent_type": "nn",
@@ -27,7 +27,8 @@
             "resource_reward": 1000,
             "episode_length": 100,
             "num_episodes": 5,
-            "incremental_rewards": "False"
+            "incremental_rewards": "False",
+            "bc_measure": "avg_y"
         }
     },
     "agent": {
@@ -39,7 +40,7 @@
             "activation_function": "tanh"
         }
     },
-    "algorithm": {
+     "algorithm": {
         "agent_population_size": 100,
         "rwg": {
             "sampling_distribution": "normal",
@@ -64,6 +65,19 @@
             "seeding_included": "True",
             "partial": "False",
             "multithreading": "False"
+        },
+         "cma-me": {
+             "sigma": 0.2,
+            "generations": 5000,
+            "tolx": 0.001,
+            "tolfunhist": 0.0,
+            "tolflatfitness": 1000,
+            "tolfun": 0.0,
+            "logging_rate": 50,
+            "seeding_required": "False",
+            "seeding_included": "False",
+            "partial": "False",
+            "multithreading": "False"
         }
-    }
+     }
 }

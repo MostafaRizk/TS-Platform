@@ -29,7 +29,7 @@ class RWGLearner(CentralisedLearner):
         agent_population = self.convert_genomes_to_agents(genome_population)
 
         # Get fitnesses of agents
-        agent_fitness_lists, team_specialisations = self.fitness_calculator.calculate_fitness_of_agent_population(agent_population, self.calculate_specialisation)
+        agent_fitness_lists, team_specialisations, behaviour_characterisations = self.fitness_calculator.calculate_fitness_of_agent_population(agent_population, self.calculate_specialisation)
         agent_fitness_average = [np.mean(fitness_list) for fitness_list in agent_fitness_lists]
 
         best_genome = None
