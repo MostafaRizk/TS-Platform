@@ -7,12 +7,13 @@ from scipy import stats
 
 setups = ["Centralised", "Decentralised", "One-pop"]
 
-def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, showing="fitness"):
+def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, y_height=15000, showing="fitness"):
     # Prepare data lists
     x = [i for i in range(2, max_agents+2, 2)]
     y_centralised = []
     y_decentralised = []
     y_onepop = []
+
     yerr_centralised = []
     yerr_decentralised = []
     yerr_onepop = []
@@ -95,10 +96,12 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, show
             if plot_type == "mean":
                 y += [np.mean(scores[key])]
                 yerr += [np.std(scores[key])]
-            elif plot_type == "max":
+            elif plot_type == "best":
                 y += [np.max(scores[key])]
+                yerr += [stats.sem(scores[key])]
             elif plot_type == "median":
                 y += [np.median(scores[key])]
+                yerr += [stats.sem(scores[key])]
             elif plot_type == "no_variance":
                 y += [np.mean(scores[key])]
             elif plot_type == "error":
@@ -109,14 +112,14 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, show
         print(f"{key}: {len(results[key])}")
 
     # Plot
-    '''
+    ''''''
     fig1, ax1 = plt.subplots(figsize=(12, 8))
     ax1.set_title(f'Scalability of Evolved {showing.capitalize()} with Number of Agents', fontsize=20)
     if showing == "fitness":
-        ax1.set_ylim(0, 8000)
+        ax1.set_ylim(0, y_height)
         ax1.set_ylabel('Fitness per agent', fontsize=18)
     elif showing == "specialisation":
-        ax1.set_ylim(0,1)
+        ax1.set_ylim(0,1.1)
         ax1.set_ylabel('Team Specialisation', fontsize=18)
     ax1.set_xticks([x for x in range(2, max_agents+2, 2)])
     ax1.set_xlabel('Number of Agents', fontsize=18)
@@ -128,18 +131,25 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, show
         tick.label.set_fontsize(16)
 
     if plot_type == "mean" or plot_type == "error":
-        plt.errorbar(x, y_centralised, yerr_centralised, label="Centralised")
-        plt.errorbar(x, y_decentralised, yerr_decentralised, label="Decentralised")
-        plt.errorbar(x, y_onepop, yerr_onepop, label="One-pop")
+        plt.errorbar(x, y_centralised, yerr_centralised, fmt='r-', label="Centralised")
+        plt.errorbar(x, y_decentralised, yerr_decentralised, fmt='b-', label="Decentralised")
+        plt.errorbar(x, y_onepop, yerr_onepop, fmt='g-', label="One-pop")
+
+    elif plot_type == "best" or plot_type == "median":
+        plt.plot(x, y_centralised, 'ro-', label=f"Centralised ({plot_type})")
+        plt.plot(x, y_decentralised, 'bo-', label=f"Decentralised ({plot_type})")
+        plt.plot(x, y_onepop, 'go-', label=f"One-pop ({plot_type})")
+
     else:
-        plt.plot(x, y_centralised, label="Centralised")
-        plt.plot(x, y_decentralised, label="Decentralised")
-        plt.plot(x, y_onepop, label="One-pop")
+        plt.plot(x, y_centralised, 'r-', label="Centralised")
+        plt.plot(x, y_decentralised, 'b-', label="Decentralised")
+        plt.plot(x, y_onepop, 'g-', abel="One-pop")
 
     plt.legend(loc='upper right', fontsize=16)
     plt.savefig(path_to_graph)
-    '''
 
+
+    '''
     def set_axis_style(ax, labels):
         ax.get_xaxis().set_tick_params(direction='out')
         ax.xaxis.set_ticks_position('bottom')
@@ -181,6 +191,7 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, show
 
     plt.suptitle(f"{showing.capitalize()} Distribution")
     plt.savefig(path_to_graph)
+    '''
 
 
 if __name__ == "__main__":
@@ -189,12 +200,18 @@ if __name__ == "__main__":
     parser.add_argument('--graph_path', action="store")
     parser.add_argument('--plot_type', action="store")
     parser.add_argument('--max_agents', action="store")
+    parser.add_argument('--y_height', action="store")
     parser.add_argument('--showing', action="store")
 
     results_path = parser.parse_args().results_path
     graph_path = parser.parse_args().graph_path
     plot_type = parser.parse_args().plot_type
     max_agents = int(parser.parse_args().max_agents)
+    y_height = parser.parse_args().y_height
+
+    if y_height:
+        y_height = int(y_height)
+
     showing = parser.parse_args().showing
 
-    plot_scalability(results_path, graph_path, plot_type, max_agents, showing)
+    plot_scalability(results_path, graph_path, plot_type, max_agents, y_height, showing)
