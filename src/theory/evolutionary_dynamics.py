@@ -12,11 +12,18 @@ import matplotlib.pyplot as plt
 import json
 import argparse
 import os
+import numpy as np
+from scipy.optimize import differential_evolution
+
+from scipy.integrate import odeint
+from functools import partial
+
+strategy = ["Novice", "Generalist", "Dropper", "Collector"]
 
 
 def theta(s):
     """
-    Step function used to compute payoff in different slopes
+    Step function used to help compute payoff in different slopes
     @param s: Sliding speed (i.e. slope)
     @return:
     """
@@ -67,87 +74,131 @@ def get_payoff_matrix(parameter_file):
     return payoff
 
 
-def get_final_distribution(parameter_file, payoff):
+def get_change(P, t=0):
     """
-    Get distribution of strategies after a certain amount of time passes
-    @param parameter_file: Path to json file
-    @param payoff: Payoff matrix for all pairs of strategies
-    @return: List containing distribution of strategies at each time step
+    Function to be passed to ODEINT. Calculates replicator dynamic equation for all strategies.
+    i.e. Calculates rate of change for each strategy
+    e.g.
+
+    Where
+
+    x_dropper = the percentage of the population that are droppers,
+
+    x_dropper' = the rate of increase/decrease of the number of dropper strategies in the population
+
+    f(x_dropper) = the fitness of a droppers in this population (depends on the distribution of other strategies),
+    calculated by getting the payoff of a dropper when it is paired with each other strategy then taking the weighted
+    sum, where the weight is the probability of being paired with each strategy
+
+    avg_fitness = the average fitness of all other strategies
+
+    We then get
+
+    x_dropper' = x_dropper(f(x_dropper) - avg_fitness)
+
+    @param P: The distribution of novice, generalist, dropper and collector strategies (in that order) at this time step
+    @param t: The current time step
+    @return: The derivative of each strategy
     """
 
+    f_novice = sum([P[i] * payoff["Novice"][strategy[i]] for i in range(len(strategy))])
+    f_generalist = sum([P[i] * payoff["Generalist"][strategy[i]] for i in range(len(strategy))])
+    f_dropper = sum([P[i] * payoff["Dropper"][strategy[i]] for i in range(len(strategy))])
+    f_collector = sum([P[i] * payoff["Collector"][strategy[i]] for i in range(len(strategy))])
+    f_avg = P[0] * f_novice + P[1] * f_generalist + P[2] * f_dropper + P[3] * f_collector
+
+    return np.array([
+        P[0] * (f_novice - f_avg),
+        P[1] * (f_generalist - f_avg),
+        P[2] * (f_dropper - f_avg),
+        P[3] * (f_collector - f_avg)
+    ])
+
+
+def get_change_centralised(P, t=0):
+    f_novice = sum([P[i] * (payoff["Novice"][strategy[i]] + payoff[strategy[i]]["Novice"]) for i in range(len(strategy))])
+    f_generalist = sum([P[i] * (payoff["Generalist"][strategy[i]] + payoff[strategy[i]]["Generalist"]) for i in range(len(strategy))])
+    f_dropper = sum([P[i] * (payoff["Dropper"][strategy[i]] + payoff[strategy[i]]["Dropper"]) for i in range(len(strategy))])
+    f_collector = sum([P[i] * (payoff["Collector"][strategy[i]] + payoff[strategy[i]]["Collector"]) for i in range(len(strategy))])
+    f_avg = P[0] * f_novice + P[1] * f_generalist + P[2] * f_dropper + P[3] * f_collector
+
+    return np.array([
+        P[0] * (f_novice - f_avg),
+        P[1] * (f_generalist - f_avg),
+        P[2] * (f_dropper - f_avg),
+        P[3] * (f_collector - f_avg)
+    ])
+
+
+def get_final_distribution(parameter_file, payoff, setup):
     parameter_dictionary = json.loads(open(parameter_file).read())
 
-    # Distribution of strategies over time (assumes everyone is a novice to begin with)
-    x = {"Novice": [parameter_dictionary["initial_distribution"]["Novice"]],
-         "Generalist": [parameter_dictionary["initial_distribution"]["Generalist"]],
-         "Dropper": [parameter_dictionary["initial_distribution"]["Dropper"]],
-         "Collector": [parameter_dictionary["initial_distribution"]["Collector"]]}
+    P0 = np.array([parameter_dictionary["initial_distribution"]["Novice"],
+         parameter_dictionary["initial_distribution"]["Generalist"],
+         parameter_dictionary["initial_distribution"]["Dropper"],
+         parameter_dictionary["initial_distribution"]["Collector"]
+         ])
 
-    # Average fitness of each strategy based on their proportions in the population
-    novice_fitness = [sum([x[strategy][0]*payoff["Novice"][strategy] for strategy in x])]
-    generalist_fitness = [sum([x[strategy][0]*payoff["Generalist"][strategy] for strategy in x])]
-    dropper_fitness = [sum([x[strategy][0]*payoff["Dropper"][strategy] for strategy in x])]
-    collector_fitness = [sum([x[strategy][0]*payoff["Collector"][strategy] for strategy in x])]
+    t = np.linspace(0, 50, 1000)
 
-    # Average fitness of population
-    average_fitness = x["Novice"][0]*novice_fitness[0] + x["Generalist"][0]*generalist_fitness[0] + \
-                      x["Dropper"][0]*dropper_fitness[0] + x["Collector"][0]*collector_fitness[0]
+    if setup == "decentralised":
+        P = odeint(get_change, P0, t)
+    elif setup == "centralised":
+        P = odeint(get_change_centralised, P0, t)
 
-    total_time = parameter_dictionary["total_time"]
-    dt = parameter_dictionary["dt"]
-
-    novice_fitness[0] *= dt
-    generalist_fitness[0] *= dt
-    dropper_fitness[0] *= dt
-    collector_fitness[0] *= dt
-
-    for t in range(total_time):
-        # Calculate fitness of each strategy and average fitness
-        f_novice = sum([x[strategy][t]*payoff["Novice"][strategy] for strategy in x])
-        f_generalist = sum([x[strategy][t]*payoff["Generalist"][strategy] for strategy in x])
-        f_dropper = sum([x[strategy][t]*payoff["Dropper"][strategy] for strategy in x])
-        f_collector = sum([x[strategy][t]*payoff["Collector"][strategy] for strategy in x])
-        f_avg = x["Novice"][t]*f_novice + x["Generalist"][t]*f_generalist + x["Dropper"][t]*f_dropper + x["Collector"][t]*f_collector
-
-        # Append to vectors
-        novice_fitness += [f_novice * dt]
-        generalist_fitness += [f_generalist * dt]
-        dropper_fitness += [f_dropper * dt]
-        collector_fitness += [f_collector * dt]
-
-        # Differential equations to update proportions
-        x["Novice"] += [x["Novice"][t] + (x["Novice"][t] * (f_novice - f_avg))*dt]
-        x["Generalist"] += [x["Generalist"][t] + (x["Generalist"][t] * (f_generalist - f_avg)) * dt]
-        x["Dropper"] += [x["Dropper"][t] + (x["Dropper"][t] * (f_dropper - f_avg)) * dt]
-        x["Collector"] += [x["Collector"][t] + (x["Collector"][t] * (f_collector - f_avg)) * dt]
-
-    return x
+    return P,t
 
 
-def plot_results(x, parameter_file):
+def get_team_payoff(payoff, P):
+    #assert sum(P) == 1.0, "Population distribution does not sum to 1"
+    if sum(P) > 1.0:
+        return float('inf')
 
-    # Make plots
-    plt.plot(x["Novice"], label='Novice')
-    plt.plot(x["Generalist"], label='Generalist')
-    plt.plot(x["Dropper"], label='Dropper')
-    plt.plot(x["Collector"], label='Collector')
+    f_novice = sum([P[i] * (payoff["Novice"][strategy[i]] + payoff[strategy[i]]["Novice"]) for i in range(len(strategy))])
+    f_generalist = sum([P[i] * (payoff["Generalist"][strategy[i]] + payoff[strategy[i]]["Generalist"]) for i in range(len(strategy))])
+    f_dropper = sum([P[i] * (payoff["Dropper"][strategy[i]] + payoff[strategy[i]]["Dropper"]) for i in range(len(strategy))])
+    f_collector = sum([P[i] * (payoff["Collector"][strategy[i]] + payoff[strategy[i]]["Collector"]) for i in range(len(strategy))])
+    f_avg = P[0] * f_novice + P[1] * f_generalist + P[2] * f_dropper + P[3] * f_collector
+
+    return -1. * f_avg
+
+
+def optimise_payoff(payoff):
+    find_payoff = partial(get_team_payoff, payoff)
+    bounds = [(0, 1), (0, 1), (0, 1), (0, 1)]
+    res = differential_evolution(find_payoff, bounds)
+
+    return ", ".join(["{:.2f}".format(x) for x in res.x]), str(-1.*res.fun)
+
+
+def plot_results(P, t, parameter_file, setup):
+    novice, generalist, dropper, collector = P.T
+    plt.plot(t, novice, label='novice')
+    plt.plot(t, generalist, label='generalist')
+    plt.plot(t, dropper, label='dropper')
+    plt.plot(t, collector, label='collector')
     plt.grid()
     plt.ylim(-0.1, 1.1)
     plt.title("Distribution of Strategies Over Time")
     plt.ylabel("Proportion of population")
     plt.xlabel("Time")
     plt.legend(loc='best')
-
     path = "/".join([el for el in parameter_file.split("/")[:-1]]) + "/analysis"
-    filename = parameter_file.split("/")[-1].strip(".json") + ".png"
-
+    filename = parameter_file.split("/")[-1].strip(".json") + f"_{setup}.png"
     plt.savefig(os.path.join(path, filename))
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Plot evolutionary dynamics')
     parser.add_argument('--parameters', action="store", dest="parameters")
+    parser.add_argument('--setup', action="store", dest="setup")
     parameter_file = parser.parse_args().parameters
+    setup = parser.parse_args().setup
+
     payoff = get_payoff_matrix(parameter_file)
-    x = get_final_distribution(parameter_file, payoff)
-    plot_results(x, parameter_file)
+    #P,t = get_final_distribution(parameter_file, payoff, setup)
+    #plot_results(P, t, parameter_file, setup)
+
+    print(parameter_file.split("/")[-1].strip(".json"))
+    print(optimise_payoff(payoff))
+    print("\n")
