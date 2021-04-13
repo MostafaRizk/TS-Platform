@@ -35,9 +35,10 @@ def theta(s):
 
 def get_payoff_matrix(parameter_file):
     """
-    Gets relevant values from json file and prepares the payoff matrix
+    Gets relevant values from json file and prepares the payoff matrix or matrices
     @param parameter_file: Path to json file
-    @return: Payoff matrix for each pair of strategies
+    @return: Payoff matrix for each pair of strategies if it is an equilibrium experiment. List of payoff matrices if
+    it is a price of anarchy experiment
     """
 
     parameter_dictionary = json.loads(open(parameter_file).read())
@@ -48,30 +49,42 @@ def get_payoff_matrix(parameter_file):
     f = parameter_dictionary["f"]
     c = parameter_dictionary["c"]
 
-    s = parameter_dictionary["s"]  # Sliding speed
+    if parameter_dictionary["experiment_type"] == "equilibrium":
+        slope_list = [parameter_dictionary["equilibrum"]["s"]] # Sliding speed
 
-    # Payoff for each strategy when it is paired with another strategy (when there is a slope)
-    payoff = {"Novice": {"Novice": s*theta(s)*f + (1-theta(s))*b,
-                         "Generalist": s*theta(s)*f + (1-theta(s))*b,
-                         "Dropper": s*theta(s)*f + (1-theta(s))*b,
-                         "Collector": s*theta(s)*f + (1-theta(s))*b},
+    elif parameter_dictionary["experiment_type"] == "price_of_anarchy":
+        slope_list = parameter_dictionary["price_of_anarchy"]["slopes"]
 
-              "Generalist": {"Novice": g - s*c,
-                             "Generalist": g - s*c,
-                             "Dropper": g - s*c,
-                             "Collector": g - s*c},
+    payoff_matrices = []
 
-              "Dropper": {"Novice": s*theta(s)*f + (1-theta(s))*b,
-                          "Generalist": s*theta(s)*f + (1-theta(s))*b,
-                          "Dropper": s*theta(s)*f + (1-theta(s))*b,
-                          "Collector": s*theta(s)*e + (1-theta(s))*b},
+    for s in slope_list:
+        # Payoff for each strategy when it is paired with another strategy (when there is a slope)
+        payoff = {"Novice": {"Novice": s*theta(s)*f + (1-theta(s))*b,
+                             "Generalist": s*theta(s)*f + (1-theta(s))*b,
+                             "Dropper": s*theta(s)*f + (1-theta(s))*b,
+                             "Collector": s*theta(s)*f + (1-theta(s))*b},
 
-              "Collector": {"Novice": b,
-                            "Generalist": b,
-                            "Dropper": s*theta(s)*e + (1-theta(s))*b,
-                            "Collector": b}}
+                  "Generalist": {"Novice": g - s*c,
+                                 "Generalist": g - s*c,
+                                 "Dropper": g - s*c,
+                                 "Collector": g - s*c},
 
-    return payoff
+                  "Dropper": {"Novice": s*theta(s)*f + (1-theta(s))*b,
+                              "Generalist": s*theta(s)*f + (1-theta(s))*b,
+                              "Dropper": s*theta(s)*f + (1-theta(s))*b,
+                              "Collector": s*theta(s)*e + (1-theta(s))*b},
+
+                  "Collector": {"Novice": b,
+                                "Generalist": b,
+                                "Dropper": s*theta(s)*e + (1-theta(s))*b,
+                                "Collector": b}}
+
+        payoff_matrices += [payoff]
+
+    if len(payoff_matrices) == 1:
+        return payoff_matrices[0]
+    else:
+        return payoff_matrices
 
 
 def get_change(P, t=0):
@@ -130,13 +143,16 @@ def get_change_centralised(P, t=0):
     ])
 
 
-def get_final_distribution(parameter_file, payoff, setup):
+def get_final_distribution(parameter_file, payoff_local, setup):
     parameter_dictionary = json.loads(open(parameter_file).read())
 
-    P0 = np.array([parameter_dictionary["initial_distribution"]["Novice"],
-         parameter_dictionary["initial_distribution"]["Generalist"],
-         parameter_dictionary["initial_distribution"]["Dropper"],
-         parameter_dictionary["initial_distribution"]["Collector"]
+    global payoff
+    payoff = payoff_local
+
+    P0 = np.array([parameter_dictionary["equilibrum"]["initial_distribution"]["Novice"],
+         parameter_dictionary["equilibrum"]["initial_distribution"]["Generalist"],
+         parameter_dictionary["equilibrum"]["initial_distribution"]["Dropper"],
+         parameter_dictionary["equilibrum"]["initial_distribution"]["Collector"]
          ])
 
     t = np.linspace(0, 50, 1000)
@@ -150,6 +166,15 @@ def get_final_distribution(parameter_file, payoff, setup):
 
 
 def get_team_payoff(payoff, P):
+    """
+    Given a payoff matrix and distribution of strategies, get the payoff of a team.
+    Payoff is negated for the purpose of optimisation.
+    Returns infinity for invalid distributions (also for purpose of optimisation)
+
+    @param payoff: Payoff matrix
+    @param P: Distribution of strategies
+    @return: Infinity for invalid distribution. Negated average team payoff otherwise
+    """
     #assert sum(P) == 1.0, "Population distribution does not sum to 1"
     if sum(P) > 1.0:
         return float('inf')
@@ -164,12 +189,38 @@ def get_team_payoff(payoff, P):
 
 
 def optimise_payoff(payoff):
+    """
+    Uses differential evolution to find the optimal team distribution, given a particular payoff matrix
+
+    @param payoff: Payoff matrix
+    @return: A tuple where the first item is a comma-separated string of the percentages of each strategy in the optimal
+    distribution, and the second item is the payoff of that optimal team
+    """
     find_payoff = partial(get_team_payoff, payoff)
     bounds = [(0, 1), (0, 1), (0, 1), (0, 1)]
     res = differential_evolution(find_payoff, bounds)
 
     return ", ".join(["{:.2f}".format(x) for x in res.x]), str(-1.*res.fun)
 
+
+def calculate_price_of_anarchy(parameter_file):
+    parameter_dictionary = json.loads(open(parameter_file).read())
+    assert parameter_dictionary["experiment_type"] == "price_of_anarchy", "Experiment type is not price_of_anarchy"
+
+    payoff_matrices = get_payoff_matrix(parameter_file)
+
+    slope_list = parameter_dictionary["price_of_anarchy"]["slopes"]
+    price_list = []
+
+    for payoff in payoff_matrices:
+        optimal_team_payoff = float(optimise_payoff(payoff)[1])
+        selfish_distribution = get_final_distribution(parameter_file, payoff, setup="decentralised")[0][-1]
+        selfish_payoff = -1. * get_team_payoff(payoff, selfish_distribution)
+        price_of_anarchy = optimal_team_payoff / selfish_payoff
+        price_list += [price_of_anarchy]
+
+    plt.plot(slope_list, price_list)
+    plt.show()
 
 def plot_results(P, t, parameter_file, setup):
     novice, generalist, dropper, collector = P.T
@@ -199,6 +250,8 @@ if __name__ == "__main__":
     #P,t = get_final_distribution(parameter_file, payoff, setup)
     #plot_results(P, t, parameter_file, setup)
 
-    print(parameter_file.split("/")[-1].strip(".json"))
-    print(optimise_payoff(payoff))
-    print("\n")
+    #print(parameter_file.split("/")[-1].strip(".json"))
+    #print(optimise_payoff(payoff))
+    #print("\n")
+
+    calculate_price_of_anarchy(parameter_file)
