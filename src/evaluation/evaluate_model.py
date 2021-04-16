@@ -11,9 +11,10 @@ from fitness import FitnessCalculator
 from agents.nn_agent_lean import NNAgent
 from operator import add
 from glob import glob
+from array2gif import write_gif
 
 
-def evaluate_model(model_path, episodes, rendering=None, time_delay=None):
+def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, print_scores=None):
     #def evaluate_model(model_path, rendering="False", time_delay=0):
     if rendering == "True":
         rendering = True
@@ -111,6 +112,13 @@ def evaluate_model(model_path, episodes, rendering=None, time_delay=None):
                                                    measure_specialisation=True, logging=False, logfilename=None,
                                                    render_mode="human")
 
+    '''results = fitness_calculator.calculate_fitness(agent_list=agent_list, render=True, time_delay=0,
+                                                   render_mode="rgb_array")
+
+    video_data = results['video_frames']
+    save_to = f"./matching_specialist.gif"
+    write_gif(video_data, save_to, fps=5)'''
+
     team_fitness_list = [0] * len(results['fitness_matrix'][0])
 
     for j in range(num_agents):
@@ -119,14 +127,21 @@ def evaluate_model(model_path, episodes, rendering=None, time_delay=None):
     team_score = np.mean(team_fitness_list)
     agent_scores = [np.mean(scores) for scores in results['fitness_matrix']]
     metric_index = 2  # R_spec
-    specialisation = np.mean([spec[metric_index] for spec in results['specialisation_list']])
+    specialisation_each_episode = [spec[metric_index] for spec in results['specialisation_list']]
+    specialisation = np.mean(specialisation_each_episode)
 
-    #print(results['fitness_matrix'])
-    #print(agent_scores)
-    #print(team_score)
-    #print(specialisation)
+    if print_scores == "True":
+        #print(results['fitness_matrix'])
+        print(f"Team fitness each episode: {team_fitness_list}")
+        print(f"Team specialisation each episode {specialisation_each_episode}")
+        print(f"Mean score for each agent: {agent_scores}")
+        print(f"Mean score for whole team: {team_score}")
+        print(f"Mean specialisation for whole team {specialisation}")
+        print("----")
+        for index,agent_episodes in enumerate(results['fitness_matrix']):
+            print(f"Agent {index}: {agent_episodes}")
 
-    return agent_scores, specialisation
+    return results
 
 
 if __name__ == "__main__":
@@ -135,10 +150,12 @@ if __name__ == "__main__":
     parser.add_argument('--episodes', action="store")
     parser.add_argument('--rendering', action="store")
     parser.add_argument('--time_delay', action="store")
+    parser.add_argument('--print_scores', action="store")
     model_path = parser.parse_args().model_path
     episodes = int(parser.parse_args().episodes)
     rendering = parser.parse_args().rendering
     time_delay = parser.parse_args().time_delay
+    print_scores = parser.parse_args().print_scores
 
-    evaluate_model(model_path, episodes, rendering, time_delay)
+    evaluate_model(model_path, episodes, rendering, time_delay, print_scores)
     #evaluate_model(model_path, rendering, time_delay)

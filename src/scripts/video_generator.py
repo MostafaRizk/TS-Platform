@@ -1,3 +1,5 @@
+import numpy as np
+
 from fitness import FitnessCalculator
 from agents.nn_agent_lean import NNAgent
 from array2gif import write_gif
@@ -8,7 +10,20 @@ def get_video_from_model(model_name, parameter_filename, save_directory, filenam
     results = None
 
     if reward_level == "team":
-        full_genome = NNAgent.load_model_from_file(model_name)
+
+        full_genome = np.load(model_name)
+        agent_list = []
+
+        for i in range(num_agents):
+            start = i * int(len(full_genome) / num_agents)
+            end = (i + 1) * int(len(full_genome) / num_agents)
+            sub_genome = full_genome[start:end]
+            agent = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
+                            parameter_filename, sub_genome)
+            agent_list += [agent]
+
+
+        '''full_genome = NNAgent.load_model_from_file(model_name)
         mid = int(len(full_genome) / num_agents)
         agent_list = []
 
@@ -16,7 +31,7 @@ def get_video_from_model(model_name, parameter_filename, save_directory, filenam
             genome = full_genome[mid*i : mid*(i+1)]
             agent = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
                           parameter_filename, genome)
-            agent_list += [agent]
+            agent_list += [agent]'''
 
         results = fitness_calculator.calculate_fitness(agent_list=agent_list, render=True, time_delay=0, render_mode="rgb_array")
 
@@ -88,7 +103,15 @@ get_video_from_model(model_name="/Users/mostafa/Documents/Code/PhD/Reports/mid-c
 '''
 
 # Bad specialist
+'''
 get_video_from_model(model_name="/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_11_24_magic_plot_combined_new_seed/results/cma_heterogeneous_team_nn_slope_3771485675_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_5_rnn_False_1_4_tanh_100_0.2_1000_0.001_200.0_36983.00000000002_final.npy",
                       parameter_filename="/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2020_11_24_magic_plot_combined_new_seed/experiments/cma_heterogeneous_team_nn_slope_3771485675_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_500_5_rnn_False_1_4_tanh_100_0.2_1000_0.001_200.0.json",
                      save_directory=save_directory,
                      filename="bad_specialist.gif")
+'''
+
+# Slick generalists
+get_video_from_model(model_name="/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/data/centralised_cma_heterogeneous_individual_nn_slope_799981517_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_100_5_False_rnn_False_1_4_tanh_100_0.2_1000_0.001_0.0_1000_0.0_5606.12_final.npy",
+                      parameter_filename="/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/data/centralised_cma_heterogeneous_individual_nn_slope_799981517_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_100_5_False_rnn_False_1_4_tanh_100_0.2_1000_0.001_0.0_1000_0.0.json",
+                     save_directory=save_directory,
+                     filename="slick_generalists.gif")

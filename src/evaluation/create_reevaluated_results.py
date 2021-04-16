@@ -9,7 +9,7 @@ from evaluation.evaluate_model import evaluate_model
 from evaluation.create_results_from_models import get_seed_file
 
 
-def create_reevaluated_results(path_to_data_folder, generation, episodes=None):
+def create_reevaluated_results(path_to_data_folder, generation, episodes):
     # TODO: Modify to avoid repetition of other function
     # Get list of models
     model_files = glob(f'{path_to_data_folder}/*cma*_{generation}.npy')  # TODO: Allow different algorithms
@@ -32,9 +32,9 @@ def create_reevaluated_results(path_to_data_folder, generation, episodes=None):
     # Get list of agent_scores for each
     for model_path in model_files:
         if not episodes:
-            agent_scores, specialisation = evaluate_model(model_path)
+            results = evaluate_model(model_path)
         else:
-            agent_scores, specialisation = evaluate_model(model_path, int(episodes))
+            results = evaluate_model(model_path, int(episodes))
 
         learning_type = model_path.split("/")[-1].split("_")[0]
         if learning_type == "centralised":
@@ -58,24 +58,23 @@ def create_reevaluated_results(path_to_data_folder, generation, episodes=None):
         seed_file = get_seed_file(path_to_data_folder, parameter_dictionary)
 
         if not episodes:
-            seed_scores, seed_specialisation = evaluate_model(seed_file)
+            seed_results = evaluate_model(seed_file)
         else:
-            seed_scores, seed_specialisation = evaluate_model(seed_file, int(episodes))
+            seed_results = evaluate_model(seed_file, int(episodes))
 
-        seed_fitness = str(np.sum(seed_scores))
+        #seed_scores = [np.mean(scores) for scores in seed_results['fitness_matrix']]
+        #seed_fitness = str(np.sum(seed_scores))
 
         # Log centralised and one-pop once
         if parameter_dictionary["general"]["learning_type"] == "centralised":
             agent_index = "None"
-            parameters_to_log = parameter_list + [agent_index] + [seed_fitness]
-
-            if parameter_dictionary["general"]["reward_level"] == "team":
-                fitness = str(np.sum(agent_scores))
-
-            elif parameter_dictionary["general"]["reward_level"] == "individual":
-                fitness = str(np.mean(agent_scores))
-
-            parameters_to_log += [fitness] + [str(seed_specialisation)] + [str(specialisation)] + [model_path]
+            parameters_to_log = parameter_list + \
+                                [agent_index] + \
+                                [str(seed_results['fitness_matrix']).replace(",", " ")] + \
+                                [str(results['fitness_matrix']).replace(",", " ")] + \
+                                [str(seed_results['specialisation_list']).replace(",", " ")] + \
+                                [str(results['specialisation_list']).replace(",", " ")] + \
+                                [model_path]
 
             line_to_log = ",".join(parameters_to_log)
             f.write(line_to_log)
@@ -85,10 +84,14 @@ def create_reevaluated_results(path_to_data_folder, generation, episodes=None):
         if parameter_dictionary["general"]["learning_type"] == "decentralised" and parameter_dictionary["general"][
             "reward_level"] == "individual":
 
-            for agent_index in range(agent_scores):
-                parameters_to_log = parameter_list + [agent_index] + [seed_fitness]
-                fitness = str(agent_scores[agent_index])
-                parameters_to_log += [fitness] + [str(seed_specialisation)] + [str(specialisation)] + [model_path]
+            for agent_index, scores in enumerate(results['fitness_matrix']):
+                parameters_to_log = parameter_list + \
+                                    [agent_index] + \
+                                    [str(seed_results['fitness_matrix']).replace(",", " ")] + \
+                                    [str(results['fitness_matrix']).replace(",", " ")] + \
+                                    [str(seed_results['specialisation_list']).replace(",", " ")] + \
+                                    [str(results['specialisation_list']).replace(",", " ")] + \
+                                    [model_path]
 
                 line_to_log = ",".join(parameters_to_log)
                 f.write(line_to_log)

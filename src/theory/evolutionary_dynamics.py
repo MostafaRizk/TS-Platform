@@ -176,8 +176,8 @@ def get_team_payoff(payoff, P):
     @return: Infinity for invalid distribution. Negated average team payoff otherwise
     """
     #assert sum(P) == 1.0, "Population distribution does not sum to 1"
-    if sum(P) > 1.0:
-        return float('inf')
+    #if sum(P) > 1.0:
+    #    return float('inf')
 
     f_novice = sum([P[i] * (payoff["Novice"][strategy[i]] + payoff[strategy[i]]["Novice"]) for i in range(len(strategy))])
     f_generalist = sum([P[i] * (payoff["Generalist"][strategy[i]] + payoff[strategy[i]]["Generalist"]) for i in range(len(strategy))])
@@ -213,14 +213,26 @@ def calculate_price_of_anarchy(parameter_file):
     price_list = []
 
     for payoff in payoff_matrices:
-        optimal_team_payoff = float(optimise_payoff(payoff)[1])
+        #optimal_distribution, optimal_team_payoff = optimise_payoff(payoff)
+        #optimal_team_payoff = float(optimal_team_payoff)
+
+        optimal_distribution = get_final_distribution(parameter_file, payoff, setup="centralised")[0][-1]
+        optimal_team_payoff = -1. * get_team_payoff(payoff, optimal_distribution)
+
         selfish_distribution = get_final_distribution(parameter_file, payoff, setup="decentralised")[0][-1]
         selfish_payoff = -1. * get_team_payoff(payoff, selfish_distribution)
+
         price_of_anarchy = optimal_team_payoff / selfish_payoff
         price_list += [price_of_anarchy]
 
     plt.plot(slope_list, price_list)
-    plt.show()
+    plt.title("Price of Anarchy as Slope Increases")
+    plt.ylabel("Price of Anarchy")
+    plt.xlabel("Slope")
+    path = "/".join([el for el in parameter_file.split("/")[:-1]]) + "/analysis"
+    filename = parameter_file.split("/")[-1].strip(".json") + ".png"
+    plt.savefig(os.path.join(path, filename))
+
 
 def plot_results(P, t, parameter_file, setup):
     novice, generalist, dropper, collector = P.T
@@ -246,12 +258,18 @@ if __name__ == "__main__":
     parameter_file = parser.parse_args().parameters
     setup = parser.parse_args().setup
 
-    payoff = get_payoff_matrix(parameter_file)
-    #P,t = get_final_distribution(parameter_file, payoff, setup)
-    #plot_results(P, t, parameter_file, setup)
+    parameter_dictionary = json.loads(open(parameter_file).read())
+
+    if parameter_dictionary["experiment_type"] == "equilibrium":
+        payoff = get_payoff_matrix(parameter_file)
+        P,t = get_final_distribution(parameter_file, payoff, setup)
+        plot_results(P, t, parameter_file, setup)
+
+    elif parameter_dictionary["experiment_type"] == "price_of_anarchy":
+        calculate_price_of_anarchy(parameter_file)
 
     #print(parameter_file.split("/")[-1].strip(".json"))
     #print(optimise_payoff(payoff))
     #print("\n")
 
-    calculate_price_of_anarchy(parameter_file)
+
