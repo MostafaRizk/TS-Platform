@@ -1,21 +1,14 @@
 import numpy as np
 
-#arr_str = '[[-112.0  803.0  802.8  -112.0  826.6]]'
-arr_str = '[[233.33333333333331  2733.333333333333  233.33333333333331  1233.3333333333333  4066.666666666665]  [233.33333333333331  2733.333333333333  233.33333333333331  1233.3333333333333  4063.666666666665]  [158.33333333333331  2657.333333333333  157.33333333333331  1165.3333333333333  3989.666666666665]  [233.33333333333331  2733.333333333333  233.33333333333331  1233.3333333333333  4065.666666666665]  [231.33333333333331  2717.333333333333  230.33333333333331  1230.3333333333333  4019.666666666665]  [191.13333333333333  2705.333333333333  230.33333333333331  1208.1333333333332  4041.666666666665]]'
+from scipy.stats import dirichlet
+from scipy.optimize import linprog
 
 
-def from_string(arr_str):
-    arr_str = arr_str[1:-1]
-    a = []
-    list_to_parse = arr_str.strip('').split("]")[:-1]
+def sample_distributions(num_samples=1000):
+    num_strategies = 4
+    sample_format = np.ones(num_strategies)
+    return dirichlet.rvs(size=num_samples, alpha=sample_format)
 
-    for el in list_to_parse:
-        new_el = el.replace("[","")
-        new_el = [float(item) for item in new_el.split()]
-        a += [new_el]
 
-    return a
+x0 = sample_distributions(1)[0]
 
-arr = from_string(arr_str)
-for row in arr:
-    print(row)

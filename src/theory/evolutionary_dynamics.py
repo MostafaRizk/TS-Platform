@@ -13,12 +13,19 @@ import json
 import argparse
 import os
 import numpy as np
-from scipy.optimize import differential_evolution
 
+from scipy.optimize import differential_evolution
 from scipy.integrate import odeint
 from functools import partial
+from scipy.stats import dirichlet
 
 strategy = ["Novice", "Generalist", "Dropper", "Collector"]
+
+
+def sample_distributions(num_samples=1000):
+    num_strategies = len(strategy)
+    sample_format = np.ones(num_strategies)
+    return dirichlet.rvs(size=num_samples, alpha=sample_format)
 
 
 def theta(s):
@@ -50,7 +57,7 @@ def get_payoff_matrix(parameter_file):
     c = parameter_dictionary["c"]
 
     if parameter_dictionary["experiment_type"] == "equilibrium":
-        slope_list = [parameter_dictionary["equilibrum"]["s"]] # Sliding speed
+        slope_list = [parameter_dictionary["equilibrium"]["s"]] # Sliding speed
 
     elif parameter_dictionary["experiment_type"] == "price_of_anarchy":
         slope_list = parameter_dictionary["price_of_anarchy"]["slopes"]
@@ -149,20 +156,53 @@ def get_final_distribution(parameter_file, payoff_local, setup):
     global payoff
     payoff = payoff_local
 
-    P0 = np.array([parameter_dictionary["equilibrum"]["initial_distribution"]["Novice"],
-         parameter_dictionary["equilibrum"]["initial_distribution"]["Generalist"],
-         parameter_dictionary["equilibrum"]["initial_distribution"]["Dropper"],
-         parameter_dictionary["equilibrum"]["initial_distribution"]["Collector"]
-         ])
+    #total_time = parameter_dictionary["equilibrium"]["total_time"]
 
     t = np.linspace(0, 50, 1000)
 
+    P0 = np.array([parameter_dictionary["equilibrium"]["initial_distribution"]["Novice"],
+         parameter_dictionary["equilibrium"]["initial_distribution"]["Generalist"],
+         parameter_dictionary["equilibrium"]["initial_distribution"]["Dropper"],
+         parameter_dictionary["equilibrium"]["initial_distribution"]["Collector"]
+         ])
+
     if setup == "decentralised":
         P = odeint(get_change, P0, t)
+
     elif setup == "centralised":
         P = odeint(get_change_centralised, P0, t)
 
     return P,t
+
+
+def get_many_final_distributions(parameter_file, payoff_local, setup):
+    parameter_dictionary = json.loads(open(parameter_file).read())
+    total_time = parameter_dictionary["total_time"]
+    intervals = parameter_dictionary["intervals"]
+    num_samples = parameter_dictionary["num_samples"]
+
+    global payoff
+    payoff = payoff_local
+
+    t = np.linspace(0, intervals, total_time)
+    initial_distributions = sample_distributions(num_samples)
+    final_distributions = [None] * num_samples
+
+    for index in range(len(initial_distributions)):
+        P0 = initial_distributions[index]
+
+        if setup == "decentralised":
+            dist = odeint(get_change, P0, t)[-1]
+
+        elif setup == "centralised":
+            dist = odeint(get_change_centralised, P0, t)[-1]
+
+        for i in range(len(dist)):
+            dist[i] = round(dist[i], 4)
+
+        final_distributions[index] = dist
+
+    return final_distributions
 
 
 def get_team_payoff(payoff, P):
@@ -176,8 +216,8 @@ def get_team_payoff(payoff, P):
     @return: Infinity for invalid distribution. Negated average team payoff otherwise
     """
     #assert sum(P) == 1.0, "Population distribution does not sum to 1"
-    #if sum(P) > 1.0:
-    #    return float('inf')
+    if sum(P) > 1.0:
+        return float('inf')
 
     f_novice = sum([P[i] * (payoff["Novice"][strategy[i]] + payoff[strategy[i]]["Novice"]) for i in range(len(strategy))])
     f_generalist = sum([P[i] * (payoff["Generalist"][strategy[i]] + payoff[strategy[i]]["Generalist"]) for i in range(len(strategy))])
@@ -203,7 +243,7 @@ def optimise_payoff(payoff):
     return ", ".join(["{:.2f}".format(x) for x in res.x]), str(-1.*res.fun)
 
 
-def calculate_price_of_anarchy(parameter_file):
+def calculate_price_of_anarchy(parameter_file, all_distributions):
     parameter_dictionary = json.loads(open(parameter_file).read())
     assert parameter_dictionary["experiment_type"] == "price_of_anarchy", "Experiment type is not price_of_anarchy"
 
@@ -213,17 +253,29 @@ def calculate_price_of_anarchy(parameter_file):
     price_list = []
 
     for payoff in payoff_matrices:
-        #optimal_distribution, optimal_team_payoff = optimise_payoff(payoff)
-        #optimal_team_payoff = float(optimal_team_payoff)
+        optimal_distribution, optimal_team_payoff = optimise_payoff(payoff)
+        optimal_team_payoff = float(optimal_team_payoff)
+        find_payoff = partial(get_team_payoff, payoff)
 
-        optimal_distribution = get_final_distribution(parameter_file, payoff, setup="centralised")[0][-1]
-        optimal_team_payoff = -1. * get_team_payoff(payoff, optimal_distribution)
+        if not all_distributions:
+            optimal_distribution = get_final_distribution(parameter_file, payoff, setup="centralised")[0][-1]
+            optimal_team_payoff = -1. * get_team_payoff(payoff, optimal_distribution)
 
-        selfish_distribution = get_final_distribution(parameter_file, payoff, setup="decentralised")[0][-1]
-        selfish_payoff = -1. * get_team_payoff(payoff, selfish_distribution)
+            selfish_distribution = get_final_distribution(parameter_file, payoff, setup="decentralised")[0][-1]
+            selfish_payoff = -1. * get_team_payoff(payoff, selfish_distribution)
 
-        price_of_anarchy = optimal_team_payoff / selfish_payoff
-        price_list += [price_of_anarchy]
+            price_of_anarchy = optimal_team_payoff / selfish_payoff
+            price_list += [price_of_anarchy]
+
+        else:
+            #optimal_distributions = get_many_final_distributions(parameter_file, payoff, setup="centralised")
+            selfish_distributions = get_many_final_distributions(parameter_file, payoff, setup="decentralised")
+
+            #optimal_payoffs = -1. * np.array(list(map(find_payoff, optimal_distributions)))
+            selfish_payoffs = -1. * np.array(list(map(find_payoff, selfish_distributions)))
+            #price_of_anarchy = np.mean(optimal_payoffs / selfish_payoffs)
+            price_of_anarchy = np.mean([optimal_team_payoff/selfish_payoff for selfish_payoff in selfish_payoffs])
+            price_list += [price_of_anarchy]
 
     plt.plot(slope_list, price_list)
     plt.title("Price of Anarchy as Slope Increases")
@@ -255,18 +307,28 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Plot evolutionary dynamics')
     parser.add_argument('--parameters', action="store", dest="parameters")
     parser.add_argument('--setup', action="store", dest="setup")
+    parser.add_argument('--all_distributions', action="store", dest="all_distributions")
     parameter_file = parser.parse_args().parameters
     setup = parser.parse_args().setup
+    all_distributions = parser.parse_args().all_distributions
+
+    if not all_distributions or all_distributions != "True":
+        all_distributions = False
+    else:
+        all_distributions = True
 
     parameter_dictionary = json.loads(open(parameter_file).read())
 
     if parameter_dictionary["experiment_type"] == "equilibrium":
         payoff = get_payoff_matrix(parameter_file)
-        P,t = get_final_distribution(parameter_file, payoff, setup)
-        plot_results(P, t, parameter_file, setup)
+        if not all_distributions:
+            P, t = get_final_distribution(parameter_file, payoff, setup)
+            plot_results(P, t, parameter_file, setup)
+        else:
+            raise RuntimeError("Cannot generate equilibrium plot for all distributions")
 
     elif parameter_dictionary["experiment_type"] == "price_of_anarchy":
-        calculate_price_of_anarchy(parameter_file)
+        calculate_price_of_anarchy(parameter_file, all_distributions)
 
     #print(parameter_file.split("/")[-1].strip(".json"))
     #print(optimise_payoff(payoff))

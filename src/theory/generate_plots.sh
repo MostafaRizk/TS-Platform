@@ -16,5 +16,7 @@
 
 #python3 evolutionary_dynamics.py --parameters /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_13_price_of_anarchy/almost_all_novice_slope_8.json --setup decentralised
 #python3 evolutionary_dynamics.py --parameters /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_13_price_of_anarchy/almost_all_novice_slope_8.json --setup centralised
-python3 evolutionary_dynamics.py --parameters /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_13_price_of_anarchy/price_of_anarchy_almost_all_novice.json
-python3 evolutionary_dynamics.py --parameters /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_13_price_of_anarchy/price_of_anarchy_mostly_novice.json
+#python3 evolutionary_dynamics.py --parameters /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_13_price_of_anarchy/price_of_anarchy_almost_all_novice.json
+#python3 evolutionary_dynamics.py --parameters /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_13_price_of_anarchy/price_of_anarchy_mostly_novice.json
+
+python3 evolutionary_dynamics.py --parameters /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_19_evolutionary_dynamics_more_samples/price_of_anarchy.json --all_distributions True

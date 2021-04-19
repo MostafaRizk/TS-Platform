@@ -9,7 +9,9 @@ from operator import add
 
 setups = ["Centralised", "Decentralised", "One-pop"]
 alpha = 0.2
-spec_metric_index = 2 # R_spec
+background_alpha = 0.5
+#spec_metric_index = 2 # R_spec
+spec_metric_index = 5 # R_spec_P
 
 
 def from_string(arr_str):
@@ -87,6 +89,8 @@ def plot_episodes(path_to_results, path_to_graph, max_agents, y_height=15000):
             key = f"{setup}-{num_agents}"
             plot_name = f"{key}"
 
+            all_runs = [None]*len(results[key])
+
             for index, seed in enumerate(results[key]):
 
                 team_fitness_list = [0] * len(results[key][seed]["fitness"][0])
@@ -95,17 +99,36 @@ def plot_episodes(path_to_results, path_to_graph, max_agents, y_height=15000):
                 for j in range(num_agents):
                     team_fitness_list = list(map(add, team_fitness_list, results[key][seed]["fitness"][j]))
 
-                for episode_index,episode_fitness in enumerate(team_fitness_list):
-                    colour = m.to_rgba(specialisation_list[episode_index][spec_metric_index])
-                    ax.plot(index, episode_fitness/num_agents, 'o' , color=colour, alpha=alpha, markersize=3)
+                these_episodes = [None] * len(team_fitness_list)
 
-                ax.plot(index, np.mean(team_fitness_list)/num_agents, 'x', color='black')
+                for episode_index, episode_fitness in enumerate(team_fitness_list):
+                    colour = m.to_rgba(specialisation_list[episode_index][spec_metric_index])
+                    #ax.plot(index, episode_fitness/num_agents, 'o', color=colour, alpha=alpha, markersize=3)
+                    these_episodes[episode_index] = (episode_fitness/num_agents, colour)
+
+                #ax.plot(index, np.mean(team_fitness_list)/num_agents, 'x', color='black')
+                all_runs[index] = (np.mean(team_fitness_list)/num_agents, these_episodes)
+
+            all_runs = sorted(all_runs, key=lambda x: x[0])
+
+            for index,run in enumerate(all_runs):
+                ax.plot(index, run[0], 'x', color='black', alpha=background_alpha)
+
+                for episode in run[1]:
+                    ax.plot(index, episode[0], 'o', color=episode[1], alpha=alpha, markersize=3)
+
+
+
+            mean_all_runs = np.mean([all_runs[i][0] for i in range(len(all_runs))])
+            ax.plot([x for x in range(len(all_runs))], [mean_all_runs]*len(all_runs), color='black')
+
 
             ax.set_ylim(-2000, y_height)
             #ax.set_ylabel("Fitness per Agent")
             ax.set_title(plot_name)
 
     #fig.colorbar(m)
+    plt.tight_layout(pad=3.0)
     plt.suptitle("Performance Across Episodes")
     plt.savefig(path_to_graph)
 
