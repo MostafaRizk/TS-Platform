@@ -34,7 +34,9 @@ def run_experiment(parameter_filename):
             if parameter_dictionary["general"]["reward_level"] == "team":
                 rwg_parameter_dictionary["general"]["reward_level"] = "team"
                 environment_name = parameter_dictionary["general"]["environment"]
-                rwg_parameter_dictionary["algorithm"]["agent_population_size"] *= parameter_dictionary["environment"][environment_name]["num_agents"]
+
+                if parameter_dictionary["general"]["team_type"] == "heterogeneous":
+                    rwg_parameter_dictionary["algorithm"]["agent_population_size"] *= parameter_dictionary["environment"][environment_name]["num_agents"]
 
             # Copy environment parameters from cma to rwg
             rwg_parameter_dictionary["environment"] = copy.deepcopy(parameter_dictionary["environment"])
