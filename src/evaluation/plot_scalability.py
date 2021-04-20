@@ -4,9 +4,28 @@ import matplotlib.pyplot as plt
 import argparse
 
 from scipy import stats
+from operator import add
 
 setups = ["Centralised", "Decentralised", "One-pop"]
+spec_metric_index = 2 # R_spec
+#spec_metric_index = 5 # R_spec_P
 
+def from_string(arr_str):
+    """
+    Convert string to a 2D array
+    @param arr_str:
+    @return:
+    """
+    arr_str = arr_str[1:-1]
+    a = []
+    list_to_parse = arr_str.strip('').split("]")[:-1]
+
+    for el in list_to_parse:
+        new_el = el.replace("[","")
+        new_el = [float(item) for item in new_el.split()]
+        a += [new_el]
+
+    return a
 
 def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, violin=False, y_height=15000, showing="fitness"):
     # Prepare data lists
@@ -48,14 +67,10 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
             key = f"{learning_type}-{num_agents}"
 
         if seed not in results[key]:
-            results[key][seed] = 0
+            results[key][seed] = None
 
-        # At the end of the loop, contains team fitness for Centralised and Decentralised
-        # but only individual fitness for One-pop
-        if showing == "fitness":
-            results[key][seed] += row["fitness"]
-        elif showing == "specialisation":
-            results[key][seed] = row["specialisation"]
+        results[key][seed] = {"fitness": from_string(row["fitness"]),
+                              "specialisation": from_string(row["specialisation"])}
 
     scores = {"Centralised-2": [],
                "Centralised-4": [],
@@ -77,15 +92,16 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
 
             for seed in results[key]:
                 if showing == "fitness":
-                    if setup == "Centralised" or setup == "Decentralised":
-                        fitness = results[key][seed] / num_agents
-                    else:
-                        fitness = results[key][seed]
+                    team_fitness_list = [0] * len(results[key][seed]["fitness"][0])
 
-                    scores[key] += [fitness]
+                    for j in range(num_agents):
+                        team_fitness_list = list(map(add, team_fitness_list, results[key][seed]["fitness"][j]))
+
+                    scores[key] += [np.mean(team_fitness_list)/num_agents]
 
                 elif showing == "specialisation":
-                    specialisation = results[key][seed]
+                    specialisation_each_episode = [episode[spec_metric_index] for episode in results[key][seed]["specialisation"]]
+                    specialisation = np.mean(specialisation_each_episode)
                     scores[key] += [specialisation]
 
             if setup == "Centralised":

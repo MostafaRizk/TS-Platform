@@ -10,8 +10,8 @@ from operator import add
 setups = ["Centralised", "Decentralised", "One-pop"]
 alpha = 0.2
 background_alpha = 0.5
-#spec_metric_index = 2 # R_spec
-spec_metric_index = 5 # R_spec_P
+spec_metric_index = 2 # R_spec
+#spec_metric_index = 5 # R_spec_P
 
 
 def from_string(arr_str):
@@ -117,11 +117,8 @@ def plot_episodes(path_to_results, path_to_graph, max_agents, y_height=15000):
                 for episode in run[1]:
                     ax.plot(index, episode[0], 'o', color=episode[1], alpha=alpha, markersize=3)
 
-
-
             mean_all_runs = np.mean([all_runs[i][0] for i in range(len(all_runs))])
             ax.plot([x for x in range(len(all_runs))], [mean_all_runs]*len(all_runs), color='black')
-
 
             ax.set_ylim(-2000, y_height)
             #ax.set_ylabel("Fitness per Agent")
