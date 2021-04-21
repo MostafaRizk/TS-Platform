@@ -27,7 +27,13 @@ class HardcodedCollectorAgent(HardcodedAgent):
                 if "OBSTACLE" in self.sensor_map[0]+self.sensor_map[1]+self.sensor_map[2] and \
                     self.sensor_map != [["OBSTACLE", "BLANK", "BLANK"], ["OBSTACLE", "BLANK", "BLANK"], ["OBSTACLE", "BLANK", "BLANK"]] and \
                     self.sensor_map != [["BLANK", "BLANK", "OBSTACLE"], ["BLANK", "BLANK", "OBSTACLE"], ["BLANK", "BLANK", "OBSTACLE"]]:
-                    action = self.action_index["PICKUP"]
+
+                    if self.last_action == self.action_index["PICKUP"]:
+                        #TODO: Fix this so that collectors don't get stuck when they collide
+                        action = self.action_index["FORWARD"]
+                    else:
+                        action = self.action_index["PICKUP"]
+
 
                 # If left wall
                 elif self.sensor_map[0][0] == self.sensor_map[1][0] == self.sensor_map[2][0] == "OBSTACLE":

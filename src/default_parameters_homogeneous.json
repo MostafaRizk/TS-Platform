@@ -2,7 +2,7 @@
     "general": {
         "learning_type": "centralised",
         "algorithm_selected": "cma",
-        "team_type": "heterogeneous",
+        "team_type": "homogeneous",
         "reward_level": "team",
         "agent_type": "nn",
         "environment": "slope",
@@ -14,7 +14,7 @@
             "num_agents": 2,
             "num_resources": 4,
             "sensor_range": 1,
-            "sliding_speed": 8,
+            "sliding_speed": 4,
             "arena_length": 8,
             "arena_width": 4,
             "cache_start": 1,
