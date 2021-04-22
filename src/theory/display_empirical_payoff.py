@@ -34,7 +34,15 @@ if num_agents == 2:
             agent1 = class1()
             agent2 = class2()
             agent_list = [agent1, agent2]
-            results = fitness_calculator.calculate_fitness(agent_list=agent_list, render=False, time_delay=0,
+            #if type(agent1) == HardcodedCollectorAgent or type(agent2) == HardcodedCollectorAgent:
+            if type(agent1) == HardcodedGeneralistAgent and type(agent2) == HardcodedCollectorAgent:
+            #if False:
+                render = True
+                time_delay = 0.1
+            else:
+                render = False
+                time_delay = 0
+            results = fitness_calculator.calculate_fitness(agent_list=agent_list, render=render, time_delay=time_delay,
                                                                measure_specialisation=True, logging=False, logfilename=None,
                                                                render_mode="human")
             agent_scores = [round(np.mean(scores)) for scores in results['fitness_matrix']]
@@ -54,7 +62,9 @@ if num_agents == 3:
                 agent3 = class3()
                 agent_list = [agent1, agent2, agent3]
                 #if type(agent1) == type(agent2) == type(agent3) == HardcodedGeneralistAgent:
-                if type(agent2) == type(agent3) == HardcodedCollectorAgent:
+                #if type(agent2) == type(agent3) == HardcodedCollectorAgent:
+                if type(agent1) == HardcodedDropperAgent and type(agent2) == HardcodedCollectorAgent and type(agent3) == HardcodedCollectorAgent:
+                #if False:
                     render = True
                     time_delay = 0.1
                 else:

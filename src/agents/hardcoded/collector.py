@@ -25,15 +25,10 @@ class HardcodedCollectorAgent(HardcodedAgent):
             elif self.current_zone == "CACHE":
                 # If an obstacle is detected but there are no walls
                 if "OBSTACLE" in self.sensor_map[0]+self.sensor_map[1]+self.sensor_map[2] and \
-                    self.sensor_map != [["OBSTACLE", "BLANK", "BLANK"], ["OBSTACLE", "BLANK", "BLANK"], ["OBSTACLE", "BLANK", "BLANK"]] and \
-                    self.sensor_map != [["BLANK", "BLANK", "OBSTACLE"], ["BLANK", "BLANK", "OBSTACLE"], ["BLANK", "BLANK", "OBSTACLE"]]:
+                        not (self.sensor_map[0][0] == self.sensor_map[1][0] == self.sensor_map[2][0] == "OBSTACLE") and \
+                        not (self.sensor_map[0][2] == self.sensor_map[1][2] == self.sensor_map[2][2] == "OBSTACLE"):
 
-                    if self.last_action == self.action_index["PICKUP"]:
-                        #TODO: Fix this so that collectors don't get stuck when they collide
-                        action = self.action_index["FORWARD"]
-                    else:
-                        action = self.action_index["PICKUP"]
-
+                    action = self.action_index["PICKUP"]
 
                 # If left wall
                 elif self.sensor_map[0][0] == self.sensor_map[1][0] == self.sensor_map[2][0] == "OBSTACLE":
@@ -61,6 +56,7 @@ class HardcodedCollectorAgent(HardcodedAgent):
 
             elif self.current_zone == "NEST":
                 action = self.action_index["DROP"]
+                #self.has_resource = False
 
         self.last_action = action
 

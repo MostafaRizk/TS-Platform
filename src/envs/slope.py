@@ -329,6 +329,7 @@ class SlopeEnv:
                 # Ensure that a resource that is in range of an agent now gets picked up if the agent is
                 # doing a pickup action and no other agent is carrying the resource
                 if self.resource_in_range(j, resource_id):
+                    #TODO: Add "and resource_id not in resources_to_delete"
                     if self.has_resource[j] is None and resource_id not in self.has_resource:
                         if self.action_name[agent_actions[j]] == "PICKUP":
                             # If resource is on the cache, update resource history
