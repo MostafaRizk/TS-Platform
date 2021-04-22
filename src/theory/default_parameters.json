@@ -1,10 +1,17 @@
 {
   "experiment_type": "price_of_anarchy",
-  "e": 6,
-  "g": 5,
-  "b": -0.5,
-  "f": -2,
-  "c": 0.25,
+
+  "generalist_reward": 6000,
+  "specialist_reward": 23000,
+  "novice_base_cost": 100,
+  "generalist_base_cost": 142,
+  "generalist_cost_multiplier": 68.5,
+  "dropper_cost_multiplier": 12,
+  "collector_cost_multiplier": 23,
+
+  "default_slope": 4,
+
+  "num_agents": 3,
 
   "equilibrum": {
     "s": 4,

@@ -63,8 +63,8 @@ if num_agents == 3:
                 agent_list = [agent1, agent2, agent3]
                 #if type(agent1) == type(agent2) == type(agent3) == HardcodedGeneralistAgent:
                 #if type(agent2) == type(agent3) == HardcodedCollectorAgent:
-                if type(agent1) == HardcodedDropperAgent and type(agent2) == HardcodedCollectorAgent and type(agent3) == HardcodedCollectorAgent:
-                #if False:
+                #if type(agent1) == HardcodedDropperAgent and type(agent2) == HardcodedCollectorAgent and type(agent3) == HardcodedCollectorAgent:
+                if False:
                     render = True
                     time_delay = 0.1
                 else:
