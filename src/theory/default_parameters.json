@@ -1,6 +1,4 @@
 {
-  "experiment_type": "price_of_anarchy",
-
   "generalist_reward": 6000,
   "specialist_reward": 23000,
   "novice_base_cost": 100,

@@ -1,5 +1,6 @@
 import json
 import numpy as np
+import pandas as pd
 
 from fitness import FitnessCalculator
 from agents.hardcoded.hitchhiker import HardcodedHitchhikerAgent
@@ -26,6 +27,11 @@ f.close()
 
 fitness_calculator = FitnessCalculator("temp.json")
 available_agents = [HardcodedHitchhikerAgent, HardcodedGeneralistAgent, HardcodedDropperAgent, HardcodedCollectorAgent]
+strategy_name = {HardcodedHitchhikerAgent: "Novice",
+            HardcodedGeneralistAgent: "Generalist",
+            HardcodedDropperAgent: "Dropper",
+            HardcodedCollectorAgent: "Collector"}
+strategies = ["Novice", "Generalist", "Dropper", "Collector"]
 
 if num_agents == 2:
     for class1 in available_agents:
@@ -52,8 +58,11 @@ if num_agents == 2:
 
 if num_agents == 3:
     for class1 in available_agents:
-        print("----")
-        print(class1)
+
+        print("--------------------------------------")
+        print(strategy_name[class1])
+        matrix = []
+
         for class2 in available_agents:
             row = []
             for class3 in available_agents:
@@ -73,10 +82,16 @@ if num_agents == 3:
                 results = fitness_calculator.calculate_fitness(agent_list=agent_list, render=render, time_delay=time_delay,
                                                                measure_specialisation=True, logging=False, logfilename=None,
                                                                render_mode="human")
-                agent_scores = [round(np.mean(scores)) for scores in results['fitness_matrix']]
+                agent_scores = "(" + ", ".join([str(round(np.mean(scores))) for scores in results['fitness_matrix']]) + ")"
                 row += [agent_scores]
 
-            print(row)
+            matrix += [row]
+
+        df = pd.DataFrame(matrix, strategies, strategies)
+        df.style.set_properties(**{'text-align': 'center'})
+
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None, 'display.width', None):
+            print(df)
 
 if num_agents == 4:
     for class1 in available_agents:

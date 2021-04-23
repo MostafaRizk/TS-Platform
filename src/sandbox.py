@@ -55,45 +55,7 @@ def get_payoff_matrix(parameter_file):
         return payoff_matrices
 
 
-def get_change(P, t=0):
-    """
-    Function to be passed to ODEINT. Calculates replicator dynamic equation for all strategies.
-    i.e. Calculates rate of change for each strategy
-    e.g.
 
-    Where
-
-    x_dropper = the percentage of the population that are droppers,
-
-    x_dropper' = the rate of increase/decrease of the number of dropper strategies in the population
-
-    f(x_dropper) = the fitness of a droppers in this population (depends on the distribution of other strategies),
-    calculated by getting the payoff of a dropper when it is paired with each other strategy then taking the weighted
-    sum, where the weight is the probability of being paired with each strategy
-
-    avg_fitness = the average fitness of all other strategies
-
-    We then get
-
-    x_dropper' = x_dropper(f(x_dropper) - avg_fitness)
-
-    @param P: The distribution of novice, generalist, dropper and collector strategies (in that order) at this time step
-    @param t: The current time step
-    @return: The derivative of each strategy
-    """
-
-    f_novice = sum([P[i] * payoff["Novice"][strategy[i]] for i in range(len(strategy))])
-    f_generalist = sum([P[i] * payoff["Generalist"][strategy[i]] for i in range(len(strategy))])
-    f_dropper = sum([P[i] * payoff["Dropper"][strategy[i]] for i in range(len(strategy))])
-    f_collector = sum([P[i] * payoff["Collector"][strategy[i]] for i in range(len(strategy))])
-    f_avg = P[0] * f_novice + P[1] * f_generalist + P[2] * f_dropper + P[3] * f_collector
-
-    return np.array([
-        P[0] * (f_novice - f_avg),
-        P[1] * (f_generalist - f_avg),
-        P[2] * (f_dropper - f_avg),
-        P[3] * (f_collector - f_avg)
-    ])
 
 
 def get_change_centralised(P, t=0):
