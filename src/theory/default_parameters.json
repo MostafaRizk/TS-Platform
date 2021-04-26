@@ -8,21 +8,9 @@
   "collector_cost_multiplier": 23,
 
   "default_slope": 4,
-
-  "num_agents": 3,
-
-  "equilibrum": {
-    "s": 4,
-    "total_time": 100,
-    "dt": 0.1,
-    "initial_distribution": {
-      "Novice": 0.85,
-      "Generalist": 0.05,
-      "Dropper": 0.05,
-      "Collector": 0.05
-    }
-  },
-  "price_of_anarchy": {
-    "slopes": [0,1,2,3,4,5,6,7,8]
-  }
+  "num_agents": 2,
+  "total_time" : 100,
+  "intervals": 1000,
+  "num_samples": 10,
+  "random_state": 1
 }

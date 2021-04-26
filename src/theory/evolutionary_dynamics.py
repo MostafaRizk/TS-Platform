@@ -21,6 +21,9 @@ import numpy as np
 import math
 
 from scipy.optimize import differential_evolution
+from scipy.optimize import minimize
+from scipy.optimize import Bounds
+from scipy.optimize import LinearConstraint
 from scipy.integrate import odeint
 from functools import partial
 from scipy.stats import dirichlet
@@ -33,6 +36,8 @@ num_agents = 0
 generalist_reward = None  # The reward (i.e. resources retrieved) for an individual generalist
 specialist_reward = None  # The reward for a dropper and collector pair together
 combos = None  # List of possible strategy combinations for num_agents-1 agents
+slope_list = [i for i in range(9)]
+random_state = None
 
 
 def sample_distributions(num_samples=1000):
@@ -45,7 +50,7 @@ def sample_distributions(num_samples=1000):
     """
     num_strategies = len(strategies)
     sample_format = np.ones(num_strategies)
-    return dirichlet.rvs(size=num_samples, alpha=sample_format)
+    return dirichlet.rvs(size=num_samples, alpha=sample_format, random_state=random_state)
 
 
 def theta(s):
@@ -74,6 +79,7 @@ def generate_constants(parameter_dictionary, slope=None):
     global generalist_reward
     global specialist_reward
     global combos
+    global random_state
 
     if slope is None:
         slope = parameter_dictionary["default_slope"]
@@ -84,39 +90,42 @@ def generate_constants(parameter_dictionary, slope=None):
     # Generalist should have a slightly higher base cost (because it carries resources around) and an additional cost
     # proportional to the slope.
     cost["Generalist"] = parameter_dictionary["generalist_base_cost"] + \
-                         parameter_dictionary["generalist_cost_multiplier"]*slope
+                         parameter_dictionary["generalist_cost_multiplier"] * slope
 
     # Droppers have the same cost as novices when there's no slope because they don't carry things while moving and the
     # cost of going to the source is the same as idling if there's no slope. When there is a slope they pay an
     # additional cost proportional to it.
     cost["Dropper"] = parameter_dictionary["novice_base_cost"] + \
-                      parameter_dictionary["dropper_cost_multiplier"]*slope
+                      parameter_dictionary["dropper_cost_multiplier"] * slope
 
     # Collectors have the same cost as novices when there's no slope because no resources make it to the nest so they
     # are basically idle. When there is a slope they pay a small additional cost for moving resources that are
     # successfully dropped (if any). This cost is the same regardless of the slope.
     cost["Collector"] = parameter_dictionary["novice_base_cost"] + \
-                        parameter_dictionary["collector_cost_multiplier"]*theta(slope)
+                        parameter_dictionary["collector_cost_multiplier"] * theta(slope)
 
     num_agents = parameter_dictionary["num_agents"]
     generalist_reward = parameter_dictionary["generalist_reward"]
-    specialist_reward = parameter_dictionary["specialist_reward"]
+    specialist_reward = parameter_dictionary["specialist_reward"] * theta(slope)
 
     combos = list(combinations_with_replacement(strategies, num_agents-1))
+
+    random_state = parameter_dictionary["random_state"]
 
     return
 
 
-def get_payoff(strategy, teammate_combo):
+def get_payoff(team, all=False):
     """
-    Calculate payoff of a strategy when its teammates are a particular combination of other strategies
+    Calculate payoff of every strategy on a team or just first agent
 
-    @param strategy: Name of the agent's strategy as a string
-    @param teammate_combo: List of strings representing the other agents' strategies
-    @return: The part of the team payoff belonging to that particular agent
+    @param team: List of strings representing the agents' strategies
+    @param all: Boolean denoting if returning all payoffs
+    @return: The summed payoff (reward - cost) for each agent on the team or payoff for just the first agent
     """
 
-    team = [strategy] + teammate_combo
+    # TODO: Use dynamic programming to avoid recalculation of same payoff
+
     num_generalists = team.count("Generalist")
     num_droppers = team.count("Dropper")
     num_collectors = team.count("Collector")
@@ -130,17 +139,27 @@ def get_payoff(strategy, teammate_combo):
     else:
         payoff_from_specialists = 0
 
-    strategy_cost = 0
+    rewards = payoff_from_generalists + payoff_from_specialists
 
-    if strategy == "Collector":
-        if num_spec_pairs == 0:
-            strategy_cost = cost["Novice"]
+    payoff = 0
+
+    for strategy in team:
+        if strategy == "Collector":
+            if num_spec_pairs == 0:
+                strategy_cost = cost["Novice"]
+            else:
+                strategy_cost = cost["Collector"]
         else:
-            strategy_cost = cost["Collector"]
-    else:
-        strategy_cost = cost[strategy]
+            strategy_cost = cost[strategy]
 
-    return payoff_from_generalists + payoff_from_specialists - strategy_cost
+        if all:
+            payoff += rewards - strategy_cost
+
+        else:
+            payoff = rewards - strategy_cost
+            break
+
+    return payoff
 
 
 def inspect_payoff_function(parameter_dictionary):
@@ -226,6 +245,21 @@ def get_probability_of_teammate_combo(teammate_combo, probability_of_strategies)
     return product * multinomial_coefficient(teammate_combo)
 
 
+def get_fitnesses(P):
+    combo_probabilities = {}
+
+    for combo in combos:
+        combo_probabilities[combo] = get_probability_of_teammate_combo(combo, P)
+
+    f_novice = sum([get_payoff(["Novice"] + list(combo)) * combo_probabilities[combo] for combo in combos])
+    f_generalist = sum([get_payoff(["Generalist"] + list(combo)) * combo_probabilities[combo] for combo in combos])
+    f_dropper = sum([get_payoff(["Dropper"] + list(combo)) * combo_probabilities[combo] for combo in combos])
+    f_collector = sum([get_payoff(["Collector"] + list(combo)) * combo_probabilities[combo] for combo in combos])
+    f_avg = P[0] * f_novice + P[1] * f_generalist + P[2] * f_dropper + P[3] * f_collector
+
+    return f_novice, f_generalist, f_dropper, f_collector, f_avg
+
+
 def get_change(P, t=0):
     """
     Function to be passed to ODEINT. Calculates replicator dynamic equation for all strategies.
@@ -253,11 +287,7 @@ def get_change(P, t=0):
     @return: The derivative of each strategy
     """
 
-    f_novice = sum([get_payoff("Novice", list(combo)) * get_probability_of_teammate_combo(combo, P) for combo in combos])
-    f_generalist = sum([get_payoff("Generalist", list(combo)) * get_probability_of_teammate_combo(combo, P) for combo in combos])
-    f_dropper = sum([get_payoff("Dropper", list(combo)) * get_probability_of_teammate_combo(combo, P) for combo in combos])
-    f_collector = sum([get_payoff("Collector", list(combo)) * get_probability_of_teammate_combo(combo, P) for combo in combos])
-    f_avg = P[0] * f_novice + P[1] * f_generalist + P[2] * f_dropper + P[3] * f_collector
+    f_novice, f_generalist, f_dropper, f_collector, f_avg = get_fitnesses(P)
 
     return np.array([
         P[0] * (f_novice - f_avg),
@@ -267,6 +297,89 @@ def get_change(P, t=0):
     ])
 
 
+def get_many_final_distributions(parameter_dictionary):
+    """
+    Samples several initial population distributions and calculates the final distribution of each using the replicator
+    dynamic.
+
+    @param parameter_dictionary:
+    @return: List of lists where each list is a final population distribution
+    """
+    total_time = parameter_dictionary["total_time"]
+    intervals = parameter_dictionary["intervals"]
+    num_samples = parameter_dictionary["num_samples"]
+
+    t = np.linspace(0, intervals, total_time)
+    initial_distributions = sample_distributions(num_samples)
+    final_distributions = [None] * num_samples
+
+    for index in range(len(initial_distributions)):
+        P0 = initial_distributions[index]
+        dist = odeint(get_change, P0, t)[-1]
+
+        for i in range(len(dist)):
+            dist[i] = round(dist[i], 4)
+
+        final_distributions[index] = dist
+
+    return final_distributions
+
+
+def get_avg_fitness(P):
+    """
+    Given a distribution of strategies, get the average fitness of the population.
+    Payoff is negated for the purpose of optimisation.
+    Returns infinity for invalid distributions (also for purpose of optimisation)
+
+    @param P: Distribution of strategies
+    @return: Infinity for invalid distribution. Negated average team payoff otherwise
+    """
+    #if sum(P) > 1.0:
+    #    return float('inf')
+
+    f_novice, f_generalist, f_dropper, f_collector, f_avg = get_fitnesses(P)
+
+    return -1. * f_avg
+
+
+def optimise_payoff():
+    """
+    Uses differential evolution to find the optimal population of strategies, given a particular payoff function
+
+    @return: A tuple where the first item is a comma-separated string of the percentages of each strategy in the optimal
+    distribution, and the second item is the payoff of that optimal team
+    """
+    constraint = LinearConstraint(np.ones(len(strategies)), lb=1, ub=1)
+    bounds = [(0, 1), (0, 1), (0, 1), (0, 1)]
+    x0 = np.array([1,0,0,0])
+    res = differential_evolution(get_avg_fitness, bounds, constraints=constraint, maxiter=10000, mutation=0.5, tol=0.0001, seed=random_state)
+    #res = minimize(fun=get_avg_fitness, x0=x0, constraints=constraint, bounds=bounds)
+
+    return ", ".join(["{:.4f}".format(x) for x in res.x]), str(-1. * res.fun)
+
+
+def calculate_price_of_anarchy(parameter_dictionary):
+    price_list = []
+
+    for slope in slope_list:
+        generate_constants(parameter_dictionary, slope)
+        optimal_distribution, optimal_payoff = optimise_payoff()
+        optimal_payoff = round(float(optimal_payoff))
+
+        selfish_distributions = get_many_final_distributions(parameter_dictionary)
+        selfish_payoffs = -1. * np.array(list(map(round,list(map(get_avg_fitness, selfish_distributions)))))
+        price_of_anarchy = np.mean([optimal_payoff / selfish_payoff for selfish_payoff in selfish_payoffs])
+        price_list += [price_of_anarchy]
+
+    plt.plot(slope_list, price_list)
+    plt.title("Price of Anarchy as Slope Increases")
+    plt.ylabel("Price of Anarchy")
+    plt.xlabel("Slope")
+    path = "/".join([el for el in parameter_file.split("/")[:-1]]) + "/analysis"
+    filename = parameter_file.split("/")[-1].strip(".json") + ".png"
+    plt.savefig(os.path.join(path, filename))
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Plot evolutionary dynamics')
     parser.add_argument('--parameters', action="store", dest="parameters")
@@ -274,6 +387,6 @@ if __name__ == "__main__":
     parameter_file = parser.parse_args().parameters
     parameter_dictionary = json.loads(open(parameter_file).read())
 
-    generate_constants(parameter_dictionary)
+    calculate_price_of_anarchy(parameter_dictionary)
 
 
