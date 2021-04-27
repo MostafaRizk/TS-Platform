@@ -8,9 +8,9 @@
   "collector_cost_multiplier": 23,
 
   "default_slope": 4,
-  "num_agents": 2,
+  "default_num_agents": 2,
   "total_time" : 100,
   "intervals": 1000,
-  "num_samples": 10,
+  "num_samples": 5,
   "random_state": 1
 }

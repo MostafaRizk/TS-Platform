@@ -19,6 +19,9 @@ import os
 import pandas as pd
 import numpy as np
 import math
+import cma
+import time
+import bisect
 
 from scipy.optimize import differential_evolution
 from scipy.optimize import minimize
@@ -32,12 +35,28 @@ from itertools import combinations_with_replacement
 strategies = ["Novice", "Generalist", "Dropper", "Collector"]
 strategy_id = {"Novice": 0, "Generalist": 1, "Dropper": 2, "Collector": 3}
 cost = {}
+payoff_dict = {}
 num_agents = 0
 generalist_reward = None  # The reward (i.e. resources retrieved) for an individual generalist
 specialist_reward = None  # The reward for a dropper and collector pair together
-combos = None  # List of possible strategy combinations for num_agents-1 agents
+combos = None  # Sorted list of possible strategy combinations for num_agents-1 agents
+full_combos = {}  # For each strategy s, combo list from before but with s inserted
 slope_list = [i for i in range(9)]
+team_list = [i for i in range(2, 9)]
 random_state = None
+distribution_precision = 4  # Number of decimal places when expressing the proportion of each strategy in the population
+#archive = {}
+
+prices_of_anarchy = {}
+
+for slope in slope_list:
+
+    temp_dict = {}
+
+    for agent in team_list:
+        temp_dict[agent] = None
+
+    prices_of_anarchy[slope] = temp_dict
 
 
 def sample_distributions(num_samples=1000):
@@ -65,7 +84,7 @@ def theta(s):
         return 1
 
 
-def generate_constants(parameter_dictionary, slope=None):
+def generate_constants(parameter_dictionary, team_size=None, slope=None):
     """
     Use the given parameters to generate the rewards and costs of each strategy.
 
@@ -79,6 +98,7 @@ def generate_constants(parameter_dictionary, slope=None):
     global generalist_reward
     global specialist_reward
     global combos
+    global full_combos
     global random_state
 
     if slope is None:
@@ -104,11 +124,29 @@ def generate_constants(parameter_dictionary, slope=None):
     cost["Collector"] = parameter_dictionary["novice_base_cost"] + \
                         parameter_dictionary["collector_cost_multiplier"] * theta(slope)
 
-    num_agents = parameter_dictionary["num_agents"]
+    if team_size is None:
+        num_agents = parameter_dictionary["default_num_agents"]
+    else:
+        num_agents = team_size
+
     generalist_reward = parameter_dictionary["generalist_reward"]
     specialist_reward = parameter_dictionary["specialist_reward"] * theta(slope)
 
-    combos = list(combinations_with_replacement(strategies, num_agents-1))
+    sorted_strategies = strategies[:]
+    sorted_strategies.sort()
+
+    combos = list(combinations_with_replacement(sorted_strategies, num_agents-1))
+
+    '''for strat in strategies:
+        expanded_combos = [None]*len(combos)
+
+        for i,combo in enumerate(combos):
+            new_combo = list(combo[:])
+            bisect.insort(new_combo, strat)
+            expanded_combos[i] = tuple(new_combo)
+
+        full_combos[strat] = expanded_combos'''
+
 
     random_state = parameter_dictionary["random_state"]
 
@@ -124,7 +162,10 @@ def get_payoff(team, all=False):
     @return: The summed payoff (reward - cost) for each agent on the team or payoff for just the first agent
     """
 
-    # TODO: Use dynamic programming to avoid recalculation of same payoff
+    #key = str(team)
+
+    #if key in payoff_dict:
+    #    return payoff_dict[key]
 
     num_generalists = team.count("Generalist")
     num_droppers = team.count("Dropper")
@@ -159,6 +200,7 @@ def get_payoff(team, all=False):
             payoff = rewards - strategy_cost
             break
 
+    #payoff_dict[key] = payoff
     return payoff
 
 
@@ -251,11 +293,18 @@ def get_fitnesses(P):
     for combo in combos:
         combo_probabilities[combo] = get_probability_of_teammate_combo(combo, P)
 
+
     f_novice = sum([get_payoff(["Novice"] + list(combo)) * combo_probabilities[combo] for combo in combos])
     f_generalist = sum([get_payoff(["Generalist"] + list(combo)) * combo_probabilities[combo] for combo in combos])
     f_dropper = sum([get_payoff(["Dropper"] + list(combo)) * combo_probabilities[combo] for combo in combos])
     f_collector = sum([get_payoff(["Collector"] + list(combo)) * combo_probabilities[combo] for combo in combos])
     f_avg = P[0] * f_novice + P[1] * f_generalist + P[2] * f_dropper + P[3] * f_collector
+    '''
+    f_novice = sum([get_payoff(full_combos["Novice"][index]) * combo_probabilities[combo] for index,combo in enumerate(combos)])
+    f_generalist = sum([get_payoff(full_combos["Generalist"][index]) * combo_probabilities[combo] for index,combo in enumerate(combos)])
+    f_dropper = sum([get_payoff(full_combos["Dropper"][index]) * combo_probabilities[combo] for index,combo in enumerate(combos)])
+    f_collector = sum([get_payoff(full_combos["Collector"][index]) * combo_probabilities[combo] for index,combo in enumerate(combos)])
+    f_avg = P[0] * f_novice + P[1] * f_generalist + P[2] * f_dropper + P[3] * f_collector'''
 
     return f_novice, f_generalist, f_dropper, f_collector, f_avg
 
@@ -318,7 +367,7 @@ def get_many_final_distributions(parameter_dictionary):
         dist = odeint(get_change, P0, t)[-1]
 
         for i in range(len(dist)):
-            dist[i] = round(dist[i], 4)
+            dist[i] = round(dist[i], distribution_precision)
 
         final_distributions[index] = dist
 
@@ -334,50 +383,105 @@ def get_avg_fitness(P):
     @param P: Distribution of strategies
     @return: Infinity for invalid distribution. Negated average team payoff otherwise
     """
-    #if sum(P) > 1.0:
-    #    return float('inf')
+    if sum(P) > 1.0:
+        return float('inf')
+
+    if False in [0<=p<=1 for p in P]:
+        return float('inf')
 
     f_novice, f_generalist, f_dropper, f_collector, f_avg = get_fitnesses(P)
 
     return -1. * f_avg
 
 
-def optimise_payoff():
+def get_behaviour_characterisation(P):
+    return P
+
+
+def get_novelty(x, population):
+    # Find k nearest neighbours in population and archive
+    pass
+
+
+def get_optimal_distribution():
     """
     Uses differential evolution to find the optimal population of strategies, given a particular payoff function
 
-    @return: A tuple where the first item is a comma-separated string of the percentages of each strategy in the optimal
-    distribution, and the second item is the payoff of that optimal team
+    @return: An array representing the optimal distribution of strategies, with each element being a float in [0,1]
+    and the array having the same length as the number of strategies
     """
-    constraint = LinearConstraint(np.ones(len(strategies)), lb=1, ub=1)
-    bounds = [(0, 1), (0, 1), (0, 1), (0, 1)]
-    x0 = np.array([1,0,0,0])
-    res = differential_evolution(get_avg_fitness, bounds, constraints=constraint, maxiter=10000, mutation=0.5, tol=0.0001, seed=random_state)
-    #res = minimize(fun=get_avg_fitness, x0=x0, constraints=constraint, bounds=bounds)
+    #constraint = LinearConstraint(np.ones(len(strategies)), lb=1, ub=1)
+    #bounds = [(0, 1), (0, 1), (0, 1), (0, 1)]
+    #res = differential_evolution(get_avg_fitness, bounds, constraints=constraint, maxiter=20000, popsize=200, mutation=0.9, tol=0.0001, seed=random_state, disp=True)
+    #final_distribution = [round(x, distribution_precision) for x in res.x]
 
-    return ", ".join(["{:.4f}".format(x) for x in res.x]), str(-1. * res.fun)
+    options = {'seed': random_state,
+               'maxiter': 1000,
+               'popsize': 100,
+               'bounds': [[0 for i in range(len(strategies))], [1 for i in range(len(strategies))]]}
+
+    # RWG seeding to bootstrap cma
+    # (because the landscape is flat)
+    samples = sample_distributions(1000)
+    min_index = None
+    min_value = float('inf')
+
+    for j in range(len(samples)):
+        s = samples[j]
+        score = get_avg_fitness(s)
+        if score < min_value:
+            min_value = score
+            min_index = j
+
+    es = cma.CMAEvolutionStrategy(samples[min_index], 0.2, options)
+
+    while not es.stop():
+        solutions = es.ask()
+        es.tell(solutions, [get_avg_fitness(s) for s in solutions])
+
+    final_distribution = [round(x, distribution_precision) for x in es.result.xbest]
+
+    return final_distribution
 
 
-def calculate_price_of_anarchy(parameter_dictionary):
+def calculate_price_of_anarchy(parameter_dictionary, plot_type, axis, team_size=None, slope=None):
+    assert None in [team_size, slope], "Can only hold team size or slope size constant. Not both."
+    assert team_size is not None or slope is not None, "Must specify either slope or team size to be held constant"
+    assert ((plot_type=="slopes" and team_size is not None) or (plot_type=="agents" and slope is not None)), "Plot type must match variables"
+
     price_list = []
 
-    for slope in slope_list:
-        generate_constants(parameter_dictionary, slope)
-        optimal_distribution, optimal_payoff = optimise_payoff()
-        optimal_payoff = round(float(optimal_payoff))
+    if plot_type == "slopes":
+        xs = slope_list
+
+    elif plot_type == "agents":
+        xs = team_list
+
+    for x in xs:
+        if plot_type == "slopes":
+            generate_constants(parameter_dictionary, team_size=team_size, slope=x)
+        elif plot_type == "agents":
+            generate_constants(parameter_dictionary, team_size=x, slope=slope)
+
+        optimal_distribution = get_optimal_distribution()
+        optimal_payoff = round(-1. * get_avg_fitness(optimal_distribution))
 
         selfish_distributions = get_many_final_distributions(parameter_dictionary)
         selfish_payoffs = -1. * np.array(list(map(round,list(map(get_avg_fitness, selfish_distributions)))))
         price_of_anarchy = np.mean([optimal_payoff / selfish_payoff for selfish_payoff in selfish_payoffs])
         price_list += [price_of_anarchy]
 
-    plt.plot(slope_list, price_list)
-    plt.title("Price of Anarchy as Slope Increases")
-    plt.ylabel("Price of Anarchy")
-    plt.xlabel("Slope")
-    path = "/".join([el for el in parameter_file.split("/")[:-1]]) + "/analysis"
-    filename = parameter_file.split("/")[-1].strip(".json") + ".png"
-    plt.savefig(os.path.join(path, filename))
+    axis.plot(xs, price_list, 'o-')
+
+    if plot_type == "slopes":
+        axis.set_title(f"{team_size} Agents")
+        axis.set(xlabel="Slope", ylabel="Price of Anarchy")
+
+    elif plot_type == "agents":
+        axis.set_title(f"Slope {slope}")
+        axis.set(xlabel="Num Agents", ylabel="Price of Anarchy")
+
+    # filename = parameter_file.split("/")[-1].strip(".json") + "_price_of_anarchy.png"
 
 
 if __name__ == "__main__":
@@ -387,6 +491,39 @@ if __name__ == "__main__":
     parameter_file = parser.parse_args().parameters
     parameter_dictionary = json.loads(open(parameter_file).read())
 
-    calculate_price_of_anarchy(parameter_dictionary)
+    '''
+    path = "/".join([el for el in parameter_file.split("/")[:-1]]) + "/analysis"
+
+    # Make plots varying team size but holding slope constant (for each slope)
+    fig, axs = plt.subplots(1, len(slope_list), sharey=True)
+    fig.suptitle("Price of Anarchy vs Team Size")
+
+    for i, slope in enumerate(slope_list):
+        calculate_price_of_anarchy(parameter_dictionary, axis=axs[i], plot_type="agents", slope=slope)
+        axs[i].label_outer()
+
+    filename = "Price of Anarchy vs Agents"
+    plt.savefig(os.path.join(path, filename))
+
+    # Make plots slope but holding team size constant (for each team size)
+    fig, axs = plt.subplots(1, len(team_list), sharey=True)
+    fig.suptitle("Price of Anarchy vs Slope")
+
+    for i, team_size in enumerate(team_list):
+        calculate_price_of_anarchy(parameter_dictionary, axis=axs[i], plot_type="slopes", team_size=team_size)
+        axs[i].label_outer()
+
+    filename = "Price of Anarchy vs Slope"
+    plt.savefig(os.path.join(path, filename))
+    '''
+
+    fig, axs = plt.subplots(2, 1)
+    start = time.perf_counter()
+    generate_constants(parameter_dictionary, team_size=8, slope=4)
+    selfish_distributions = get_many_final_distributions(parameter_dictionary)
+    selfish_payoffs = -1. * np.array(list(map(round, list(map(get_avg_fitness, selfish_distributions)))))
+    end = time.perf_counter()
+    time_taken = end-start
+    print(time_taken)
 
 

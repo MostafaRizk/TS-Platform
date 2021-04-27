@@ -1,6 +1,5 @@
 
 
-
 def get_payoff_matrix(parameter_file):
     """
     Gets relevant values from json file and prepares the payoff matrix or matrices
@@ -55,9 +54,6 @@ def get_payoff_matrix(parameter_file):
         return payoff_matrices
 
 
-
-
-
 def get_change_centralised(P, t=0):
     f_novice = sum(
         [P[i] * (payoff["Novice"][strategy[i]] + payoff[strategy[i]]["Novice"]) for i in range(len(strategy))])
@@ -102,15 +98,6 @@ def get_final_distribution(parameter_file, payoff_local, setup):
     return P, t
 
 
-
-
-
-
-
-
-
-
-
 def plot_results(P, t, parameter_file, setup):
     novice, generalist, dropper, collector = P.T
     plt.plot(t, novice, label='novice')
@@ -127,8 +114,10 @@ def plot_results(P, t, parameter_file, setup):
     filename = parameter_file.split("/")[-1].strip(".json") + f"_{setup}.png"
     plt.savefig(os.path.join(path, filename))
 
+import cma
 
 if __name__ == "__main__":
+    '''
     parser = argparse.ArgumentParser(description='Plot evolutionary dynamics')
     parser.add_argument('--parameters', action="store", dest="parameters")
     parser.add_argument('--setup', action="store", dest="setup")
@@ -160,5 +149,11 @@ if __name__ == "__main__":
     # print(parameter_file.split("/")[-1].strip(".json"))
     # print(optimise_payoff(payoff))
     # print("\n")
+    '''
+
+    from cma.constraints_handler import BoundaryHandlerBase
+    a = BoundaryHandlerBase([0,1])
+    print(a)
+
 
 
