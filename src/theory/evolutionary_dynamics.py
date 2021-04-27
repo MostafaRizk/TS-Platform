@@ -40,7 +40,6 @@ num_agents = 0
 generalist_reward = None  # The reward (i.e. resources retrieved) for an individual generalist
 specialist_reward = None  # The reward for a dropper and collector pair together
 combos = None  # Sorted list of possible strategy combinations for num_agents-1 agents
-full_combos = {}  # For each strategy s, combo list from before but with s inserted
 slope_list = [i for i in range(9)]
 team_list = [i for i in range(2, 9)]
 random_state = None
@@ -98,7 +97,6 @@ def generate_constants(parameter_dictionary, team_size=None, slope=None):
     global generalist_reward
     global specialist_reward
     global combos
-    global full_combos
     global random_state
 
     if slope is None:
@@ -136,18 +134,6 @@ def generate_constants(parameter_dictionary, team_size=None, slope=None):
     sorted_strategies.sort()
 
     combos = list(combinations_with_replacement(sorted_strategies, num_agents-1))
-
-    '''for strat in strategies:
-        expanded_combos = [None]*len(combos)
-
-        for i,combo in enumerate(combos):
-            new_combo = list(combo[:])
-            bisect.insort(new_combo, strat)
-            expanded_combos[i] = tuple(new_combo)
-
-        full_combos[strat] = expanded_combos'''
-
-
     random_state = parameter_dictionary["random_state"]
 
     return
@@ -164,8 +150,8 @@ def get_payoff(team, all=False):
 
     #key = str(team)
 
-    #if key in payoff_dict:
-    #    return payoff_dict[key]
+    if team in payoff_dict:
+        return payoff_dict[team]
 
     num_generalists = team.count("Generalist")
     num_droppers = team.count("Dropper")
@@ -200,7 +186,7 @@ def get_payoff(team, all=False):
             payoff = rewards - strategy_cost
             break
 
-    #payoff_dict[key] = payoff
+    payoff_dict[team] = payoff
     return payoff
 
 
@@ -288,23 +274,18 @@ def get_probability_of_teammate_combo(teammate_combo, probability_of_strategies)
 
 
 def get_fitnesses(P):
-    combo_probabilities = {}
+    f_novice = 0
+    f_generalist = 0
+    f_collector = 0
+    f_dropper = 0
 
     for combo in combos:
-        combo_probabilities[combo] = get_probability_of_teammate_combo(combo, P)
+        f_novice += get_payoff(tuple(["Novice"]) + combo) * get_probability_of_teammate_combo(combo, P)
+        f_generalist += get_payoff(tuple(["Generalist"]) + combo) * get_probability_of_teammate_combo(combo, P)
+        f_dropper += get_payoff(tuple(["Dropper"]) + combo) * get_probability_of_teammate_combo(combo, P)
+        f_collector += get_payoff(tuple(["Collector"]) + combo) * get_probability_of_teammate_combo(combo, P)
 
-
-    f_novice = sum([get_payoff(["Novice"] + list(combo)) * combo_probabilities[combo] for combo in combos])
-    f_generalist = sum([get_payoff(["Generalist"] + list(combo)) * combo_probabilities[combo] for combo in combos])
-    f_dropper = sum([get_payoff(["Dropper"] + list(combo)) * combo_probabilities[combo] for combo in combos])
-    f_collector = sum([get_payoff(["Collector"] + list(combo)) * combo_probabilities[combo] for combo in combos])
     f_avg = P[0] * f_novice + P[1] * f_generalist + P[2] * f_dropper + P[3] * f_collector
-    '''
-    f_novice = sum([get_payoff(full_combos["Novice"][index]) * combo_probabilities[combo] for index,combo in enumerate(combos)])
-    f_generalist = sum([get_payoff(full_combos["Generalist"][index]) * combo_probabilities[combo] for index,combo in enumerate(combos)])
-    f_dropper = sum([get_payoff(full_combos["Dropper"][index]) * combo_probabilities[combo] for index,combo in enumerate(combos)])
-    f_collector = sum([get_payoff(full_combos["Collector"][index]) * combo_probabilities[combo] for index,combo in enumerate(combos)])
-    f_avg = P[0] * f_novice + P[1] * f_generalist + P[2] * f_dropper + P[3] * f_collector'''
 
     return f_novice, f_generalist, f_dropper, f_collector, f_avg
 
@@ -491,7 +472,6 @@ if __name__ == "__main__":
     parameter_file = parser.parse_args().parameters
     parameter_dictionary = json.loads(open(parameter_file).read())
 
-    '''
     path = "/".join([el for el in parameter_file.split("/")[:-1]]) + "/analysis"
 
     # Make plots varying team size but holding slope constant (for each slope)
@@ -515,15 +495,5 @@ if __name__ == "__main__":
 
     filename = "Price of Anarchy vs Slope"
     plt.savefig(os.path.join(path, filename))
-    '''
-
-    fig, axs = plt.subplots(2, 1)
-    start = time.perf_counter()
-    generate_constants(parameter_dictionary, team_size=8, slope=4)
-    selfish_distributions = get_many_final_distributions(parameter_dictionary)
-    selfish_payoffs = -1. * np.array(list(map(round, list(map(get_avg_fitness, selfish_distributions)))))
-    end = time.perf_counter()
-    time_taken = end-start
-    print(time_taken)
 
 
