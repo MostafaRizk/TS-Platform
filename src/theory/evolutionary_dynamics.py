@@ -22,6 +22,7 @@ import math
 import cma
 import time
 import bisect
+import sys
 
 from scipy.optimize import differential_evolution
 from scipy.optimize import minimize
@@ -31,6 +32,7 @@ from scipy.integrate import odeint
 from functools import partial
 from scipy.stats import dirichlet
 from itertools import combinations_with_replacement
+from io import StringIO
 
 strategies = ["Novice", "Generalist", "Dropper", "Collector"]
 strategy_id = {"Novice": 0, "Generalist": 1, "Dropper": 2, "Collector": 3}
@@ -147,8 +149,6 @@ def get_payoff(team, all=False):
     @param all: Boolean denoting if returning all payoffs
     @return: The summed payoff (reward - cost) for each agent on the team or payoff for just the first agent
     """
-
-    #key = str(team)
 
     if team in payoff_dict:
         return payoff_dict[team]
@@ -274,17 +274,15 @@ def get_probability_of_teammate_combo(teammate_combo, probability_of_strategies)
 
 
 def get_fitnesses(P):
-    f_novice = 0
-    f_generalist = 0
-    f_collector = 0
-    f_dropper = 0
+    combo_probabilities = {}
 
     for combo in combos:
-        f_novice += get_payoff(tuple(["Novice"]) + combo) * get_probability_of_teammate_combo(combo, P)
-        f_generalist += get_payoff(tuple(["Generalist"]) + combo) * get_probability_of_teammate_combo(combo, P)
-        f_dropper += get_payoff(tuple(["Dropper"]) + combo) * get_probability_of_teammate_combo(combo, P)
-        f_collector += get_payoff(tuple(["Collector"]) + combo) * get_probability_of_teammate_combo(combo, P)
+        combo_probabilities[combo] = get_probability_of_teammate_combo(combo, P)
 
+    f_novice = sum([get_payoff(tuple(["Novice"]) + combo) * combo_probabilities[combo] for combo in combos])
+    f_generalist = sum([get_payoff(tuple(["Generalist"]) + combo) * combo_probabilities[combo] for combo in combos])
+    f_dropper = sum([get_payoff(tuple(["Dropper"]) + combo) * combo_probabilities[combo] for combo in combos])
+    f_collector = sum([get_payoff(tuple(["Collector"]) + combo) * combo_probabilities[combo] for combo in combos])
     f_avg = P[0] * f_novice + P[1] * f_generalist + P[2] * f_dropper + P[3] * f_collector
 
     return f_novice, f_generalist, f_dropper, f_collector, f_avg
@@ -384,7 +382,7 @@ def get_novelty(x, population):
     pass
 
 
-def get_optimal_distribution():
+def get_optimal_distribution(parameter_dictionary):
     """
     Uses differential evolution to find the optimal population of strategies, given a particular payoff function
 
@@ -396,14 +394,17 @@ def get_optimal_distribution():
     #res = differential_evolution(get_avg_fitness, bounds, constraints=constraint, maxiter=20000, popsize=200, mutation=0.9, tol=0.0001, seed=random_state, disp=True)
     #final_distribution = [round(x, distribution_precision) for x in res.x]
 
+    old_stdout = sys.stdout
+    sys.stdout = mystdout = StringIO()
+
     options = {'seed': random_state,
-               'maxiter': 1000,
-               'popsize': 100,
+               'maxiter': parameter_dictionary["optimisation"]["generations"],
+               'popsize': parameter_dictionary["optimisation"]["population"],
                'bounds': [[0 for i in range(len(strategies))], [1 for i in range(len(strategies))]]}
 
     # RWG seeding to bootstrap cma
     # (because the landscape is flat)
-    samples = sample_distributions(1000)
+    samples = sample_distributions(parameter_dictionary["optimisation"]["rwg_samples"])
     min_index = None
     min_value = float('inf')
 
@@ -414,13 +415,15 @@ def get_optimal_distribution():
             min_value = score
             min_index = j
 
-    es = cma.CMAEvolutionStrategy(samples[min_index], 0.2, options)
+    es = cma.CMAEvolutionStrategy(samples[min_index], parameter_dictionary["optimisation"]["sigma"], options)
 
     while not es.stop():
         solutions = es.ask()
         es.tell(solutions, [get_avg_fitness(s) for s in solutions])
 
     final_distribution = [round(x, distribution_precision) for x in es.result.xbest]
+
+    sys.stdout = old_stdout
 
     return final_distribution
 
@@ -440,17 +443,32 @@ def calculate_price_of_anarchy(parameter_dictionary, plot_type, axis, team_size=
 
     for x in xs:
         if plot_type == "slopes":
+            if prices_of_anarchy[x][team_size]:
+                price_list += [prices_of_anarchy[x][team_size]]
+                continue
+
             generate_constants(parameter_dictionary, team_size=team_size, slope=x)
+
         elif plot_type == "agents":
+            if prices_of_anarchy[slope][x]:
+                price_list += [prices_of_anarchy[slope][x]]
+                continue
+
             generate_constants(parameter_dictionary, team_size=x, slope=slope)
 
-        optimal_distribution = get_optimal_distribution()
+        optimal_distribution = get_optimal_distribution(parameter_dictionary)
         optimal_payoff = round(-1. * get_avg_fitness(optimal_distribution))
 
         selfish_distributions = get_many_final_distributions(parameter_dictionary)
         selfish_payoffs = -1. * np.array(list(map(round,list(map(get_avg_fitness, selfish_distributions)))))
         price_of_anarchy = np.mean([optimal_payoff / selfish_payoff for selfish_payoff in selfish_payoffs])
         price_list += [price_of_anarchy]
+
+        if plot_type == "slopes":
+            prices_of_anarchy[x][team_size] = price_of_anarchy
+
+        elif plot_type == "agents":
+            prices_of_anarchy[slope][x] = price_of_anarchy
 
     axis.plot(xs, price_list, 'o-')
 
@@ -474,26 +492,40 @@ if __name__ == "__main__":
 
     path = "/".join([el for el in parameter_file.split("/")[:-1]]) + "/analysis"
 
+    cols = 3
+
     # Make plots varying team size but holding slope constant (for each slope)
-    fig, axs = plt.subplots(1, len(slope_list), sharey=True)
+    rows = math.ceil(len(slope_list) / cols)
+    fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30,15))
     fig.suptitle("Price of Anarchy vs Team Size")
 
+    print("Price of Anarchy vs Team Size")
     for i, slope in enumerate(slope_list):
-        calculate_price_of_anarchy(parameter_dictionary, axis=axs[i], plot_type="agents", slope=slope)
-        axs[i].label_outer()
+        print(f"Slope {slope}")
+        row_id = i // rows
+        col_id = i % cols
+        calculate_price_of_anarchy(parameter_dictionary, axis=axs[row_id][col_id], plot_type="agents", slope=slope)
+        axs[row_id][col_id].label_outer()
 
     filename = "Price of Anarchy vs Agents"
+    plt.rcParams.update({'font.size': 18})
     plt.savefig(os.path.join(path, filename))
 
     # Make plots slope but holding team size constant (for each team size)
-    fig, axs = plt.subplots(1, len(team_list), sharey=True)
+    rows = math.ceil(len(team_list) / cols)
+    fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30,15))
     fig.suptitle("Price of Anarchy vs Slope")
 
+    print("Price of Anarchy vs Slope")
     for i, team_size in enumerate(team_list):
-        calculate_price_of_anarchy(parameter_dictionary, axis=axs[i], plot_type="slopes", team_size=team_size)
-        axs[i].label_outer()
+        print(f"Team size {team_size}")
+        row_id = i // rows
+        col_id = i % cols
+        calculate_price_of_anarchy(parameter_dictionary, axis=axs[row_id][col_id], plot_type="slopes", team_size=team_size)
+        axs[row_id][col_id].label_outer()
 
     filename = "Price of Anarchy vs Slope"
+    plt.rcParams.update({'font.size': 18})
     plt.savefig(os.path.join(path, filename))
 
 

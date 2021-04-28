@@ -12,5 +12,12 @@
   "total_time" : 100,
   "intervals": 1000,
   "num_samples": 5,
-  "random_state": 1
+  "random_state": 1,
+
+  "optimisation": {
+    "generations": 10,
+    "rwg_samples": 1,
+    "population": 10,
+    "sigma": 0.2
+  }
 }

@@ -11,10 +11,11 @@ from fitness import FitnessCalculator
 from agents.nn_agent_lean import NNAgent
 from operator import add
 from glob import glob
+from agents.hardcoded.hitchhiker import HardcodedHitchhikerAgent
 from array2gif import write_gif
 
 
-def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, print_scores=None):
+def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, print_scores=None, ids_to_remove=None):
     #def evaluate_model(model_path, rendering="False", time_delay=0):
     if rendering == "True":
         rendering = True
@@ -75,21 +76,30 @@ def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, p
         full_genome = np.load(model_path)
 
         for i in range(num_agents):
-            start = i * int(len(full_genome) / num_agents)
-            end = (i+1) * int(len(full_genome) / num_agents)
-            sub_genome = full_genome[start:end]
-            agent = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
-                          parameter_path, sub_genome)
+            if ids_to_remove and i in ids_to_remove:
+                agent = HardcodedHitchhikerAgent()
+
+            else:
+                start = i * int(len(full_genome) / num_agents)
+                end = (i + 1) * int(len(full_genome) / num_agents)
+                sub_genome = full_genome[start:end]
+                agent = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
+                                parameter_path, sub_genome)
+
             agent_list += [agent]
 
     elif parameter_dictionary["general"]["learning_type"] == "centralised" and \
             parameter_dictionary["general"]["reward_level"] == "individual":
 
-        genome_population = [np.load(model_path) for i in range(num_agents)]
+        for i in range(num_agents):
+            if ids_to_remove and i in ids_to_remove:
+                agent = HardcodedHitchhikerAgent()
 
-        for genome in genome_population:
-            agent = NNAgent(fitness_calculator.get_observation_size(),
-                               fitness_calculator.get_action_size(), parameter_path, genome)
+            else:
+                genome = np.load(model_path)
+                agent = NNAgent(fitness_calculator.get_observation_size(),
+                                   fitness_calculator.get_action_size(), parameter_path, genome)
+
             agent_list += [agent]
 
     elif parameter_dictionary["general"]["learning_type"] == "decentralised" and \
@@ -102,10 +112,16 @@ def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, p
 
         assert len(all_genome_files) == num_agents, "Number of genome files does not match number of agents on the team"
 
-        for genome_file in all_genome_files:
-            genome = np.load(genome_file)
-            agent = NNAgent(fitness_calculator.get_observation_size(),
-                            fitness_calculator.get_action_size(), parameter_path, genome)
+        for i, genome_file in enumerate(all_genome_files):
+
+            if ids_to_remove and i in ids_to_remove:
+                agent = HardcodedHitchhikerAgent()
+
+            else:
+                genome = np.load(genome_file)
+                agent = NNAgent(fitness_calculator.get_observation_size(),
+                                fitness_calculator.get_action_size(), parameter_path, genome)
+
             agent_list += [agent]
 
     results = fitness_calculator.calculate_fitness(agent_list=agent_list, render=rendering, time_delay=time_delay,
@@ -151,11 +167,16 @@ if __name__ == "__main__":
     parser.add_argument('--rendering', action="store")
     parser.add_argument('--time_delay', action="store")
     parser.add_argument('--print_scores', action="store")
+    parser.add_argument('--ids_to_remove', action="store")
     model_path = parser.parse_args().model_path
     episodes = int(parser.parse_args().episodes)
     rendering = parser.parse_args().rendering
     time_delay = parser.parse_args().time_delay
     print_scores = parser.parse_args().print_scores
+    ids_to_remove = parser.parse_args().ids_to_remove
 
-    evaluate_model(model_path, episodes, rendering, time_delay, print_scores)
+    if ids_to_remove:
+        ids_to_remove = [int(id) for id in ids_to_remove.strip("[]").split(",")]
+
+    evaluate_model(model_path, episodes, rendering, time_delay, print_scores, ids_to_remove)
     #evaluate_model(model_path, rendering, time_delay)
