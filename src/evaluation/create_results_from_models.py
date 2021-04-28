@@ -6,6 +6,7 @@ import argparse
 from glob import glob
 from learning.learner_parent import Learner
 from evaluation.evaluate_model import evaluate_model
+from copy import deepcopy
 
 
 def get_seed_file(data_folder, parameter_dictionary):
@@ -14,15 +15,16 @@ def get_seed_file(data_folder, parameter_dictionary):
     """
     # Get pre and post seed params for model
     #parameter_list = ["centralised_rwg"] + parameter_list[2:-7]
-    parameter_dictionary["general"]["learning_type"] = "centralised"
-    parameter_dictionary["general"]["algorithm_selected"] = "rwg"
+    copied_dictionary = deepcopy(parameter_dictionary)
+    copied_dictionary["general"]["learning_type"] = "centralised"
+    copied_dictionary["general"]["algorithm_selected"] = "rwg"
 
     # If individual reward, allow seeds that used any number of agents
-    if parameter_dictionary["general"]["reward_level"] == "individual":
-        parameter_dictionary["environment"]["slope"]["num_agents"] = 1
+    if copied_dictionary["general"]["reward_level"] == "individual":
+        copied_dictionary["environment"]["slope"]["num_agents"] = 1
 
     # Get list of all seed files with matching parameters
-    seedfile_prefix = "_".join(str(item) for item in Learner.get_core_params_in_model_name(parameter_dictionary))
+    seedfile_prefix = "_".join(str(item) for item in Learner.get_core_params_in_model_name(copied_dictionary))
     seedfile_extension = ".npy"
     possible_seedfiles = glob(f'{data_folder}/{seedfile_prefix}*{seedfile_extension}')
 
