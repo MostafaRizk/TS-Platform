@@ -15,34 +15,7 @@ from agents.hardcoded.hitchhiker import HardcodedHitchhikerAgent
 from array2gif import write_gif
 
 
-def get_parameter_dictionary(model_path):
-    data_directory = "/".join(model_path.split("/")[:-1])
-    model_filename = model_path.split("/")[-1]
-
-    learning_type = model_filename.split("_")[0]
-    algorithm_selected = model_filename.split("_")[1]
-
-    if algorithm_selected != "rwg":
-        if learning_type == "centralised":
-            parameter_list = model_filename.split("_")[:-2]
-            parameter_filename = "_".join(parameter_list) + ".json"
-
-        elif learning_type == "decentralised":
-            parameter_list = model_filename.split("_")[:-3]
-            parameter_filename = "_".join(parameter_list) + ".json"
-
-        else:
-            raise RuntimeError("Learning type must be centralised or decentralised")
-
-    else:
-        parameter_list = model_filename.split("_")[:-1]
-        parameter_filename = "_".join(parameter_list) + ".json"
-
-    parameter_path = os.path.join(data_directory, parameter_filename)
-    return json.loads(open(parameter_path).read())
-
 def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, print_scores=None, ids_to_remove=None):
-    #def evaluate_model(model_path, rendering="False", time_delay=0):
     if rendering == "True":
         rendering = True
     else:
@@ -97,7 +70,8 @@ def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, p
         fitness_calculator = FitnessCalculator(parameter_path)
 
     if parameter_dictionary["general"]["learning_type"] == "centralised" and \
-            parameter_dictionary["general"]["reward_level"] == "team":
+            parameter_dictionary["general"]["reward_level"] == "team" and \
+            parameter_dictionary["general"]["team_type"] == "heterogeneous":
 
         full_genome = np.load(model_path)
 
@@ -114,8 +88,9 @@ def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, p
 
             agent_list += [agent]
 
-    elif parameter_dictionary["general"]["learning_type"] == "centralised" and \
-            parameter_dictionary["general"]["reward_level"] == "individual":
+    elif (parameter_dictionary["general"]["learning_type"] == "centralised" and \
+            parameter_dictionary["general"]["reward_level"] == "individual") or \
+            parameter_dictionary["general"]["team_type"] == "homogeneous":
 
         for i in range(num_agents):
             if ids_to_remove and i in ids_to_remove:

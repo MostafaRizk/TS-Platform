@@ -5,7 +5,7 @@ import argparse
 
 from glob import glob
 from learning.learner_parent import Learner
-from evaluation.evaluate_model import evaluate_model, get_parameter_dictionary
+from evaluation.evaluate_model import evaluate_model
 from evaluation.create_results_from_models import get_seed_file
 from itertools import combinations
 
