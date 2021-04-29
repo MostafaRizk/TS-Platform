@@ -40,7 +40,7 @@ def create_reevaluated_results(path_to_data_folder, generation, episodes, num_ag
         if num_agents_to_remove != 0 and num_agents_to_remove < team_size:
             combinations_to_remove[team_size] = [list(combo) for combo in list(combinations([i for i in range(team_size)], num_agents_to_remove))]
         else:
-            combinations_to_remove[team_size] = []
+            combinations_to_remove[team_size] = [None]
 
     # Get list of agent_scores for each
     for model_path in model_files:
