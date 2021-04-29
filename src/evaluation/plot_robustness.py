@@ -9,9 +9,9 @@ from evaluation.plot_scalability import from_string
 from scipy import stats
 from operator import add
 
-setups = ["Centralised", "Decentralised", "One-pop"]
-#spec_metric_index = 2 # R_spec
-spec_metric_index = 5 # R_spec_P
+setups = ["Centralised", "Decentralised", "One-pop", "Homogeneous"]
+spec_metric_index = 2 # R_spec
+#spec_metric_index = 5 # R_spec_P
 
 
 def plot_robustness(data_path, file_list, path_to_graph, plot_type, max_agents, y_height=15000, showing="fitness"):
@@ -34,6 +34,7 @@ def plot_robustness(data_path, file_list, path_to_graph, plot_type, max_agents, 
 
         for index, row in data.iterrows():
             learning_type = row["learning_type"].capitalize()
+            team_type = row["team_type"].capitalize()
             reward_level = row["reward_level"].capitalize()
             num_agents = row["num_agents"]
 
@@ -48,6 +49,8 @@ def plot_robustness(data_path, file_list, path_to_graph, plot_type, max_agents, 
 
             if learning_type == "Centralised" and reward_level == "Individual":
                 key = f"One-pop-{num_agents}"
+            elif team_type == "Homogeneous":
+                key = f"{team_type}-{num_agents}"
             else:
                 key = f"{learning_type}-{num_agents}"
 
@@ -90,10 +93,12 @@ def plot_robustness(data_path, file_list, path_to_graph, plot_type, max_agents, 
         y_centralised = []
         y_decentralised = []
         y_onepop = []
+        y_homogeneous = []
 
         yerr_centralised = []
         yerr_decentralised = []
         yerr_onepop = []
+        yerr_homogeneous = []
 
         # For each number of agents removed (that is valid for that team size)
         for num_agents_removed in range(num_agents):
@@ -133,6 +138,10 @@ def plot_robustness(data_path, file_list, path_to_graph, plot_type, max_agents, 
                 elif setup == "One-pop":
                     y = y_onepop
                     yerr = yerr_onepop
+
+                elif setup == "Homogeneous":
+                    y = y_homogeneous
+                    yerr = yerr_homogeneous
 
                 if plot_type == "mean":
                     y += [np.mean(scores[key][num_agents_removed])]
@@ -175,16 +184,19 @@ def plot_robustness(data_path, file_list, path_to_graph, plot_type, max_agents, 
             axis.errorbar(x, y_centralised, yerr_centralised, fmt='r-', label="Centralised")
             axis.errorbar(x, y_decentralised, yerr_decentralised, fmt='b-', label="Decentralised")
             axis.errorbar(x, y_onepop, yerr_onepop, fmt='g-', label="One-pop")
+            axis.errorbar(x, y_homogeneous, yerr_homogeneous, fmt='k-', label="Homogeneous")
 
         elif plot_type == "best" or plot_type == "median":
             axis.plot(x, y_centralised, 'ro-', label=f"Centralised ({plot_type})")
             axis.plot(x, y_decentralised, 'bo-', label=f"Decentralised ({plot_type})")
             axis.plot(x, y_onepop, 'go-', label=f"One-pop ({plot_type})")
+            axis.plot(x, y_homogeneous, 'ko-', label=f"Homogeneous ({plot_type})")
 
         else:
             axis.plot(x, y_centralised, 'ro-', label="Centralised")
             axis.plot(x, y_decentralised, 'bo-', label="Decentralised")
             axis.plot(x, y_onepop, 'go-', label="One-pop")
+            axis.plot(x, y_homogeneous, 'ko-', label="Homogeneous")
 
         axis.legend(loc='upper right', fontsize=16)
 

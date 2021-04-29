@@ -6,7 +6,7 @@ import argparse
 from scipy import stats
 from operator import add
 
-setups = ["Centralised", "Decentralised", "One-pop"]
+setups = ["Centralised", "Decentralised", "One-pop", "Homogeneous"]
 spec_metric_index = 2 # R_spec
 #spec_metric_index = 5 # R_spec_P
 
@@ -35,36 +35,34 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
     y_centralised = []
     y_decentralised = []
     y_onepop = []
+    y_homogeneous = []
 
     yerr_centralised = []
     yerr_decentralised = []
     yerr_onepop = []
+    yerr_homogeneous = []
 
     # Read data from results file
     data = pd.read_csv(path_to_results)
 
-    results = {"Centralised-2": {},
-               "Centralised-4": {},
-               "Centralised-6": {},
-               "Centralised-8": {},
-               "Decentralised-2": {},
-               "Decentralised-4": {},
-               "Decentralised-6": {},
-               "Decentralised-8": {},
-               "One-pop-2": {},
-               "One-pop-4": {},
-               "One-pop-6": {},
-               "One-pop-8": {}
-               }
+    results = {}
+
+    for setup in setups:
+        for team_size in range(2, max_agents + 2, 2):
+            key = f"{setup}-{team_size}"
+            results[key] = {}
 
     for index, row in data.iterrows():
         learning_type = row["learning_type"].capitalize()
+        team_type = row["team_type"].capitalize()
         reward_level = row["reward_level"].capitalize()
         num_agents = row["num_agents"]
         seed = row["seed"]
 
         if learning_type == "Centralised" and reward_level == "Individual":
             key = f"One-pop-{num_agents}"
+        elif team_type == "Homogeneous":
+            key = f"{team_type}-{num_agents}"
         else:
             key = f"{learning_type}-{num_agents}"
 
@@ -74,19 +72,12 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
         results[key][seed] = {"fitness": from_string(row["fitness"]),
                               "specialisation": from_string(row["specialisation"])}
 
-    scores = {"Centralised-2": [],
-               "Centralised-4": [],
-               "Centralised-6": [],
-              "Centralised-8": [],
-               "Decentralised-2": [],
-               "Decentralised-4": [],
-               "Decentralised-6": [],
-              "Decentralised-8": [],
-               "One-pop-2": [],
-               "One-pop-4": [],
-               "One-pop-6": [],
-              "One-pop-8": []
-               }
+    scores = {}
+
+    for setup in setups:
+        for team_size in range(2, max_agents + 2, 2):
+            key = f"{setup}-{team_size}"
+            scores[key] = []
 
     for num_agents in range(2, max_agents+2, 2):
         for setup in setups:
@@ -117,6 +108,10 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
             elif setup == "One-pop":
                 y = y_onepop
                 yerr = yerr_onepop
+
+            elif setup == "Homogeneous":
+                y = y_homogeneous
+                yerr = yerr_homogeneous
 
             if plot_type == "mean":
                 y += [np.mean(scores[key])]
@@ -160,16 +155,19 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
             plt.errorbar(x, y_centralised, yerr_centralised, fmt='r-', label="Centralised")
             plt.errorbar(x, y_decentralised, yerr_decentralised, fmt='b-', label="Decentralised")
             plt.errorbar(x, y_onepop, yerr_onepop, fmt='g-', label="One-pop")
+            plt.errorbar(x, y_homogeneous, yerr_homogeneous, fmt='k-', label="Homogeneous")
 
         elif plot_type == "best" or plot_type == "median":
             plt.plot(x, y_centralised, 'ro-', label=f"Centralised ({plot_type})")
             plt.plot(x, y_decentralised, 'bo-', label=f"Decentralised ({plot_type})")
             plt.plot(x, y_onepop, 'go-', label=f"One-pop ({plot_type})")
+            plt.plot(x, y_homogeneous, 'ko-', label=f"Homogeneous ({plot_type})")
 
         else:
             plt.plot(x, y_centralised, 'ro-', label="Centralised")
             plt.plot(x, y_decentralised, 'bo-', label="Decentralised")
             plt.plot(x, y_onepop, 'go-', label="One-pop")
+            plt.plot(x, y_homogeneous, 'ko-', label="Homogeneous")
 
         plt.legend(loc='upper right', fontsize=16)
         plt.savefig(path_to_graph)
@@ -207,6 +205,8 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
                     pc.set_color('blue')
                 elif setups[id] == "One-pop":
                     pc.set_color('green')
+                elif setups[id] == "Homogeneous":
+                    pc.set_color('black')
 
             for pc in ('cbars', 'cmins', 'cmaxes'):
                 parts[pc].set_color('black')

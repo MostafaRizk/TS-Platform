@@ -7,7 +7,7 @@ import matplotlib.colors as colours
 from scipy import stats
 from operator import add
 
-setups = ["Centralised", "Decentralised", "One-pop"]
+setups = ["Centralised", "Decentralised", "One-pop", "Homogeneous"]
 alpha = 0.2
 background_alpha = 0.5
 spec_metric_index = 2 # R_spec
@@ -38,32 +38,29 @@ def plot_episodes(path_to_results, path_to_graph, max_agents, y_height=15000):
     y_centralised = []
     y_decentralised = []
     y_onepop = []
+    y_homogeneous = []
 
     # Read data from results file
     data = pd.read_csv(path_to_results)
 
-    results = {"Centralised-2": {},
-               "Centralised-4": {},
-               "Centralised-6": {},
-               "Centralised-8": {},
-               "Decentralised-2": {},
-               "Decentralised-4": {},
-               "Decentralised-6": {},
-               "Decentralised-8": {},
-               "One-pop-2": {},
-               "One-pop-4": {},
-               "One-pop-6": {},
-               "One-pop-8": {}
-               }
+    results = {}
+
+    for setup in setups:
+        for team_size in range(2, max_agents + 2, 2):
+            key = f"{setup}-{team_size}"
+            results[key] = {}
 
     for index, row in data.iterrows():
         learning_type = row["learning_type"].capitalize()
+        team_type = row["team_type"].capitalize()
         reward_level = row["reward_level"].capitalize()
         num_agents = row["num_agents"]
         seed = row["seed"]
 
         if learning_type == "Centralised" and reward_level == "Individual":
             key = f"One-pop-{num_agents}"
+        elif team_type == "Homogeneous":
+            key = f"{team_type}-{num_agents}"
         else:
             key = f"{learning_type}-{num_agents}"
 
