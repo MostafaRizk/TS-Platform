@@ -10,6 +10,7 @@ setups = ["Centralised", "Decentralised", "One-pop"]
 spec_metric_index = 2 # R_spec
 #spec_metric_index = 5 # R_spec_P
 
+
 def from_string(arr_str):
     """
     Convert string to a 2D array
@@ -26,6 +27,7 @@ def from_string(arr_str):
         a += [new_el]
 
     return a
+
 
 def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, violin=False, y_height=15000, showing="fitness"):
     # Prepare data lists
