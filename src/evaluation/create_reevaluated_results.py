@@ -93,7 +93,7 @@ def create_reevaluated_results(path_to_data_folder, generation, episodes, num_ag
 
             # Log results
             parameters_to_log = parameter_list + \
-                                [str(combo)] + \
+                                [str(combo).replace(",", " ")] + \
                                 [str(seed_results['fitness_matrix']).replace(",", " ")] + \
                                 [str(results['fitness_matrix']).replace(",", " ")] + \
                                 [str(seed_results['specialisation_list']).replace(",", " ")] + \
