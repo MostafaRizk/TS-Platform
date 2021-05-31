@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import argparse
 import os
 import math
+import chardet
 
 from evaluation.plot_scalability import from_string
 from scipy import stats
@@ -30,7 +31,11 @@ def plot_robustness(data_path, file_list, path_to_graph, plot_type, max_agents, 
     # For each results file, populate dictionary
     for num_agents_removed, results_file in enumerate(file_list):
         path_to_results = os.path.join(data_path, results_file)
-        data = pd.read_csv(path_to_results)
+
+        with open(path_to_results, 'rb') as rawdata:
+            file_attributes = chardet.detect(rawdata.read(100000))
+
+        data = pd.read_csv(path_to_results, encoding=file_attributes['encoding'])
 
         for index, row in data.iterrows():
             learning_type = row["learning_type"].capitalize()

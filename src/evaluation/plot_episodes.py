@@ -10,8 +10,8 @@ from operator import add
 setups = ["Centralised", "Decentralised", "One-pop", "Homogeneous"]
 alpha = 0.2
 background_alpha = 0.5
-spec_metric_index = 2 # R_spec
-#spec_metric_index = 5 # R_spec_P
+#spec_metric_index = 2 # R_spec
+spec_metric_index = 5 # R_spec_P
 
 
 def from_string(arr_str):

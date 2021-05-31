@@ -109,7 +109,6 @@ class SlopeEnv:
                                   "retrieved": False # Was the resource retrieved
                                   } for i in range(self.max_resources)]
 
-
         # Step variables
         self.behaviour_map = [self.forward_step, self.backward_step, self.left_step, self.right_step]
         self.action_name = ["FORWARD", "BACKWARD", "LEFT", "RIGHT", "PICKUP", "DROP"]
