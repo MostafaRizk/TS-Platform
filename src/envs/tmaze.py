@@ -10,7 +10,7 @@ except:
     pass
 
 
-class ForkEnv:
+class TMazeEnv:
     def __init__(self, parameter_filename=None):
         if parameter_filename is None:
             raise RuntimeError("No parameter file specified for the environment")
@@ -18,8 +18,8 @@ class ForkEnv:
         parameter_dictionary = json.loads(open(parameter_filename).read())
 
         # Environment dimensions
-        self.hall_size = parameter_dictionary["environment"]["fork"]["hall_size"]
-        self.start_zone_size = parameter_dictionary["environment"]["fork"]["start_zone_size"]
+        self.hall_size = parameter_dictionary["environment"]["tmaze"]["hall_size"]
+        self.start_zone_size = parameter_dictionary["environment"]["tmaze"]["start_zone_size"]
 
         if self.start_zone_size % 2 == 0:
             self.offset = 0
@@ -41,8 +41,8 @@ class ForkEnv:
         self.agent_width = 0.8
 
         # Other constants and variables
-        self.num_agents = parameter_dictionary["environment"]["fork"]["num_agents"]
-        self.episode_length = parameter_dictionary["environment"]["fork"]["num_episodes"]
+        self.num_agents = parameter_dictionary["environment"]["tmaze"]["num_agents"]
+        self.episode_length = parameter_dictionary["environment"]["tmaze"]["num_episodes"]
         self.specialised_actions = 0
         self.total_actions = 0
 
@@ -118,7 +118,7 @@ class ForkEnv:
 
         self.total_actions += 1
 
-        observations = self.get_observations()
+        observations = self.get_agent_observations()
 
         return observations, rewards
 
@@ -132,6 +132,8 @@ class ForkEnv:
         self.specialised_actions = 0
         self.total_actions = 0
         self.agent_positions = self.generate_agent_positions()
+
+        return self.get_agent_observations()
 
     # Actions
     def up(self, agent_id):
@@ -167,11 +169,25 @@ class ForkEnv:
                     self.arena_constraints["x_max"] - 1),
             self.agent_positions[agent_id][1])
 
+    # Simple getters --------------------------------------------------------------------------------------------------
+    def get_num_agents(self):
+        """
+        Returns number of agents
+        :return: Integer representing number of agents
+        """
+        return self.num_agents
+
+    def get_observation_size(self):
+        return self.observation_space_size
+
+    def get_action_size(self):
+        return self.action_space_size
+
     # Helpers
     def generate_agent_positions(self):
-        return [(-1, 0), (0, -1)]  # [None] * self.num_agents
+        return [(0, 0), (0, 0)]  # [None] * self.num_agents
 
-    def get_observations(self):
+    def get_agent_observations(self):
         observations = [[0, 0]] * self.num_agents
 
         for i in range(self.num_agents):

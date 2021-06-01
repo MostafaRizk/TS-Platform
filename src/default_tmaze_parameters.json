@@ -5,12 +5,12 @@
         "team_type": "heterogeneous",
         "reward_level": "team",
         "agent_type": "nn",
-        "environment": "fork",
+        "environment": "tmaze",
         "calculate_specialisation": "False",
         "seed": 0
     },
     "environment": {
-        "fork": {
+        "tmaze": {
             "num_agents": 2,
             "hall_size": 9,
             "start_zone_size": 3,

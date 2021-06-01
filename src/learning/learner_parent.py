@@ -174,23 +174,33 @@ class Learner:
         parameters_in_name += [parameter_dictionary['general']['seed']]
 
         # Get environment params
-        parameters_in_name += [parameter_dictionary['environment']['slope']['num_agents']]
-        parameters_in_name += [parameter_dictionary['environment']['slope']['num_resources']]
-        parameters_in_name += [parameter_dictionary['environment']['slope']['sensor_range']]
-        parameters_in_name += [parameter_dictionary['environment']['slope']['sliding_speed']]
-        parameters_in_name += [parameter_dictionary['environment']['slope']['arena_length']]
-        parameters_in_name += [parameter_dictionary['environment']['slope']['arena_width']]
-        parameters_in_name += [parameter_dictionary['environment']['slope']['cache_start']]
-        parameters_in_name += [parameter_dictionary['environment']['slope']['slope_start']]
-        parameters_in_name += [parameter_dictionary['environment']['slope']['source_start']]
-        parameters_in_name += [parameter_dictionary['environment']['slope']['base_cost']]
-        parameters_in_name += [parameter_dictionary['environment']['slope']['upward_cost_factor']]
-        parameters_in_name += [parameter_dictionary['environment']['slope']['downward_cost_factor']]
-        parameters_in_name += [parameter_dictionary['environment']['slope']['carry_factor']]
-        parameters_in_name += [parameter_dictionary['environment']['slope']['resource_reward']]
-        parameters_in_name += [parameter_dictionary['environment']['slope']['episode_length']]
-        parameters_in_name += [parameter_dictionary['environment']['slope']['num_episodes']]
-        parameters_in_name += [parameter_dictionary['environment']['slope']['incremental_rewards']]
+        environment_name = parameter_dictionary['general']['environment']
+
+        if environment_name == "slope":
+            parameters_in_name += [parameter_dictionary['environment']['slope']['num_agents']]
+            parameters_in_name += [parameter_dictionary['environment']['slope']['num_resources']]
+            parameters_in_name += [parameter_dictionary['environment']['slope']['sensor_range']]
+            parameters_in_name += [parameter_dictionary['environment']['slope']['sliding_speed']]
+            parameters_in_name += [parameter_dictionary['environment']['slope']['arena_length']]
+            parameters_in_name += [parameter_dictionary['environment']['slope']['arena_width']]
+            parameters_in_name += [parameter_dictionary['environment']['slope']['cache_start']]
+            parameters_in_name += [parameter_dictionary['environment']['slope']['slope_start']]
+            parameters_in_name += [parameter_dictionary['environment']['slope']['source_start']]
+            parameters_in_name += [parameter_dictionary['environment']['slope']['base_cost']]
+            parameters_in_name += [parameter_dictionary['environment']['slope']['upward_cost_factor']]
+            parameters_in_name += [parameter_dictionary['environment']['slope']['downward_cost_factor']]
+            parameters_in_name += [parameter_dictionary['environment']['slope']['carry_factor']]
+            parameters_in_name += [parameter_dictionary['environment']['slope']['resource_reward']]
+            parameters_in_name += [parameter_dictionary['environment']['slope']['episode_length']]
+            parameters_in_name += [parameter_dictionary['environment']['slope']['num_episodes']]
+            parameters_in_name += [parameter_dictionary['environment']['slope']['incremental_rewards']]
+
+        elif environment_name == "tmaze":
+            parameters_in_name += [parameter_dictionary['environment']['tmaze']['num_agents']]
+            parameters_in_name += [parameter_dictionary['environment']['tmaze']['hall_size']]
+            parameters_in_name += [parameter_dictionary['environment']['tmaze']['start_zone_size']]
+            parameters_in_name += [parameter_dictionary['environment']['tmaze']['episode_length']]
+            parameters_in_name += [parameter_dictionary['environment']['tmaze']['num_episodes']]
 
         # Get agent params for relevant agent type
         agent_type = parameter_dictionary['general']['agent_type']
@@ -218,31 +228,42 @@ class Learner:
         @return:
         """
         # TODO: Change the heading so it accommodates other agent types
+        environment_name = parameter_dictionary['general']['environment']
+
         headings = ["learning_type",
                     "algorithm_selected",
                     "team_type",
                     "reward_level",
                     "agent_type",
                     "environment",
-                    "seed",
-                    "num_agents",
-                    "num_resources",
-                    "sensor_range",
-                    "sliding_speed",
-                    "arena_length",
-                    "arena_width",
-                    "cache_start",
-                    "slope_start",
-                    "source_start",
-                    "base_cost",
-                    "upward_cost_factor",
-                    "downward_cost_factor",
-                    "carry_factor",
-                    "resource_reward",
-                    "episode_length",
-                    "num_episodes",
-                    "incremental_rewards",
-                    "architecture",
+                    "seed"]
+        if environment_name == "slope":
+            headings += ["num_agents",
+                         "num_resources",
+                         "sensor_range",
+                         "sliding_speed",
+                         "arena_length",
+                         "arena_width",
+                         "cache_start",
+                         "slope_start",
+                         "source_start",
+                         "base_cost",
+                         "upward_cost_factor",
+                         "downward_cost_factor",
+                         "carry_factor",
+                         "resource_reward",
+                         "episode_length",
+                         "num_episodes",
+                         "incremental_rewards"]
+
+        elif environment_name == "tmaze":
+            headings += ["num_agents",
+                         "hall_size",
+                         "start_zone_size",
+                         "episode_length",
+                         "num_episodes"]
+
+        headings += ["architecture",
                     "bias",
                     "hidden_layers",
                     "hidden_units_per_layer",

@@ -23,7 +23,10 @@ class BenchmarkPlotter:
         self.dt_str = "" #datetime.now().strftime('%d-%m-%Y_%H-%M-%S')
         self.genomes_file = genomes_file
 
-        self.spec_score_keys = ["R_coop", "R_coop_eff", "R_spec", "R_coop x P", "R_coop_eff x P", "R_spec x P"]
+        if self.env_name.split("_")[0] == "slope":
+            self.spec_score_keys = ["R_coop", "R_coop_eff", "R_spec", "R_coop x P", "R_coop_eff x P", "R_spec x P"]
+        elif self.env_name.split("_")[0] == "tmaze":
+            self.spec_score_keys = ["num_pairs"]
 
         #### Plot params
         self.plot_pt_alpha = 0.2
@@ -571,9 +574,10 @@ class BenchmarkPlotter:
             #self.plot_score_percentiles(sample_dict)
 
 def get_experiment_name_from_filename(filename):
+    env_name = filename.strip(".csv").split("/")[-1].split("_")[7]
     items_in_shortened_name = filename.strip(".csv").split("_")[-10:-6]
     shortened_name = "_".join([str(item) for item in items_in_shortened_name])
-    return shortened_name
+    return env_name + "_" + shortened_name
 
 def arch_dict_to_label(arch_dict):
     label = '{} HL'.format(arch_dict['N_hidden_layers'])
@@ -588,10 +592,15 @@ def walk_multi_dir(results_dir, bias, params_dict_list, **kwargs):
     else:
         spec_metric_key = kwargs.get('spec_metric_key', None)
 
+    if kwargs.get('env', None) is None:
+        raise RuntimeError("No env name passed")
+    else:
+        env = kwargs.get('env', None)
+
     params_results_dict_list = []
     for params_dict in params_dict_list:
 
-        stat_file_prefix = f'all_genomes_rwg_heterogeneous_team_nn_slope*{params_dict["NN"].lower()}_{bias}_{params_dict["N_hidden_layers"]}_{params_dict["N_hidden_units"]}'
+        stat_file_prefix = f'all_genomes_centralised_rwg_heterogeneous_team_nn_{env}*{params_dict["NN"].lower()}_{bias}_{params_dict["N_hidden_layers"]}_{params_dict["N_hidden_units"]}'
         regex_string = f'{results_dir}/{stat_file_prefix}_*_stats.json'
         stat_files = glob(regex_string)
 
@@ -649,7 +658,7 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     solve them on the other axis.
     '''
 
-    results_dir = os.path.join(parent_dir, 'results')
+    results_dir = os.path.join(parent_dir, 'data')
     analysis_dir = os.path.join(parent_dir, 'analysis')
     figures_dir = os.path.join(analysis_dir, f'combined_plots_{bias}')
 
@@ -661,17 +670,29 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     else:
         spec_metric_key = kwargs.get('spec_metric_key', None)
 
+    if kwargs.get('env', None) is None:
+        raise RuntimeError("No env name passed")
+    else:
+        env = kwargs.get('env', None)
+
     print(f'Making plots for {spec_metric_key}')
 
-    envs_list = [
-        'SlopeForaging-FFNN',
-        'SlopeForaging-RNN'
-    ]
+    if env == "slope":
+        envs_list = [
+            'SlopeForaging-FFNN',
+            'SlopeForaging-RNN'
+        ]
 
-    env_name_title_dict = {
-        'SlopeForaging-FFNN': f'SlopeForaging\n(FFNN)',
-        'SlopeForaging-RNN': f'SlopeForaging\n(RNN)'
-    }
+        env_name_title_dict = {
+            'SlopeForaging-FFNN': f'SlopeForaging\n(FFNN)',
+            'SlopeForaging-RNN': f'SlopeForaging\n(RNN)'
+        }
+
+    elif env == "tmaze":
+        envs_list = ["TMaze-FFNN"]
+        env_name_title_dict = {
+            'TMaze-FFNN': f'TMaze\n(FFNN)'
+        }
 
     '''{
         'N_hidden_layers' : 1,

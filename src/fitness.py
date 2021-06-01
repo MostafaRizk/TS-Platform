@@ -4,7 +4,7 @@ import os
 import numpy as np
 import time
 from envs.slope import SlopeEnv
-from envs.fork import ForkEnv
+from envs.tmaze import TMazeEnv
 
 
 class FitnessCalculator:
@@ -19,8 +19,8 @@ class FitnessCalculator:
 
         if self.parameter_dictionary["general"]["environment"] == "slope":
             self.env = SlopeEnv(parameter_filename)
-        elif self.parameter_dictionary["general"]["environment"] == "fork":
-            self.env = ForkEnv(parameter_filename)
+        elif self.parameter_dictionary["general"]["environment"] == "tmaze":
+            self.env = TMazeEnv(parameter_filename)
 
         environment_name = self.parameter_dictionary['general']['environment']
         self.num_agents = self.parameter_dictionary['environment'][environment_name]['num_agents']
