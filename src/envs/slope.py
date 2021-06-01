@@ -720,7 +720,7 @@ class SlopeEnv:
         self.current_num_resources -= 1
 
     # Specialisation Metrics ------------------------------------------------------------------------------------------
-    def calculate_ferrante_specialisation(self):
+    def calculate_specialisation(self):
         """
         Calculates task specialisation according to Ferrante et al's measure i.e:
         Of all the retrieved resources, what proportion were carried by multiple agents

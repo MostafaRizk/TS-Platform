@@ -12,12 +12,14 @@ except:
 
 class ForkEnv:
     def __init__(self, parameter_filename=None):
+        if parameter_filename is None:
+            raise RuntimeError("No parameter file specified for the environment")
+
+        parameter_dictionary = json.loads(open(parameter_filename).read())
 
         # Environment dimensions
-        self.up_hall_size = 9
-        self.down_hall_size = 9
-        self.right_hall_size = 9
-        self.start_zone_size = 3
+        self.hall_size = parameter_dictionary["environment"]["fork"]["hall_size"]
+        self.start_zone_size = parameter_dictionary["environment"]["fork"]["start_zone_size"]
 
         if self.start_zone_size % 2 == 0:
             self.offset = 0
@@ -25,12 +27,12 @@ class ForkEnv:
             self.offset = 1
 
         self.arena_constraints = {"x_min": -(self.start_zone_size//2),
-                                  "x_max": (self.start_zone_size//2) + self.offset + self.right_hall_size,
-                                  "y_min": -(self.start_zone_size//2) - self.down_hall_size,
-                                  "y_max": (self.start_zone_size//2) + self.offset + self.up_hall_size}
+                                  "x_max": (self.start_zone_size//2) + self.offset + self.hall_size,
+                                  "y_min": -(self.start_zone_size//2) - self.hall_size,
+                                  "y_max": (self.start_zone_size//2) + self.offset + self.hall_size}
 
-        self.total_width = self.start_zone_size + self.right_hall_size
-        self.total_height = self.start_zone_size + self.up_hall_size + self.down_hall_size
+        self.total_width = self.start_zone_size + self.hall_size
+        self.total_height = self.start_zone_size + self.hall_size + self.hall_size
 
         self.x_shift = abs(self.arena_constraints["x_min"])
         self.y_shift = abs(self.arena_constraints["y_min"])
@@ -39,8 +41,10 @@ class ForkEnv:
         self.agent_width = 0.8
 
         # Other constants and variables
-        self.num_agents = 2
-        self.episode_length = 10
+        self.num_agents = parameter_dictionary["environment"]["fork"]["num_agents"]
+        self.episode_length = parameter_dictionary["environment"]["fork"]["num_episodes"]
+        self.specialised_actions = 0
+        self.total_actions = 0
 
         # Rendering constants
         self.scale = 40
@@ -60,13 +64,13 @@ class ForkEnv:
         except:
             pass
 
-        self.agent_positions = [(-1, 0), (0, -1)]  # [None] * self.num_agents
+        self.agent_positions = self.generate_agent_positions()
 
         # Step variables
         self.behaviour_map = [self.up, self.down, self.right]
         self.action_name = ["UP", "DOWN",  "RIGHT"]
 
-        self.seed_value = 1 #parameter_dictionary['general']['seed']
+        self.seed_value = parameter_dictionary['general']['seed']
         self.np_random = np.random.RandomState(self.seed_value)
 
         # Observation space
@@ -102,24 +106,32 @@ class ForkEnv:
             self.behaviour_map[agent_actions[i]](i)
 
             # If an agent did a generalist behaviour
-            if self.action_name[agent_actions[i]] == "RIGHT":
+            if self.action_name[agent_actions[i]] == "RIGHT" and self.get_area_from_position(self.agent_positions[i]) == "RIGHT_HALL":
                 rewards[i] = 1
 
             # If an agent did a specialist behaviour
-            elif self.action_name[agent_actions[i]] == "UP" and self.action_name[agent_actions[teammate[i]]] == "DOWN":
+            elif self.action_name[agent_actions[i]] == "UP" and self.get_area_from_position(self.agent_positions[i]) == "UP_HALL" and \
+                    self.action_name[agent_actions[teammate[i]]] == "DOWN" and self.get_area_from_position(self.agent_positions[teammate[i]]) == "DOWN_HALL":
                 rewards[i] = 2
                 rewards[teammate[i]] = 2
+                self.specialised_actions += 1
 
-        observations = [[0, 0]] * self.num_agents
+        self.total_actions += 1
 
-        for i in range(self.num_agents):
-            observations[i][0] = self.agent_positions[i][1]
-            observations[i][1] = self.agent_positions[i][0]
+        observations = self.get_observations()
 
         return observations, rewards
 
     def reset(self):
-        pass
+        try:
+            self.viewer.close()
+        except:
+            pass
+
+        self.viewer = None
+        self.specialised_actions = 0
+        self.total_actions = 0
+        self.agent_positions = self.generate_agent_positions()
 
     # Actions
     def up(self, agent_id):
@@ -154,6 +166,48 @@ class ForkEnv:
             np.clip(self.agent_positions[agent_id][0] + 1, self.arena_constraints["x_min"],
                     self.arena_constraints["x_max"] - 1),
             self.agent_positions[agent_id][1])
+
+    # Helpers
+    def generate_agent_positions(self):
+        return [(-1, 0), (0, -1)]  # [None] * self.num_agents
+
+    def get_observations(self):
+        observations = [[0, 0]] * self.num_agents
+
+        for i in range(self.num_agents):
+            observations[i][0] = self.agent_positions[i][1]
+            observations[i][1] = self.agent_positions[i][0]
+
+        return observations
+
+    def get_area_from_position(self, position):
+        """
+        Given an x,y coordinate, returns the name of the zone
+        @param position:
+        @return:
+        """
+        x = position[0]
+        y = position[1]
+
+        if x < self.arena_constraints["x_min"] or x > self.arena_constraints["x_max"]:
+            raise ValueError("x position is not valid")
+        if y < self.arena_constraints["y_min"] or x > self.arena_constraints["y_max"]:
+            raise ValueError("y position is not valid")
+
+        if y >= self.arena_constraints["y_min"] + self.hall_size + self.start_zone_size:
+            return "UP_HALL"
+        elif self.arena_constraints["y_min"] <= y < self.arena_constraints["y_min"] + self.hall_size:
+            return "DOWN_HALL"
+        elif x >= self.arena_constraints["x_min"] + self.start_zone_size:
+            return "RIGHT_HALL"
+        else:
+            return "START_ZONE"
+
+    def calculate_specialisation(self):
+        return [self.specialised_actions / self.total_actions]
+
+    def reset_rng(self):
+        self.np_random = np.random.RandomState(self.seed_value)
 
     # Rendering functions
     def draw_arena_segment(self, top, bottom, left, right, rgb_tuple):
@@ -236,14 +290,14 @@ class ForkEnv:
 
             # Draw up hall
             up_hall = self.draw_arena_segment(self.arena_constraints["y_max"],
-                                              self.arena_constraints["y_max"] - self.up_hall_size,
+                                              self.arena_constraints["y_max"] - self.hall_size,
                                               self.arena_constraints["x_min"],
                                               self.arena_constraints["x_min"] + self.start_zone_size,
                                               self.hall_colour)
             self.viewer.add_geom(up_hall)
 
             # Draw down hall
-            down_hall = self.draw_arena_segment(self.arena_constraints["y_max"] - self.up_hall_size - self.start_zone_size,
+            down_hall = self.draw_arena_segment(self.arena_constraints["y_max"] - self.hall_size - self.start_zone_size,
                                                 self.arena_constraints["y_min"],
                                                 self.arena_constraints["x_min"],
                                                 self.arena_constraints["x_min"] + self.start_zone_size,
@@ -251,16 +305,16 @@ class ForkEnv:
             self.viewer.add_geom(down_hall)
 
             # Draw right hall
-            right_hall = self.draw_arena_segment(self.arena_constraints["y_min"] + self.down_hall_size + self.start_zone_size,
-                                                 self.arena_constraints["y_min"] + self.down_hall_size,
+            right_hall = self.draw_arena_segment(self.arena_constraints["y_min"] + self.hall_size + self.start_zone_size,
+                                                 self.arena_constraints["y_min"] + self.hall_size,
                                                  self.arena_constraints["x_min"] + self.start_zone_size,
                                                  self.arena_constraints["x_max"],
                                                  self.hall_colour)
             self.viewer.add_geom(right_hall)
 
             # Draw start zone
-            start_zone = self.draw_arena_segment(self.arena_constraints["y_min"] + self.down_hall_size + self.start_zone_size,
-                                                 self.arena_constraints["y_min"] + self.down_hall_size,
+            start_zone = self.draw_arena_segment(self.arena_constraints["y_min"] + self.hall_size + self.start_zone_size,
+                                                 self.arena_constraints["y_min"] + self.hall_size,
                                                  self.arena_constraints["x_min"],
                                                  self.arena_constraints["x_min"] + self.start_zone_size,
                                                  self.start_zone_colour)

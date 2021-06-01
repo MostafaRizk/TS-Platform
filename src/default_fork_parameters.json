@@ -1,0 +1,57 @@
+{
+    "general": {
+        "learning_type": "centralised",
+        "algorithm_selected": "cma",
+        "team_type": "heterogeneous",
+        "reward_level": "team",
+        "agent_type": "nn",
+        "environment": "fork",
+        "calculate_specialisation": "False",
+        "seed": 0
+    },
+    "environment": {
+        "fork": {
+            "num_agents": 2,
+            "hall_size": 9,
+            "start_zone_size": 3,
+            "episode_length": 10,
+            "num_episodes": 5,
+        }
+    },
+    "agent": {
+        "nn": {
+            "architecture": "ffnn",
+            "bias": "False",
+            "hidden_layers": 0,
+            "hidden_units_per_layer": 4,
+            "activation_function": "tanh"
+        }
+    },
+    "algorithm": {
+        "agent_population_size": 100,
+        "rwg": {
+            "sampling_distribution": "normal",
+            "normal": {
+                "mean": 0,
+                "std": 1
+            },
+            "uniform": {
+                "min": -3,
+                "max": 3
+            }
+        },
+        "cma": {
+            "sigma": 0.2,
+            "generations": 1000,
+            "tolx": 0.001,
+            "tolfunhist": 0.0,
+            "tolflatfitness": 1000,
+            "tolfun": 0.0,
+            "logging_rate": 50,
+            "seeding_required": "True",
+            "seeding_included": "True",
+            "partial": "False",
+            "multithreading": "False"
+        }
+    }
+}

@@ -4,6 +4,7 @@ import os
 import numpy as np
 import time
 from envs.slope import SlopeEnv
+from envs.fork import ForkEnv
 
 
 class FitnessCalculator:
@@ -18,6 +19,8 @@ class FitnessCalculator:
 
         if self.parameter_dictionary["general"]["environment"] == "slope":
             self.env = SlopeEnv(parameter_filename)
+        elif self.parameter_dictionary["general"]["environment"] == "fork":
+            self.env = ForkEnv(parameter_filename)
 
         environment_name = self.parameter_dictionary['general']['environment']
         self.num_agents = self.parameter_dictionary['environment'][environment_name]['num_agents']
@@ -30,9 +33,8 @@ class FitnessCalculator:
         self.random_seed = self.parameter_dictionary['general']['seed']
         self.np_random = np.random.RandomState(self.random_seed)
 
-        #TODO: Upgrade this to work with other environments
-        self.episode_length = self.parameter_dictionary['environment']['slope']['episode_length']
-        self.num_episodes = self.parameter_dictionary['environment']['slope']['num_episodes']
+        self.episode_length = self.parameter_dictionary['environment'][environment_name]['episode_length']
+        self.num_episodes = self.parameter_dictionary['environment'][environment_name]['num_episodes']
 
     def calculate_fitness_of_agent_population(self, population, calculate_specialisation):
         """
@@ -141,7 +143,7 @@ class FitnessCalculator:
 
             # Extra computations if calculating specialisation or logging actions
             if measure_specialisation:
-                specialisation_list += [self.env.calculate_ferrante_specialisation()]
+                specialisation_list += [self.env.calculate_specialisation()]
 
             if logging:
                 #for agent_action_list in agent_action_matrix:
