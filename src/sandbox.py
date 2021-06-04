@@ -3,9 +3,10 @@ import numpy as np
 from fitness import FitnessCalculator
 from agents.nn_agent_lean import NNAgent
 
-parameter_path = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_06_01_tmaze_rwg/data/ffnn_bias_0HL_tanh.json"
+#parameter_path = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_06_01_tmaze_rwg/data/ffnn_bias_0HL_tanh.json"
+parameter_path = "default_tmaze_parameters.json"
 fitness_calculator = FitnessCalculator(parameter_path)
-model_path = "/Users/mostafa/Documents/Code/PhD/TS-Platform/src/centralised_rwg_heterogeneous_team_nn_tmaze_1_2_9_3_10_5_ffnn_True_0_0_tanh_20_normal_0_1_24.0.npy"
+model_path = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_06_01_tmaze_rwg/data/centralised_rwg_heterogeneous_team_nn_tmaze_1_2_9_3_10_1_ffnn_True_0_0_tanh_20000_normal_0_1_36.0.npy"
 full_genome = np.load(model_path)
 num_agents = 2
 agent_list = [None] * num_agents

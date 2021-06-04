@@ -12,10 +12,11 @@
     "environment": {
         "tmaze": {
             "num_agents": 2,
+            "num_obstacles_per_hall": 3,
             "hall_size": 9,
             "start_zone_size": 3,
             "episode_length": 10,
-            "num_episodes": 5,
+            "num_episodes": 5
         }
     },
     "agent": {

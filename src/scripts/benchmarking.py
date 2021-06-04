@@ -786,6 +786,12 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
 
     ###################### plot main episode/mean plots
     for i, env_name in enumerate(envs_list):
+
+        if len(envs_list) == 1:
+            axes_list = axes
+        else:
+            axes_list = axes[i]
+
         for j, arch_dict in enumerate(arch_dict_list):
 
             env_arch_tuple = (env_name, *list(arch_dict.values()))
@@ -809,7 +815,7 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
                 raise RuntimeError("Did not specify y-limits for mean plot")
 
             lims = kwargs.get('mean_lim', None)
-            axes[i][j].set_ylim(lims[0], lims[1])
+            axes_list[j].set_ylim(lims[0], lims[1])
 
             cm = plt.cm.get_cmap('RdYlGn')
             norm = colours.Normalize(vmin=0, vmax=1)
@@ -817,17 +823,17 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
 
             for score_tuple, spec_tuple in zip(all_trials_indexed, all_spec_trials_indexed):
                 colour = m.to_rgba(spec_tuple[1])
-                axes[i][j].plot(score_tuple[0], score_tuple[1], 'o', color=colour, alpha=plot_pt_alpha, markersize=3)
+                axes_list[j].plot(score_tuple[0], score_tuple[1], 'o', color=colour, alpha=plot_pt_alpha, markersize=3)
 
-            axes[i][j].plot(all_trials_mean, color='black')
+            axes_list[j].plot(all_trials_mean, color='black')
 
-            axes[i][j].tick_params(**plot_tick_params)
+            axes_list[j].tick_params(**plot_tick_params)
 
             # arch_dict_to_label(arch_dict)
             if i == len(envs_list) - 1:
-                axes[i][j].set_xlabel('$R_a(n)$,\n\n' + arch_dict_to_label(arch_dict), **plot_label_params)
+                axes_list[j].set_xlabel('$R_a(n)$,\n\n' + arch_dict_to_label(arch_dict), **plot_label_params)
             if j == 0:
-                axes[i][j].set_ylabel(env_name_title_dict[env_name] + '\n\n$S_{a,n,e}$ and $M_{a,n}$', **plot_label_params)
+                axes_list[j].set_ylabel(env_name_title_dict[env_name] + '\n\n$S_{a,n,e}$ and $M_{a,n}$', **plot_label_params)
 
     plt.subplots_adjust(left=0.2, **adjust_kwargs)
     print('Plotting part 1 png...')
@@ -859,26 +865,26 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
             raise RuntimeError("Did not specify y-limits for variance plot")
 
         lims = kwargs.get('var_lim', None)
-        axes[i][j].set_ylim(lims[0], lims[1])
+        axes_list[j].set_ylim(lims[0], lims[1])
 
         if kwargs.get('mean_lim', None) is None:
             raise RuntimeError("Did not specify x-limits for variance plot")
 
         lims = kwargs.get('mean_lim', None)
-        axes[i][j].set_xlim(lims[0], lims[1])
+        axes_list[j].set_xlim(lims[0], lims[1])
 
-        axes[i][j].tick_params(**plot_tick_params)
-        axes[i][j].tick_params(axis='x', labelsize=0)
+        axes_list[j].tick_params(**plot_tick_params)
+        axes_list[j].tick_params(axis='x', labelsize=0)
 
-        axes[i][j].plot(all_trials_mean, all_trials_std, 'o', color='mediumorchid', alpha=plot_pt_alpha,
+        axes_list[j].plot(all_trials_mean, all_trials_std, 'o', color='mediumorchid', alpha=plot_pt_alpha,
                         markersize=3)
 
-        # axes[i][j].set_xlabel('$M_{a,n}$', **plot_label_params)
-        axes[i][j].set_ylabel('$V_{a,n}$', **plot_label_params)
+        # axes_list[j].set_xlabel('$M_{a,n}$', **plot_label_params)
+        axes_list[j].set_ylabel('$V_{a,n}$', **plot_label_params)
         if i == len(envs_list) - 1:
-            axes[i][j].set_xlabel('$M_{a,n}$\n\n' + arch_dict_to_label(arch_dict), **plot_label_params)
+            axes_list[j].set_xlabel('$M_{a,n}$\n\n' + arch_dict_to_label(arch_dict), **plot_label_params)
 
-        # axes[i][j].label_outer()
+        # axes_list[j].label_outer()
 
     ##################################### Plot histograms for 2HL4HU
     j = 1
@@ -898,21 +904,21 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
             raise RuntimeError("Did not specify y-limits for histogram")
 
         lims = kwargs.get('dist_lim', None)
-        axes[i][j].set_ylim(lims[0], lims[1])
+        axes_list[j].set_ylim(lims[0], lims[1])
 
         if kwargs.get('N_bins', None) is None:
             raise RuntimeError("Did not specify bins for histogram")
 
-        axes[i][j].hist(all_trials_mean, color='dodgerblue', edgecolor='gray', log=True,
+        axes_list[j].hist(all_trials_mean, color='dodgerblue', edgecolor='gray', log=True,
                         bins=kwargs.get('N_bins', None))
-        axes[i][j].tick_params(**plot_tick_params)
-        axes[i][j].tick_params(axis='x', labelsize=0)
+        axes_list[j].tick_params(**plot_tick_params)
+        axes_list[j].tick_params(axis='x', labelsize=0)
 
-        axes[i][j].set_ylabel('', **plot_label_params)
+        axes_list[j].set_ylabel('', **plot_label_params)
         if i == len(envs_list) - 1:
-            axes[i][j].set_xlabel('$M_{a,n}$\n\n' + arch_dict_to_label(arch_dict), **plot_label_params)
+            axes_list[j].set_xlabel('$M_{a,n}$\n\n' + arch_dict_to_label(arch_dict), **plot_label_params)
 
-        # axes[i][j].label_outer()
+        # axes_list[j].label_outer()
 
     # plt.tight_layout()
     plt.subplots_adjust(left=0.2, **adjust_kwargs)
