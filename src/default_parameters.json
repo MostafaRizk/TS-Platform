@@ -60,8 +60,8 @@
             "tolflatfitness": 1000,
             "tolfun": 0.0,
             "logging_rate": 50,
-            "seeding_required": "True",
-            "seeding_included": "True",
+            "seeding_required": "False",
+            "seeding_included": "False",
             "partial": "False",
             "multithreading": "False"
         }

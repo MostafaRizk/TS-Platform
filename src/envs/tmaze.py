@@ -78,7 +78,7 @@ class TMazeEnv:
         self.num_agents = parameter_dictionary["environment"]["tmaze"]["num_agents"]
         self.episode_length = parameter_dictionary["environment"]["tmaze"]["num_episodes"]
         self.specialised_actions = 0
-        self.total_actions = 0
+        self.total_rewarded_actions = 0
         self.num_pairs = None
 
         # Rendering constants
@@ -142,10 +142,10 @@ class TMazeEnv:
         for i in range(self.num_agents):
             action_successful[i] = self.behaviour_map[agent_actions[i]](i)
 
-            if self.action_name[i] == "UP":
+            if self.action_name[agent_actions[i]] == "UP":
                 up_count += 1
 
-            elif self.action_name[i] == "DOWN":
+            elif self.action_name[agent_actions[i]] == "DOWN":
                 down_count += 1
 
         self.num_pairs = min(up_count, down_count)
@@ -159,12 +159,18 @@ class TMazeEnv:
             # If an agent did a specialist behaviour
             elif self.action_name[agent_actions[i]] == "UP" and self.get_area_from_position(self.agent_positions[i]) == "UP_HALL" and action_successful[i]:
                 rewards[i] = (2 * self.num_pairs) / up_count
-                self.specialised_actions += 1
+
+                if self.num_pairs > 0:
+                    self.specialised_actions += 1
+
                 self.total_rewarded_actions += 1
 
             elif self.action_name[agent_actions[i]] == "DOWN" and self.get_area_from_position(self.agent_positions[i]) == "DOWN_HALL" and action_successful[i]:
                 rewards[i] = (2 * self.num_pairs) / down_count
-                self.specialised_actions += 1
+
+                if self.num_pairs > 0:
+                    self.specialised_actions += 1
+
                 self.total_rewarded_actions += 1
 
         observations = self.get_agent_observations()
@@ -179,8 +185,9 @@ class TMazeEnv:
 
         self.viewer = None
         self.specialised_actions = 0
-        self.total_actions = 0
+        self.total_rewarded_actions = 0
         self.agent_positions = self.generate_agent_positions()
+        self.num_pairs = None
 
         return self.get_agent_observations()
 
@@ -191,9 +198,16 @@ class TMazeEnv:
         :param agent_id: Index of the agent in self.agent_positions
         :return:
         """
+        if self.agent_positions[agent_id][0] < self.arena_constraints["x_min"] + self.start_zone_size:
+            y_min = self.arena_constraints["y_min"]
+            y_max = self.arena_constraints["y_max"]
+        else:
+            y_min = self.arena_constraints["y_min"] + self.hall_size
+            y_max = self.arena_constraints["y_min"] + self.hall_size + self.start_zone_size
+
         new_position = (self.agent_positions[agent_id][0],
-                        np.clip(self.agent_positions[agent_id][1] + 1, self.arena_constraints["y_min"],
-                                self.arena_constraints["y_max"] - 1))
+                        np.clip(self.agent_positions[agent_id][1] + 1, y_min,
+                                y_max - 1))
 
         if new_position not in self.obstacle_coordinates:
             self.agent_positions[agent_id] = new_position
@@ -207,6 +221,13 @@ class TMazeEnv:
         :param agent_id: Index of the agent in self.agent_positions
         :return:
         """
+        if self.agent_positions[agent_id][0] < self.arena_constraints["x_min"] + self.start_zone_size:
+            y_min = self.arena_constraints["y_min"]
+            y_max = self.arena_constraints["y_max"]
+        else:
+            y_min = self.arena_constraints["y_min"] + self.hall_size
+            y_max = self.arena_constraints["y_min"] + self.hall_size + self.start_zone_size
+
         new_position = (self.agent_positions[agent_id][0],
                         np.clip(self.agent_positions[agent_id][1] - 1, self.arena_constraints["y_min"],
                                 self.arena_constraints["y_max"] - 1))
@@ -223,9 +244,17 @@ class TMazeEnv:
         :param agent_id: Index of the agent in self.agent_positions
         :return:
         """
-        new_position = (np.clip(self.agent_positions[agent_id][0] + 1,
-                                self.arena_constraints["x_min"],
-                                self.arena_constraints["x_max"] - 1),
+        x_min = self.arena_constraints["x_min"]
+
+        if self.agent_positions[agent_id][1] >= self.arena_constraints["y_min"] + self.hall_size + self.start_zone_size or \
+                self.agent_positions[agent_id][1] < self.arena_constraints["y_min"] + self.hall_size:
+
+            x_max = self.arena_constraints["x_min"] + self.start_zone_size
+
+        else:
+            x_max = self.arena_constraints["x_max"]
+
+        new_position = (np.clip(self.agent_positions[agent_id][0] + 1, x_min, x_max-1),
                         self.agent_positions[agent_id][1])
 
         if new_position not in self.obstacle_coordinates:
@@ -240,8 +269,17 @@ class TMazeEnv:
         :param agent_id: Index of the agent in self.agent_positions
         :return:
         """
-        new_position = (np.clip(self.agent_positions[agent_id][0] - 1, self.arena_constraints["x_min"],
-                                self.arena_constraints["x_max"] - 1),
+        x_min = self.arena_constraints["x_min"]
+
+        if self.agent_positions[agent_id][1] >= self.arena_constraints["y_min"] + self.hall_size + self.start_zone_size or \
+                self.agent_positions[agent_id][1] < self.arena_constraints["y_min"] + self.hall_size:
+
+            x_max = self.arena_constraints["x_min"] + self.start_zone_size
+
+        else:
+            x_max = self.arena_constraints["x_max"]
+
+        new_position = (np.clip(self.agent_positions[agent_id][0] - 1, x_min, x_max - 1),
                         self.agent_positions[agent_id][1])
 
         if new_position not in self.obstacle_coordinates:
@@ -310,7 +348,10 @@ class TMazeEnv:
             return "START_ZONE"
 
     def calculate_specialisation(self):
-        return [self.specialised_actions / self.total_actions]
+        if self.total_rewarded_actions == 0:
+            return 0
+
+        return [self.specialised_actions / self.total_rewarded_actions]
 
     def reset_rng(self):
         self.np_random = np.random.RandomState(self.seed_value)

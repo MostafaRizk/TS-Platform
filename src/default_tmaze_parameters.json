@@ -7,7 +7,7 @@
         "agent_type": "nn",
         "environment": "tmaze",
         "calculate_specialisation": "False",
-        "seed": 0
+        "seed": 1
     },
     "environment": {
         "tmaze": {
@@ -22,14 +22,14 @@
     "agent": {
         "nn": {
             "architecture": "ffnn",
-            "bias": "False",
+            "bias": "True",
             "hidden_layers": 0,
             "hidden_units_per_layer": 4,
             "activation_function": "tanh"
         }
     },
     "algorithm": {
-        "agent_population_size": 100,
+        "agent_population_size": 1000,
         "rwg": {
             "sampling_distribution": "normal",
             "normal": {
@@ -43,14 +43,14 @@
         },
         "cma": {
             "sigma": 0.2,
-            "generations": 1000,
+            "generations": 100,
             "tolx": 0.001,
             "tolfunhist": 0.0,
             "tolflatfitness": 1000,
             "tolfun": 0.0,
             "logging_rate": 50,
-            "seeding_required": "True",
-            "seeding_included": "True",
+            "seeding_required": "False",
+            "seeding_included": "False",
             "partial": "False",
             "multithreading": "False"
         }
