@@ -17,8 +17,8 @@ class TMazeEnv:
 
         parameter_dictionary = json.loads(open(parameter_filename).read())
 
-        self.seed_value = parameter_dictionary['general']['seed']
-        #self.seed_value = parameter_dictionary['environment']['tmaze']['env_seed']
+        # self.seed_value = parameter_dictionary['general']['seed']
+        self.seed_value = parameter_dictionary['environment']['tmaze']['env_seed']
         self.np_random = np.random.RandomState(self.seed_value)
 
         # Environment dimensions
@@ -77,7 +77,11 @@ class TMazeEnv:
         self.agent_width = 0.8
         self.obstacle_width = 1.0
         self.num_agents = parameter_dictionary["environment"]["tmaze"]["num_agents"]
-        self.episode_length = parameter_dictionary["environment"]["tmaze"]["num_episodes"]
+        self.num_episodes = parameter_dictionary["environment"]["tmaze"]["num_episodes"]
+
+        if self.num_episodes > 1:
+            raise RuntimeError("All episodes are identical in TMaze. Modify the reset function to add this functionality")
+
         self.specialised_actions = 0
         self.total_rewarded_actions = 0
         self.num_pairs = None
