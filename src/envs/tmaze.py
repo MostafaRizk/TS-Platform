@@ -18,6 +18,7 @@ class TMazeEnv:
         parameter_dictionary = json.loads(open(parameter_filename).read())
 
         self.seed_value = parameter_dictionary['general']['seed']
+        #self.seed_value = parameter_dictionary['environment']['tmaze']['env_seed']
         self.np_random = np.random.RandomState(self.seed_value)
 
         # Environment dimensions

@@ -43,7 +43,8 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
                    'tolx': self.parameter_dictionary['algorithm']['cma']['tolx'],
                    'tolfunhist': self.parameter_dictionary['algorithm']['cma']['tolfunhist'],
                    'tolflatfitness': self.parameter_dictionary['algorithm']['cma']['tolflatfitness'],
-                   'tolfun': self.parameter_dictionary['algorithm']['cma']['tolfun']}
+                   'tolfun': self.parameter_dictionary['algorithm']['cma']['tolfun'],
+                   'tolstagnation': self.parameter_dictionary['algorithm']['cma']['tolstagnation']}
 
         # Initialise cma with a mean genome and sigma
         seed_genome, seed_fitness = self.get_seed_genome()
