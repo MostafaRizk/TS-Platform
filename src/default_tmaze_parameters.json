@@ -17,7 +17,8 @@
             "start_zone_size": 3,
             "episode_length": 10,
             "num_episodes": 1,
-            "env_seed": 1
+            "env_seed": 1,
+            "reward_structure": "sparse"
         }
     },
     "agent": {
