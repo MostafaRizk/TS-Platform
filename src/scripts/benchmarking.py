@@ -93,7 +93,11 @@ class BenchmarkPlotter:
             all_trials += [episode_scores]
 
             # Make a list of lists. For each specialisation metric, there is a list of scores for all episodes
-            raw_spec_scores = row.split(",")[-num_spec_scores:]
+            if num_spec_scores == 1:
+                raw_spec_scores = [row.split(",")[-1]]
+            else:
+                raw_spec_scores = row.split(",")[-num_spec_scores:]
+
             raw_spec_scores = [[float(raw_spec_scores[i + j]) for i in range(0, len(raw_spec_scores), len(self.spec_score_keys))] for j in range(len(self.spec_score_keys))]
 
             # Take the average of all the episodes for each specialisation metric and store them in all_spec_scores

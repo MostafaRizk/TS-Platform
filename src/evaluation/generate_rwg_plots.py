@@ -4,7 +4,8 @@ from scripts.benchmarking import plot_envs_vs_NN_arch
 
 
 def generate_plots(genome_directory, env, metric=None):
-    biases = [False, True]
+    #biases = [False, True]
+    biases = [True]
     if metric is None:
         if env == "slope":
             metrics = ["R_coop", "R_coop_eff", "R_spec"]

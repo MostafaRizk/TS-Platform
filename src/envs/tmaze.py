@@ -60,18 +60,7 @@ class TMazeEnv:
         self.num_obstacles_per_hall = parameter_dictionary["environment"]["tmaze"]["num_obstacles_per_hall"]
         self.obstacle_coordinates = {}
 
-        # Place obstacles in each hallway
-        for i, hall in enumerate(["UP", "DOWN", "RIGHT"]):
-            for j in range(self.num_obstacles_per_hall):
-                obstacle_placed = False
-
-                while not obstacle_placed:
-                    candidate_position = self.generate_obstacle_position(hall)
-
-                    # Make sure there isn't already an obstacle in that position
-                    if candidate_position not in self.obstacle_coordinates:
-                        self.obstacle_coordinates[candidate_position] = True
-                        obstacle_placed = True
+        self.place_obstacles()
 
         # Constants and variables
         self.agent_width = 0.8
@@ -356,6 +345,28 @@ class TMazeEnv:
         x = self.np_random.randint(low=self.obstacle_generation_constraints[hall]["x_min"], high=self.obstacle_generation_constraints[hall]["x_max"])
         y = self.np_random.randint(low=self.obstacle_generation_constraints[hall]["y_min"], high=self.obstacle_generation_constraints[hall]["y_max"])
         return x, y
+
+    def place_obstacles(self):
+        # Place obstacles in each hallway
+        # Uncomment for random obstacles
+        '''
+        for i, hall in enumerate(["UP", "DOWN", "RIGHT"]):
+            for j in range(self.num_obstacles_per_hall):
+                obstacle_placed = False
+
+                while not obstacle_placed:
+                    candidate_position = self.generate_obstacle_position(hall)
+
+                    # Make sure there isn't already an obstacle in that position
+                    if candidate_position not in self.obstacle_coordinates:
+                        self.obstacle_coordinates[candidate_position] = True
+                        obstacle_placed = True
+        '''
+        # Uncomment for hardcoded obstacles
+        self.obstacle_coordinates = {(0, 3), (1, 5), (-1, 5), (3, 0), (5, 1), (5, -1), (0, -3), (1, -5), (-1, -5)}
+
+        if self.hall_size != 9 or self.num_obstacles_per_hall != 3 or self.start_zone_size != 3:
+            raise RuntimeError("Currently using hard-coded obstacles. Please modify the place_obstacles method to allow random obstacles")
 
     def get_agent_observations(self):
         observations = [[0, 0]] * self.num_agents
