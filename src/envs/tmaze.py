@@ -74,12 +74,9 @@ class TMazeEnv:
             raise RuntimeError("All episodes are identical in TMaze. Modify the reset function to add this functionality")
 
         if self.reward_structure == "sparse":
-            if self.episode_length != 10 or self.seed_value != 1 or self.hall_size != 9 or self.start_zone_size != 3 or self.num_obstacles_per_hall != 3:
-                raise RuntimeError("Sparse rewards may not work for this configuration")
-            else:
-                self.top_goal = 9
-                self.bottom_goal = -9
-                self.right_goal = 10
+            self.top_goal = self.arena_constraints["y_max"] - self.hall_size//2
+            self.bottom_goal = self.arena_constraints["y_min"] + self.hall_size//2
+            self.right_goal = self.arena_constraints["x_max"] - self.hall_size//2
 
         self.specialised_actions = 0
         self.total_rewarded_actions = 0
@@ -157,10 +154,10 @@ class TMazeEnv:
 
             # Count the agents at the top/bottom for calculating sparse rewards
             if self.reward_structure == "sparse":
-                if self.agent_positions[i][1] == self.top_goal:
+                if self.agent_positions[i][1] >= self.top_goal:
                     num_agents_at_top += 1
 
-                if self.agent_positions[i][1] == self.bottom_goal:
+                if self.agent_positions[i][1] <= self.bottom_goal:
                     num_agents_at_bottom += 1
 
         num_pairs = min(up_count, down_count)
@@ -169,14 +166,18 @@ class TMazeEnv:
         for i in range(self.num_agents):
             # If an agent did a generalist behaviour
             if self.action_name[agent_actions[i]] == "RIGHT" and self.get_area_from_position(self.agent_positions[i]) == "RIGHT_HALL" and action_successful[i]:
-                if self.reward_structure == "dense":
+                if self.reward_structure == "dense" or (self.reward_structure == "sparse" and self.agent_positions[i][0] >= self.right_goal):
                     rewards[i] = 1
+
                 self.total_rewarded_actions += 1
 
             # If an agent did a specialist behaviour
             elif self.action_name[agent_actions[i]] == "UP" and self.get_area_from_position(self.agent_positions[i]) == "UP_HALL" and action_successful[i]:
                 if self.reward_structure == "dense":
                     rewards[i] = (2 * num_pairs) / up_count
+
+                elif self.reward_structure == "sparse" and self.agent_positions[i][1] >= self.top_goal:
+                    rewards[i] = (2 * num_finished_pairs) / num_agents_at_top
 
                 if num_pairs > 0:
                     self.specialised_actions += 1
@@ -187,23 +188,13 @@ class TMazeEnv:
                 if self.reward_structure == "dense":
                     rewards[i] = (2 * num_pairs) / down_count
 
+                elif self.reward_structure == "sparse" and self.agent_positions[i][1] <= self.bottom_goal:
+                    rewards[i] = (2 * num_finished_pairs) / num_agents_at_bottom
+
                 if num_pairs > 0:
                     self.specialised_actions += 1
 
                 self.total_rewarded_actions += 1
-
-            if self.reward_structure == "sparse":
-                if self.agent_positions[i][0] == self.right_goal:
-                    rewards[i] = float(self.right_goal - self.start_zone_size//2)
-
-                elif self.agent_positions[i][1] == self.top_goal:
-                    # Num tiles traveled with +2 for each agent
-                    rewardable_distance = self.top_goal - self.start_zone_size//2
-                    rewards[i] = float(rewardable_distance * 2 * num_finished_pairs / num_agents_at_top)
-
-                elif self.agent_positions[i][1] == self.bottom_goal:
-                    rewardable_distance = abs(self.bottom_goal) - self.start_zone_size // 2
-                    rewards[i] = float(rewardable_distance * 2 * num_finished_pairs / num_agents_at_bottom)
 
         observations = self.get_agent_observations()
 
@@ -260,8 +251,8 @@ class TMazeEnv:
             y_max = self.arena_constraints["y_min"] + self.hall_size + self.start_zone_size
 
         new_position = (self.agent_positions[agent_id][0],
-                        np.clip(self.agent_positions[agent_id][1] - 1, self.arena_constraints["y_min"],
-                                self.arena_constraints["y_max"] - 1))
+                        np.clip(self.agent_positions[agent_id][1] - 1, y_min,
+                                y_max - 1))
 
         if new_position not in self.obstacle_coordinates:
             self.agent_positions[agent_id] = new_position
@@ -363,9 +354,9 @@ class TMazeEnv:
                         obstacle_placed = True
         '''
         # Uncomment for hardcoded obstacles
-        self.obstacle_coordinates = {(0, 3), (1, 5), (-1, 5), (3, 0), (5, 1), (5, -1), (0, -3), (1, -5), (-1, -5)}
+        self.obstacle_coordinates = {(0, 3), (3, 0), (0, -3)}
 
-        if self.hall_size != 9 or self.num_obstacles_per_hall != 3 or self.start_zone_size != 3:
+        if self.num_obstacles_per_hall != 1 or (self.start_zone_size + self.hall_size) < 3:
             raise RuntimeError("Currently using hard-coded obstacles. Please modify the place_obstacles method to allow random obstacles")
 
     def get_agent_observations(self):
