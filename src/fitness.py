@@ -36,6 +36,8 @@ class FitnessCalculator:
         self.episode_length = self.parameter_dictionary['environment'][environment_name]['episode_length']
         self.num_episodes = self.parameter_dictionary['environment'][environment_name]['num_episodes']
 
+        self.learning_type = self.parameter_dictionary['general']['learning_type']
+
     def calculate_fitness_of_agent_population(self, population, calculate_specialisation):
         """
         Takes a population of Agent objects, places each group in a team and calculates the fitnesses of each
@@ -44,6 +46,8 @@ class FitnessCalculator:
         @return: List containing fitness value of each Agent in the population
         """
 
+        # TODO: Modify to support fully centralised learning
+        assert self.learning_type != "fully-centralised", "This method does not currently support fully centralised learning"
         assert len(population) % self.num_agents == 0, "Population needs to be divisible by the number of agents per team"
 
         fitnesses = []
@@ -63,7 +67,7 @@ class FitnessCalculator:
 
         return fitnesses, specialisations
 
-    def calculate_fitness(self, agent_list, render=False, time_delay=0, measure_specialisation=False,
+    def calculate_fitness(self, controller_list, render=False, time_delay=0, measure_specialisation=False,
                           logging=False, logfilename=None, render_mode="human"):
         """
         Calculates the fitness of a team of agents. Fitness is calculated
@@ -72,7 +76,7 @@ class FitnessCalculator:
         times (according to the parameter file). This is done without resetting the random number generator so that
         there are new initial positions for agents and resources in each simulation run.
 
-        @param agent_list: List of Agent objects
+        @param controller_list: List of controller objects. One per agent unless fully centralised.
         @param render: Boolean indicating whether or not simulations will be visualised
         @param time_delay: Integer indicating how many seconds delay (for smoother visualisation)
         @param measure_specialisation: Boolean indicating whether or not specialisation is being measured
@@ -84,13 +88,16 @@ class FitnessCalculator:
         specialisation observed for the team for each episode)
         """
 
-        assert len(agent_list) == self.num_agents, "Agents passed to function do not match parameter file"
+        if self.learning_type != "fully-centralised":
+            assert len(controller_list) == self.num_agents, "Agents passed to function do not match parameter file"
+        else:
+            assert len(controller_list) == 1, "Must only have 1 controller for fully centralised learning"
 
         # Initialise major variables
         file_reader = None
-        fitness_matrix = [[0]*self.num_episodes for i in range(len(agent_list))]
+        fitness_matrix = [[0]*self.num_episodes for i in range(self.num_agents)]
         specialisation_list = []
-        agent_copies = [copy.deepcopy(agent) for agent in agent_list]
+        controller_copies = [copy.deepcopy(controller) for controller in controller_list]
         video_frames = []
         self.env.reset_rng()
 
@@ -111,8 +118,8 @@ class FitnessCalculator:
             observations = self.env.reset()
 
             # Initialise variables
-            agent_action_matrix = [[-1]*self.episode_length for i in range(len(agent_list))]
-            current_episode_reward_matrix = [[0]*self.episode_length for i in range(len(agent_list))]
+            agent_action_matrix = [[-1]*self.episode_length for _ in range(self.num_agents)]
+            current_episode_reward_matrix = [[0]*self.episode_length for _ in range(self.num_agents)]
 
             # Do 1 run of the simulation
             for t in range(self.episode_length):
@@ -121,14 +128,30 @@ class FitnessCalculator:
                 elif render:
                     self.env.render(mode=render_mode)
 
-                robot_actions = []
+                agent_actions = []
 
-                for i in range(len(observations)):
-                    robot_actions += [agent_copies[i].act(observations[i])]
-                    agent_action_matrix[i][t] = [robot_actions[-1]]
+                if self.learning_type != "fully-centralised":
+                    for i in range(len(observations)):
+                        agent_actions += [controller_copies[i].act(observations[i])]
+                        agent_action_matrix[i][t] = [agent_actions[-1]]
+
+                else:
+                    full_observation = []
+
+                    for obs in observations:
+                        full_observation += obs
+
+                    activation_values = controller_copies[0].get_all_activation_values(full_observation)
+
+                    for i in range(len(observations)):
+                        start_index = i * self.num_agents
+                        end_index = (i+1) * self.num_agents
+                        agent_actions += [activation_values[start_index:end_index].argmax()]
+                        agent_action_matrix[i][t] = [agent_actions[i]]
+
 
                 # The environment changes according to all their actions
-                observations, rewards = self.env.step(robot_actions)
+                observations, rewards = self.env.step(agent_actions)
 
                 # Calculate how much of the rewards go to each agent type
                 for i in range(len(rewards)):
@@ -139,7 +162,7 @@ class FitnessCalculator:
                     time.sleep(time_delay)
 
             # Reset agent networks
-            agent_copies = [copy.deepcopy(agent) for agent in agent_list]
+            controller_copies = [copy.deepcopy(controller) for controller in controller_list]
 
             # Extra computations if calculating specialisation or logging actions
             if measure_specialisation:

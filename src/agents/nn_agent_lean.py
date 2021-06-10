@@ -53,9 +53,15 @@ class NNAgent(Agent):
     def get_num_weights(self):
         return self.net.get_num_weights()
 
-    def act(self, observation):
+    def act(self, observation, num_agents=1):
         activation_values = self.net.forward(observation)
-        action = activation_values.argmax()
+
+        if num_agents == 1:
+            action = activation_values.argmax()
+
+        elif num_agents > 1:
+
+
         return action
 
     def get_all_activation_values(self, observation):
