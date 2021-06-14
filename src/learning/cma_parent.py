@@ -12,7 +12,8 @@ from learning.learner_parent import Learner
 from glob import glob
 from io import StringIO
 
-from learning.rwg import RWGLearner
+from learning.rwg_centralised import CentralisedRWGLearner
+from learning.rwg_fully_centralised import FullyCentralisedRWGLearner
 
 
 class CMALearner(Learner):
@@ -84,7 +85,12 @@ class CMALearner(Learner):
         else:
             # Set mini-rwg parameters
             temporary_parameter_dictionary = copy.deepcopy(self.parameter_dictionary)
-            temporary_parameter_dictionary['general']['learning_type'] = "centralised"
+
+            if self.learning_type == "fully-centralised":
+                temporary_parameter_dictionary['general']['learning_type'] = "fully-centralised"
+            else:
+                temporary_parameter_dictionary['general']['learning_type'] = "centralised"
+
             temporary_parameter_dictionary['general']['algorithm_selected'] = "rwg"
 
             env_name = temporary_parameter_dictionary['general']['environment']
@@ -104,7 +110,13 @@ class CMALearner(Learner):
 
             # Generate seed genome
             temporary_calculator = FitnessCalculator(temporary_parameter_file)
-            learner = RWGLearner(temporary_calculator)
+
+            if self.learning_type != "fully-centralised":
+                learner = CentralisedRWGLearner(temporary_calculator)
+
+            else:
+                learner = FullyCentralisedRWGLearner(temporary_calculator)
+
             seed_genome, seed_fitness = learner.learn(logging=False)
 
             # Delete temporary paramter file

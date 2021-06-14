@@ -40,30 +40,43 @@ class FitnessCalculator:
 
     def calculate_fitness_of_agent_population(self, population, calculate_specialisation):
         """
-        Takes a population of Agent objects, places each group in a team and calculates the fitnesses of each
+        Takes a population of controller objects, if each controller is an agent of the environment then places each
+        group of agents in a team and calculates the fitnesses of each. If each controller is a team, then calculates
+        the fitness of each agent on that team
 
         @param population: List of Agent objects
-        @return: List containing fitness value of each Agent in the population
+        @return: List containing fitness value of each agent
         """
 
-        # TODO: Modify to support fully centralised learning
-        assert self.learning_type != "fully-centralised", "This method does not currently support fully centralised learning"
-        assert len(population) % self.num_agents == 0, "Population needs to be divisible by the number of agents per team"
+        if self.learning_type != "fully-centralised":
+            assert len(population) % self.num_agents == 0, "Population needs to be divisible by the number of agents per team"
 
         fitnesses = []
         specialisations = []
         agents_per_team = self.num_agents
 
-        for i in range(0, len(population), agents_per_team):
-            agent_list = [population[i+j] for j in range(0, agents_per_team)]
-            results_dict = self.calculate_fitness(agent_list, measure_specialisation=calculate_specialisation)
-            fitness_matrix = results_dict['fitness_matrix']
+        if self.learning_type != "fully-centralised":
+            for i in range(0, len(population), agents_per_team):
+                agent_list = [population[i+j] for j in range(0, agents_per_team)]
+                results_dict = self.calculate_fitness(agent_list, measure_specialisation=calculate_specialisation)
+                fitness_matrix = results_dict['fitness_matrix']
 
-            # Specialisation of the team calculated through several measures. List of lists. One list of measures for each episode
-            specialisation_measures = results_dict["specialisation_list"]
+                # Specialisation of the team calculated through several measures. List of lists. One list of measures for each episode
+                specialisation_measures = results_dict["specialisation_list"]
 
-            fitnesses += fitness_matrix
-            specialisations += [specialisation_measures]
+                fitnesses += fitness_matrix
+                specialisations += [specialisation_measures]
+
+        else:
+            for controller in population:
+                results_dict = self.calculate_fitness([controller], measure_specialisation=calculate_specialisation)
+                fitness_matrix = results_dict['fitness_matrix']
+
+                # Specialisation of the team calculated through several measures. List of lists. One list of measures for each episode
+                specialisation_measures = results_dict["specialisation_list"]
+
+                fitnesses += fitness_matrix
+                specialisations += [specialisation_measures]
 
         return fitnesses, specialisations
 
@@ -141,14 +154,10 @@ class FitnessCalculator:
                     for obs in observations:
                         full_observation += obs
 
-                    activation_values = controller_copies[0].get_all_activation_values(full_observation)
+                    agent_actions = controller_copies[0].act(full_observation, self.num_agents)
 
                     for i in range(len(observations)):
-                        start_index = i * self.num_agents
-                        end_index = (i+1) * self.num_agents
-                        agent_actions += [activation_values[start_index:end_index].argmax()]
                         agent_action_matrix[i][t] = [agent_actions[i]]
-
 
                 # The environment changes according to all their actions
                 observations, rewards = self.env.step(agent_actions)

@@ -1,0 +1,61 @@
+{
+    "general": {
+        "learning_type": "fully-centralised",
+        "algorithm_selected": "cma",
+        "team_type": "heterogeneous",
+        "reward_level": "team",
+        "agent_type": "nn",
+        "environment": "tmaze",
+        "calculate_specialisation": "False",
+        "seed": 1
+    },
+    "environment": {
+        "tmaze": {
+            "num_agents": 2,
+            "num_obstacles_per_hall": 1,
+            "hall_size": 9,
+            "start_zone_size": 3,
+            "episode_length": 10,
+            "num_episodes": 1,
+            "env_seed": 1,
+            "reward_structure": "dense"
+        }
+    },
+    "agent": {
+        "nn": {
+            "architecture": "ffnn",
+            "bias": "True",
+            "hidden_layers": 0,
+            "hidden_units_per_layer": 4,
+            "activation_function": "tanh"
+        }
+    },
+    "algorithm": {
+        "agent_population_size": 100,
+        "rwg": {
+            "sampling_distribution": "normal",
+            "normal": {
+                "mean": 0,
+                "std": 1
+            },
+            "uniform": {
+                "min": -3,
+                "max": 3
+            }
+        },
+        "cma": {
+            "sigma": 0.2,
+            "generations": 1000,
+            "tolx": 0.001,
+            "tolfunhist": 0.0,
+            "tolflatfitness": 1000,
+            "tolfun": 0.0,
+            "tolstagnation": 1000,
+            "logging_rate": 50,
+            "seeding_required": "False",
+            "seeding_included": "False",
+            "partial": "False",
+            "multithreading": "False"
+        }
+    }
+}

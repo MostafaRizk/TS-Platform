@@ -13,7 +13,7 @@ from learning.cma_parent import CMALearner
 from glob import glob
 from io import StringIO
 
-from learning.rwg import RWGLearner
+from learning.rwg_centralised import CentralisedRWGLearner
 
 
 def learn_agent(learner, index, fitness_calculator, insert_representative_genomes_in_population, remove_representative_fitnesses, convert_genomes_to_agents, calculate_specialisation):
@@ -100,7 +100,7 @@ class DecentralisedCMALearner(DecentralisedLearner, CMALearner):
 
                 for index, learner in enumerate(learners):
                     if not learner.stop():
-                        parallel_threads += [learn_in_parallel.remote(learner, index, self.fitness_calculator, self.insert_representative_genomes_in_population, self.remove_representative_fitnesses, self.convert_genomes_to_agents, self.calculate_specialisation)]
+                        parallel_threads += [learn_in_parallel.remote(learner, index, self.fitness_calculator, self.insert_representative_genomes_in_population, self.remove_representative_fitnesses, self.convert_genomes_to_controllers, self.calculate_specialisation)]
 
                     elif not stopping_reasons[index]:
                         # Log reason for stopping
@@ -127,7 +127,7 @@ class DecentralisedCMALearner(DecentralisedLearner, CMALearner):
             else:
                 for index, learner in enumerate(learners):
                     if not learner.stop():
-                        learners[index], self.representative_genomes[index], best_fitnesses[index] = learn_agent(learner, index, self.fitness_calculator, self.insert_representative_genomes_in_population, self.remove_representative_fitnesses, self.convert_genomes_to_agents, self.calculate_specialisation)
+                        learners[index], self.representative_genomes[index], best_fitnesses[index] = learn_agent(learner, index, self.fitness_calculator, self.insert_representative_genomes_in_population, self.remove_representative_fitnesses, self.convert_genomes_to_controllers, self.calculate_specialisation)
 
                         # Log best genome for this learner
                         if generation % self.logging_rate == 0:

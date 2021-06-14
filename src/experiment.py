@@ -4,9 +4,11 @@ import json
 
 from fitness import FitnessCalculator
 from learning.learner_parent import Learner
-from learning.rwg import RWGLearner
+from learning.rwg_centralised import CentralisedRWGLearner
+from learning.rwg_fully_centralised import FullyCentralisedRWGLearner
 from learning.cma_centralised import CentralisedCMALearner
 from learning.cma_decentralised import DecentralisedCMALearner
+from learning.cma_fully_centralised import FullyCentralisedCMALearner
 
 
 def run_experiment(parameter_filename):
@@ -14,12 +16,21 @@ def run_experiment(parameter_filename):
     fitness_calculator = FitnessCalculator(parameter_filename)
 
     if parameter_dictionary["general"]["algorithm_selected"] == "rwg":
-        learner = RWGLearner(fitness_calculator)
+        if parameter_dictionary["general"]["learning_type"] == "centralised":
+            learner = CentralisedRWGLearner(fitness_calculator)
+        elif parameter_dictionary["general"]["learning_type"] == "fully-centralised":
+            learner = FullyCentralisedRWGLearner(fitness_calculator)
+        else:
+            raise RuntimeError("Invalid learning type for rwg")
+
         genome, fitness = learner.learn()
 
     elif parameter_dictionary["general"]["algorithm_selected"] == "cma":
 
         if parameter_dictionary["algorithm"]["cma"]["seeding_included"] == "True":
+            if parameter_dictionary["general"]["learning_type"] == "fully-centralised":
+                raise RuntimeError("Seeding included is not yet supported for fully centralised")
+
             # Load default rwg parameters
             default_rwg_parameter_filename = 'default_rwg_parameters_individual.json'
             rwg_parameter_dictionary = json.loads(open(default_rwg_parameter_filename).read())
@@ -50,7 +61,7 @@ def run_experiment(parameter_filename):
 
             # Create rwg json file and load to fitness calculator
             parameters_in_name = Learner.get_core_params_in_model_name(rwg_parameter_dictionary)
-            parameters_in_name += RWGLearner.get_additional_params_in_model_name(rwg_parameter_dictionary)
+            parameters_in_name += CentralisedRWGLearner.get_additional_params_in_model_name(rwg_parameter_dictionary)
             new_rwg_parameter_filename = "_".join([str(param) for param in parameters_in_name]) + ".json"
             f = open(new_rwg_parameter_filename, "w")
             rwg_dictionary_string = json.dumps(rwg_parameter_dictionary, indent=4)
@@ -59,7 +70,7 @@ def run_experiment(parameter_filename):
             rwg_fitness_calculator = FitnessCalculator(new_rwg_parameter_filename)
 
             # Seeding
-            learner1 = RWGLearner(rwg_fitness_calculator)
+            learner1 = CentralisedRWGLearner(rwg_fitness_calculator)
             genome1, fitness1 = learner1.learn()
 
             # Learning
@@ -77,6 +88,10 @@ def run_experiment(parameter_filename):
 
             elif parameter_dictionary["general"]["learning_type"] == "decentralised":
                 learner = DecentralisedCMALearner(fitness_calculator)
+                genomes, fitnesses = learner.learn()
+
+            elif parameter_dictionary["general"]["learning_type"] == "fully-centralised":
+                learner = FullyCentralisedCMALearner(fitness_calculator)
                 genomes, fitnesses = learner.learn()
 
 

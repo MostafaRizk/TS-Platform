@@ -54,15 +54,29 @@ class NNAgent(Agent):
         return self.net.get_num_weights()
 
     def act(self, observation, num_agents=1):
+        """
+        Returns an action given an observation. If the network represents a team of agents, returns a list of actions
+        and should receive a concatenated list of all their observations.
+
+        @param observation: Observation of all agents represented by the network
+        @param num_agents: Number of agents represented by the network
+        @return: A single action or a list of actions
+        """
         activation_values = self.net.forward(observation)
 
         if num_agents == 1:
             action = activation_values.argmax()
+            return action
 
         elif num_agents > 1:
+            actions = [None] * num_agents
 
+            for i in range(num_agents):
+                start_index = i * num_agents
+                end_index = (i + 1) * num_agents
+                actions[i] = activation_values[start_index:end_index].argmax()
 
-        return action
+            return actions
 
     def get_all_activation_values(self, observation):
         return self.net.forward(observation)

@@ -1,8 +1,7 @@
 from learning.learner_parent import Learner
-from operator import add
 
 
-class CentralisedLearner(Learner):
+class FullyCentralisedLearner(Learner):
     def __init__(self, calculator):
         super().__init__(calculator)
 

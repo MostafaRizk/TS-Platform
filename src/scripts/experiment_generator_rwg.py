@@ -5,7 +5,7 @@ import argparse
 
 import numpy as np
 
-from learning.rwg import RWGLearner
+from learning.rwg_centralised import CentralisedRWGLearner
 from learning.learner_parent import Learner
 from glob import glob
 
@@ -41,7 +41,7 @@ def generate_rwg_experiments(experiment_directory, core_parameter_filename, lear
             parameter_dictionary["general"]["seed"] = new_seed
             parameters_in_filename = []
             parameters_in_filename += Learner.get_core_params_in_model_name(parameter_dictionary)
-            parameters_in_filename += RWGLearner.get_additional_params_in_model_name(parameter_dictionary)
+            parameters_in_filename += CentralisedRWGLearner.get_additional_params_in_model_name(parameter_dictionary)
             filename = "_".join([str(param) for param in parameters_in_filename]) + ".json"
             f = open(f"{experiment_directory}/data/{filename}", "w")
             dictionary_string = json.dumps(parameter_dictionary, indent=4)
