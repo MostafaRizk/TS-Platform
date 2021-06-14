@@ -111,15 +111,7 @@ get_video_from_model(model_name="/Users/mostafa/Documents/Code/PhD/TS-Platform/r
 '''
 
 # Slick generalists
-'''get_video_from_model(model_name="/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/data/centralised_cma_heterogeneous_individual_nn_slope_799981517_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_100_5_False_rnn_False_1_4_tanh_100_0.2_1000_0.001_0.0_1000_0.0_5606.12_final.npy",
+get_video_from_model(model_name="/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/data/centralised_cma_heterogeneous_individual_nn_slope_799981517_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_100_5_False_rnn_False_1_4_tanh_100_0.2_1000_0.001_0.0_1000_0.0_5606.12_final.npy",
                       parameter_filename="/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/data/centralised_cma_heterogeneous_individual_nn_slope_799981517_2_4_1_4_8_4_1_3_7_1_3.0_0.2_2_1000_100_5_False_rnn_False_1_4_tanh_100_0.2_1000_0.001_0.0_1000_0.0.json",
                      save_directory=save_directory,
                      filename="slick_generalists.gif")
-'''
-
-#8-agent team
-"/Users/mostafa/Desktop/Centralised_8_agents.mov"
-get_video_from_model(model_name="/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_equal_games_per_learner_more_samples/data/centralised_cma_heterogeneous_team_nn_slope_630311760_8_16_1_4_8_16_1_3_7_1_3.0_0.2_2_1000_100_5_False_rnn_False_1_4_tanh_400_0.2_1000_0.001_0.0_1000_0.0_41139.2_final.npy",
-                      parameter_filename="/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_equal_games_per_learner_more_samples/data/centralised_cma_heterogeneous_team_nn_slope_630311760_8_16_1_4_8_16_1_3_7_1_3.0_0.2_2_1000_100_5_False_rnn_False_1_4_tanh_400_0.2_1000_0.001_0.0_1000_0.0.json",
-                     save_directory=save_directory,
-                     filename="centralised_8.gif")
