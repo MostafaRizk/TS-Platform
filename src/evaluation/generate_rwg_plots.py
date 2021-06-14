@@ -27,9 +27,9 @@ def generate_plots(genome_directory, env, metric=None):
                 num_episodes = 20
 
             elif env == "tmaze":
-                N_bins = [n for n in range(0, 40, 5)]
-                mean_lim = (0, 40)
-                var_lim = (0, 40)
+                N_bins = [n for n in range(0, 15, 5)]
+                mean_lim = (0, 15)
+                var_lim = (0, 15)
                 dist_lim = (10 ** -1, 10000)
                 num_samples = 10000
                 num_episodes = 1
