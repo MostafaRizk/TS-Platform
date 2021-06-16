@@ -14,6 +14,9 @@ class NNAgent(Agent):
 
         self.parameter_dictionary = json.loads(open(parameter_filename).read())
 
+        self.observation_size = observation_size
+        self.action_size = action_size
+
         # Set activation
         activation_function = self.parameter_dictionary['agent']['nn']['activation_function']
 
@@ -70,10 +73,11 @@ class NNAgent(Agent):
 
         elif num_agents > 1:
             actions = [None] * num_agents
+            num_actions = self.action_size // num_agents
 
             for i in range(num_agents):
-                start_index = i * num_agents
-                end_index = (i + 1) * num_agents
+                start_index = i * num_actions
+                end_index = (i + 1) * num_actions
                 actions[i] = activation_values[start_index:end_index].argmax()
 
             return actions

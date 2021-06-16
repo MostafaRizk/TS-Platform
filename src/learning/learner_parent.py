@@ -121,7 +121,7 @@ class Learner:
                                    self.fitness_calculator.get_action_size()*self.num_agents, self.parameter_filename, genome)
                 controller_population += [central_controller]
 
-            return controller_population
+        return controller_population
 
     def get_genome_fitnesses_from_agent_fitnesses(self, agent_fitness_lists):
         """
