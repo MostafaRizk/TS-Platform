@@ -102,7 +102,8 @@ class CMALearner(Learner):
             temporary_parameter_dictionary['algorithm']['rwg']['normal']['std'] = 1
 
             # Write mini-rwg parameters to file
-            temporary_parameter_file = f"temporary_parameter_file_{temporary_parameter_dictionary['general']['seed']}.json"
+            file_suffix = "_".join([str(item) for item in self.get_core_params_in_model_name(temporary_parameter_dictionary)])
+            temporary_parameter_file = f"temporary_parameter_file_{file_suffix}.json"
             f = open(temporary_parameter_file, "w")
             dictionary_string = json.dumps(temporary_parameter_dictionary, indent=4)
             f.write(dictionary_string)
