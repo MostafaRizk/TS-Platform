@@ -161,6 +161,7 @@ class CMALearner(Learner):
                      "tolx",
                      "tolfunhist",
                      "tolflatfitness"
-                     "tolfun"]
+                     "tolfun",
+                     "tolstagnation"]
 
         return headings

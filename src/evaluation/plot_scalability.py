@@ -6,9 +6,10 @@ import argparse
 from scipy import stats
 from operator import add
 
-setups = ["Centralised", "Decentralised", "One-pop", "Homogeneous"]
+setups = ["Centralised", "Decentralised", "Fully-centralised"]
 #spec_metric_index = 2 # R_spec
-spec_metric_index = 5 # R_spec_P
+#spec_metric_index = 5 # R_spec_P
+spec_metric_index = 0
 
 
 def from_string(arr_str):
@@ -29,18 +30,20 @@ def from_string(arr_str):
     return a
 
 
-def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, violin=False, y_height=15000, showing="fitness"):
+def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, violin=False, y_min_height=-2000, y_height=15000, showing="fitness"):
     # Prepare data lists
     x = [i for i in range(2, max_agents+2, 2)]
     y_centralised = []
     y_decentralised = []
     y_onepop = []
     y_homogeneous = []
+    y_fully_centralised = []
 
     yerr_centralised = []
     yerr_decentralised = []
     yerr_onepop = []
     yerr_homogeneous = []
+    yerr_fully_centralised = []
 
     # Read data from results file
     data = pd.read_csv(path_to_results)
@@ -69,8 +72,12 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
         if seed not in results[key]:
             results[key][seed] = None
 
-        results[key][seed] = {"fitness": from_string(row["fitness"]),
-                              "specialisation": from_string(row["specialisation"])}
+        if type(row["fitness"]) == float:
+            results[key][seed] = {"fitness": row["fitness"]
+                                  ,"specialisation": row["specialisation"]}
+        else:
+            results[key][seed] = {"fitness": from_string(row["fitness"]),
+                                  "specialisation": from_string(row["specialisation"])}
 
     scores = {}
 
@@ -113,6 +120,10 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
                 y = y_homogeneous
                 yerr = yerr_homogeneous
 
+            elif setup == "Fully-centralised":
+                y = y_fully_centralised
+                yerr = yerr_fully_centralised
+
             if plot_type == "mean":
                 y += [np.mean(scores[key])]
                 yerr += [np.std(scores[key])]
@@ -152,22 +163,25 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
             tick.label.set_fontsize(16)
 
         if plot_type == "mean" or plot_type == "error":
-            plt.errorbar(x, y_centralised, yerr_centralised, fmt='r-', label="Centralised")
-            plt.errorbar(x, y_decentralised, yerr_decentralised, fmt='b-', label="Decentralised")
-            plt.errorbar(x, y_onepop, yerr_onepop, fmt='g-', label="One-pop")
-            plt.errorbar(x, y_homogeneous, yerr_homogeneous, fmt='k-', label="Homogeneous")
+            plt.errorbar(x, y_centralised, yerr_centralised, fmt='r-', label="Hybrid")
+            plt.errorbar(x, y_decentralised, yerr_decentralised, fmt='b-', label="Fully Decentralised")
+            #plt.errorbar(x, y_onepop, yerr_onepop, fmt='g-', label="One-pop")
+            #plt.errorbar(x, y_homogeneous, yerr_homogeneous, fmt='k-', label="Homogeneous")
+            plt.errorbar(x, y_fully_centralised, yerr_fully_centralised, fmt='g-', label="Fully Centralised")
 
         elif plot_type == "best" or plot_type == "median":
-            plt.plot(x, y_centralised, 'ro-', label=f"Centralised ({plot_type})")
-            plt.plot(x, y_decentralised, 'bo-', label=f"Decentralised ({plot_type})")
-            plt.plot(x, y_onepop, 'go-', label=f"One-pop ({plot_type})")
-            plt.plot(x, y_homogeneous, 'ko-', label=f"Homogeneous ({plot_type})")
+            plt.plot(x, y_centralised, 'ro-', label=f"Hybrid ({plot_type})")
+            plt.plot(x, y_decentralised, 'bo-', label=f"Fully Decentralised ({plot_type})")
+            plt.plot(x, y_fully_centralised, 'go-', label=f"Fully Centralised ({plot_type})")
+            # plt.plot(x, y_onepop, 'go-', label=f"One-pop ({plot_type})")
+            # plt.plot(x, y_homogeneous, 'ko-', label=f"Homogeneous ({plot_type})")
 
         else:
-            plt.plot(x, y_centralised, 'ro-', label="Centralised")
-            plt.plot(x, y_decentralised, 'bo-', label="Decentralised")
-            plt.plot(x, y_onepop, 'go-', label="One-pop")
-            plt.plot(x, y_homogeneous, 'ko-', label="Homogeneous")
+            plt.plot(x, y_centralised, 'ro-', label="Hybrid")
+            plt.plot(x, y_decentralised, 'bo-', label="Fully Decentralised")
+            #plt.plot(x, y_onepop, 'go-', label="One-pop")
+            #plt.plot(x, y_homogeneous, 'ko-', label="Homogeneous")
+            plt.plot(x, y_fully_centralised, 'go-', label="Fully Centralised")
 
         plt.legend(loc='upper right', fontsize=16)
         plt.savefig(path_to_graph)
@@ -189,7 +203,7 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
         for col,ax in enumerate(axs):
 
             if showing == "fitness":
-                ax.set_ylim(-2000, y_height)
+                ax.set_ylim(y_min_height, y_height)
                 ax.set_ylabel("Fitness per Agent")
             elif showing == "specialisation":
                 ax.set_ylim(-0.2, 1.2)
@@ -225,7 +239,8 @@ if __name__ == "__main__":
     parser.add_argument('--plot_type', action="store")
     parser.add_argument('--max_agents', action="store")
     parser.add_argument('--violin', action="store")
-    parser.add_argument('--y_height', action="store")
+    parser.add_argument('--y_height_min', action="store")
+    parser.add_argument('--y_height_max', action="store")
     parser.add_argument('--showing', action="store")
 
     results_path = parser.parse_args().results_path
@@ -239,11 +254,15 @@ if __name__ == "__main__":
     else:
         violin = True
 
-    y_height = parser.parse_args().y_height
+    y_height_min = parser.parse_args().y_height_min
+    y_height_max = parser.parse_args().y_height_max
 
-    if y_height:
-        y_height = int(y_height)
+    if y_height_min:
+        y_height_min = int(y_height_min)
+
+    if y_height_max:
+        y_height_max = int(y_height_max)
 
     showing = parser.parse_args().showing
 
-    plot_scalability(results_path, graph_path, plot_type, max_agents, violin, y_height, showing)
+    plot_scalability(results_path, graph_path, plot_type, max_agents, violin, y_height_min, y_height_max, showing)

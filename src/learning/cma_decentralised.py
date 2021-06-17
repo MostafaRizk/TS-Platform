@@ -39,8 +39,8 @@ def learn_agent(learner, index, fitness_calculator, insert_representative_genome
     new_learner.tell(genome_population, [-f for f in genome_fitness_average])
 
     # Update representative agent
-    best_genome = learner.result[0]
-    best_fitness = -learner.result[1]
+    best_genome = new_learner.result[0]
+    best_fitness = -new_learner.result[1]
 
     return new_learner, best_genome, best_fitness
 

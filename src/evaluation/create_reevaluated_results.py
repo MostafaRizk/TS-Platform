@@ -10,7 +10,7 @@ from evaluation.create_results_from_models import get_seed_file
 from itertools import combinations
 
 
-def create_reevaluated_results(path_to_data_folder, generation, episodes, num_agents_to_remove=0, max_team_size=None):
+def create_reevaluated_results(path_to_data_folder, generation, episodes, num_agents_to_remove=0, max_team_size=None, has_seed_file=False, env="tmaze"):
     # TODO: Modify to avoid repetition of other function
     # Get list of models
     model_files = glob(f'{path_to_data_folder}/*cma*_{generation}.npy')  # TODO: Allow different algorithms
@@ -24,7 +24,10 @@ def create_reevaluated_results(path_to_data_folder, generation, episodes, num_ag
 
     # Write header
     # TODO: Get the header using the learner classes? What about 'agents_removed'?
-    header = "learning_type,algorithm_selected,team_type,reward_level,agent_type,environment,seed,num_agents,num_resources,sensor_range,sliding_speed,arena_length,arena_width,cache_start,slope_start,source_start,base_cost,upward_cost_factor,downward_cost_factor,carry_factor,resource_reward,episode_length,num_episodes, incremental_rewards,architecture,bias,hidden_layers,hidden_units_per_layer,activation_function,agent_population_size,sigma,generations,tolx,tolfunhist,tolflatfitness,tolfun,agents_removed,seed_fitness,fitness,seed_specialisation,specialisation,model_name"
+    if env == "slope":
+        header = "learning_type,algorithm_selected,team_type,reward_level,agent_type,environment,seed,num_agents,num_resources,sensor_range,sliding_speed,arena_length,arena_width,cache_start,slope_start,source_start,base_cost,upward_cost_factor,downward_cost_factor,carry_factor,resource_reward,episode_length,num_episodes, incremental_rewards,architecture,bias,hidden_layers,hidden_units_per_layer,activation_function,agent_population_size,sigma,generations,tolx,tolfunhist,tolflatfitness,tolfun,agents_removed,seed_fitness,fitness,seed_specialisation,specialisation,model_name"
+    elif env == "tmaze":
+        header = "learning_type,algorithm_selected,team_type,reward_level,agent_type,environment,seed,num_agents,hall_size,start_zone_size,episode_length,num_episodes,architecture,bias,hidden_layers,hidden_units_per_layer,activation_function,agent_population_size,sigma,generations,tolx,tolfunhist,tolflatfitness,tolfun,agents_removed,seed_fitness,fitness,seed_specialisation,specialisation,model_name"
 
     f.write(header)
     f.write("\n")
@@ -47,7 +50,7 @@ def create_reevaluated_results(path_to_data_folder, generation, episodes, num_ag
 
         learning_type = model_path.split("/")[-1].split("_")[0]
 
-        if learning_type == "centralised":
+        if learning_type == "centralised" or learning_type == "fully-centralised":
             parameter_list = model_path.split("/")[-1].split("_")[:-2]
             parameter_filename = "_".join(parameter_list) + ".json"
             agent_index = "None"
@@ -63,7 +66,7 @@ def create_reevaluated_results(path_to_data_folder, generation, episodes, num_ag
             agent_index = model_path.split("/")[-1].split("_")[-3]
 
         else:
-            raise RuntimeError("Model prefix must be Centralised or Decentralised")
+            raise RuntimeError("Model prefix must be centralised, decentralised or fully-centralised")
 
         parameter_path = os.path.join(path_to_data_folder, parameter_filename)
         parameter_dictionary = json.loads(open(parameter_path).read())
@@ -81,22 +84,29 @@ def create_reevaluated_results(path_to_data_folder, generation, episodes, num_ag
             else:
                 results = evaluate_model(model_path=model_path, episodes=int(episodes), ids_to_remove=combo)
 
-            seed_file = get_seed_file(path_to_data_folder, parameter_dictionary)
+            if has_seed_file:
+                seed_file = get_seed_file(path_to_data_folder, parameter_dictionary)
 
-            if not episodes:
-                seed_results = evaluate_model(model_path=seed_file)
+                if not episodes:
+                    seed_results = evaluate_model(model_path=seed_file)
+                else:
+                    seed_results = evaluate_model(model_path=seed_file, episodes=int(episodes))
+
+                #seed_scores = [np.mean(scores) for scores in seed_results['fitness_matrix']]
+                #seed_fitness = str(np.sum(seed_scores))
+                seed_fitness_to_log = str(seed_results['fitness_matrix']).replace(",", " ")
+                seed_spec_to_log = str(seed_results['specialisation_list']).replace(",", " ")
+
             else:
-                seed_results = evaluate_model(model_path=seed_file, episodes=int(episodes))
-
-            #seed_scores = [np.mean(scores) for scores in seed_results['fitness_matrix']]
-            #seed_fitness = str(np.sum(seed_scores))
+                seed_fitness_to_log = "N/A"
+                seed_spec_to_log = "N/A"
 
             # Log results
             parameters_to_log = parameter_list + \
                                 [str(combo).replace(",", " ")] + \
-                                [str(seed_results['fitness_matrix']).replace(",", " ")] + \
+                                [seed_fitness_to_log] + \
                                 [str(results['fitness_matrix']).replace(",", " ")] + \
-                                [str(seed_results['specialisation_list']).replace(",", " ")] + \
+                                [seed_spec_to_log] + \
                                 [str(results['specialisation_list']).replace(",", " ")] + \
                                 [model_path]
 

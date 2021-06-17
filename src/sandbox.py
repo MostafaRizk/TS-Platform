@@ -38,8 +38,33 @@ def visualise(model_type, directory, parameter_file, model_file):
 
     print(results)
 
-directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/src"
-parameter_file = "default_tmaze_parameters_rwg_fc.json"
-model_file = "fully-centralised_rwg_heterogeneous_team_nn_tmaze_1_2_9_3_10_1_ffnn_True_0_0_tanh_20000_normal_0_1_20.0.npy"
+#directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/src"
+#parameter_file = "default_tmaze_parameters_rwg_fc.json"
+#model_file = "fully-centralised_rwg_heterogeneous_team_nn_tmaze_1_2_9_3_10_1_ffnn_True_0_0_tanh_20000_normal_0_1_20.0.npy"
 
-visualise("fully-centralised", directory, parameter_file, model_file)
+#visualise("fully-centralised", directory, parameter_file, model_file)
+
+
+def visualise_agents(parameter_file, model_list):
+    rendering = True
+    time_delay = 1
+    fitness_calculator = FitnessCalculator(parameter_file)
+    controller_list = []
+
+    for model in model_list:
+        agent_model = np.load(model, allow_pickle=True)
+        controller_list += [NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(),
+                parameter_file, agent_model)]
+
+
+    results = fitness_calculator.calculate_fitness(controller_list=controller_list, render=rendering,
+                                                   time_delay=time_delay,
+                                                   measure_specialisation=True, logging=False, logfilename=None,
+                                                   render_mode="human")
+
+parameter_file = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_06_16_a_comparison/data/decentralised_cma_heterogeneous_individual_nn_tmaze_491264_2_9_3_10_1_ffnn_True_0_4_tanh_100_0.2_1000_0.001_0.0_1000_0.0.json"
+model1 = "/Users/mostafa/Documents/Code/PhD/TS-Platform/src/decentralised_cma_heterogeneous_individual_nn_tmaze_491264_2_9_3_10_1_ffnn_True_0_4_tanh_100_0.2_1000_0.001_0.0_1000_0.0_1_8.0_final.npy"
+model2 = "/Users/mostafa/Documents/Code/PhD/TS-Platform/src/decentralised_cma_heterogeneous_individual_nn_tmaze_491264_2_9_3_10_1_ffnn_True_0_4_tanh_100_0.2_1000_0.001_0.0_1000_0.0_0_8.0_final.npy"
+model_list = [model1, model2]
+
+visualise_agents(parameter_file, model_list)

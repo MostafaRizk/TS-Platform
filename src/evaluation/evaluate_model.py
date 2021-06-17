@@ -14,6 +14,8 @@ from glob import glob
 from agents.hardcoded.hitchhiker import HardcodedHitchhikerAgent
 from array2gif import write_gif
 
+#metric_index = 2  # R_spec
+metric_index = 0 # T-Maze
 
 def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, print_scores=None, ids_to_remove=None):
     if rendering == "True":
@@ -35,7 +37,7 @@ def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, p
     if algorithm_selected != "rwg":
         generation = model_filename.split("_")[-1].strip(".npy")
 
-        if learning_type == "centralised":
+        if learning_type == "centralised" or learning_type == "fully-centralised":
             parameter_list = model_filename.split("_")[:-2]
             parameter_filename = "_".join(parameter_list) + ".json"
             agent_index = "None"
@@ -44,7 +46,7 @@ def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, p
             parameter_filename = "_".join(parameter_list) + ".json"
             agent_index = model_filename.split("_")[-3]
         else:
-            raise RuntimeError("Learning type must be centralised or decentralised")
+            raise RuntimeError("Learning type must be centralised, decentralised or fully centralised")
 
     else:
         parameter_list = model_filename.split("_")[:-1]
@@ -125,7 +127,13 @@ def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, p
 
             agent_list += [agent]
 
-    results = fitness_calculator.calculate_fitness(agent_list=agent_list, render=rendering, time_delay=time_delay,
+    elif parameter_dictionary["general"]["learning_type"] == "fully-centralised":
+        genome = np.load(model_path)
+        agent = NNAgent(fitness_calculator.get_observation_size() * num_agents,
+                        fitness_calculator.get_action_size() * num_agents, parameter_path, genome)
+        agent_list = [agent]
+
+    results = fitness_calculator.calculate_fitness(controller_list=agent_list, render=rendering, time_delay=time_delay,
                                                    measure_specialisation=True, logging=False, logfilename=None,
                                                    render_mode="human")
 
@@ -143,7 +151,6 @@ def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, p
 
     team_score = np.mean(team_fitness_list)
     agent_scores = [np.mean(scores) for scores in results['fitness_matrix']]
-    metric_index = 2  # R_spec
     specialisation_each_episode = [spec[metric_index] for spec in results['specialisation_list']]
     specialisation = np.mean(specialisation_each_episode)
 

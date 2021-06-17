@@ -360,7 +360,7 @@ class TMazeEnv:
             raise RuntimeError("Currently using hard-coded obstacles. Please modify the place_obstacles method to allow random obstacles")
 
     def get_agent_observations(self):
-        observations = [[0, 0]] * self.num_agents
+        observations = [[0, 0] for i in range(self.num_agents)]
 
         for i in range(self.num_agents):
             observations[i][0] = self.agent_positions[i][1]
@@ -393,7 +393,7 @@ class TMazeEnv:
 
     def calculate_specialisation(self):
         if self.total_rewarded_actions == 0:
-            return 0
+            return [0]
 
         return [self.specialised_actions / self.total_rewarded_actions]
 
