@@ -53,6 +53,7 @@ class FitnessCalculator:
 
         fitnesses = []
         specialisations = []
+        behaviour_characterisations = []
         agents_per_team = self.num_agents
 
         if self.learning_type != "fully-centralised":
@@ -64,21 +65,24 @@ class FitnessCalculator:
                 # Specialisation of the team calculated through several measures. List of lists. One list of measures for each episode
                 specialisation_measures = results_dict["specialisation_list"]
 
+                behaviour_characterisation_matrix = results_dict['behaviour_characterisation_matrix']
+
                 fitnesses += fitness_matrix
                 specialisations += [specialisation_measures]
+                behaviour_characterisations += behaviour_characterisation_matrix
 
         else:
             for controller in population:
                 results_dict = self.calculate_fitness([controller], measure_specialisation=calculate_specialisation)
                 fitness_matrix = results_dict['fitness_matrix']
-
-                # Specialisation of the team calculated through several measures. List of lists. One list of measures for each episode
                 specialisation_measures = results_dict["specialisation_list"]
+                behaviour_characterisation_matrix = results_dict['behaviour_characterisation_matrix']
 
                 fitnesses += fitness_matrix
                 specialisations += [specialisation_measures]
+                behaviour_characterisations += behaviour_characterisation_matrix
 
-        return fitnesses, specialisations
+        return fitnesses, specialisations, behaviour_characterisations
 
     def calculate_fitness(self, controller_list, render=False, time_delay=0, measure_specialisation=False,
                           logging=False, logfilename=None, render_mode="human"):
@@ -108,8 +112,13 @@ class FitnessCalculator:
 
         # Initialise major variables
         file_reader = None
-        fitness_matrix = [[0]*self.num_episodes for i in range(self.num_agents)]
+        fitness_matrix = [[0]*self.num_episodes for _ in range(self.num_agents)]
         specialisation_list = []
+
+        # For each agent, contains its BC value in every episode
+        # Concatenate if evaluating team novelty
+        behaviour_characterisation_matrix = [[None] * self.num_episodes for _ in range(self.num_agents)]
+
         controller_copies = [copy.deepcopy(controller) for controller in controller_list]
         video_frames = []
         self.env.reset_rng()
@@ -177,6 +186,9 @@ class FitnessCalculator:
             if measure_specialisation:
                 specialisation_list += [self.env.calculate_specialisation()]
 
+            for i in range(self.num_agents):
+                behaviour_characterisation_matrix[i][episode] = self.env.get_behaviour_characterisation()
+
             if logging:
                 #for agent_action_list in agent_action_matrix:
                 #    action_string = ','.join(str(action) for action in agent_action_list) + '\n'
@@ -188,7 +200,7 @@ class FitnessCalculator:
         if logging:
             file_reader.close()
 
-        return {"fitness_matrix": fitness_matrix, "specialisation_list": specialisation_list, "video_frames": video_frames}
+        return {"fitness_matrix": fitness_matrix, "specialisation_list": specialisation_list, "video_frames": video_frames, "behaviour_characterisation_matrix": behaviour_characterisation_matrix}
 
     # Helpers ---------------------------------------------------------------------------------------------------------
 
