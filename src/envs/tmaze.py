@@ -81,6 +81,10 @@ class TMazeEnv:
         self.specialised_actions = 0
         self.total_rewarded_actions = 0
 
+        # Novelty constants
+        self.bc_measure = parameter_dictionary['environment']['tmaze']['bc_measure']
+        self.avg_pos_for_agent = [[0, 0] for _ in range(self.num_agents)]
+
         # Rendering constants
         self.scale = 40
         self.start_zone_colour = [0.5, 0.5, 0.5]
@@ -196,6 +200,9 @@ class TMazeEnv:
 
                 self.total_rewarded_actions += 1
 
+            self.avg_pos_for_agent[i][0] += self.agent_positions[i][0] / self.episode_length
+            self.avg_pos_for_agent[i][1] += self.agent_positions[i][1] / self.episode_length
+
         observations = self.get_agent_observations()
 
         return observations, rewards
@@ -210,6 +217,7 @@ class TMazeEnv:
         self.specialised_actions = 0
         self.total_rewarded_actions = 0
         self.agent_positions = self.generate_agent_positions()
+        self.avg_pos_for_agent = [[0, 0] for _ in range(self.num_agents)]
 
         return self.get_agent_observations()
 
@@ -360,7 +368,7 @@ class TMazeEnv:
             raise RuntimeError("Currently using hard-coded obstacles. Please modify the place_obstacles method to allow random obstacles")
 
     def get_agent_observations(self):
-        observations = [[0, 0] for i in range(self.num_agents)]
+        observations = [[0, 0] for _ in range(self.num_agents)]
 
         for i in range(self.num_agents):
             observations[i][0] = self.agent_positions[i][1]
@@ -396,6 +404,11 @@ class TMazeEnv:
             return [0]
 
         return [self.specialised_actions / self.total_rewarded_actions]
+
+    # Calculate behaviour characterisation
+    def get_behaviour_characterisation(self):
+        if self.bc_measure == "avg_pos":
+            return self.avg_pos_for_agent
 
     def reset_rng(self):
         self.np_random = np.random.RandomState(self.seed_value)
