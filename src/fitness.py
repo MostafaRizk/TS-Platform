@@ -117,7 +117,7 @@ class FitnessCalculator:
 
         # For each agent, contains its BC value in every episode
         # Concatenate if evaluating team novelty
-        behaviour_characterisation_matrix = [[None] * self.num_episodes for _ in range(self.num_agents)]
+        behaviour_characterisation_matrix = [[] for _ in range(self.num_agents)]
 
         controller_copies = [copy.deepcopy(controller) for controller in controller_list]
         video_frames = []
@@ -186,8 +186,10 @@ class FitnessCalculator:
             if measure_specialisation:
                 specialisation_list += [self.env.calculate_specialisation()]
 
+            bc_for_agent = self.env.get_behaviour_characterisation()
+
             for i in range(self.num_agents):
-                behaviour_characterisation_matrix[i][episode] = self.env.get_behaviour_characterisation()
+                behaviour_characterisation_matrix[i] += bc_for_agent[i]
 
             if logging:
                 #for agent_action_list in agent_action_matrix:

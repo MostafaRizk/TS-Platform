@@ -37,6 +37,16 @@ class Learner:
         elif self.parameter_dictionary['general']['calculate_specialisation'] == "False":
             self.calculate_specialisation = False
 
+        if self.parameter_dictionary['general']['using_novelty'] == "True":
+            self.using_novelty = True
+            self.novelty_archive = {}  # Key is genome, contains dictionary with 'bc' and 'fitness'
+            self.novelty_params = {"distance_metric": self.parameter_dictionary['novelty']['distance_metric'],
+                                   "k": self.parameter_dictionary['novelty']['k']
+                                   }
+
+        elif self.parameter_dictionary['general']['using_novelty'] == "False":
+            self.using_novelty = False
+
     def learn(self, logging):
         pass
 

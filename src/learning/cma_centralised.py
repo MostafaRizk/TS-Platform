@@ -12,8 +12,11 @@ from learning.learner_centralised import CentralisedLearner
 from learning.cma_parent import CMALearner
 from glob import glob
 from io import StringIO
-
+from operator import add
 from learning.rwg_centralised import CentralisedRWGLearner
+from helpers import novelty_helpers
+from functools import partial
+from queue import PriorityQueue
 
 
 @ray.remote
@@ -24,6 +27,8 @@ def learn_in_parallel(fitness_calculator, agent_pop, spec_flag):
 class CentralisedCMALearner(CentralisedLearner, CMALearner):
     def __init__(self, calculator):
         super().__init__(calculator)
+        self.calculate_behaviour_distance = partial(novelty_helpers.calculate_distance, metric=self.novelty_params['distance_metric'])
+
 
     def learn(self, logging=True):
         """
@@ -110,15 +115,60 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
                         #team_specialisations += element[1]
 
             else:
-                agent_fitness_lists, team_specialisations = self.fitness_calculator.calculate_fitness_of_agent_population(controller_population, self.calculate_specialisation)
+                agent_fitness_lists, team_specialisations, agent_bc_vectors = self.fitness_calculator.calculate_fitness_of_agent_population(controller_population, self.calculate_specialisation)
 
             # Convert agent fitnesses into genome fitnesses
             genome_fitness_lists = self.get_genome_fitnesses_from_agent_fitnesses(agent_fitness_lists)
             genome_fitness_average = [np.mean(fitness_list) for fitness_list in genome_fitness_lists]
+            team_bc_vectors = self.get_team_bc_from_agent_bc(agent_bc_vectors)
 
             # Update the algorithm with the new fitness evaluations
             # CMA minimises fitness so we negate the fitness values
-            es.tell(genome_population, [-f for f in genome_fitness_average])
+            if not self.using_novelty:
+                es.tell(genome_population, [-f for f in genome_fitness_average])
+
+            else:
+                novelties = [0] * len(team_bc_vectors)
+
+                # Get each genome's novelty
+                for index, bc in enumerate(team_bc_vectors):
+                    # Calculate distance to each behaviour in the archive
+                    distances = {}
+
+                    for key in self.novelty_archive.keys():
+                        distances[key] = self.calculate_behaviour_distance(bc, self.novelty_archive[key]['bc'])
+
+                    # Find k-nearest-neighbours in the archive
+                    # TODO: Make this more efficient
+                    nearest_neighbours = {}
+
+                    for i in range(self.novelty_params['k']):
+                        min_dist = float('inf')
+                        min_key = None
+
+                        for key in self.novelty_archive.keys():
+                            if distances[key] < min_dist and key not in nearest_neighbours:
+                                min_dist = distances[key]
+                                min_key = key
+
+                        nearest_neighbours[min_key] = min_key
+
+                    # Calculate novelty (average distance to k nearest neighbours)
+                    avg_distance = 0
+
+                    for key in nearest_neighbours.keys():
+                        avg_distance += distances[key]
+
+                    avg_distance /= self.novelty_params['k']
+                    novelties[index] = avg_distance
+
+                # Normalise novelties
+                # Normalise fitnesses
+                # Store best fitness if it's better than the best so far
+                # Calculate weighted score of each solution
+                # Add scores to archive if they pass the threshold
+                # Update population distribution
+                pass
 
             generation = es.result.iterations
 
@@ -165,6 +215,30 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
         # For most configurations, each genome is either copied onto multiple agents or split across multiple agents
         else:
             return self.parameter_dictionary['algorithm']['agent_population_size'] / self.num_agents
+
+    def get_team_bc_from_agent_bc(self, agent_bc_vectors):
+        """
+        Given a list of behaviour characterisation vectors (one for each agent), concatenates the vectors for all the
+        agents on a team so that each team has a vector.
+
+        @param agent_bc_vectors: List of behaviour characterisation vectors (one for each agent)
+        @return: List of behaviour characterisation vectors (one for each team)
+        """
+        team_bc_vectors = []
+
+        if self.reward_level == "team":
+            for i in range(0, len(agent_bc_vectors) - 1, self.num_agents):
+                team_i_vector = []
+
+                for j in range(self.num_agents):
+                    team_i_vector += agent_bc_vectors[i+j]
+
+                team_bc_vectors += [team_i_vector]
+
+            return team_bc_vectors
+
+        else:
+            raise RuntimeError('Cannot calculate team behaviour characterisation when rewards are not at the team level')
 
     def log(self, genome, genome_fitness, generation, seed_fitness):
         """
