@@ -41,7 +41,9 @@ class Learner:
             self.using_novelty = True
             self.novelty_archive = {}  # Key is genome, contains dictionary with 'bc' and 'fitness'
             self.novelty_params = {"distance_metric": self.parameter_dictionary['novelty']['distance_metric'],
-                                   "k": self.parameter_dictionary['novelty']['k']
+                                   "k": self.parameter_dictionary['novelty']['k'],
+                                   "novelty_weight": self.parameter_dictionary['novelty']['novelty_weight'],
+                                   "archive_threshold": self.parameter_dictionary['novelty']['archive_threshold']
                                    }
 
         elif self.parameter_dictionary['general']['using_novelty'] == "False":

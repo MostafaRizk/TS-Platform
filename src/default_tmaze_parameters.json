@@ -61,7 +61,9 @@
     },
     "novelty": {
         "distance_metric": "euclidean",
-        "k": 15
+        "k": 15,
+        "novelty_weight": 0.5,
+        "archive_threshold": 0.1
 
     }
 }

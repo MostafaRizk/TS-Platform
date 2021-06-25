@@ -59,6 +59,9 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
         if self.parameter_dictionary["algorithm"]["agent_population_size"] % num_threads != 0:
             raise RuntimeError("Agent population is not divisible by the number of parallel threads")
 
+        best_genome = None
+        best_genome_fitness = float('-inf')
+
         # Learning loop
         while not es.stop():
             # Get population of genomes to be used this generation
@@ -129,6 +132,11 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
 
             else:
                 novelties = [0] * len(team_bc_vectors)
+                min_fitness = float('inf')
+                max_fitness = float('-inf')
+                max_fitness_genome = None
+                min_novelty = float('inf')
+                max_novelty = float('-inf')
 
                 # Get each genome's novelty
                 for index, bc in enumerate(team_bc_vectors):
@@ -162,32 +170,60 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
                     avg_distance /= self.novelty_params['k']
                     novelties[index] = avg_distance
 
-                # Normalise novelties
-                # Normalise fitnesses
+                    if novelties[index] < min_novelty:
+                        min_novelty = novelties[index]
+
+                    if novelties[index] > max_novelty:
+                        max_novelty = novelties[index]
+
+                    if genome_fitness_average[index] < min_fitness:
+                        min_fitness = genome_fitness_average[index]
+
+                    if genome_fitness_average[index] > max_fitness:
+                        max_fitness = genome_fitness_average[index]
+                        max_fitness_genome = genome_population[index]
+
+                # Normalise novelties and fitnesses
+                novelty_range = max_novelty-min_novelty
+                fitness_range = max_fitness-min_fitness
+
+                for index in range(len(genome_fitness_average)):
+                    novelties[index] = (novelties[index] - min_novelty) / novelty_range
+                    genome_fitness_average[index] = (genome_fitness_average[index] - min_fitness) / fitness_range
+
                 # Store best fitness if it's better than the best so far
-                # Calculate weighted score of each solution
-                # Add scores to archive if they pass the threshold
+                if max_fitness > best_genome_fitness:
+                    best_genome_fitness = max_fitness
+                    best_genome = max_fitness_genome
+
+                # Calculate weighted score of each solution and add to archive if it passes the threshold
+                weighted_scores = [0] * len(genome_fitness_average)
+
+                for index in range(len(genome_fitness_average)):
+                    weighted_scores[index] = (1 - self.novelty_params['novelty_weight']) * genome_fitness_average[index] + self.novelty_params['novelty_weight'] * novelties[index]
+
+                    if weighted_scores[index] > self.novelty_params['archive_threshold']:
+                        key = genome_population[index]
+                        self.novelty_archive[key] = {'bc': team_bc_vectors[index],
+                                                     'fitness': genome_fitness_average[index]}
+
                 # Update population distribution
-                pass
+                es.tell(genome_population, [-s for s in weighted_scores])
 
             generation = es.result.iterations
 
             if generation % self.logging_rate == 0:
-                self.log(es.result[0], -es.result[1], generation, seed_fitness)
+                self.log(best_genome, best_genome_fitness, generation, seed_fitness)
 
             es.disp()
 
-        # Get best genome and its fitness value
-        best_genome = es.result[0]
-        best_fitness = -es.result[1]
-
-        print(f"Best fitness is {best_fitness}")
+        print(f"Best fitness is {best_genome_fitness}")
 
         print(es.stop())
 
         # Save best model
-        model_name = self.generate_model_name(best_fitness)
-        self.log(best_genome, best_fitness, "final", seed_fitness)
+        model_name = self.generate_model_name(best_genome_fitness)
+        self.log(best_genome, best_genome_fitness, "final", seed_fitness)
 
         # Log evolution details to file
         log_file_name = model_name + ".log"
@@ -198,7 +234,7 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
         # Reset output stream
         sys.stdout = old_stdout
 
-        return best_genome, best_fitness
+        return best_genome, best_genome_fitness
 
     # Helpers ---------------------------------------------------------------------------------------------------------
 
