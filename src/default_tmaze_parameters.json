@@ -19,7 +19,8 @@
             "episode_length": 10,
             "num_episodes": 1,
             "env_seed": 1,
-            "reward_structure": "dense"
+            "reward_structure": "dense",
+            "bc_measure": "avg_pos"
         }
     },
     "agent": {
@@ -46,7 +47,7 @@
         },
         "cma": {
             "sigma": 0.2,
-            "generations": 1000,
+            "generations": 10,
             "tolx": 0.001,
             "tolfunhist": 0.0,
             "tolflatfitness": 1000,

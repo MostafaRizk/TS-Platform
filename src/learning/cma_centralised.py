@@ -140,11 +140,18 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
 
                 # Get each genome's novelty
                 for index, bc in enumerate(team_bc_vectors):
-                    # Calculate distance to each behaviour in the archive
+                    # Calculate distance to each behaviour in the archive.
                     distances = {}
 
-                    for key in self.novelty_archive.keys():
-                        distances[key] = self.calculate_behaviour_distance(bc, self.novelty_archive[key]['bc'])
+                    if len(self.novelty_archive) > 0:
+                        for key in self.novelty_archive.keys():
+                            distances[str(key)] = self.calculate_behaviour_distance(a=bc, b=self.novelty_archive[key]['bc'])
+
+                    # Calculate distances to the current population if the archive is empty
+                    else:
+                        for other_index,genome in enumerate(genome_population):
+                            if other_index != index:
+                                distances[str(genome)] = self.calculate_behaviour_distance(a=bc, b=team_bc_vectors[other_index])
 
                     # Find k-nearest-neighbours in the archive
                     # TODO: Make this more efficient
@@ -154,12 +161,22 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
                         min_dist = float('inf')
                         min_key = None
 
-                        for key in self.novelty_archive.keys():
-                            if distances[key] < min_dist and key not in nearest_neighbours:
-                                min_dist = distances[key]
-                                min_key = key
+                        if len(self.novelty_archive) > 0:
+                            for key in self.novelty_archive.keys():
+                                if distances[key] < min_dist and key not in nearest_neighbours:
+                                    min_dist = distances[key]
+                                    min_key = key
 
-                        nearest_neighbours[min_key] = min_key
+                        else:
+                            for other_index, genome in enumerate(genome_population):
+                                key = str(genome)
+                                if other_index != index:
+                                    if distances[key] < min_dist and key not in nearest_neighbours:
+                                        min_dist = distances[key]
+                                        min_key = key
+
+                        if min_key:
+                            nearest_neighbours[min_key] = min_key
 
                     # Calculate novelty (average distance to k nearest neighbours)
                     avg_distance = 0
@@ -194,7 +211,7 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
                 # Store best fitness if it's better than the best so far
                 if max_fitness > best_genome_fitness:
                     best_genome_fitness = max_fitness
-                    best_genome = max_fitness_genome
+                    best_genome = list(max_fitness_genome)
 
                 # Calculate weighted score of each solution and add to archive if it passes the threshold
                 weighted_scores = [0] * len(genome_fitness_average)
@@ -203,7 +220,7 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
                     weighted_scores[index] = (1 - self.novelty_params['novelty_weight']) * genome_fitness_average[index] + self.novelty_params['novelty_weight'] * novelties[index]
 
                     if weighted_scores[index] > self.novelty_params['archive_threshold']:
-                        key = genome_population[index]
+                        key = str(genome_population[index])
                         self.novelty_archive[key] = {'bc': team_bc_vectors[index],
                                                      'fitness': genome_fitness_average[index]}
 
