@@ -65,7 +65,7 @@
         "distance_metric": "euclidean",
         "k": 15,
         "novelty_weight": 0.5,
-        "archive_threshold": 0.1,
+        "archive_threshold": 0.9,
         "gens_before_change": 5,
         "insertions_before_increase": 4,
         "threshold_increase_amount": 0.2,
