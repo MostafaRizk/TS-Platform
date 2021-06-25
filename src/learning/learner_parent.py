@@ -43,7 +43,12 @@ class Learner:
             self.novelty_params = {"distance_metric": self.parameter_dictionary['novelty']['distance_metric'],
                                    "k": self.parameter_dictionary['novelty']['k'],
                                    "novelty_weight": self.parameter_dictionary['novelty']['novelty_weight'],
-                                   "archive_threshold": self.parameter_dictionary['novelty']['archive_threshold']
+                                   "archive_threshold": self.parameter_dictionary['novelty']['archive_threshold'],
+                                   "gens_before_change": self.parameter_dictionary['novelty']['gens_before_change'],
+                                   "insertions_before_increase": self.parameter_dictionary['novelty']['insertions_before_increase'],
+                                   "threshold_increase_amount": self.parameter_dictionary['novelty']['threshold_increase_amount'],
+                                   "threshold_decrease_amount": self.parameter_dictionary['novelty']['threshold_decrease_amount'],
+                                   "random_insertion_chance": self.parameter_dictionary['novelty']['random_insertion_chance']
                                    }
 
         elif self.parameter_dictionary['general']['using_novelty'] == "False":

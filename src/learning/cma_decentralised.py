@@ -78,7 +78,8 @@ class DecentralisedCMALearner(DecentralisedLearner, CMALearner):
                    'tolfunhist': self.parameter_dictionary['algorithm']['cma']['tolfunhist'],
                    'tolflatfitness': self.parameter_dictionary['algorithm']['cma']['tolflatfitness'],
                    'tolfun': self.parameter_dictionary['algorithm']['cma']['tolfun'],
-                   'tolstagnation': self.parameter_dictionary['algorithm']['cma']['tolstagnation']}
+                   'tolstagnation': self.parameter_dictionary['algorithm']['cma']['tolstagnation'],
+                   'tolfacupx': self.parameter_dictionary['algorithm']['cma']['tolfacupx']}
 
         # Get seed genome
         seed_genome, seed_fitness = self.get_seed_genome()  # TODO: Investigate whether learners should start from different seed genomes

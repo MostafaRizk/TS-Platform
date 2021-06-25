@@ -16,7 +16,7 @@ from operator import add
 from learning.rwg_centralised import CentralisedRWGLearner
 from helpers import novelty_helpers
 from functools import partial
-from queue import PriorityQueue
+from collections import deque
 
 
 @ray.remote
@@ -49,7 +49,8 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
                    'tolfunhist': self.parameter_dictionary['algorithm']['cma']['tolfunhist'],
                    'tolflatfitness': self.parameter_dictionary['algorithm']['cma']['tolflatfitness'],
                    'tolfun': self.parameter_dictionary['algorithm']['cma']['tolfun'],
-                   'tolstagnation': self.parameter_dictionary['algorithm']['cma']['tolstagnation']}
+                   'tolstagnation': self.parameter_dictionary['algorithm']['cma']['tolstagnation'],
+                   'tolfacupx': self.parameter_dictionary['algorithm']['cma']['tolfacupx']}
 
         # Initialise cma with a mean genome and sigma
         seed_genome, seed_fitness = self.get_seed_genome()
@@ -61,6 +62,11 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
 
         best_genome = None
         best_genome_fitness = float('-inf')
+        generation = 0
+
+        if self.using_novelty:
+            recent_insertions = deque(maxlen=self.novelty_params['insertions_before_increase'])
+            np_random = np.random.RandomState(self.parameter_dictionary['general']['seed'])
 
         # Learning loop
         while not es.stop():
@@ -223,11 +229,31 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
                         key = str(genome_population[index])
                         self.novelty_archive[key] = {'bc': team_bc_vectors[index],
                                                      'fitness': genome_fitness_average[index]}
+                        recent_insertions.append(generation)
+
+                    else:
+                        # Insert genome into archive with certain probability, regardless of threshold
+                        if np_random.random() < self.novelty_params['random_insertion_chance']:
+                            recent_insertions.append(generation)
 
                 # Update population distribution
                 es.tell(genome_population, [-s for s in weighted_scores])
 
-            generation = es.result.iterations
+                # Increase archive threshold if too many things have been recently inserted
+                if len(recent_insertions) >= self.novelty_params['insertions_before_increase']:
+                    insertion_window_start = recent_insertions.popleft()
+
+                    if (generation - insertion_window_start) <= self.novelty_params['gens_before_change']:
+                        self.novelty_params['archive_threshold'] += self.novelty_params['threshold_increase_amount']
+
+                # Decrease archive threshold if not enough things have been recently inserted
+                last_insertion_time = recent_insertions.pop()
+                recent_insertions.append(last_insertion_time)
+
+                if (generation - last_insertion_time) >= self.novelty_params['gens_before_change']:
+                    self.novelty_params['archive_threshold'] -= self.novelty_params['threshold_decrease_amount']
+
+            generation += 1
 
             if generation % self.logging_rate == 0:
                 self.log(best_genome, best_genome_fitness, generation, seed_fitness)
