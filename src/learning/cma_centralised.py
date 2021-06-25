@@ -248,8 +248,12 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
                         self.novelty_params['archive_threshold'] = min(1.0, increased_threshold)
 
                 # Decrease archive threshold if not enough things have been recently inserted
-                last_insertion_time = recent_insertions.pop()
-                recent_insertions.append(last_insertion_time)
+                if len(recent_insertions) > 0:
+                    last_insertion_time = recent_insertions.pop()
+                    recent_insertions.append(last_insertion_time)
+
+                else:
+                    last_insertion_time = -1
 
                 if (generation - last_insertion_time) >= self.novelty_params['gens_before_change']:
                     decreased_threshold = self.novelty_params['archive_threshold'] - self.novelty_params['threshold_decrease_amount']
