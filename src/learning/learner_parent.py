@@ -39,17 +39,25 @@ class Learner:
 
         if self.parameter_dictionary['general']['using_novelty'] == "True":
             self.using_novelty = True
-            self.novelty_archive = {}  # Key is genome, contains dictionary with 'bc' and 'fitness'
+
             self.novelty_params = {"distance_metric": self.parameter_dictionary['novelty']['distance_metric'],
                                    "k": self.parameter_dictionary['novelty']['k'],
                                    "novelty_weight": self.parameter_dictionary['novelty']['novelty_weight'],
-                                   "archive_threshold": self.parameter_dictionary['novelty']['archive_threshold'],
                                    "gens_before_change": self.parameter_dictionary['novelty']['gens_before_change'],
                                    "insertions_before_increase": self.parameter_dictionary['novelty']['insertions_before_increase'],
                                    "threshold_increase_amount": self.parameter_dictionary['novelty']['threshold_increase_amount'],
                                    "threshold_decrease_amount": self.parameter_dictionary['novelty']['threshold_decrease_amount'],
                                    "random_insertion_chance": self.parameter_dictionary['novelty']['random_insertion_chance']
                                    }
+
+            if self.learning_type == "centralised" or self.learning_type == "fully-centralised":
+                self.novelty_archive = {}  # Key is genome, contains dictionary with 'bc' and 'fitness'
+                self.novelty_params["archive_threshold"] = self.parameter_dictionary['novelty']['archive_threshold']
+
+            elif self.learning_type == "decentralised":
+                # Separate archive and threshold for each agent's learner if it is decentralised
+                self.novelty_archive = [{} for _ in range(self.num_agents)]
+                self.novelty_params["archive_threshold"] = [self.parameter_dictionary['novelty']['archive_threshold']] * self.num_agents
 
         elif self.parameter_dictionary['general']['using_novelty'] == "False":
             self.using_novelty = False

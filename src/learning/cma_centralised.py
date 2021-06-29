@@ -14,8 +14,6 @@ from glob import glob
 from io import StringIO
 from operator import add
 from learning.rwg_centralised import CentralisedRWGLearner
-from helpers import novelty_helpers
-from functools import partial
 from collections import deque
 
 
@@ -27,8 +25,6 @@ def learn_in_parallel(fitness_calculator, agent_pop, spec_flag):
 class CentralisedCMALearner(CentralisedLearner, CMALearner):
     def __init__(self, calculator):
         super().__init__(calculator)
-        self.calculate_behaviour_distance = partial(novelty_helpers.calculate_distance, metric=self.novelty_params['distance_metric'])
-
 
     def learn(self, logging=True):
         """
@@ -62,6 +58,7 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
 
         best_genome = None
         best_genome_fitness = float('-inf')
+
         generation = 0
 
         if self.using_novelty:

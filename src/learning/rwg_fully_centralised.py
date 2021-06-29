@@ -16,7 +16,7 @@ class FullyCentralisedRWGLearner(CentralisedRWGLearner):
         controller_population = self.convert_genomes_to_controllers(genome_population)
 
         # Get fitnesses of agents
-        agent_fitness_lists, team_specialisations = self.fitness_calculator.calculate_fitness_of_agent_population(controller_population, self.calculate_specialisation)
+        agent_fitness_lists, team_specialisations, agent_bc_vectors = self.fitness_calculator.calculate_fitness_of_agent_population(controller_population, self.calculate_specialisation)
         agent_fitness_average = [np.mean(fitness_list) for fitness_list in agent_fitness_lists]
 
         best_genome = None

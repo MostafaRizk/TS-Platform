@@ -57,6 +57,22 @@ class DecentralisedLearner(Learner):
 
         return trimmed_fitness_list
 
+    def remove_representative_bc(self, agent_bc_vectors):
+        """
+        Given a list of behaviour characterisations for agents, remove the characterisations of representative agents
+        i.e. team members that are not currently being evaluated
+
+        @param agent_bc_vectors: List of behaviour characterisations, one for each agent on every team
+        @return: Behaviour characterisations for only the agents being evaluated
+        """
+        trimmed_bc_list = []
+        agents_per_team = self.num_agents
+
+        for i in range(0, len(agent_bc_vectors), agents_per_team):
+            trimmed_bc_list += [agent_bc_vectors[i]]
+
+        return trimmed_bc_list
+
     def generate_model_name(self, fitness, agent_index):
         pass
 
