@@ -7,7 +7,8 @@
         "agent_type": "nn",
         "environment": "slope",
         "calculate_specialisation": "False",
-        "seed": 0
+        "seed": 0,
+        "using_novelty": "True"
     },
     "environment": {
         "slope": {
@@ -27,7 +28,9 @@
             "resource_reward": 1000,
             "episode_length": 100,
             "num_episodes": 5,
-            "incremental_rewards": "False"
+            "incremental_rewards": "False",
+            "env_seed": 1,
+            "bc_measure": "avg_pos"
         }
     },
     "agent": {
@@ -54,16 +57,29 @@
         },
         "cma": {
             "sigma": 0.2,
-            "generations": 1000,
+            "generations": 10,
             "tolx": 0.001,
             "tolfunhist": 0.0,
             "tolflatfitness": 1000,
             "tolfun": 0.0,
+            "tolstagnation": 1000,
+            "tolfacupx": 1e9,
             "logging_rate": 50,
             "seeding_required": "False",
             "seeding_included": "False",
             "partial": "False",
             "multithreading": "False"
         }
-    }
+    },
+        "novelty": {
+            "distance_metric": "euclidean",
+            "k": 15,
+            "novelty_weight": 0.5,
+            "archive_threshold": 0.9,
+            "gens_before_change": 5,
+            "insertions_before_increase": 4,
+            "threshold_increase_amount": 0.2,
+            "threshold_decrease_amount": 0.05,
+            "random_insertion_chance": 0.01
+        }
 }

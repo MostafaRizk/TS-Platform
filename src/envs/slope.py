@@ -77,6 +77,10 @@ class SlopeEnv:
             raise RuntimeError("Incremental rewards is not set to True or False")
             raise RuntimeError("Incremental rewards is not set to True or False")
 
+        # Novelty constants
+        self.bc_measure = parameter_dictionary['environment']['slope']['bc_measure']
+        self.avg_pos_for_agent = [[0, 0] for _ in range(self.num_agents)]
+
         # Rendering constants
         self.scale = 50  # Scale for rendering
         self.nest_colour = [0.25, 0.25, 0.25]
@@ -114,7 +118,8 @@ class SlopeEnv:
         self.action_name = ["FORWARD", "BACKWARD", "LEFT", "RIGHT", "PICKUP", "DROP"]
         self.has_resource = [None] * self.num_agents
 
-        self.seed_value = parameter_dictionary['general']['seed']
+        #self.seed_value = parameter_dictionary['general']['seed']
+        self.seed_value = parameter_dictionary['environment']['slope']['env_seed']
         self.np_random = np.random.RandomState(self.seed_value)
 
         # Observation space (additional details explained in self.get_agent_observations())
@@ -217,6 +222,9 @@ class SlopeEnv:
         # Reset variables that were changed during runtime
         self.has_resource = [None] * self.num_agents
         self.current_num_resources = self.default_num_resources
+
+        # Reset BC
+        self.avg_pos_for_agent = [[0, 0] for _ in range(self.num_agents)]
 
         return self.get_agent_observations()
 
@@ -759,6 +767,11 @@ class SlopeEnv:
             participation = sum(agent_participated) / self.num_agents
 
         return [r_coop, r_coop_eff, r_spec, r_coop * participation, r_coop_eff * participation, r_spec * participation]
+
+    # Calculate behaviour characterisation
+    def get_behaviour_characterisation(self):
+        if self.bc_measure == "avg_pos":
+            return self.avg_pos_for_agent
 
     # Rendering Functions ---------------------------------------------------------------------------------------------
     def draw_arena_segment(self, top, bottom, rgb_tuple):

@@ -71,6 +71,5 @@
         "threshold_increase_amount": 0.2,
         "threshold_decrease_amount": 0.05,
         "random_insertion_chance": 0.01
-
     }
 }
