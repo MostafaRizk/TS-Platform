@@ -161,7 +161,7 @@ class FitnessCalculator:
                     full_observation = []
 
                     for obs in observations:
-                        full_observation += obs
+                        full_observation = np.append(full_observation, obs)
 
                     agent_actions = controller_copies[0].act(full_observation, self.num_agents)
 
