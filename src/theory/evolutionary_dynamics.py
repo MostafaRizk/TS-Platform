@@ -45,7 +45,7 @@ combos = None  # Sorted list of possible strategy combinations for num_agents-1 
 slope_list = [i for i in range(9)]
 team_list = [i for i in range(2, 9)]
 random_state = None
-distribution_precision = 4  # Number of decimal places when expressing the proportion of each strategy in the population
+distribution_precision = 2  # Number of decimal places when expressing the proportion of each strategy in the population
 #archive = {}
 
 prices_of_anarchy = {}
@@ -373,13 +373,42 @@ def get_avg_fitness(P):
     return -1. * f_avg
 
 
-def get_behaviour_characterisation(P):
-    return P
+def get_optimal_via_brute_force():
 
+    distribution_fitness = {}
+    distribution_fitness['best'] = {'distribution': None,
+                                   'score': float('Inf')}
+    mask_1 = [-1, 1, 0, 0]
+    mask_2 = [-1, 0, 1, 0]
+    mask_3 = [-1, 0, 0, 1]
 
-def get_novelty(x, population):
-    # Find k nearest neighbours in population and archive
-    pass
+    def generate_recursively(strategy_distribution):
+        if strategy_distribution[0] < 0:
+            return
+
+        key = str(strategy_distribution)
+
+        if key in distribution_fitness.keys():
+            return
+
+        else:
+            distribution_in_percentages = [k/100 for k in strategy_distribution]
+            score = get_avg_fitness(distribution_in_percentages)
+            distribution_fitness[key] = score
+
+            if score < distribution_fitness['best']['score']:
+                distribution_fitness['best']['score'] = score
+                distribution_fitness['best']['distribution'] = distribution_in_percentages[:]
+
+            generate_recursively([strategy_distribution[j] + mask_1[j] for j in range(4)])
+            generate_recursively([strategy_distribution[j] + mask_2[j] for j in range(4)])
+            generate_recursively([strategy_distribution[j] + mask_3[j] for j in range(4)])
+
+    generate_recursively([100, 0, 0, 0])
+    print(distribution_fitness['best'])
+    print("Did it work?")
+
+    return distribution_fitness['best']['distribution']
 
 
 def get_optimal_distribution(parameter_dictionary):
@@ -389,11 +418,34 @@ def get_optimal_distribution(parameter_dictionary):
     @return: An array representing the optimal distribution of strategies, with each element being a float in [0,1]
     and the array having the same length as the number of strategies
     """
-    #constraint = LinearConstraint(np.ones(len(strategies)), lb=1, ub=1)
-    #bounds = [(0, 1), (0, 1), (0, 1), (0, 1)]
-    #res = differential_evolution(get_avg_fitness, bounds, constraints=constraint, maxiter=20000, popsize=200, mutation=0.9, tol=0.0001, seed=random_state, disp=True)
-    #final_distribution = [round(x, distribution_precision) for x in res.x]
 
+    # Use differential evolution
+    '''
+    constraint = LinearConstraint(np.ones(len(strategies)), lb=1, ub=1)
+    bounds = [(0, 1), (0, 1), (0, 1), (0, 1)]
+    res = differential_evolution(get_avg_fitness, bounds, constraints=constraint, maxiter=20000, popsize=200, mutation=0.9, tol=0.0001, seed=random_state, disp=True)
+    final_distribution = [round(x, distribution_precision) for x in res.x]
+    '''
+
+    # RWG (either as seed for cma or an optimisation approach on its own)
+    '''
+    samples = sample_distributions(parameter_dictionary["optimisation"]["rwg_samples"])
+    min_index = None
+    min_value = float('inf')
+
+    for j in range(len(samples)):
+        s = [round(item, distribution_precision) for item in samples[j]]
+        score = get_avg_fitness(s)
+        if score < min_value:
+            min_value = score
+            min_index = j
+
+    # Use best rwg solution
+    final_distribution = [round(item, distribution_precision) for item in samples[min_index]]
+    '''
+
+    # Use CMA
+    '''
     old_stdout = sys.stdout
     sys.stdout = mystdout = StringIO()
 
@@ -401,20 +453,7 @@ def get_optimal_distribution(parameter_dictionary):
                'maxiter': parameter_dictionary["optimisation"]["generations"],
                'popsize': parameter_dictionary["optimisation"]["population"],
                'bounds': [[0 for i in range(len(strategies))], [1 for i in range(len(strategies))]]}
-
-    # RWG seeding to bootstrap cma
-    # (because the landscape is flat)
-    samples = sample_distributions(parameter_dictionary["optimisation"]["rwg_samples"])
-    min_index = None
-    min_value = float('inf')
-
-    for j in range(len(samples)):
-        s = samples[j]
-        score = get_avg_fitness(s)
-        if score < min_value:
-            min_value = score
-            min_index = j
-
+    
     es = cma.CMAEvolutionStrategy(samples[min_index], parameter_dictionary["optimisation"]["sigma"], options)
 
     while not es.stop():
@@ -423,7 +462,9 @@ def get_optimal_distribution(parameter_dictionary):
 
     final_distribution = [round(x, distribution_precision) for x in es.result.xbest]
 
-    sys.stdout = old_stdout
+    sys.stdout = old_stdout'''
+
+    final_distribution = get_optimal_via_brute_force()
 
     return final_distribution
 

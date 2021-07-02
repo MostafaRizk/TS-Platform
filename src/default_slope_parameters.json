@@ -64,7 +64,7 @@
             "tolfun": 0.0,
             "tolstagnation": 1000,
             "tolfacupx": 1e9,
-            "logging_rate": 50,
+            "logging_rate": 5,
             "seeding_required": "False",
             "seeding_included": "False",
             "partial": "False",
@@ -74,7 +74,7 @@
         "novelty": {
             "distance_metric": "euclidean",
             "k": 15,
-            "novelty_weight": 0.5,
+            "novelty_weight": 0.25,
             "archive_threshold": 0.9,
             "gens_before_change": 10,
             "insertions_before_increase": 4,
