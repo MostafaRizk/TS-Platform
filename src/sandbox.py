@@ -38,9 +38,9 @@ def visualise(model_type, directory, parameter_file, model_file):
 
     print(results)
 
-directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_07_01_a_slope_experiments/data/"
-parameter_file = "centralised_cma_heterogeneous_team_nn_slope_550290314_2_16_1_8_8_16_1_3_7_1_3.0_0.2_2_1000_100_5_False_rnn_False_1_4_tanh_100_0.2_500_0.001_0.0_1000_0.0.json"
-model_file = "centralised_cma_heterogeneous_team_nn_slope_550290314_2_16_1_8_8_16_1_3_7_1_3.0_0.2_2_1000_100_5_False_rnn_False_1_4_tanh_100_0.2_500_0.001_0.0_1000_0.0_5666.160000000001_final.npy"
+#directory = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_07_01_a_slope_experiments/data/"
+#parameter_file = "centralised_cma_heterogeneous_team_nn_slope_550290314_2_16_1_8_8_16_1_3_7_1_3.0_0.2_2_1000_100_5_False_rnn_False_1_4_tanh_100_0.2_500_0.001_0.0_1000_0.0.json"
+#model_file = "centralised_cma_heterogeneous_team_nn_slope_550290314_2_16_1_8_8_16_1_3_7_1_3.0_0.2_2_1000_100_5_False_rnn_False_1_4_tanh_100_0.2_500_0.001_0.0_1000_0.0_5666.160000000001_final.npy"
 
 #visualise("centralised", directory, parameter_file, model_file)
 
@@ -64,9 +64,26 @@ def visualise_agents(parameter_file, model_list):
     print(results)
 
 
-parameter_file = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_07_02_a_slope_more_novelty/data/decentralised_cma_heterogeneous_individual_nn_slope_1904615677_2_16_1_8_8_16_1_3_7_1_3.0_0.2_2_1000_100_5_False_rnn_False_1_4_tanh_100_0.2_500_0.001_0.0_1000_0.0.json"
-model1 = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_07_02_a_slope_more_novelty/data/decentralised_cma_heterogeneous_individual_nn_slope_1904615677_2_16_1_8_8_16_1_3_7_1_3.0_0.2_2_1000_100_5_False_rnn_False_1_4_tanh_100_0.2_500_0.001_0.0_1000_0.0_0_-26.160000000000004_0.npy"
-model2 = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_07_02_a_slope_more_novelty/data/decentralised_cma_heterogeneous_individual_nn_slope_1904615677_2_16_1_8_8_16_1_3_7_1_3.0_0.2_2_1000_100_5_False_rnn_False_1_4_tanh_100_0.2_500_0.001_0.0_1000_0.0_1_278.44_0.npy"
-model_list = [model1, model2]
+#parameter_file = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_07_02_a_slope_more_novelty/data/decentralised_cma_heterogeneous_individual_nn_slope_1904615677_2_16_1_8_8_16_1_3_7_1_3.0_0.2_2_1000_100_5_False_rnn_False_1_4_tanh_100_0.2_500_0.001_0.0_1000_0.0.json"
+#model1 = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_07_02_a_slope_more_novelty/data/decentralised_cma_heterogeneous_individual_nn_slope_1904615677_2_16_1_8_8_16_1_3_7_1_3.0_0.2_2_1000_100_5_False_rnn_False_1_4_tanh_100_0.2_500_0.001_0.0_1000_0.0_0_-26.160000000000004_0.npy"
+#model2 = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_07_02_a_slope_more_novelty/data/decentralised_cma_heterogeneous_individual_nn_slope_1904615677_2_16_1_8_8_16_1_3_7_1_3.0_0.2_2_1000_100_5_False_rnn_False_1_4_tanh_100_0.2_500_0.001_0.0_1000_0.0_1_278.44_0.npy"
+#model_list = [model1, model2]
 
-visualise_agents(parameter_file, model_list)
+#visualise_agents(parameter_file, model_list)
+
+#################
+from deap import base, creator, algorithms, tools
+
+genome_length = 10
+seed = 1
+np_random = np.random.RandomState(seed)
+
+creator.create("FitnessMax", base.Fitness, weights=(1.0,))
+creator.create("Individual", np.ndarray, fitness=creator.FitnessMax)
+
+toolbox = base.Toolbox()
+toolbox.register("attr_float", np_random.random)
+toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_float, n=genome_length)
+toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+
+algorithms.eaSteadyState(toolbox, population=100, ngen=1000)

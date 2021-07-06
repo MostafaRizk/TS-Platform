@@ -1,9 +1,9 @@
 {
     "general": {
-        "learning_type": "decentralised",
-        "algorithm_selected": "cma",
+        "learning_type": "centralised",
+        "algorithm_selected": "ga",
         "team_type": "heterogeneous",
-        "reward_level": "individual",
+        "reward_level": "team",
         "agent_type": "nn",
         "environment": "slope",
         "calculate_specialisation": "False",
@@ -69,6 +69,16 @@
             "seeding_included": "False",
             "partial": "False",
             "multithreading": "False"
+        },
+        "ga": {
+            "generations": 100,
+            "mutation_probability": 0.3,
+            "tournament_size": 10,
+            "mu": 0,
+            "sigma": 1,
+            "num_parents": 2,
+            "num_children": 2
+
         }
     },
         "novelty": {
