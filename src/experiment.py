@@ -9,6 +9,7 @@ from learning.rwg_fully_centralised import FullyCentralisedRWGLearner
 from learning.cma_centralised import CentralisedCMALearner
 from learning.cma_decentralised import DecentralisedCMALearner
 from learning.cma_fully_centralised import FullyCentralisedCMALearner
+from learning.ga_centralised import CentralisedGALearner
 
 
 def run_experiment(parameter_filename):
@@ -93,6 +94,11 @@ def run_experiment(parameter_filename):
             elif parameter_dictionary["general"]["learning_type"] == "fully-centralised":
                 learner = FullyCentralisedCMALearner(fitness_calculator)
                 genomes, fitnesses = learner.learn()
+
+    elif parameter_dictionary["general"]["algorithm_selected"] == "ga":
+        if parameter_dictionary["general"]["learning_type"] == "centralised":
+            learner = CentralisedGALearner(fitness_calculator)
+            genome, fitness = learner.learn()
 
 
 if __name__ == "__main__":
