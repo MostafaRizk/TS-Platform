@@ -71,7 +71,7 @@
             "multithreading": "False"
         },
         "ga": {
-            "generations": 100,
+            "generations": 1000,
             "mutation_probability": 0.3,
             "tournament_size": 10,
             "mu": 0,
@@ -86,7 +86,7 @@
         "novelty": {
             "distance_metric": "euclidean",
             "k": 15,
-            "novelty_weight": 0.25,
+            "novelty_weight": 0.5,
             "archive_threshold": 0.9,
             "gens_before_change": 10,
             "insertions_before_increase": 4,

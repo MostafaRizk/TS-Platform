@@ -13,6 +13,9 @@ class CentralisedGALearner(CentralisedLearner, GALearner):
         self.seed = self.parameter_dictionary['general']['seed']
         self.np_random = np.random.RandomState(self.seed)
 
+        if self.using_novelty:
+            self.recent_insertions = deque(maxlen=self.novelty_params['insertions_before_increase'])
+
     def learn(self, logging=True):
         num_generations = self.parameter_dictionary['algorithm']['ga']['generations']
         pop_size = self.get_genome_population_length()
@@ -24,9 +27,6 @@ class CentralisedGALearner(CentralisedLearner, GALearner):
         num_parents = self.parameter_dictionary['algorithm']['ga']['num_parents']
         num_children = self.parameter_dictionary['algorithm']['ga']['num_children']
         crowding_factor = self.parameter_dictionary['algorithm']['ga']['crowding_factor']
-
-        if self.using_novelty:
-            recent_insertions = deque(maxlen=self.novelty_params['insertions_before_increase'])
 
         if num_parents != 2:
             raise RuntimeError("Only supports 2 parents for now")
@@ -62,19 +62,13 @@ class CentralisedGALearner(CentralisedLearner, GALearner):
 
         else:
             # Calculate novelty
-            scores = genome_fitness_average[:]
-
-            for index in range(len(scores)):
-                if scores[index] > best_genome_fitness:
-                    best_genome_fitness = scores[index]
-                    best_genome = genome_population[index]
-
+            scores, best_genome, best_genome_fitness = self.calculate_weighted_scores(genome_population, genome_fitness_average, team_bc_vectors, 0)
             initial_fitness = best_genome_fitness
 
             for ind, score in zip(genome_population, scores):
                 ind.fitness.values = (score,)
 
-            for generation in range(num_generations):
+            for generation in range(1, num_generations+1):
                 # Select the next generation individuals
                 parents = toolbox.select(genome_population, num_parents)
 
@@ -101,9 +95,6 @@ class CentralisedGALearner(CentralisedLearner, GALearner):
                 child_genome_fitness_average = [np.mean(fitness_list) for fitness_list in child_genome_fitness_lists]
                 child_team_bc_vectors = self.get_team_bc_from_agent_bc(child_agent_bc_vectors)
 
-                # Calculate novelty
-                child_scores = child_genome_fitness_average[:]
-
                 # Replace most similar individuals in population
                 indicies_to_replace = []
 
@@ -125,11 +116,19 @@ class CentralisedGALearner(CentralisedLearner, GALearner):
                 for i in range(len(indicies_to_replace)):
                     loser_index = indicies_to_replace[i]
                     genome_population[loser_index] = children[i]
-                    genome_population[loser_index].fitness.values = (child_scores[i],)
+                    genome_fitness_lists[loser_index] = child_genome_fitness_lists[i]
+                    genome_fitness_average[loser_index] = child_genome_fitness_average[i]
+                    team_bc_vectors[loser_index] = child_team_bc_vectors[i]
 
-                    if child_scores[i] > best_genome_fitness:
-                        best_genome_fitness = child_scores[i]
-                        best_genome = children[i]
+                # Calculate novelty
+                weighted_scores, max_fitness_genome, max_fitness = self.calculate_weighted_scores(genome_population, genome_fitness_average, team_bc_vectors, generation)
+
+                for ind, score in zip(genome_population, weighted_scores):
+                    ind.fitness.values = (score,)
+
+                if max_fitness > best_genome_fitness:
+                    best_genome_fitness = max_fitness
+                    best_genome = max_fitness_genome
 
         print(f"Best fitness is {best_genome_fitness}")
 
@@ -149,6 +148,128 @@ class CentralisedGALearner(CentralisedLearner, GALearner):
         return best_genome, best_genome_fitness
 
     # Helpers ---------------------------------------------------------------------------------------------------------
+
+    def calculate_weighted_scores(self, genome_population_ref, genome_fitness_average_ref, genome_bc_vectors_ref, generation):
+
+        genome_population = genome_population_ref[:]
+        genome_fitness_average = genome_fitness_average_ref[:]
+        genome_bc_vectors = genome_bc_vectors_ref[:]
+
+        novelties = [0] * len(genome_bc_vectors)
+        min_fitness = float('inf')
+        max_fitness = float('-inf')
+        max_fitness_genome = None
+        min_novelty = float('inf')
+        max_novelty = float('-inf')
+
+        # Get each genome's novelty
+        for index, bc in enumerate(genome_bc_vectors):
+            # Calculate distance to each behaviour in the archive.
+            distances = {}
+
+            if len(self.novelty_archive) > 0:
+                for key in self.novelty_archive.keys():
+                    distances[str(key)] = self.calculate_behaviour_distance(a=bc, b=self.novelty_archive[key]['bc'])
+
+            # Calculate distances to the current population
+            for other_index, genome in enumerate(genome_population):
+                if other_index != index:
+                    distances[str(genome)] = self.calculate_behaviour_distance(a=bc, b=genome_bc_vectors[other_index])
+
+            # Find k-nearest-neighbours in the archive
+            # TODO: Make this more efficient
+            nearest_neighbours = {}
+
+            for i in range(self.novelty_params['k']):
+                min_dist = float('inf')
+                min_key = None
+
+                if len(self.novelty_archive) > 0:
+                    for key in self.novelty_archive.keys():
+                        if distances[key] < min_dist and key not in nearest_neighbours:
+                            min_dist = distances[key]
+                            min_key = key
+
+                for other_index, genome in enumerate(genome_population):
+                    key = str(genome)
+                    if other_index != index:
+                        if distances[key] < min_dist and key not in nearest_neighbours:
+                            min_dist = distances[key]
+                            min_key = key
+
+                if min_key:
+                    nearest_neighbours[min_key] = min_key
+
+            # Calculate novelty (average distance to k nearest neighbours)
+            avg_distance = 0
+
+            for key in nearest_neighbours.keys():
+                avg_distance += distances[key]
+
+            avg_distance /= self.novelty_params['k']
+            novelties[index] = avg_distance
+
+            if novelties[index] < min_novelty:
+                min_novelty = novelties[index]
+
+            if novelties[index] > max_novelty:
+                max_novelty = novelties[index]
+
+            if genome_fitness_average[index] < min_fitness:
+                min_fitness = genome_fitness_average[index]
+
+            if genome_fitness_average[index] > max_fitness:
+                max_fitness = genome_fitness_average[index]
+                max_fitness_genome = genome_population[index]
+
+        # Normalise novelties and fitnesses
+        novelty_range = max_novelty - min_novelty
+        fitness_range = max_fitness - min_fitness
+
+        for index in range(len(genome_fitness_average)):
+            if novelty_range != 0:
+                 novelties[index] = (novelties[index] - min_novelty) / novelty_range
+
+            if fitness_range != 0:
+                genome_fitness_average[index] = (genome_fitness_average[index] - min_fitness) / fitness_range
+
+        # Calculate weighted score of each solution and add to archive if it passes the threshold
+        weighted_scores = [0] * len(genome_fitness_average)
+
+        for index in range(len(genome_fitness_average)):
+            weighted_scores[index] = (1 - self.novelty_params['novelty_weight']) * genome_fitness_average[index] + self.novelty_params['novelty_weight'] * novelties[index]
+
+            if weighted_scores[index] > self.novelty_params['archive_threshold']:
+                key = str(genome_population[index])
+                self.novelty_archive[key] = {'bc': genome_bc_vectors[index], 'fitness': genome_fitness_average[index]}
+                self.recent_insertions.append(generation)
+
+            else:
+                # Insert genome into archive with certain probability, regardless of threshold
+                if self.np_random.random() < self.novelty_params['random_insertion_chance']:
+                    self.recent_insertions.append(generation)
+
+            # Increase archive threshold if too many things have been recently inserted
+            if len(self.recent_insertions) >= self.novelty_params['insertions_before_increase']:
+                insertion_window_start = self.recent_insertions.popleft()
+
+                if (generation - insertion_window_start) <= self.novelty_params['gens_before_change']:
+                    increased_threshold = self.novelty_params['archive_threshold'] + self.novelty_params['threshold_increase_amount']
+                    self.novelty_params['archive_threshold'] = min(1.0, increased_threshold)
+
+            # Decrease archive threshold if not enough things have been recently inserted
+            if len(self.recent_insertions) > 0:
+                last_insertion_time = self.recent_insertions.pop()
+                self.recent_insertions.append(last_insertion_time)
+
+            else:
+                last_insertion_time = -1
+
+            if (generation - last_insertion_time) >= self.novelty_params['gens_before_change']:
+                decreased_threshold = self.novelty_params['archive_threshold'] - self.novelty_params['threshold_decrease_amount']
+                self.novelty_params['archive_threshold'] = max(0.0, decreased_threshold)
+
+        return weighted_scores, list(max_fitness_genome), max_fitness
 
     def get_genome_population_length(self):
         """
