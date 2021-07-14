@@ -64,7 +64,13 @@ def run_experiment(parameter_filename):
 
             # Create rwg json file and load to fitness calculator
             parameters_in_name = Learner.get_core_params_in_model_name(rwg_parameter_dictionary)
-            parameters_in_name += CentralisedRWGLearner.get_additional_params_in_model_name(rwg_parameter_dictionary)
+
+            if parameter_dictionary["general"]["learning_type"] == "centralised":
+                parameters_in_name += CentralisedRWGLearner.get_additional_params_in_model_name(rwg_parameter_dictionary)
+
+            elif parameter_dictionary["general"]["learning_type"] == "fully-centralised":
+                parameters_in_name += FullyCentralisedRWGLearner.get_additional_params_in_model_name(rwg_parameter_dictionary)
+
             new_rwg_parameter_filename = "_".join([str(param) for param in parameters_in_name]) + ".json"
             f = open(new_rwg_parameter_filename, "w")
             rwg_dictionary_string = json.dumps(rwg_parameter_dictionary, indent=4)
@@ -73,7 +79,12 @@ def run_experiment(parameter_filename):
             rwg_fitness_calculator = FitnessCalculator(new_rwg_parameter_filename)
 
             # Seeding
-            learner1 = CentralisedRWGLearner(rwg_fitness_calculator)
+            if parameter_dictionary["general"]["learning_type"] == "centralised":
+                learner1 = CentralisedRWGLearner(rwg_fitness_calculator)
+
+            elif parameter_dictionary["general"]["learning_type"] == "fully-centralised":
+                learner1 = FullyCentralisedRWGLearner(rwg_fitness_calculator)
+
             genome1, fitness1 = learner1.learn()
 
             # Learning
@@ -84,6 +95,11 @@ def run_experiment(parameter_filename):
             elif parameter_dictionary["general"]["learning_type"] == "decentralised":
                 learner2 = DecentralisedCMALearner(fitness_calculator)
                 genomes, fitnesses = learner2.learn()
+
+            elif parameter_dictionary["general"]["learning_type"] == "fully-centralised":
+                learner2 = FullyCentralisedCMALearner(fitness_calculator)
+                genomes, fitnesses = learner2.learn()
+
         else:
             if parameter_dictionary["general"]["learning_type"] == "centralised":
                 learner = CentralisedCMALearner(fitness_calculator)
