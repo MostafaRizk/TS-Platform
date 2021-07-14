@@ -1,14 +1,14 @@
 {
     "general": {
         "learning_type": "centralised",
-        "algorithm_selected": "ga",
+        "algorithm_selected": "cma",
         "team_type": "heterogeneous",
         "reward_level": "team",
         "agent_type": "nn",
         "environment": "slope",
         "calculate_specialisation": "False",
         "seed": 1,
-        "using_novelty": "True"
+        "using_novelty": "False"
     },
     "environment": {
         "slope": {
@@ -57,14 +57,14 @@
         },
         "cma": {
             "sigma": 0.2,
-            "generations": 500,
+            "generations": 1000,
             "tolx": 0.001,
             "tolfunhist": 0.0,
             "tolflatfitness": 1000,
             "tolfun": 0.0,
             "tolstagnation": 1000,
             "tolfacupx": 1e9,
-            "logging_rate": 5,
+            "logging_rate": 50,
             "seeding_required": "False",
             "seeding_included": "False",
             "partial": "False",
