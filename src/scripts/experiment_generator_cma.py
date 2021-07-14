@@ -29,7 +29,8 @@ def generate_cma_experiments(experiment_directory, core_parameter_filename, lear
 
     elif holding_constant == "games_per_run_2":
         pop_size_for_team = {
-            "centralised": {2: 200, 4: 800, 6: 1800}
+            "centralised": {2: 200, 4: 800, 6: 1800, 8: 3200},
+            "fully-centralised": {2: 200, 4: 800, 6: 1800, 8: 3200}
         }
 
     for num_agents in num_agents_in_setup:

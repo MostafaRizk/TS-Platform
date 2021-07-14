@@ -33,7 +33,9 @@ def run_experiment(parameter_filename):
             #    raise RuntimeError("Seeding included is not yet supported for fully centralised")
 
             # Load default rwg parameters
-            default_rwg_parameter_filename = 'default_rwg_parameters_individual.json'
+            if parameter_dictionary["general"]["environment"] == "slope":
+                default_rwg_parameter_filename = 'default_slope_rwg_parameters_individual.json'
+
             rwg_parameter_dictionary = json.loads(open(default_rwg_parameter_filename).read())
 
             # Copy general parameters from cma to rwg
