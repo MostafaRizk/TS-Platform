@@ -29,8 +29,8 @@ def run_experiment(parameter_filename):
     elif parameter_dictionary["general"]["algorithm_selected"] == "cma":
 
         if parameter_dictionary["algorithm"]["cma"]["seeding_included"] == "True":
-            if parameter_dictionary["general"]["learning_type"] == "fully-centralised":
-                raise RuntimeError("Seeding included is not yet supported for fully centralised")
+            #if parameter_dictionary["general"]["learning_type"] == "fully-centralised":
+            #    raise RuntimeError("Seeding included is not yet supported for fully centralised")
 
             # Load default rwg parameters
             default_rwg_parameter_filename = 'default_rwg_parameters_individual.json'

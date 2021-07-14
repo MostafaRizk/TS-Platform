@@ -65,8 +65,8 @@
             "tolstagnation": 1000,
             "tolfacupx": 1e9,
             "logging_rate": 50,
-            "seeding_required": "False",
-            "seeding_included": "False",
+            "seeding_required": "True",
+            "seeding_included": "True",
             "partial": "False",
             "multithreading": "False"
         },
