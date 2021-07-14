@@ -79,11 +79,11 @@ def run_experiment(parameter_filename):
             rwg_fitness_calculator = FitnessCalculator(new_rwg_parameter_filename)
 
             # Seeding
-            if parameter_dictionary["general"]["learning_type"] == "centralised":
-                learner1 = CentralisedRWGLearner(rwg_fitness_calculator)
-
-            elif parameter_dictionary["general"]["learning_type"] == "fully-centralised":
+            if parameter_dictionary["general"]["learning_type"] == "fully-centralised":
                 learner1 = FullyCentralisedRWGLearner(rwg_fitness_calculator)
+
+            else:
+                learner1 = CentralisedRWGLearner(rwg_fitness_calculator)
 
             genome1, fitness1 = learner1.learn()
 
