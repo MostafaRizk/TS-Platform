@@ -36,7 +36,9 @@ class CMALearner(Learner):
 
         # Log every x many generations
         self.logging_rate = self.parameter_dictionary['algorithm']['cma']['logging_rate']
-        self.calculate_behaviour_distance = partial(novelty_helpers.calculate_distance, metric=self.novelty_params['distance_metric'])
+
+        if self.using_novelty:
+            self.calculate_behaviour_distance = partial(novelty_helpers.calculate_distance, metric=self.novelty_params['distance_metric'])
 
     def get_seed_genome(self):
         """
