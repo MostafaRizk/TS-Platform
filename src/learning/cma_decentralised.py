@@ -235,7 +235,22 @@ class DecentralisedCMALearner(DecentralisedLearner, CMALearner):
                 # Create and run parallel threads
                 for index, learner in enumerate(learners):
                     if not learner.stop():
-                        parallel_threads += [learn_in_parallel.remote(learner, index, self.fitness_calculator, self.insert_representative_genomes_in_population, self.remove_representative_fitnesses, self.convert_genomes_to_controllers, self.calculate_specialisation, self.using_novelty, self.remove_representative_bc, self.novelty_archive, self.novelty_params, self.calculate_behaviour_distance, recent_insertions, np_random, generation)]
+                        if self.using_novelty:
+                            parallel_threads += [learn_in_parallel.remote(learner, index, self.fitness_calculator, self.insert_representative_genomes_in_population, self.remove_representative_fitnesses, self.convert_genomes_to_controllers, self.calculate_specialisation, self.using_novelty, self.remove_representative_bc, self.novelty_archive, self.novelty_params, self.calculate_behaviour_distance, recent_insertions, np_random, generation)]
+                        else:
+                            parallel_threads += [learn_in_parallel.remote(learner, index, self.fitness_calculator,
+                                                                          self.insert_representative_genomes_in_population,
+                                                                          self.remove_representative_fitnesses,
+                                                                          self.convert_genomes_to_controllers,
+                                                                          self.calculate_specialisation,
+                                                                          self.using_novelty,
+                                                                          None,
+                                                                          None,
+                                                                          None,
+                                                                          None,
+                                                                          None,
+                                                                          None,
+                                                                          None)]
 
                     elif not stopping_reasons[index]:
                         # Log reason for stopping
@@ -263,7 +278,15 @@ class DecentralisedCMALearner(DecentralisedLearner, CMALearner):
             else:
                 for index, learner in enumerate(learners):
                     if not learner.stop():
-                        learners[index], self.representative_genomes[index], best_fitnesses[index] = learn_agent(learner, index, self.fitness_calculator, self.insert_representative_genomes_in_population, self.remove_representative_fitnesses, self.convert_genomes_to_controllers, self.calculate_specialisation, self.using_novelty, self.remove_representative_bc, self.novelty_archive, self.novelty_params, self.calculate_behaviour_distance, recent_insertions, np_random, generation)
+                        if self.using_novelty:
+                            learners[index], self.representative_genomes[index], best_fitnesses[index] = learn_agent(learner, index, self.fitness_calculator, self.insert_representative_genomes_in_population, self.remove_representative_fitnesses, self.convert_genomes_to_controllers, self.calculate_specialisation, self.using_novelty, self.remove_representative_bc, self.novelty_archive, self.novelty_params, self.calculate_behaviour_distance, recent_insertions, np_random, generation)
+
+                        else:
+                            learners[index], self.representative_genomes[index], best_fitnesses[index] = learn_agent(
+                                learner, index, self.fitness_calculator,
+                                self.insert_representative_genomes_in_population, self.remove_representative_fitnesses,
+                                self.convert_genomes_to_controllers, self.calculate_specialisation, self.using_novelty,
+                                None, None, None, None, None, None, None)
 
                         # Log best genome for this learner
                         if generation % self.logging_rate == 0:
