@@ -132,6 +132,8 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
             # CMA minimises fitness so we negate the fitness values
             if not self.using_novelty:
                 es.tell(genome_population, [-f for f in genome_fitness_average])
+                best_genome = es.result[0]
+                best_genome_fitness = -es.result[1]
 
             else:
                 novelties = [0] * len(team_bc_vectors)

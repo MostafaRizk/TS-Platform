@@ -43,6 +43,10 @@ def learn_agent(learner, learner_index, fitness_calculator, insert_representativ
     if not using_novelty:
         new_learner.tell(genome_population, [-f for f in genome_fitness_average])
 
+        # Update representative agent
+        best_genome = new_learner.result[0]
+        best_genome_fitness = -new_learner.result[1]
+
     else:
         novelties = [0] * len(agent_bc_vectors)
         min_fitness = float('inf')
@@ -166,10 +170,6 @@ def learn_agent(learner, learner_index, fitness_calculator, insert_representativ
         if (generation - last_insertion_time) >= novelty_params['gens_before_change']:
             decreased_threshold = novelty_params['archive_threshold'][learner_index] - novelty_params['threshold_decrease_amount']
             novelty_params['archive_threshold'][learner_index] = max(0.0, decreased_threshold)
-
-    # Update representative agent
-    #best_genome = new_learner.result[0]
-    #best_fitness = -new_learner.result[1]
 
     return new_learner, best_genome, best_genome_fitness
 
