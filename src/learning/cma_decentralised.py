@@ -244,7 +244,7 @@ class DecentralisedCMALearner(DecentralisedLearner, CMALearner):
                                                                           self.convert_genomes_to_controllers,
                                                                           self.calculate_specialisation,
                                                                           self.using_novelty,
-                                                                          None,
+                                                                          self.remove_representative_bc,
                                                                           None,
                                                                           None,
                                                                           None,
@@ -286,7 +286,8 @@ class DecentralisedCMALearner(DecentralisedLearner, CMALearner):
                                 learner, index, self.fitness_calculator,
                                 self.insert_representative_genomes_in_population, self.remove_representative_fitnesses,
                                 self.convert_genomes_to_controllers, self.calculate_specialisation, self.using_novelty,
-                                None, None, None, None, None, None, None)
+                                self.remove_representative_bc, None, None,
+                                None, None, None, None)
 
                         # Log best genome for this learner
                         if generation % self.logging_rate == 0:
