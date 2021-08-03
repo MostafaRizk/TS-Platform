@@ -7,9 +7,10 @@ from scipy import stats
 from operator import add
 
 setups = ["Centralised", "Decentralised", "Fully-centralised"]
-#spec_metric_index = 2 # R_spec
+setup_labels = ["CTDE", "FD", "FC"]
+spec_metric_index = 2 # R_spec
 #spec_metric_index = 5 # R_spec_P
-spec_metric_index = 0
+#spec_metric_index = 0
 
 
 def from_string(arr_str):
@@ -163,21 +164,21 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
             tick.label.set_fontsize(16)
 
         if plot_type == "mean" or plot_type == "error":
-            plt.errorbar(x, y_centralised, yerr_centralised, fmt='r-', label="Hybrid")
+            plt.errorbar(x, y_centralised, yerr_centralised, fmt='r-', label="CTDE")
             plt.errorbar(x, y_decentralised, yerr_decentralised, fmt='b-', label="Fully Decentralised")
             #plt.errorbar(x, y_onepop, yerr_onepop, fmt='g-', label="One-pop")
             #plt.errorbar(x, y_homogeneous, yerr_homogeneous, fmt='k-', label="Homogeneous")
             plt.errorbar(x, y_fully_centralised, yerr_fully_centralised, fmt='g-', label="Fully Centralised")
 
         elif plot_type == "best" or plot_type == "median":
-            plt.plot(x, y_centralised, 'ro-', label=f"Hybrid ({plot_type})")
+            plt.plot(x, y_centralised, 'ro-', label=f"CTDE ({plot_type})")
             plt.plot(x, y_decentralised, 'bo-', label=f"Fully Decentralised ({plot_type})")
             plt.plot(x, y_fully_centralised, 'go-', label=f"Fully Centralised ({plot_type})")
             # plt.plot(x, y_onepop, 'go-', label=f"One-pop ({plot_type})")
             # plt.plot(x, y_homogeneous, 'ko-', label=f"Homogeneous ({plot_type})")
 
         else:
-            plt.plot(x, y_centralised, 'ro-', label="Hybrid")
+            plt.plot(x, y_centralised, 'ro-', label="CTDE")
             plt.plot(x, y_decentralised, 'bo-', label="Fully Decentralised")
             #plt.plot(x, y_onepop, 'go-', label="One-pop")
             #plt.plot(x, y_homogeneous, 'ko-', label="Homogeneous")
@@ -217,7 +218,7 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
                     pc.set_color('red')
                 elif setups[id] == "Decentralised":
                     pc.set_color('blue')
-                elif setups[id] == "One-pop":
+                elif setups[id] == "Fully-centralised":
                     pc.set_color('green')
                 elif setups[id] == "Homogeneous":
                     pc.set_color('black')
@@ -225,7 +226,7 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
             for pc in ('cbars', 'cmins', 'cmaxes'):
                 parts[pc].set_color('black')
 
-            set_axis_style(ax, setups)
+            set_axis_style(ax, setup_labels)
             ax.set_title(f"{num_agents} Agents")
 
         plt.suptitle(f"{showing.capitalize()} Distribution")

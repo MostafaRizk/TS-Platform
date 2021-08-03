@@ -62,7 +62,7 @@ def create_results_from_models(path_to_data_folder, start_generation, step_size,
         # For every model, extract parameters and convert to a comma separated list
         for model_name in model_files:
             learning_type = model_name.split("/")[-1].split("_")[0]
-            if learning_type == "centralised":
+            if learning_type == "centralised" or learning_type == "fully-centralised":
                 parameter_list = model_name.split("/")[-1].split("_")[:-2]
                 parameter_filename = "_".join(parameter_list) + ".json"
                 agent_index = "None"
@@ -71,7 +71,7 @@ def create_results_from_models(path_to_data_folder, start_generation, step_size,
                 parameter_filename = "_".join(parameter_list) + ".json"
                 agent_index = model_name.split("/")[-1].split("_")[-3]
             else:
-                raise RuntimeError("Model prefix must be Centralised or Decentralised")
+                raise RuntimeError("Model prefix must be centralised, decentralised or fully-centralised")
 
             parameter_path = os.path.join(path_to_data_folder, parameter_filename)
             parameter_dictionary = json.loads(open(parameter_path).read())

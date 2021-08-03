@@ -302,6 +302,10 @@ class SlopeEnv:
 
         self.agent_positions = agent_collision_positions
 
+        for i in range(len(self.agent_positions)):
+            self.avg_pos_for_agent[i][0] += self.agent_positions[i][0] / self.episode_length
+            self.avg_pos_for_agent[i][1] += self.agent_positions[i][1] / self.episode_length
+
     def update_resource_positions(self, agent_actions, old_agent_positions, rewards):
         """
         Resources get moved, dropped, picked up, slided and deleted (if at the nest)

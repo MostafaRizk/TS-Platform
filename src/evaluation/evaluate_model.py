@@ -14,8 +14,8 @@ from glob import glob
 from agents.hardcoded.hitchhiker import HardcodedHitchhikerAgent
 from array2gif import write_gif
 
-#metric_index = 2  # R_spec
-metric_index = 0 # T-Maze
+metric_index = 2  # R_spec
+#metric_index = 0 # T-Maze
 
 def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, print_scores=None, ids_to_remove=None):
     if rendering == "True":
