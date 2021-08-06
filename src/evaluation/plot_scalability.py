@@ -12,6 +12,9 @@ spec_metric_index = 2 # R_spec
 #spec_metric_index = 5 # R_spec_P
 #spec_metric_index = 0
 
+spec_index_with_participation = 5
+spec_index_without_participation = 2
+
 
 def from_string(arr_str):
     """
@@ -105,6 +108,23 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
                     specialisation = np.mean(specialisation_each_episode)
                     scores[key] += [specialisation]
 
+                elif showing == "participation":
+                    participation_each_episode = []
+
+                    for episode in results[key][seed]["specialisation"]:
+                        spec_with_participation = episode[spec_index_with_participation]
+                        spec_without_participation = episode[spec_index_without_participation]
+
+                        if spec_without_participation != 0:
+                            participation_each_episode += [spec_with_participation / spec_without_participation]
+
+                        else:
+                            participation_each_episode += [0.0]
+
+                    participation = np.mean(participation_each_episode)
+                    scores[key] += [participation]
+
+
             if setup == "Centralised":
                 y = y_centralised
                 yerr = yerr_centralised
@@ -148,12 +168,19 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
     if not violin:
         fig1, ax1 = plt.subplots(figsize=(12, 8))
         ax1.set_title(f'Scalability of Evolved {showing.capitalize()} with Number of Agents', fontsize=20)
+
         if showing == "fitness":
             ax1.set_ylim(0, y_height)
             ax1.set_ylabel('Fitness per agent', fontsize=18)
+
         elif showing == "specialisation":
             ax1.set_ylim(0, 1.1)
             ax1.set_ylabel('Team Specialisation', fontsize=18)
+
+        elif showing == "participation":
+            ax1.set_ylim(0, 1.1)
+            ax1.set_ylabel('Team Participation', fontsize=18)
+
         ax1.set_xticks([x for x in range(2, max_agents+2, 2)])
         ax1.set_xlabel('Number of Agents', fontsize=18)
 
