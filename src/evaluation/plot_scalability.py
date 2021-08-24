@@ -16,22 +16,38 @@ spec_index_with_participation = 5
 spec_index_without_participation = 2
 
 
-def from_string(arr_str):
+def from_string(arr_str, dim=2):
     """
-    Convert string to a 2D array
+    Convert string to an array with dimension dim
     @param arr_str:
+    @param dim: Dimension size of new array
     @return:
     """
-    arr_str = arr_str[1:-1]
-    a = []
-    list_to_parse = arr_str.strip('').split("]")[:-1]
+    if dim == 2:
+        arr_str = arr_str[1:-1]
+        a = []
+        list_to_parse = arr_str.strip('').split("]")[:-1]
 
-    for el in list_to_parse:
-        new_el = el.replace("[","")
-        new_el = [float(item) for item in new_el.split()]
-        a += [new_el]
+        for el in list_to_parse:
+            new_el = el.replace("[","")
+            new_el = [float(item) for item in new_el.split()]
+            a += [new_el]
 
-    return a
+        return a
+
+    if dim == 3:
+        arr_str = arr_str[1:-1]
+        a = []
+        list_to_parse = arr_str.strip('').split("]]")[:-1]
+
+        for el in list_to_parse:
+            new_el = from_string(el+"]]")
+            a += [new_el]
+
+        return a
+
+
+
 
 
 def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, violin=False, y_min_height=-2000, y_height=15000, showing="fitness"):
@@ -77,11 +93,13 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
             results[key][seed] = None
 
         if type(row["fitness"]) == float:
-            results[key][seed] = {"fitness": row["fitness"]
-                                  ,"specialisation": row["specialisation"]}
+            results[key][seed] = {"fitness": row["fitness"],
+                                  "specialisation": row["specialisation"],
+                                  "participation": row["participation"]}
         else:
             results[key][seed] = {"fitness": from_string(row["fitness"]),
-                                  "specialisation": from_string(row["specialisation"])}
+                                  "specialisation": from_string(row["specialisation"]),
+                                  "participation": from_string(row["participation"])}
 
     scores = {}
 
@@ -111,15 +129,14 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
                 elif showing == "participation":
                     participation_each_episode = []
 
-                    for episode in results[key][seed]["specialisation"]:
-                        spec_with_participation = episode[spec_index_with_participation]
-                        spec_without_participation = episode[spec_index_without_participation]
+                    for episode in results[key][seed]["participation"]:
+                        agents_participated = 0
 
-                        if spec_without_participation != 0:
-                            participation_each_episode += [spec_with_participation / spec_without_participation]
+                        for agent_res_count in episode:
+                            if agent_res_count != 0:
+                                agents_participated += 1
 
-                        else:
-                            participation_each_episode += [0.0]
+                        participation_each_episode += [agents_participated / num_agents]
 
                     participation = np.mean(participation_each_episode)
                     scores[key] += [participation]
@@ -233,7 +250,7 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
             if showing == "fitness":
                 ax.set_ylim(y_min_height, y_height)
                 ax.set_ylabel("Fitness per Agent")
-            elif showing == "specialisation":
+            elif showing == "specialisation" or showing == "participation":
                 ax.set_ylim(-0.2, 1.2)
                 ax.set_ylabel("Team Specialisation")
 

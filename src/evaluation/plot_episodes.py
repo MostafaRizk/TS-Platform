@@ -7,11 +7,12 @@ import matplotlib.colors as colours
 from scipy import stats
 from operator import add
 
-setups = ["Centralised", "Decentralised", "One-pop", "Homogeneous"]
+setups = ["Centralised", "Decentralised", "Fully-centralised"]
+setup_labels = ["CTDE", "Fully Decentralised", "Fully Centralised"]
 alpha = 0.2
 background_alpha = 0.5
-#spec_metric_index = 2 # R_spec
-spec_metric_index = 5 # R_spec_P
+spec_metric_index = 2 # R_spec
+#spec_metric_index = 5 # R_spec_P
 
 
 def from_string(arr_str):
@@ -39,6 +40,7 @@ def plot_episodes(path_to_results, path_to_graph, max_agents, y_height=15000):
     y_decentralised = []
     y_onepop = []
     y_homogeneous = []
+    y_fully_centralised = []
 
     # Read data from results file
     data = pd.read_csv(path_to_results)
@@ -84,7 +86,7 @@ def plot_episodes(path_to_results, path_to_graph, max_agents, y_height=15000):
             setup = setups[row-1]
             num_agents = col*2
             key = f"{setup}-{num_agents}"
-            plot_name = f"{key}"
+            plot_name = f"{setup_labels[row-1]}-{num_agents} agents"
 
             all_runs = [None]*len(results[key])
 

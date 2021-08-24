@@ -17,7 +17,7 @@ from array2gif import write_gif
 metric_index = 2  # R_spec
 #metric_index = 0 # T-Maze
 
-def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, print_scores=None, ids_to_remove=None):
+def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, print_scores=None, ids_to_remove=None, bc_measure=None):
     if rendering == "True":
         rendering = True
     else:
@@ -59,8 +59,17 @@ def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, p
     num_agents = parameter_dictionary["environment"][environment]["num_agents"]
     agent_list = []
 
+    dictionary_changed = False
+
     if episodes and parameter_dictionary["environment"][environment]["num_episodes"] != episodes:
         parameter_dictionary["environment"][environment]["num_episodes"] = episodes
+        dictionary_changed = True
+
+    if bc_measure and parameter_dictionary["environment"][environment]["bc_measure"] != bc_measure:
+        parameter_dictionary["environment"][environment]["bc_measure"] = bc_measure
+        dictionary_changed = True
+
+    if dictionary_changed:
         new_parameter_path = os.path.join(data_directory, "temp.json")
         f = open(new_parameter_path, "w")
         dictionary_string = json.dumps(parameter_dictionary, indent=4)

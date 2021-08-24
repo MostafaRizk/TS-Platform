@@ -77,10 +77,6 @@ class SlopeEnv:
             raise RuntimeError("Incremental rewards is not set to True or False")
             raise RuntimeError("Incremental rewards is not set to True or False")
 
-        # Novelty constants
-        self.bc_measure = parameter_dictionary['environment']['slope']['bc_measure']
-        self.avg_pos_for_agent = [[0, 0] for _ in range(self.num_agents)]
-
         # Rendering constants
         self.scale = 50  # Scale for rendering
         self.nest_colour = [0.25, 0.25, 0.25]
@@ -133,6 +129,11 @@ class SlopeEnv:
         # Action space
         # 0- Forward, 1- Backward, 2- Left, 3- Right, 4- Pick up, 5- Drop
         self.action_space_size = 6
+
+        # Novelty constants
+        self.bc_measure = parameter_dictionary['environment']['slope']['bc_measure']
+        self.avg_pos_for_agent = [[0, 0] for _ in range(self.num_agents)]
+        self.agent_action_count = [[0 for _ in range(self.action_space_size)] for _ in range(self.num_agents)]
 
     def step(self, agent_actions):
         """
@@ -225,6 +226,7 @@ class SlopeEnv:
 
         # Reset BC
         self.avg_pos_for_agent = [[0, 0] for _ in range(self.num_agents)]
+        self.agent_action_count = [[0 for _ in range(self.action_space_size)] for _ in range(self.num_agents)]
 
         return self.get_agent_observations()
 
@@ -267,6 +269,10 @@ class SlopeEnv:
             # Negative reward for dropping/picking up but is not affected by resource weight
             else:
                 rewards[i] -= self.base_cost
+
+            # Count how many of each action was done by each agent
+            action_index = agent_actions[i]
+            self.agent_action_count[i][action_index] += 1
 
         return rewards
 
@@ -772,10 +778,28 @@ class SlopeEnv:
 
         return [r_coop, r_coop_eff, r_spec, r_coop * participation, r_coop_eff * participation, r_spec * participation]
 
+    def calculate_participation(self):
+        """
+        For every agent, count how many resources it helped retrieve
+        @return: List containing participation count for each agent
+        """
+        agent_participated = [0 for _ in range(self.num_agents)]
+
+        for i in range(self.latest_resource_id + 1):
+            if self.resource_history[i]["retrieved"]:
+                # Increment the participation count for each agent that helped carry this resource
+                for agent_index in self.resource_carried_by[i]:
+                    agent_participated[agent_index] += 1
+
+        return agent_participated
+
     # Calculate behaviour characterisation
     def get_behaviour_characterisation(self):
         if self.bc_measure == "avg_pos":
             return self.avg_pos_for_agent
+
+        elif self.bc_measure == "agent_action_count":
+            return self.agent_action_count
 
     # Rendering Functions ---------------------------------------------------------------------------------------------
     def draw_arena_segment(self, top, bottom, rgb_tuple):

@@ -22,7 +22,7 @@ setup_markers = {
 spec_metric_index = 2  # R_spec
 
 
-def plot_behaviours(path_to_results, path_to_graph, max_agents):
+def plot_behaviours(path_to_results, path_to_graph, max_agents, bc_measure):
     # Read data from results file
     data = pd.read_csv(path_to_results)
 
@@ -57,7 +57,7 @@ def plot_behaviours(path_to_results, path_to_graph, max_agents):
         else:
             results[key][seed] = {"fitness": from_string(row["fitness"]),
                                   "specialisation": from_string(row["specialisation"]),
-                                  "behaviour_characterisation": from_string(row["behaviour_characterisation"])}
+                                  "behaviour_characterisation": from_string(row["behaviour_characterisation"], dim=3)}
 
     fig = plt.figure(figsize=(19, 9))
     cm = plt.cm.get_cmap('RdYlGn')
@@ -75,19 +75,37 @@ def plot_behaviours(path_to_results, path_to_graph, max_agents):
             key = f"{setup}-{num_agents}"
 
             for seed in results[key]:
-                team_bc = []
+                if bc_measure == "agent_action_count":
+                    num_episodes = len(results[key][seed]["behaviour_characterisation"][0])
 
-                for agent_bc in results[key][seed]["behaviour_characterisation"]:
-                    team_bc += agent_bc
+                    for episode in range(num_episodes):
+                        team_bc = [0 for _ in range(len(results[key][seed]["behaviour_characterisation"][0][0]))]
 
-                results[key][seed]["behaviour_characterisation"] = team_bc
-                matrix += [team_bc]
-                markers += [setup_markers[setup]]
-                labels += [setup]
+                        for j in range(num_agents):
+                            team_bc = list(map(add, team_bc, results[key][seed]["behaviour_characterisation"][j][episode]))
 
-                specialisation_each_episode = [episode[spec_metric_index] for episode in results[key][seed]["specialisation"]]
-                specialisation = np.mean(specialisation_each_episode)
-                scores += [specialisation]
+                        matrix += [team_bc]
+                        markers += [setup_markers[setup]]
+                        labels += [setup]
+                        specialisation = results[key][seed]["specialisation"][episode][spec_metric_index]
+                        #specialisation_each_episode = [episode[spec_metric_index] for episode in results[key][seed]["specialisation"]]
+                        #specialisation = np.mean(specialisation_each_episode)
+                        scores += [specialisation]
+
+                else:
+                    team_bc = []
+
+                    for agent_bc in results[key][seed]["behaviour_characterisation"]:
+                            team_bc += agent_bc
+
+                    results[key][seed]["behaviour_characterisation"] = team_bc
+                    matrix += [team_bc]
+                    markers += [setup_markers[setup]]
+                    labels += [setup]
+
+                    specialisation_each_episode = [episode[spec_metric_index] for episode in results[key][seed]["specialisation"]]
+                    specialisation = np.mean(specialisation_each_episode)
+                    scores += [specialisation]
 
         pca = PCA(n_components=2)
         pca_result = pca.fit_transform(np.array(matrix))
@@ -108,6 +126,6 @@ def plot_behaviours(path_to_results, path_to_graph, max_agents):
 
 
 
-path_to_results = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_07_21_a_scalability/data/results_reevaluated_30ep_bc_final.csv"
-path_to_graph = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_07_21_a_scalability/analysis/behaviour_plot_30.png"
-plot_behaviours(path_to_results, path_to_graph, max_agents=8)
+path_to_results = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_08_06_a_scalability_variable_arena/data/results_reevaluated_30ep_final.csv"
+path_to_graph = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_08_06_a_scalability_variable_arena/analysis/behaviour_plot.png"
+plot_behaviours(path_to_results, path_to_graph, max_agents=8, bc_measure="agent_action_count")

@@ -53,6 +53,7 @@ class FitnessCalculator:
 
         fitnesses = []
         specialisations = []
+        participations = []
         behaviour_characterisations = []
         agents_per_team = self.num_agents
 
@@ -69,6 +70,7 @@ class FitnessCalculator:
 
                 fitnesses += fitness_matrix
                 specialisations += [specialisation_measures]
+                participations += results_dict["participation_list"]
                 behaviour_characterisations += behaviour_characterisation_matrix
 
         else:
@@ -80,9 +82,10 @@ class FitnessCalculator:
 
                 fitnesses += fitness_matrix
                 specialisations += [specialisation_measures]
+                participations += results_dict["participation_list"]
                 behaviour_characterisations += behaviour_characterisation_matrix
 
-        return fitnesses, specialisations, behaviour_characterisations
+        return fitnesses, specialisations, participations, behaviour_characterisations
 
     def calculate_fitness(self, controller_list, render=False, time_delay=0, measure_specialisation=False,
                           logging=False, logfilename=None, render_mode="human"):
@@ -114,6 +117,7 @@ class FitnessCalculator:
         file_reader = None
         fitness_matrix = [[0]*self.num_episodes for _ in range(self.num_agents)]
         specialisation_list = []
+        participation_list = []
 
         # For each agent, contains its BC value in every episode
         # Concatenate if evaluating team novelty
@@ -186,10 +190,11 @@ class FitnessCalculator:
             if measure_specialisation:
                 specialisation_list += [self.env.calculate_specialisation()]
 
+            participation_list += [self.env.calculate_participation()]
             bc_for_agent = self.env.get_behaviour_characterisation()
 
             for i in range(self.num_agents):
-                behaviour_characterisation_matrix[i] += bc_for_agent[i]
+                behaviour_characterisation_matrix[i] += [bc_for_agent[i]]
 
             if logging:
                 #for agent_action_list in agent_action_matrix:
@@ -202,7 +207,7 @@ class FitnessCalculator:
         if logging:
             file_reader.close()
 
-        return {"fitness_matrix": fitness_matrix, "specialisation_list": specialisation_list, "video_frames": video_frames, "behaviour_characterisation_matrix": behaviour_characterisation_matrix}
+        return {"fitness_matrix": fitness_matrix, "specialisation_list": specialisation_list, "participation_list": participation_list, "video_frames": video_frames, "behaviour_characterisation_matrix": behaviour_characterisation_matrix}
 
     # Helpers ---------------------------------------------------------------------------------------------------------
 
