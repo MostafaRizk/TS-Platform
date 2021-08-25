@@ -108,6 +108,8 @@ class SlopeEnv:
                                   "collector_index": -1, # index of agent who last picked it up on the cache (if the resource is delivered, this will also be the agent that delivers it)
                                   "retrieved": False # Was the resource retrieved
                                   } for i in range(self.max_resources)]
+        self.agent_trajectories = [[None for _ in range(self.episode_length)] for _ in range(self.num_agents)]
+        self.last_trajectory_recorded = 0
 
         # Step variables
         self.behaviour_map = [self.forward_step, self.backward_step, self.left_step, self.right_step]
@@ -223,6 +225,12 @@ class SlopeEnv:
         # Reset variables that were changed during runtime
         self.has_resource = [None] * self.num_agents
         self.current_num_resources = self.default_num_resources
+        self.agent_trajectories = [[None for _ in range(self.episode_length)] for _ in range(self.num_agents)]
+        
+        for agent_id in range(self.num_agents):
+            self.agent_trajectories[agent_id][0] = self.agent_positions[agent_id][1]
+
+        self.last_trajectory_recorded = 0
 
         # Reset BC
         self.avg_pos_for_agent = [[0, 0] for _ in range(self.num_agents)]
@@ -307,10 +315,14 @@ class SlopeEnv:
             self.agent_map[agent_collision_positions[i][1]][agent_collision_positions[i][0]] = i + 1
 
         self.agent_positions = agent_collision_positions
-
+        
         for i in range(len(self.agent_positions)):
             self.avg_pos_for_agent[i][0] += self.agent_positions[i][0] / self.episode_length
             self.avg_pos_for_agent[i][1] += self.agent_positions[i][1] / self.episode_length
+            
+            self.agent_trajectories[i][self.last_trajectory_recorded] = self.agent_positions[i][1]
+
+        self.last_trajectory_recorded += 1
 
     def update_resource_positions(self, agent_actions, old_agent_positions, rewards):
         """
@@ -800,6 +812,9 @@ class SlopeEnv:
 
         elif self.bc_measure == "agent_action_count":
             return self.agent_action_count
+    
+    def get_trajectories(self):
+        return self.agent_trajectories
 
     # Rendering Functions ---------------------------------------------------------------------------------------------
     def draw_arena_segment(self, top, bottom, rgb_tuple):

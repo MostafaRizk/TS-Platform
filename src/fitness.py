@@ -55,6 +55,7 @@ class FitnessCalculator:
         specialisations = []
         participations = []
         behaviour_characterisations = []
+        trajectories = []
         agents_per_team = self.num_agents
 
         if self.learning_type != "fully-centralised":
@@ -72,6 +73,7 @@ class FitnessCalculator:
                 specialisations += [specialisation_measures]
                 participations += results_dict["participation_list"]
                 behaviour_characterisations += behaviour_characterisation_matrix
+                trajectories += results_dict["trajectory_matrix"]
 
         else:
             for controller in population:
@@ -84,8 +86,9 @@ class FitnessCalculator:
                 specialisations += [specialisation_measures]
                 participations += results_dict["participation_list"]
                 behaviour_characterisations += behaviour_characterisation_matrix
+                trajectories += results_dict["trajectory_matrix"]
 
-        return fitnesses, specialisations, participations, behaviour_characterisations
+        return fitnesses, specialisations, participations, behaviour_characterisations, trajectories
 
     def calculate_fitness(self, controller_list, render=False, time_delay=0, measure_specialisation=False,
                           logging=False, logfilename=None, render_mode="human"):
@@ -122,6 +125,9 @@ class FitnessCalculator:
         # For each agent, contains its BC value in every episode
         # Concatenate if evaluating team novelty
         behaviour_characterisation_matrix = [[] for _ in range(self.num_agents)]
+
+        # Trajectory of each
+        trajectory_matrix = [[[None for _ in range(self.episode_length)] for _ in range(self.num_episodes)] for _ in range(self.num_agents)]
 
         controller_copies = [copy.deepcopy(controller) for controller in controller_list]
         video_frames = []
@@ -193,8 +199,11 @@ class FitnessCalculator:
             participation_list += [self.env.calculate_participation()]
             bc_for_agent = self.env.get_behaviour_characterisation()
 
+            trajectories = self.env.get_trajectories()
+
             for i in range(self.num_agents):
                 behaviour_characterisation_matrix[i] += [bc_for_agent[i]]
+                trajectory_matrix[i][episode] = trajectories[i]
 
             if logging:
                 #for agent_action_list in agent_action_matrix:
@@ -207,7 +216,7 @@ class FitnessCalculator:
         if logging:
             file_reader.close()
 
-        return {"fitness_matrix": fitness_matrix, "specialisation_list": specialisation_list, "participation_list": participation_list, "video_frames": video_frames, "behaviour_characterisation_matrix": behaviour_characterisation_matrix}
+        return {"fitness_matrix": fitness_matrix, "specialisation_list": specialisation_list, "participation_list": participation_list, "video_frames": video_frames, "behaviour_characterisation_matrix": behaviour_characterisation_matrix, "trajectory_matrix": trajectory_matrix}
 
     # Helpers ---------------------------------------------------------------------------------------------------------
 

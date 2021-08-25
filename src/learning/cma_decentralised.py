@@ -28,7 +28,7 @@ def learn_agent(learner, learner_index, fitness_calculator, insert_representativ
     agent_population = convert_genomes_to_agents(extended_genome_population)
 
     # Get fitnesses of genomes (same as fitnesses of agents)
-    genome_fitness_lists, team_specialisations, agent_bc_vectors = fitness_calculator.calculate_fitness_of_agent_population(agent_population, calculate_specialisation)
+    genome_fitness_lists, team_specialisations, participations, agent_bc_vectors, trajectories = fitness_calculator.calculate_fitness_of_agent_population(agent_population, calculate_specialisation)
 
     # Remove fitness values of the representative agents of the other populations
     genome_fitness_lists = remove_representative_fitnesses(genome_fitness_lists)

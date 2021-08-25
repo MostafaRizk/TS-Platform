@@ -26,7 +26,7 @@ def create_reevaluated_results(path_to_data_folder, generation, episodes, num_ag
     # Write header
     # TODO: Get the header using the learner classes? What about 'agents_removed'?
     if env == "slope":
-        header = "learning_type,algorithm_selected,team_type,reward_level,agent_type,environment,seed,num_agents,num_resources,sensor_range,sliding_speed,arena_length,arena_width,cache_start,slope_start,source_start,base_cost,upward_cost_factor,downward_cost_factor,carry_factor,resource_reward,episode_length,num_episodes, incremental_rewards,architecture,bias,hidden_layers,hidden_units_per_layer,activation_function,agent_population_size,sigma,generations,tolx,tolfunhist,tolflatfitness,tolfun,agents_removed,seed_fitness,fitness,seed_specialisation,specialisation,participation,behaviour_characterisation,model_name"
+        header = "learning_type,algorithm_selected,team_type,reward_level,agent_type,environment,seed,num_agents,num_resources,sensor_range,sliding_speed,arena_length,arena_width,cache_start,slope_start,source_start,base_cost,upward_cost_factor,downward_cost_factor,carry_factor,resource_reward,episode_length,num_episodes, incremental_rewards,architecture,bias,hidden_layers,hidden_units_per_layer,activation_function,agent_population_size,sigma,generations,tolx,tolfunhist,tolflatfitness,tolfun,agents_removed,seed_fitness,fitness,seed_specialisation,specialisation,participation,behaviour_characterisation,trajectory,model_name"
     elif env == "tmaze":
         header = "learning_type,algorithm_selected,team_type,reward_level,agent_type,environment,seed,num_agents,hall_size,start_zone_size,episode_length,num_episodes,architecture,bias,hidden_layers,hidden_units_per_layer,activation_function,agent_population_size,sigma,generations,tolx,tolfunhist,tolflatfitness,tolfun,agents_removed,seed_fitness,fitness,seed_specialisation,specialisation,behaviour_characterisation,model_name"
 
@@ -111,6 +111,7 @@ def create_reevaluated_results(path_to_data_folder, generation, episodes, num_ag
                                 [str(results['specialisation_list']).replace(",", " ")] + \
                                 [str(results['participation_list']).replace(",", " ")] + \
                                 [str(results['behaviour_characterisation_matrix']).replace(",", " ")] + \
+                                [str(results['trajectory_matrix']).replace(",", " ")] + \
                                 [model_path]
 
             line_to_log = ",".join(parameters_to_log)

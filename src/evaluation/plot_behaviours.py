@@ -11,7 +11,7 @@ from sklearn.decomposition import PCA
 # WARNING: The ith element of each list must match
 # i.e. setup_labels[i] must be the shortened name for setups[i] etc
 setups = ["Centralised", "Decentralised", "Fully-centralised"]
-setup_labels = ["CTDE", "FD", "FC"]
+setup_labels = ["CTDE", "Fully Decentralised", "Fully Centralised"]
 marker_list = ['^', 's', 'o']
 setup_markers = {
                 "Centralised": '^',
@@ -62,7 +62,7 @@ def plot_behaviours(path_to_results, path_to_graph, max_agents, bc_measure):
     fig = plt.figure(figsize=(19, 9))
     cm = plt.cm.get_cmap('RdYlGn')
     plt.suptitle("Mapping Evolved Solutions in the Behaviour Space")
-    num_rows = 1
+    num_rows = 3
     num_cols = max_agents // 2
 
     for num_agents in range(2, max_agents+2, 2):
@@ -70,9 +70,13 @@ def plot_behaviours(path_to_results, path_to_graph, max_agents, bc_measure):
         markers = []
         labels = []
         scores = []
+        setup_start_id = [None for _ in range(len(setups))]
+        current_matrix_id = 0
 
-        for setup in setups:
+        for i in range(len(setups)):
+            setup = setups[i]
             key = f"{setup}-{num_agents}"
+            setup_start_id[i] = current_matrix_id
 
             for seed in results[key]:
                 if bc_measure == "agent_action_count":
@@ -85,6 +89,7 @@ def plot_behaviours(path_to_results, path_to_graph, max_agents, bc_measure):
                             team_bc = list(map(add, team_bc, results[key][seed]["behaviour_characterisation"][j][episode]))
 
                         matrix += [team_bc]
+                        current_matrix_id += 1
                         markers += [setup_markers[setup]]
                         labels += [setup]
                         specialisation = results[key][seed]["specialisation"][episode][spec_metric_index]
@@ -110,15 +115,31 @@ def plot_behaviours(path_to_results, path_to_graph, max_agents, bc_measure):
         pca = PCA(n_components=2)
         pca_result = pca.fit_transform(np.array(matrix))
         print(f"{num_agents}: {np.sum(pca.explained_variance_ratio_)}")
-        xs = pca_result[:, 0]
-        ys = pca_result[:, 1]
 
-        subplot_id = num_agents//2
-        ax = fig.add_subplot(num_rows, num_cols, subplot_id)
-        plt.title(f"{num_agents} Agents")
+        for setup_id in range(len(setups)):
+            start_id = setup_start_id[setup_id]
 
-        for x, y, s, m, l in zip(xs, ys, scores, markers, labels):
-            ax.scatter(x, y, c=cm(s), marker=m, label=l)
+            if setup_id < len(setups) - 1:
+                end_id = setup_start_id[setup_id + 1]
+                xs = pca_result[start_id:end_id, 0]
+                ys = pca_result[start_id:end_id, 1]
+                scores_temp = scores[start_id:end_id]
+                markers_temp = markers[start_id:end_id]
+                labels_temp = labels[start_id:end_id]
+
+            else:
+                xs = pca_result[start_id:, 0]
+                ys = pca_result[start_id:, 1]
+                scores_temp = scores[start_id:]
+                markers_temp = markers[start_id:]
+                labels_temp = labels[start_id:]
+
+            subplot_id = (num_agents//2) + (setup_id * num_cols)
+            ax = fig.add_subplot(num_rows, num_cols, subplot_id)
+            plt.title(f"{setup_labels[setup_id]}- {num_agents} Agents")
+
+            for x, y, s, m, l in zip(xs, ys, scores_temp, markers_temp, labels_temp):
+                ax.scatter(x, y, c=cm(s), marker=m, label=l)
 
     #fig.legend(setup_labels)
     plt.savefig(path_to_graph)
