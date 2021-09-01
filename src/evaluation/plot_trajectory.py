@@ -44,7 +44,9 @@ def load_results(path_to_results, max_agents):
                               "specialisation": from_string(row["specialisation"]),
                               "behaviour_characterisation": from_string(row["behaviour_characterisation"], dim=3),
                               "participation": from_string(row["participation"]),
-                              "trajectory": from_string(row["trajectory"], dim=3)}
+                              "total_resources": from_string(row["total_resources"], dim=1),
+                              "trajectory": from_string(row["trajectory"], dim=3),
+                              "model_name": row["model_name"]}
 
     return results
 
@@ -69,6 +71,7 @@ def plot_trajectory(results, path_to_graph, learning_type, num_agents, run_numbe
                 "team_specialisation": results[key][seed]["specialisation"][episode_index][spec_metric_index],
                 "agent_bcs": [results[key][seed]["behaviour_characterisation"][agent_id][episode_index] for agent_id in range(num_agents)],
                 "agent_participations": results[key][seed]["participation"][episode_index],
+                "total_resources": results[key][seed]["total_resources"][episode_index],
                 "agent_trajectories": [results[key][seed]["trajectory"][agent_id][episode_index] for agent_id in range(num_agents)]
             }
 
@@ -77,14 +80,16 @@ def plot_trajectory(results, path_to_graph, learning_type, num_agents, run_numbe
     all_runs = sorted(all_runs, key=lambda x: x[0])
     all_runs[run_number] = (all_runs[run_number][0], sorted(all_runs[run_number][1], key=lambda x: x["fitness_per_agent"]))
 
-    fig = plt.figure(figsize=(8, 9))
+    fig = plt.figure(figsize=(18, 9))
     label_index = setups.index(learning_type)
     plt.suptitle(f"Behaviour Inspection for {setup_labels[label_index]} w/ {num_agents}-Agents: Run {run_number}")
     num_cols = len(episode_numbers)
-    num_rows = 3
+    num_rows = 4
 
     for episode_index, episode in enumerate(episode_numbers):
         data = all_runs[run_number][1][episode]
+
+        # Plot trajectory of each agent
         t = [i for i in range(len(data["agent_trajectories"][0]))]
         subplot_id = episode_index + 1
         ax = fig.add_subplot(num_rows, num_cols, subplot_id)
@@ -101,12 +106,18 @@ def plot_trajectory(results, path_to_graph, learning_type, num_agents, run_numbe
         # Plot actions of each agent
         subplot_id = (episode_index + 1) + (len(episode_numbers))
         ax = fig.add_subplot(num_rows, num_cols, subplot_id)
-
-        bottom = [0]*len(action_names)
+        #bottom = [0]*len(action_names)
+        x = np.arange(len(action_names))
+        width = 0.35/(num_agents/2)
 
         for agent_id in range(num_agents):
-            ax.bar(np.arange(len(action_names)), data["agent_bcs"][agent_id], bottom=bottom, label=f"Agent {agent_id + 1}")
-            bottom = [bottom[i] + data["agent_bcs"][agent_id][i] for i in range(len(action_names))]
+            action_list = []
+            for action_index in range(len(action_names)):
+                action_list += [data["agent_bcs"][agent_id][action_index]]
+
+            position = x - (width*num_agents/2) + (2*agent_id + 1)*width/2
+            ax.bar(position, action_list, width=width, label=f"Agent {agent_id + 1}")
+            #bottom = [bottom[i] + data["agent_bcs"][agent_id][i] for i in range(len(action_names))]
 
         ax.set_xticks(np.arange(len(action_names)))
         ax.set_xticklabels(action_names)
@@ -117,30 +128,44 @@ def plot_trajectory(results, path_to_graph, learning_type, num_agents, run_numbe
         # Plot fitness of each agent
         subplot_id = (episode_index + 1) + 2*(len(episode_numbers))
         ax = fig.add_subplot(num_rows, num_cols, subplot_id)
-
         ax.bar(np.arange(num_agents), data["agent_fitnesses"], color=[f"C{agent_id}" for agent_id in range(num_agents)])
-
         ax.set_xticks(np.arange(num_agents))
         ax.set_xticklabels([f"Agent {agent_id+1}" for agent_id in range(num_agents)])
         plt.ylim(-2000, max_fitness)
         plt.ylabel("Fitness")
         plt.title(f"Episode {episode}- Agent Fitness")
 
+        # Plot participation of each agent
+        subplot_id = (episode_index + 1) + 3*len(episode_numbers)
+        ax = fig.add_subplot(num_rows, num_cols, subplot_id)
+        total = data["total_resources"]
+        if total != 0:
+            participation_percentage = [p/total for p in data["agent_participations"]]
+        else:
+            participation_percentage = data["agent_participations"]
+        ax.bar(np.arange(num_agents), participation_percentage, color=[f"C{agent_id}" for agent_id in range(num_agents)])
+        ax.set_xticks(np.arange(num_agents))
+        ax.set_xticklabels([f"Agent {agent_id + 1}" for agent_id in range(num_agents)])
+        plt.ylim(0, 1)
+        plt.ylabel("Participation")
+        plt.title(f"Episode {episode}- Agent Participation")
+
     fig.tight_layout(pad=3.0)
     plt.savefig(path_to_graph)
 
-results = load_results(path_to_results="/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_08_06_a_scalability_variable_arena/data/results_reevaluated_30ep_final.csv",
-             max_agents=8)
+if __name__ == "__main__":
+    results = load_results(path_to_results="/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_08_06_a_scalability_variable_arena/data/results_reevaluated_30ep_final.csv",
+                 max_agents=8)
 
-learning_type = "Centralised"
-num_agents = 8
-run_number = 1
-episode_numbers = [29, 0]
+    learning_type = "Decentralised"
+    num_agents = 8
+    run_number = 29
+    episode_numbers = [29, 0]
 
-plot_trajectory(results=results,
-                path_to_graph=f"/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_08_06_a_scalability_variable_arena/analysis/behaviour_inspection_{learning_type}_{num_agents}_{run_number}_{episode_numbers}.png",
-                learning_type=learning_type,
-                num_agents=num_agents,
-                run_number=run_number,
-                episode_numbers=episode_numbers,
-                max_fitness=40000)
+    plot_trajectory(results=results,
+                    path_to_graph=f"/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_08_06_a_scalability_variable_arena/analysis/behaviour_inspection_{learning_type}_{num_agents}_{run_number}_{episode_numbers}.png",
+                    learning_type=learning_type,
+                    num_agents=num_agents,
+                    run_number=run_number,
+                    episode_numbers=episode_numbers,
+                    max_fitness=40000)

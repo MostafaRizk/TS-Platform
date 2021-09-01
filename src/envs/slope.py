@@ -110,6 +110,7 @@ class SlopeEnv:
                                   } for i in range(self.max_resources)]
         self.agent_trajectories = [[None for _ in range(self.episode_length)] for _ in range(self.num_agents)]
         self.last_trajectory_recorded = 0
+        self.total_resources_retrieved = 0
 
         # Step variables
         self.behaviour_map = [self.forward_step, self.backward_step, self.left_step, self.right_step]
@@ -231,6 +232,7 @@ class SlopeEnv:
             self.agent_trajectories[agent_id][0] = self.agent_positions[agent_id][1]
 
         self.last_trajectory_recorded = 0
+        self.total_resources_retrieved = 0
 
         # Reset BC
         self.avg_pos_for_agent = [[0, 0] for _ in range(self.num_agents)]
@@ -393,6 +395,7 @@ class SlopeEnv:
 
             self.delete_resource(resource_id)
             self.resource_history[resource_id]["retrieved"] = True
+            self.total_resources_retrieved += 1
 
         return rewards
 
@@ -800,8 +803,9 @@ class SlopeEnv:
         for i in range(self.latest_resource_id + 1):
             if self.resource_history[i]["retrieved"]:
                 # Increment the participation count for each agent that helped carry this resource
-                for agent_index in self.resource_carried_by[i]:
-                    agent_participated[agent_index] += 1
+                for agent_index in range(self.num_agents):
+                    if self.resource_carried_by[i][agent_index]:
+                        agent_participated[agent_index] += 1
 
         return agent_participated
 
@@ -815,6 +819,9 @@ class SlopeEnv:
     
     def get_trajectories(self):
         return self.agent_trajectories
+
+    def get_total_resources_retrieved(self):
+        return self.total_resources_retrieved
 
     # Rendering Functions ---------------------------------------------------------------------------------------------
     def draw_arena_segment(self, top, bottom, rgb_tuple):

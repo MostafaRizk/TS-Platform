@@ -17,7 +17,8 @@ from array2gif import write_gif
 metric_index = 2  # R_spec
 #metric_index = 0 # T-Maze
 
-def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, print_scores=None, ids_to_remove=None, bc_measure=None):
+
+def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, print_scores=None, ids_to_remove=None, bc_measure=None, save_video=False):
     if rendering == "True":
         rendering = True
     else:
@@ -142,16 +143,16 @@ def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, p
                         fitness_calculator.get_action_size() * num_agents, parameter_path, genome)
         agent_list = [agent]
 
-    results = fitness_calculator.calculate_fitness(controller_list=agent_list, render=rendering, time_delay=time_delay,
-                                                   measure_specialisation=True, logging=False, logfilename=None,
-                                                   render_mode="human")
+    if not save_video:
 
-    '''results = fitness_calculator.calculate_fitness(agent_list=agent_list, render=True, time_delay=0,
-                                                   render_mode="rgb_array")
+        results = fitness_calculator.calculate_fitness(controller_list=agent_list, render=rendering, time_delay=time_delay,
+                                                       measure_specialisation=True, logging=False, logfilename=None,
+                                                       render_mode="human")
 
-    video_data = results['video_frames']
-    save_to = f"./matching_specialist.gif"
-    write_gif(video_data, save_to, fps=5)'''
+    else:
+        results = fitness_calculator.calculate_fitness(controller_list=agent_list, render=rendering, time_delay=time_delay,
+                                                       measure_specialisation=True, logging=False, logfilename=None,
+                                                       render_mode="rgb_array")
 
     team_fitness_list = [0] * len(results['fitness_matrix'][0])
 

@@ -23,6 +23,16 @@ def from_string(arr_str, dim=2):
     @param dim: Dimension size of new array
     @return:
     """
+    if dim == 1:
+        arr_str = arr_str[1:-1]
+        a = []
+        list_to_parse = arr_str.split()
+
+        for el in list_to_parse:
+            a += [float(el)]
+
+        return a
+
     if dim == 2:
         arr_str = arr_str[1:-1]
         a = []

@@ -121,6 +121,7 @@ class FitnessCalculator:
         fitness_matrix = [[0]*self.num_episodes for _ in range(self.num_agents)]
         specialisation_list = []
         participation_list = []
+        total_resources_per_episode = [0]*self.num_episodes
 
         # For each agent, contains its BC value in every episode
         # Concatenate if evaluating team novelty
@@ -130,7 +131,7 @@ class FitnessCalculator:
         trajectory_matrix = [[[None for _ in range(self.episode_length)] for _ in range(self.num_episodes)] for _ in range(self.num_agents)]
 
         controller_copies = [copy.deepcopy(controller) for controller in controller_list]
-        video_frames = []
+        video_frames = [None]*self.num_episodes
         self.env.reset_rng()
 
         # Create logging file if logging
@@ -152,11 +153,12 @@ class FitnessCalculator:
             # Initialise variables
             agent_action_matrix = [[-1]*self.episode_length for _ in range(self.num_agents)]
             current_episode_reward_matrix = [[0]*self.episode_length for _ in range(self.num_agents)]
+            frames = []
 
             # Do 1 run of the simulation
             for t in range(self.episode_length):
-                if render and render_mode == "rgb_array" and episode == 0:
-                    video_frames += [self.env.render(mode=render_mode)]
+                if render and render_mode == "rgb_array":
+                    frames += [self.env.render(mode=render_mode)]
                 elif render:
                     self.env.render(mode=render_mode)
 
@@ -198,8 +200,9 @@ class FitnessCalculator:
 
             participation_list += [self.env.calculate_participation()]
             bc_for_agent = self.env.get_behaviour_characterisation()
-
             trajectories = self.env.get_trajectories()
+            total_resources_per_episode[episode] = self.env.get_total_resources_retrieved()
+            video_frames[episode] = np.array(frames)
 
             for i in range(self.num_agents):
                 behaviour_characterisation_matrix[i] += [bc_for_agent[i]]
@@ -216,7 +219,7 @@ class FitnessCalculator:
         if logging:
             file_reader.close()
 
-        return {"fitness_matrix": fitness_matrix, "specialisation_list": specialisation_list, "participation_list": participation_list, "video_frames": video_frames, "behaviour_characterisation_matrix": behaviour_characterisation_matrix, "trajectory_matrix": trajectory_matrix}
+        return {"fitness_matrix": fitness_matrix, "specialisation_list": specialisation_list, "participation_list": participation_list, "video_frames": video_frames, "behaviour_characterisation_matrix": behaviour_characterisation_matrix, "trajectory_matrix": trajectory_matrix, "total_resources": total_resources_per_episode}
 
     # Helpers ---------------------------------------------------------------------------------------------------------
 
