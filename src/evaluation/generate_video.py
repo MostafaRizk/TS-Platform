@@ -76,12 +76,6 @@ if __name__ == "__main__":
                 "num_agents": 8,
                 "run_number": 29,
                 "episode_numbers": [29, 0],
-                "agents_to_remove": 4},
-                {
-                "learning_type": "Decentralised",
-                "num_agents": 8,
-                "run_number": 29,
-                "episode_numbers": [29, 0],
                 "agents_to_remove": 4}
     ]
 

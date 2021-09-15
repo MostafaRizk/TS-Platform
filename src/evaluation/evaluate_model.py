@@ -142,7 +142,7 @@ def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, p
 
         if ids_to_remove:
             agent = NNAgent(fitness_calculator.get_observation_size() * num_agents,
-                            fitness_calculator.get_action_size() * num_agents, parameter_path, genome, ids_to_remove, HardcodedHitchhikerAgent)
+                            fitness_calculator.get_action_size() * num_agents, parameter_path, genome, ids_to_remove, HardcodedHitchhikerAgent, dummy_observations=True)
 
         else:
             agent = NNAgent(fitness_calculator.get_observation_size() * num_agents,

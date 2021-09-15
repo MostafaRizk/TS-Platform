@@ -7,7 +7,7 @@ from agents.lean_networks.RNN_multilayer import RNN_multilayer
 
 
 class NNAgent(Agent):
-    def __init__(self, observation_size, action_size, parameter_filename, genome=None, ids_to_remove=None, dummy_policy=None):
+    def __init__(self, observation_size, action_size, parameter_filename, genome=None, ids_to_remove=None, dummy_policy=None, dummy_observations=None):
         # Load parameters
         if parameter_filename is None:
             raise RuntimeError("No parameter file specified for the neural network")
@@ -53,8 +53,19 @@ class NNAgent(Agent):
         if ids_to_remove and dummy_policy:
             self.ids_to_remove = ids_to_remove
             self.dummy_agents = [None for _ in range(len(ids_to_remove))]
+
             for i in ids_to_remove:
                 self.dummy_agents[i] = dummy_policy()
+
+            self.dummy_observations = dummy_observations
+
+        elif ids_to_remove or dummy_policy:
+            raise RuntimeError("Must name ids of agents to be removed AND the policy replacing them")
+
+        else:
+            self.ids_to_remove = None
+            self.dummy_agents = None
+            self.dummy_observations = None
 
     def get_genome(self):
         return self.net.get_weights_as_list()
@@ -71,6 +82,15 @@ class NNAgent(Agent):
         @param num_agents: Number of agents represented by the network
         @return: A single action or a list of actions
         """
+        if self.ids_to_remove and self.dummy_observations:
+            for i in self.ids_to_remove:
+                observation_size = len(observation) // num_agents
+                start_index = i * observation_size
+                end_index = (i + 1) * observation_size
+
+                for j in range(start_index, end_index):
+                    observation[j] = -1
+
         activation_values = self.net.forward(observation)
 
         if num_agents == 1:
