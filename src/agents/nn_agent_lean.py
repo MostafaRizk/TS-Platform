@@ -7,7 +7,7 @@ from agents.lean_networks.RNN_multilayer import RNN_multilayer
 
 
 class NNAgent(Agent):
-    def __init__(self, observation_size, action_size, parameter_filename, genome=None):
+    def __init__(self, observation_size, action_size, parameter_filename, genome=None, ids_to_remove=None, dummy_policy=None):
         # Load parameters
         if parameter_filename is None:
             raise RuntimeError("No parameter file specified for the neural network")
@@ -50,6 +50,12 @@ class NNAgent(Agent):
         else:
             self.net.set_weights_by_list(genome)
 
+        if ids_to_remove and dummy_policy:
+            self.ids_to_remove = ids_to_remove
+            self.dummy_agents = [None for _ in range(len(ids_to_remove))]
+            for i in ids_to_remove:
+                self.dummy_agents[i] = dummy_policy()
+
     def get_genome(self):
         return self.net.get_weights_as_list()
 
@@ -79,6 +85,14 @@ class NNAgent(Agent):
                 start_index = i * num_actions
                 end_index = (i + 1) * num_actions
                 actions[i] = activation_values[start_index:end_index].argmax()
+
+            if self.ids_to_remove:
+                for i in self.ids_to_remove:
+                    observation_size = len(observation) // num_agents
+                    start_index = i * observation_size
+                    end_index = (i+1) * observation_size
+                    agent_observation = [int(obs) for obs in observation[start_index:end_index]]
+                    actions[i] = self.dummy_agents[i].act(agent_observation)
 
             return actions
 

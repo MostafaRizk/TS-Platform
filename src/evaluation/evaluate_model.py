@@ -139,8 +139,15 @@ def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, p
 
     elif parameter_dictionary["general"]["learning_type"] == "fully-centralised":
         genome = np.load(model_path)
-        agent = NNAgent(fitness_calculator.get_observation_size() * num_agents,
-                        fitness_calculator.get_action_size() * num_agents, parameter_path, genome)
+
+        if ids_to_remove:
+            agent = NNAgent(fitness_calculator.get_observation_size() * num_agents,
+                            fitness_calculator.get_action_size() * num_agents, parameter_path, genome, ids_to_remove, HardcodedHitchhikerAgent)
+
+        else:
+            agent = NNAgent(fitness_calculator.get_observation_size() * num_agents,
+                            fitness_calculator.get_action_size() * num_agents, parameter_path, genome)
+
         agent_list = [agent]
 
     if not save_video:

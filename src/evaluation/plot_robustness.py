@@ -10,17 +10,18 @@ from evaluation.plot_scalability import from_string
 from scipy import stats
 from operator import add
 
-setups = ["Centralised", "Decentralised", "One-pop", "Homogeneous"]
+setups = ["Centralised", "Decentralised", "Fully-centralised"]
+setup_labels = ["CTDE", "FD", "FC"]
 spec_metric_index = 2 # R_spec
-#spec_metric_index = 5 # R_spec_P
+# spec_metric_index = 5 # R_spec_P
 
 
-def plot_robustness(data_path, file_list, path_to_graph, plot_type, max_agents, y_height=15000, showing="fitness"):
+def plot_robustness(data_path, file_list, path_to_graph, plot_type, min_agents, max_agents, agents_removed, y_min_height, y_height, showing="fitness"):
     # Create results dictionary with keys for num_agents_removed
     results = {}
 
     for setup in setups:
-        for team_size in range(2, max_agents+2, 2):
+        for team_size in range(min_agents, max_agents+2, 2):
             key = f"{setup}-{team_size}"
             results[key] = {}
 
@@ -43,7 +44,7 @@ def plot_robustness(data_path, file_list, path_to_graph, plot_type, max_agents, 
             reward_level = row["reward_level"].capitalize()
             num_agents = row["num_agents"]
 
-            if num_agents > max_agents:
+            if num_agents > max_agents or num_agents < min_agents:
                 continue
 
             seed = row["seed"]
@@ -66,15 +67,17 @@ def plot_robustness(data_path, file_list, path_to_graph, plot_type, max_agents, 
                                                                    "specialisation": from_string(row["specialisation"])}
 
     # Create figure with 2 subplots per row
-    cols = 2
-    rows = math.ceil((max_agents / 2) / cols)
+    rows = 1
+    #cols = math.ceil((max_agents / 2) / rows)
+    cols = (max_agents//2 - min_agents//2) + 1
+
     fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30, 15))
-    fig.suptitle(f"Robustness of {showing.capitalize()}")
+    fig.suptitle(f"Robustness of {showing.capitalize()}", fontsize=60)
 
     scores = {}
 
     for setup in setups:
-        for team_size in range(2, max_agents + 2, 2):
+        for team_size in range(min_agents, max_agents + 2, 2):
             key = f"{setup}-{team_size}"
             scores[key] = {}
 
@@ -83,34 +86,39 @@ def plot_robustness(data_path, file_list, path_to_graph, plot_type, max_agents, 
                     scores[key][num_agents_removed] = []
 
     # For each team size
-    for i in range((max_agents)//2):
-        num_agents = (i+1) * 2
-        col_id = i % cols
+    for i in range(min_agents, max_agents+2, 2):
+        #num_agents = (i+1) * 2
+        num_agents = i
+        col_id = (i - min_agents)//2 + 1
 
-        if rows > 1:
-            row_id = i // rows
-            axis = axs[row_id][col_id]
-
-        else:
+        if cols > 1:
             axis = axs[col_id]
 
-        x = [j for j in range(num_agents)]
+        else:
+            axis = axs
+
+        x = [j for j in range(agents_removed+1)]
         y_centralised = []
         y_decentralised = []
         y_onepop = []
         y_homogeneous = []
+        y_fully_centralised = []
 
         yerr_centralised = []
         yerr_decentralised = []
         yerr_onepop = []
         yerr_homogeneous = []
+        yerr_fully_centralised = []
+
+        if num_agents < min_agents or num_agents > max_agents:
+            continue
 
         # For each number of agents removed (that is valid for that team size)
-        for num_agents_removed in range(num_agents):
+        for num_agents_removed in range(agents_removed+1):
             for setup in setups:
                 key = f"{setup}-{num_agents}"
 
-                # For ever seed
+                # For every seed
                 for seed in results[key][num_agents_removed]:
 
                     # For every combination of removed ids
@@ -148,6 +156,10 @@ def plot_robustness(data_path, file_list, path_to_graph, plot_type, max_agents, 
                     y = y_homogeneous
                     yerr = yerr_homogeneous
 
+                elif setup == "Fully-centralised":
+                    y = y_fully_centralised
+                    yerr = yerr_fully_centralised
+
                 if plot_type == "mean":
                     y += [np.mean(scores[key][num_agents_removed])]
                     yerr += [np.std(scores[key][num_agents_removed])]
@@ -168,42 +180,48 @@ def plot_robustness(data_path, file_list, path_to_graph, plot_type, max_agents, 
 
         # Add data to plot
         axis.label_outer()
-        axis.set_title(f"{num_agents} Agents", fontsize=20)
-        axis.set_xlabel("Num Agents Removed", fontsize=18)
+        axis.set_title(f"{num_agents} Agents", fontsize=58)
+        axis.set_xlabel("Num Agents Removed", fontsize=56)
+        axis.set_xticks(np.arange(0, agents_removed + 1))
+        axis.set_xticklabels([str(k) for k in range(agents_removed+1)])
 
         for tick in axis.xaxis.get_major_ticks():
-            tick.label.set_fontsize(16)
+            tick.label.set_fontsize(54)
 
         for tick in axis.yaxis.get_major_ticks():
-            tick.label.set_fontsize(16)
+            tick.label.set_fontsize(54)
 
         if showing == "fitness":
-            axis.set_ylabel("Fitness per agent", fontsize=18)
-            axis.set_ylim(0, y_height)
+            axis.set_ylabel("Fitness per agent", fontsize=56)
+            axis.set_ylim(y_min_height, y_height)
 
         elif showing == "specialisation":
-            axis.set_ylabel("Specialisation", fontsize=18)
+            axis.set_ylabel("Specialisation", fontsize=56)
             axis.set_ylim(0, 1.1)
 
         if plot_type == "mean" or plot_type == "error":
-            axis.errorbar(x, y_centralised, yerr_centralised, fmt='r-', label="Centralised")
-            axis.errorbar(x, y_decentralised, yerr_decentralised, fmt='b-', label="Decentralised")
-            axis.errorbar(x, y_onepop, yerr_onepop, fmt='g-', label="One-pop")
-            axis.errorbar(x, y_homogeneous, yerr_homogeneous, fmt='k-', label="Homogeneous")
+            axis.errorbar(x, y_centralised, yerr_centralised, fmt='r-', label="CTDE")
+            axis.errorbar(x, y_decentralised, yerr_decentralised, fmt='b-', label="Fully-Decentralised")
+            axis.errorbar(x, y_fully_centralised, yerr_fully_centralised, fmt='g-', label="Fully-Centralised")
+            #axis.errorbar(x, y_onepop, yerr_onepop, fmt='g-', label="One-pop")
+            #axis.errorbar(x, y_homogeneous, yerr_homogeneous, fmt='k-', label="Homogeneous")
+
 
         elif plot_type == "best" or plot_type == "median":
-            axis.plot(x, y_centralised, 'ro-', label=f"Centralised ({plot_type})")
-            axis.plot(x, y_decentralised, 'bo-', label=f"Decentralised ({plot_type})")
-            axis.plot(x, y_onepop, 'go-', label=f"One-pop ({plot_type})")
-            axis.plot(x, y_homogeneous, 'ko-', label=f"Homogeneous ({plot_type})")
+            axis.plot(x, y_centralised, 'ro-', label=f"CTDE ({plot_type})")
+            axis.plot(x, y_decentralised, 'bo-', label=f"Fully-Decentralised ({plot_type})")
+            #axis.plot(x, y_onepop, 'go-', label=f"One-pop ({plot_type})")
+            #axis.plot(x, y_homogeneous, 'ko-', label=f"Homogeneous ({plot_type})")
+            axis.plot(x, y_fully_centralised, 'go-', label=f"Fully-Centralised ({plot_type})")
 
         else:
-            axis.plot(x, y_centralised, 'ro-', label="Centralised")
-            axis.plot(x, y_decentralised, 'bo-', label="Decentralised")
-            axis.plot(x, y_onepop, 'go-', label="One-pop")
-            axis.plot(x, y_homogeneous, 'ko-', label="Homogeneous")
+            axis.plot(x, y_centralised, 'ro-', label="CTDE")
+            axis.plot(x, y_decentralised, 'bo-', label="Fully-Decentralised")
+            #axis.plot(x, y_onepop, 'go-', label="One-pop")
+            #axis.plot(x, y_homogeneous, 'ko-', label="Homogeneous")
+            axis.plot(x, y_fully_centralised, 'go-', label="Fully-Centralised")
 
-        axis.legend(loc='upper right', fontsize=16)
+        axis.legend(loc='upper right', fontsize=50)
 
     # Save
     #filename = f"robustness_of_{showing}.png"
@@ -216,7 +234,10 @@ if __name__ == "__main__":
     parser.add_argument('--file_list', action="store")
     parser.add_argument('--graph_path', action="store")
     parser.add_argument('--plot_type', action="store")
+    parser.add_argument('--min_agents', action="store")
     parser.add_argument('--max_agents', action="store")
+    parser.add_argument('--agents_removed', action="store")
+    parser.add_argument('--y_min_height', action="store")
     parser.add_argument('--y_height', action="store")
     parser.add_argument('--showing', action="store")
 
@@ -227,7 +248,14 @@ if __name__ == "__main__":
 
     graph_path = parser.parse_args().graph_path
     plot_type = parser.parse_args().plot_type
+    min_agents = int(parser.parse_args().min_agents)
     max_agents = int(parser.parse_args().max_agents)
+    agents_removed = int(parser.parse_args().agents_removed)
+
+    y_min_height = parser.parse_args().y_min_height
+
+    if y_min_height:
+        y_min_height = int(y_min_height)
 
     y_height = parser.parse_args().y_height
 
@@ -236,4 +264,4 @@ if __name__ == "__main__":
 
     showing = parser.parse_args().showing
 
-    plot_robustness(data_path, file_list, graph_path, plot_type, max_agents, y_height, showing)
+    plot_robustness(data_path, file_list, graph_path, plot_type, min_agents, max_agents, agents_removed, y_min_height, y_height, showing)

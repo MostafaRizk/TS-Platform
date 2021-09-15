@@ -10,7 +10,7 @@ from evaluation.create_results_from_models import get_seed_file
 from itertools import combinations
 
 
-def create_reevaluated_results(path_to_data_folder, generation, episodes, num_agents_to_remove=0, max_team_size=None, has_seed_file=False, env="slope", bc_measure=None):
+def create_reevaluated_results(path_to_data_folder, generation, episodes, num_agents_to_remove=0, min_team_size=2, max_team_size=None, has_seed_file=False, env="slope", bc_measure=None):
     # TODO: Modify to avoid repetition of other function
     # Get list of models
     model_files = glob(f'{path_to_data_folder}/*cma*_{generation}.npy')  # TODO: Allow different algorithms
@@ -40,9 +40,11 @@ def create_reevaluated_results(path_to_data_folder, generation, episodes, num_ag
 
     combinations_to_remove = {}
 
-    for team_size in range(2, max_team_size+2, 2):
+    for team_size in range(min_team_size, max_team_size+2, 2):
         if num_agents_to_remove != 0 and num_agents_to_remove < team_size:
-            combinations_to_remove[team_size] = [list(combo) for combo in list(combinations([i for i in range(team_size)], num_agents_to_remove))]
+            # Uncomment to try all combinations of agents removed
+            # combinations_to_remove[team_size] = [list(combo) for combo in list(combinations([i for i in range(team_size)], num_agents_to_remove))]
+            combinations_to_remove[team_size] = [[i for i in range(num_agents_to_remove)]]
         else:
             combinations_to_remove[team_size] = [None]
 
@@ -76,7 +78,7 @@ def create_reevaluated_results(path_to_data_folder, generation, episodes, num_ag
         num_agents = parameter_dictionary["environment"][environment]["num_agents"]
 
         # If the model has n agents but n or more agents must be removed, don't evaluate that model
-        if num_agents_to_remove >= num_agents or num_agents > max_team_size:
+        if num_agents_to_remove >= num_agents or num_agents > max_team_size or num_agents < min_team_size:
             continue
 
         for combo in combinations_to_remove[num_agents]:
@@ -134,6 +136,7 @@ if __name__ == "__main__":
     parser.add_argument('--generation', action="store")
     parser.add_argument('--episodes', action="store")
     parser.add_argument('--num_agents_to_remove', action="store")
+    parser.add_argument('--min_team_size', action="store")
     parser.add_argument('--max_team_size', action="store")
     parser.add_argument('--env', action="store")
     parser.add_argument('--bc_measure', action="store")
@@ -148,9 +151,14 @@ if __name__ == "__main__":
     if num_agents_to_remove:
         num_agents_to_remove = int(num_agents_to_remove)
 
+    min_team_size = parser.parse_args().min_team_size
+
+    if min_team_size:
+        min_team_size = int(min_team_size)
+
     max_team_size = parser.parse_args().max_team_size
 
     if max_team_size:
         max_team_size = int(max_team_size)
 
-    create_reevaluated_results(data_path, generation, episodes, num_agents_to_remove, max_team_size, env=env, bc_measure=bc_measure)
+    create_reevaluated_results(data_path, generation, episodes, num_agents_to_remove, min_team_size, max_team_size, env=env, bc_measure=bc_measure)

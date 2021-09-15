@@ -1,27 +1,12 @@
 #!/bin/bash
 
-#python3 create_reevaluated_results.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/data --generation final --episodes 5 --num_agents_to_remove 1 --max_team_size 4
-#python3 create_reevaluated_results.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/data --generation final --episodes 5 --num_agents_to_remove 2 --max_team_size 4
-#python3 create_reevaluated_results.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/data --generation final --episodes 5 --num_agents_to_remove 3 --max_team_size 4
-#python3 create_reevaluated_results.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/data --generation final --episodes 5 --num_agents_to_remove 0 --max_team_size 4
+folder_name="2021_08_06_a_scalability_variable_arena"
+agents_to_remove=(1 2 3 4)
 
+#for i in ${!agents_to_remove[@]}
+#do
+#python3 create_reevaluated_results.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/$folder_name/data --generation final --episodes 30 --num_agents_to_remove ${agents_to_remove[$i]} --min_team_size 8 --max_team_size 8 --env slope --bc_measure agent_action_count
+#done
 
-#python3 create_reevaluated_results.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_20_homogeneous_evolution/data --generation final --episodes 5 --num_agents_to_remove 0 --max_team_size 4
-#python3 create_reevaluated_results.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_20_homogeneous_evolution/data --generation final --episodes 5 --num_agents_to_remove 1 --max_team_size 4
-#python3 create_reevaluated_results.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_20_homogeneous_evolution/data --generation final --episodes 5 --num_agents_to_remove 2 --max_team_size 4
-#python3 create_reevaluated_results.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_20_homogeneous_evolution/data --generation final --episodes 5 --num_agents_to_remove 3 --max_team_size 4
-
-#python3 plot_robustness.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/data/ --file_list [robustness_0_removed.csv,robustness_1_removed.csv,robustness_2_removed.csv,robustness_3_removed.csv] --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/analysis/robustness_of_fitness.png --plot_type error --max_agents 4 --y_height 8000 --showing fitness
-#python3 plot_robustness.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/data/ --file_list [robustness_0_removed.csv,robustness_1_removed.csv,robustness_2_removed.csv,robustness_3_removed.csv] --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/analysis/robustness_of_specialisation_participation.png --plot_type error --max_agents 4 --showing specialisation
-
-#python3 plot_robustness.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_29_magic_combined_homogeneous/data/ --file_list [robustness_0_removed.csv,robustness_1_removed.csv,robustness_2_removed.csv,robustness_3_removed.csv] --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_29_magic_combined_homogeneous/analysis/robustness_of_fitness.png --plot_type error --max_agents 4 --y_height 8000 --showing fitness
-#python3 plot_robustness.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_29_magic_combined_homogeneous/data/ --file_list [robustness_0_removed.csv,robustness_1_removed.csv,robustness_2_removed.csv,robustness_3_removed.csv] --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_29_magic_combined_homogeneous/analysis/robustness_of_specialisation_participation.png --plot_type error --max_agents 4 --showing specialisation
-
-python3 create_reevaluated_results.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_29_magic_combined_homogeneous/data --generation final --episodes 5 --num_agents_to_remove 0 --max_team_size 8
-python3 create_reevaluated_results.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_29_magic_combined_homogeneous/data --generation final --episodes 5 --num_agents_to_remove 1 --max_team_size 8
-python3 create_reevaluated_results.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_29_magic_combined_homogeneous/data --generation final --episodes 5 --num_agents_to_remove 2 --max_team_size 8
-python3 create_reevaluated_results.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_29_magic_combined_homogeneous/data --generation final --episodes 5 --num_agents_to_remove 3 --max_team_size 8
-python3 create_reevaluated_results.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_29_magic_combined_homogeneous/data --generation final --episodes 5 --num_agents_to_remove 4 --max_team_size 8
-python3 create_reevaluated_results.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_29_magic_combined_homogeneous/data --generation final --episodes 5 --num_agents_to_remove 5 --max_team_size 8
-python3 create_reevaluated_results.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_29_magic_combined_homogeneous/data --generation final --episodes 5 --num_agents_to_remove 6 --max_team_size 8
-python3 create_reevaluated_results.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_29_magic_combined_homogeneous/data --generation final --episodes 5 --num_agents_to_remove 7 --max_team_size 8
+python3 plot_robustness.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/$folder_name/data/ --file_list [results_reevaluated_30ep_final.csv,robustness_1_removed.csv,robustness_2_removed.csv,robustness_3_removed.csv,robustness_4_removed.csv] --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/$folder_name/analysis/robustness_fitness.png --plot_type error --min_agents 8 --max_agents 8 --agents_removed 4 --y_min_height 0 --y_height 8000 --showing fitness
+python3 plot_robustness.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/$folder_name/data/ --file_list [results_reevaluated_30ep_final.csv,robustness_1_removed.csv,robustness_2_removed.csv,robustness_3_removed.csv,robustness_4_removed.csv] --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/$folder_name/analysis/robustness_spec.png --plot_type error --min_agents 8 --max_agents 8 --agents_removed 4 --showing specialisation

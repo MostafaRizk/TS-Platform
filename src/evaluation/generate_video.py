@@ -15,7 +15,7 @@ import moviepy.editor as mp
 spec_metric_index = 2  # R_spec
 
 
-def generate_video(results, path_to_video_folder, learning_type, num_agents, run_number, episode_numbers):
+def generate_video(results, path_to_video_folder, learning_type, num_agents, run_number, episode_numbers, agents_to_remove=0):
     key = f"{learning_type}-{num_agents}"
     all_runs = [None] * len(results[key])
 
@@ -48,13 +48,17 @@ def generate_video(results, path_to_video_folder, learning_type, num_agents, run
     model_path = all_runs[run_number][1]
     total_episodes = len(all_runs[run_number][2])
 
-    evaluation_results = evaluate_model(model_path, rendering="True", episodes=total_episodes, save_video=True)
+    if agents_to_remove <= 0:
+        evaluation_results = evaluate_model(model_path, rendering="True", episodes=total_episodes, save_video=True)
+
+    else:
+        evaluation_results = evaluate_model(model_path, rendering="True", episodes=total_episodes, ids_to_remove=[k for k in range(agents_to_remove)], save_video=True)
 
     video_data = evaluation_results['video_frames']
 
     for episode in episode_numbers:
         episode_order_id = all_runs[run_number][2][episode]["episode_order_id"]
-        filename = f"video_{learning_type}_{num_agents}_{run_number}_{episode}.gif"
+        filename = f"video_{learning_type}_{num_agents}_{run_number}_{episode}_{agents_to_remove}.gif"
         save_to = os.path.join(path_to_video_folder, filename)
         write_gif(video_data[episode_order_id], save_to, fps=5)
 
@@ -63,25 +67,43 @@ def generate_video(results, path_to_video_folder, learning_type, num_agents, run
 
 
 if __name__ == "__main__":
-    results = load_results(path_to_results="/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_08_06_a_scalability_variable_arena/data/results_reevaluated_30ep_final.csv",
-                 max_agents=8)
+    #results = load_results(path_to_results="/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_08_06_a_scalability_variable_arena/data/results_reevaluated_30ep_final.csv", max_agents=8)
+    results = load_results(path_to_results="/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_08_19_a_scalability_constant_arena_60_samples/data/results_reevaluated_30ep_final.csv", max_agents=8)
 
-    learning_type = "Centralised"
-    num_agents = 8
-    run_number = 29
-    episode_numbers = [29, 0]
 
-    plot_trajectory(results=results,
-                    path_to_graph=f"/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_08_06_a_scalability_variable_arena/analysis/behaviour_inspection_{learning_type}_{num_agents}_{run_number}_{episode_numbers}.png",
-                    learning_type=learning_type,
-                    num_agents=num_agents,
-                    run_number=run_number,
-                    episode_numbers=episode_numbers,
-                    max_fitness=40000)
+    configs = [{
+                "learning_type": "Fully-centralised",
+                "num_agents": 8,
+                "run_number": 29,
+                "episode_numbers": [29, 0],
+                "agents_to_remove": 4},
+                {
+                "learning_type": "Decentralised",
+                "num_agents": 8,
+                "run_number": 29,
+                "episode_numbers": [29, 0],
+                "agents_to_remove": 4}
+    ]
 
-    generate_video(results=results,
-                    path_to_video_folder=f"/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_08_06_a_scalability_variable_arena/analysis",
-                    learning_type=learning_type,
-                    num_agents=num_agents,
-                    run_number=run_number,
-                    episode_numbers=episode_numbers)
+    for config in configs:
+        learning_type = config["learning_type"]
+        num_agents = config["num_agents"]
+        run_number = config["run_number"]
+        episode_numbers = config["episode_numbers"]
+        agents_to_remove = config["agents_to_remove"]
+
+        """plot_trajectory(results=results,
+                        path_to_graph=f"/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_08_06_a_scalability_variable_arena/analysis/behaviour_inspection_{learning_type}_{num_agents}_{run_number}_{episode_numbers}.png",
+                        learning_type=learning_type,
+                        num_agents=num_agents,
+                        run_number=run_number,
+                        episode_numbers=episode_numbers,
+                        max_fitness=40000)"""
+
+        generate_video(results=results,
+                        path_to_video_folder=f"/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_08_06_a_scalability_variable_arena/analysis",
+                        learning_type=learning_type,
+                        num_agents=num_agents,
+                        run_number=run_number,
+                        episode_numbers=episode_numbers,
+                        agents_to_remove=agents_to_remove)
