@@ -571,6 +571,9 @@ class SlopeEnv:
     def get_action_size(self):
         return self.action_space_size
 
+    def get_episode_length(self):
+        return self.episode_length
+
     # Helpers ---------------------------------------------------------------------------------------------------------
     def get_area_from_position(self, position):
         """

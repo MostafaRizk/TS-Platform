@@ -332,6 +332,9 @@ class TMazeEnv:
     def get_action_size(self):
         return self.action_space_size
 
+    def get_episode_length(self):
+        return self.episode_length
+
     # Helpers
     def generate_agent_positions(self):
         return [(0, 0)]  * self.num_agents

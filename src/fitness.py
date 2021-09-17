@@ -5,6 +5,7 @@ import numpy as np
 import time
 from envs.slope import SlopeEnv
 from envs.tmaze import TMazeEnv
+from envs.box_pushing import BoxPushingEnv
 
 
 class FitnessCalculator:
@@ -21,6 +22,8 @@ class FitnessCalculator:
             self.env = SlopeEnv(parameter_filename)
         elif self.parameter_dictionary["general"]["environment"] == "tmaze":
             self.env = TMazeEnv(parameter_filename)
+        elif self.parameter_dictionary["general"]["environment"] == "box_pushing":
+            self.env = BoxPushingEnv(parameter_filename)
 
         environment_name = self.parameter_dictionary['general']['environment']
         self.num_agents = self.parameter_dictionary['environment'][environment_name]['num_agents']
@@ -33,7 +36,8 @@ class FitnessCalculator:
         self.random_seed = self.parameter_dictionary['general']['seed']
         self.np_random = np.random.RandomState(self.random_seed)
 
-        self.episode_length = self.parameter_dictionary['environment'][environment_name]['episode_length']
+        #self.episode_length = self.parameter_dictionary['environment'][environment_name]['episode_length']
+        self.episode_length = self.env.get_episode_length()
         self.num_episodes = self.parameter_dictionary['environment'][environment_name]['num_episodes']
 
         self.learning_type = self.parameter_dictionary['general']['learning_type']
