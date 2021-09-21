@@ -13,7 +13,7 @@
     "environment": {
         "box_pushing": {
             "defection": "True",
-            "partial_cooperation": "False",
+            "partial_cooperation": "True",
             "sensing": "local",
             "specialisation": "False",
             "environment_scaling": "variable",

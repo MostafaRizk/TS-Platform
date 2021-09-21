@@ -88,16 +88,16 @@ class BoxPushingEnv:
 
         self.home_length = self.goal_length = 1
 
-        self.agent_width = 20
+        self.agent_width = 0.8
 
         if self.defection:
-            self.small_box_width = self.agent_width * 1.5
+            self.small_box_width = 0.8
 
         if self.partial_cooperation:
-            self.medium_box_width = self.small_box_width * self.medium_box_size
+            self.medium_box_width = self.medium_box_size - 0.2
 
-        self.big_box_width = self.small_box_width * self.num_agents
-        self.agent_height = self.agent_width * 1.5
+        self.big_box_width = self.num_agents - 0.2
+        self.agent_height = 0.4
 
         # Rewards
         self.big_reward_per_agent = parameter_dictionary['environment']['box_pushing']['big_reward_per_agent']
@@ -168,14 +168,43 @@ class BoxPushingEnv:
                     agent_placed = True
 
         # Places all boxes
-        for i in range(self.num_small_boxes):
+        for i in range(self.num_small_boxes + self.num_medium_boxes + self.num_big_boxes):
             box_placed = False
+
             while not box_placed:
                 x, y = self.generate_box_position()
-                if self.box_map[y][x] == 0:
-                    self.box_map[y][x] = i + 1
-                    self.boxes_in_arena[i] = (x, y)
-                    box_placed = True
+
+                # Place small boxes
+                if i < self.num_small_boxes:
+                    #if self.box_map[y][x] == 0:
+                    if all([self.box_map[j][x] == 0 for j in range(self.arena_constraints["y_max"])]):
+                        self.box_map[y][x] = i + 1
+                        self.boxes_in_arena[i] = (x, y, "small")
+                        box_placed = True
+
+                # Place medium boxes
+                elif i >= self.num_small_boxes and self.num_medium_boxes > 0:
+                    if (x + self.medium_box_size - 1) < self.arena_constraints["x_max"]:
+                        if all([self.box_map[y][x+j] == 0 for j in range(self.medium_box_size)]) and \
+                                all([all([self.box_map[k][x+j] == 0 for j in range(self.medium_box_size)]) for k in range(self.arena_constraints["y_max"])]):
+
+                            for j in range(self.medium_box_size):
+                                self.box_map[y][x+j] = i + 1
+
+                            self.boxes_in_arena[i] = (x, y, "medium")
+                            box_placed = True
+
+                # Place big box
+                elif i >= self.num_small_boxes and self.num_big_boxes > 0:
+                    if (x + self.num_agents - 1) < self.arena_constraints["x_max"]:
+                        if all([self.box_map[y][x+j] == 0 for j in range(self.num_agents)]) and \
+                                all([all([self.box_map[k][x+j] == 0 for j in range(self.num_agents)]) for k in range(self.arena_constraints["y_max"])]):
+
+                            for j in range(self.num_agents):
+                                self.box_map[y][x+j] = i + 1
+
+                            self.boxes_in_arena[i] = (x, y, "big")
+                            box_placed = True
 
         return self.get_agent_observations()
 
@@ -244,7 +273,6 @@ class BoxPushingEnv:
         return self.episode_length
 
     # Helpers
-
     def reset_rng(self):
         self.np_random = np.random.RandomState(self.seed_value)
 
@@ -362,19 +390,27 @@ class BoxPushingEnv:
 
             # Draw agent(s)
             for i in range(self.num_agents):
-                agent = rendering.FilledPolygon([(0, 0), (self.agent_width, 0), (self.agent_width/2, self.agent_height)])
+                agent = rendering.FilledPolygon([(0, 0), (self.agent_width*self.scale, 0), (self.agent_width/2*self.scale, self.agent_height*self.scale)])
                 agent.set_color(self.agent_colour[0], self.agent_colour[1], self.agent_colour[2])
                 agent.add_attr(
                     rendering.Transform(
                         translation=(
-                            -self.agent_width/2,
-                            -self.agent_height/2)))
+                            -self.agent_width/2*self.scale,
+                            -self.agent_height/2*self.scale)))
                 agent.add_attr(self.agent_transforms[i])
                 self.viewer.add_geom(agent)
 
             # Draw box(es)
-            for i in range(self.num_small_boxes):
-                l, r, t, b = -self.small_box_width / 2, self.small_box_width / 2, self.small_box_width, 0
+            for i in range(self.num_small_boxes + self.num_medium_boxes + self.num_big_boxes):
+                if i < self.num_small_boxes:
+                    l, r, t, b = -self.small_box_width / 2 * self.scale, self.small_box_width / 2 * self.scale, self.small_box_width * self.scale, 0
+
+                elif i >= self.num_small_boxes and self.num_medium_boxes > 0:
+                    l, r, t, b = -self.medium_box_width / 2 * self.scale, self.medium_box_width / 2 * self.scale, self.small_box_width * self.scale, 0
+
+                elif i >= self.num_small_boxes and self.num_big_boxes > 0:
+                    l, r, t, b = -self.big_box_width / 2 * self.scale, self.big_box_width / 2 * self.scale, self.small_box_width * self.scale, 0
+
                 box = rendering.FilledPolygon([(l, b), (l, t), (r, t), (r, b)])
                 box.set_color(self.box_colour[0], self.box_colour[1], self.box_colour[2])
                 box.add_attr(
@@ -392,10 +428,21 @@ class BoxPushingEnv:
                 (self.agent_positions[i][1] - self.arena_constraints["y_min"] + 0.5) * self.scale)
 
         # Set position of box(es)
-        for box_id, box_position in self.boxes_in_arena.items():
-            self.box_transforms[box_id].set_translation(
-                (box_position[0] - self.arena_constraints["x_min"] + 0.5) * self.scale,
-                (box_position[1] - self.arena_constraints["y_min"] + 0.125) * self.scale)
+        for box_id, box_details in self.boxes_in_arena.items():
+            if box_details[2] == "small":
+                self.box_transforms[box_id].set_translation(
+                    (box_details[0] - self.arena_constraints["x_min"] + 0.5) * self.scale,
+                    (box_details[1] - self.arena_constraints["y_min"] + 0.125) * self.scale)
+
+            elif box_details[2] == "medium":
+                self.box_transforms[box_id].set_translation(
+                    (box_details[0] - self.arena_constraints["x_min"] + (0.5 * self.medium_box_size)) * self.scale,
+                    (box_details[1] - self.arena_constraints["y_min"] + 0.125) * self.scale)
+
+            elif box_details[2] == "big":
+                self.box_transforms[box_id].set_translation(
+                    (box_details[0] - self.arena_constraints["x_min"] + (0.5 * self.num_agents)) * self.scale,
+                    (box_details[1] - self.arena_constraints["y_min"] + 0.125) * self.scale)
 
         return self.viewer.render(return_rgb_array=mode == 'rgb_array')
 
