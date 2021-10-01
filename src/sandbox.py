@@ -8,7 +8,7 @@ parameter_path = "/Users/mostafa/Documents/Code/PhD/TS-Platform/src/default_box_
 
 fitness_calculator = FitnessCalculator(parameter_path)
 
-num_agents = 2
+num_agents = 6
 agent_list = []
 for i in range(num_agents):
     agent = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_path)

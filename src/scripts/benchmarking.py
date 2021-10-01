@@ -579,9 +579,10 @@ class BenchmarkPlotter:
 
 def get_experiment_name_from_filename(filename):
     env_name = filename.strip(".csv").split("/")[-1].split("_")[7]
+    learning_type = filename.strip(".csv").split("/")[-1].split("_")[2]
     items_in_shortened_name = filename.strip(".csv").split("_")[-10:-6]
     shortened_name = "_".join([str(item) for item in items_in_shortened_name])
-    return env_name + "_" + shortened_name
+    return "_".join([env_name, learning_type, shortened_name])
 
 def arch_dict_to_label(arch_dict):
     label = '{} HL'.format(arch_dict['N_hidden_layers'])

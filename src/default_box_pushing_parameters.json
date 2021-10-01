@@ -13,14 +13,14 @@
     "environment": {
         "box_pushing": {
             "defection": "True",
-            "partial_cooperation": "True",
+            "partial_cooperation": "False",
             "sensing": "local",
             "specialisation": "False",
             "environment_scaling": "variable",
             "reward_sharing": "True",
             "time_scaling": "variable",
             "sparse_rewards": "True",
-            "num_agents": 2,
+            "num_agents": 6,
             "arena_length": 8,
             "min_arena_width": 4,
             "medium_box_size": 2,
