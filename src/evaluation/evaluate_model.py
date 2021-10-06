@@ -18,7 +18,7 @@ metric_index = 2  # R_spec
 #metric_index = 0 # T-Maze
 
 
-def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, print_scores=None, ids_to_remove=None, bc_measure=None, save_video=False):
+def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, print_scores=None, ids_to_remove=None, dummy_observations=False, bc_measure=None, save_video=False):
     if rendering == "True":
         rendering = True
     else:
@@ -142,7 +142,7 @@ def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, p
 
         if ids_to_remove:
             agent = NNAgent(fitness_calculator.get_observation_size() * num_agents,
-                            fitness_calculator.get_action_size() * num_agents, parameter_path, genome, ids_to_remove, HardcodedHitchhikerAgent, dummy_observations=True)
+                            fitness_calculator.get_action_size() * num_agents, parameter_path, genome, ids_to_remove, HardcodedHitchhikerAgent, dummy_observations)
 
         else:
             agent = NNAgent(fitness_calculator.get_observation_size() * num_agents,

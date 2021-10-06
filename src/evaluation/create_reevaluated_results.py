@@ -10,14 +10,14 @@ from evaluation.create_results_from_models import get_seed_file
 from itertools import combinations
 
 
-def create_reevaluated_results(path_to_data_folder, generation, episodes, num_agents_to_remove=0, min_team_size=2, max_team_size=None, has_seed_file=False, env="slope", bc_measure=None):
+def create_reevaluated_results(path_to_data_folder, generation, episodes, num_agents_to_remove=0, dummy_observations=False, min_team_size=2, max_team_size=None, has_seed_file=False, env="slope", bc_measure=None):
     # TODO: Modify to avoid repetition of other function
     # Get list of models
     model_files = glob(f'{path_to_data_folder}/*cma*_{generation}.npy')  # TODO: Allow different algorithms
 
     # Create final results file
     if num_agents_to_remove != 0:
-        results_file = os.path.join(path_to_data_folder, f'robustness_{num_agents_to_remove}_removed.csv')
+        results_file = os.path.join(path_to_data_folder, f'robustness_{num_agents_to_remove}_removed_dummy={dummy_observations}.csv')
     else:
         results_file = os.path.join(path_to_data_folder, f'results_reevaluated_{episodes}ep_{generation}.csv')
 
@@ -83,9 +83,9 @@ def create_reevaluated_results(path_to_data_folder, generation, episodes, num_ag
 
         for combo in combinations_to_remove[num_agents]:
             if not episodes:
-                results = evaluate_model(model_path=model_path, ids_to_remove=combo, bc_measure=bc_measure)
+                results = evaluate_model(model_path=model_path, ids_to_remove=combo, dummy_observations=dummy_observations, bc_measure=bc_measure)
             else:
-                results = evaluate_model(model_path=model_path, episodes=int(episodes), ids_to_remove=combo, bc_measure=bc_measure)
+                results = evaluate_model(model_path=model_path, episodes=int(episodes), ids_to_remove=combo, dummy_observations=dummy_observations, bc_measure=bc_measure)
 
             if has_seed_file:
                 seed_file = get_seed_file(path_to_data_folder, parameter_dictionary)
@@ -136,6 +136,7 @@ if __name__ == "__main__":
     parser.add_argument('--generation', action="store")
     parser.add_argument('--episodes', action="store")
     parser.add_argument('--num_agents_to_remove', action="store")
+    parser.add_argument('--dummy_observations', action="store")
     parser.add_argument('--min_team_size', action="store")
     parser.add_argument('--max_team_size', action="store")
     parser.add_argument('--env', action="store")
@@ -161,4 +162,11 @@ if __name__ == "__main__":
     if max_team_size:
         max_team_size = int(max_team_size)
 
-    create_reevaluated_results(data_path, generation, episodes, num_agents_to_remove, min_team_size, max_team_size, env=env, bc_measure=bc_measure)
+    dummy_observations = parser.parse_args().dummy_observations
+
+    if dummy_observations == "True":
+        dummy_observations = True
+    elif dummy_observations == "False":
+        dummy_observations = False
+
+    create_reevaluated_results(data_path, generation, episodes, num_agents_to_remove, dummy_observations, min_team_size, max_team_size, env=env, bc_measure=bc_measure)

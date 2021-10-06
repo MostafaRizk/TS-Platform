@@ -1,22 +1,19 @@
 import numpy as np
+import subprocess
 import os
 
-from fitness import FitnessCalculator
-from agents.nn_agent_lean import NNAgent
+generator_seed = 2
+num_seeds = 30
+path = "results/2021_10_06_b_aamas_data/2021_10_04_scalability_constant_arena_correct_neurons/data/"
+np_random = np.random.RandomState(generator_seed)
+#os.chdir(path)
 
-parameter_path = "/Users/mostafa/Documents/Code/PhD/TS-Platform/src/default_box_pushing_parameters.json"
+array_string = ""
 
-fitness_calculator = FitnessCalculator(parameter_path)
+for i in range(30):
+    new_seed = np_random.randint(low=1, high=2 ** 32 - 1)
+    if i != 0:
+        array_string += " "
+    array_string += f"\"{new_seed}\""
 
-num_agents = 6
-agent_list = []
-for i in range(num_agents):
-    agent = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_path)
-    agent_list += [agent]
-
-results = fitness_calculator.calculate_fitness(controller_list=agent_list, render=True, time_delay=0.1,
-                                                       measure_specialisation=False, logging=False, logfilename=None,
-                                                       render_mode="human")
-
-
-
+print(array_string)

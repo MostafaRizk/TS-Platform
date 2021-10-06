@@ -8,6 +8,11 @@ from operator import add
 
 setups = ["Centralised", "Decentralised", "Fully-centralised"]
 setup_labels = ["CTDE", "FD", "FC"]
+
+ctde_colour = '#d55e00'
+decentralised_colour = '#0071b2'
+fully_centralised_colour = '#009E73'
+
 spec_metric_index = 2 # R_spec
 #spec_metric_index = 5 # R_spec_P
 #spec_metric_index = 0
@@ -174,7 +179,7 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
 
             if plot_type == "mean":
                 y += [np.mean(scores[key])]
-                yerr += [np.std(scores[key])]
+                #yerr += [np.std(scores[key])]
             elif plot_type == "best":
                 y += [np.max(scores[key])]
                 yerr += [stats.sem(scores[key])]
@@ -191,38 +196,51 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
         print(f"{key}: {len(results[key])}")
 
     # Plot
+    title_font = 40
+    label_font = 36
+    tick_font = 30
+    legend_font = 30
+    label_padding = 1.08
+
     ''''''
     if not violin:
-        fig1, ax1 = plt.subplots(figsize=(12, 8))
-        ax1.set_title(f'Scalability of Evolved {showing.capitalize()} with Number of Agents', fontsize=20)
+        fig1, ax1 = plt.subplots(figsize=(16, 10))
+        ax1.set_title(f'Scalability of Evolved {showing.capitalize()} with Number of Agents', fontsize=title_font, y=label_padding)
 
         if showing == "fitness":
             ax1.set_ylim(0, y_height)
-            ax1.set_ylabel('Fitness per agent', fontsize=18)
+            ax1.set_ylabel('Fitness per agent', fontsize=label_font, x=label_padding)
 
         elif showing == "specialisation":
             ax1.set_ylim(0, 1.1)
-            ax1.set_ylabel('Team Specialisation', fontsize=18)
+            ax1.set_ylabel('Team Specialisation', fontsize=label_font)
 
         elif showing == "participation":
             ax1.set_ylim(0, 1.1)
-            ax1.set_ylabel('Team Participation', fontsize=18)
+            ax1.set_ylabel('Team Participation', fontsize=label_font)
 
         ax1.set_xticks([x for x in range(2, max_agents+2, 2)])
-        ax1.set_xlabel('Number of Agents', fontsize=18)
+        ax1.set_xlabel('Number of Agents', fontsize=label_font, y=label_padding)
 
         for tick in ax1.xaxis.get_major_ticks():
-            tick.label.set_fontsize(16)
+            tick.label.set_fontsize(tick_font)
 
         for tick in ax1.yaxis.get_major_ticks():
-            tick.label.set_fontsize(16)
+            tick.label.set_fontsize(tick_font)
 
-        if plot_type == "mean" or plot_type == "error":
-            plt.errorbar(x, y_centralised, yerr_centralised, fmt='r-', label="CTDE")
-            plt.errorbar(x, y_decentralised, yerr_decentralised, fmt='b-', label="Fully Decentralised")
-            #plt.errorbar(x, y_onepop, yerr_onepop, fmt='g-', label="One-pop")
-            #plt.errorbar(x, y_homogeneous, yerr_homogeneous, fmt='k-', label="Homogeneous")
-            plt.errorbar(x, y_fully_centralised, yerr_fully_centralised, fmt='g-', label="Fully Centralised")
+        linewidth = 2
+        markersize = 14
+
+        if plot_type == "error":
+            plt.errorbar(x, y_centralised, yerr_centralised, color=ctde_colour, linestyle='-', label="CTDE", marker='^', markersize=markersize, linewidth=linewidth)
+            plt.errorbar(x, y_decentralised, yerr_decentralised, color=decentralised_colour, linestyle='-', label="Fully Decentralised", marker='s', markersize=markersize, linewidth=linewidth)
+            plt.errorbar(x, y_fully_centralised, yerr_fully_centralised, color=fully_centralised_colour, linestyle='-', label="Fully Centralised", marker='o', markersize=markersize, linewidth=linewidth)
+
+        elif plot_type == "mean":
+            plt.plot(x, y_centralised, color=ctde_colour, linestyle='-', label="CTDE", marker='^', markersize=markersize, linewidth=linewidth)
+            plt.plot(x, y_decentralised, color=decentralised_colour, linestyle='-', label="Fully Decentralised", marker='s', markersize=markersize, linewidth=linewidth)
+            plt.plot(x, y_fully_centralised, color=fully_centralised_colour, linestyle='-', label="Fully Centralised", marker='o', markersize=markersize, linewidth=linewidth)
+
 
         elif plot_type == "best" or plot_type == "median":
             plt.plot(x, y_centralised, 'ro-', label=f"CTDE ({plot_type})")
@@ -238,7 +256,7 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
             #plt.plot(x, y_homogeneous, 'ko-', label="Homogeneous")
             plt.plot(x, y_fully_centralised, 'go-', label="Fully Centralised")
 
-        plt.legend(loc='upper right', fontsize=16)
+        plt.legend(loc='upper right', fontsize=legend_font)
         plt.savefig(path_to_graph)
 
     else:
@@ -246,10 +264,10 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
             ax.get_xaxis().set_tick_params(direction='out')
             ax.xaxis.set_ticks_position('bottom')
             ax.set_xticks(np.arange(1, len(labels) + 1))
-            ax.set_xticklabels(labels, fontsize=12)
+            ax.set_xticklabels(labels, fontsize=tick_font)
             ax.set_xlim(0.25, len(labels) + 0.75)
             for tick in ax.yaxis.get_major_ticks():
-                tick.label.set_fontsize(12)
+                tick.label.set_fontsize(tick_font)
 
         #fig = plt.figure(figsize=(19, 9))
         fig, axs = plt.subplots(1, 4, sharey=True, figsize=(19,9))
@@ -259,31 +277,31 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
 
             if showing == "fitness":
                 ax.set_ylim(y_min_height, y_height)
-                ax.set_ylabel("Fitness per Agent")
+                ax.set_ylabel("Fitness per Agent", fontsize=label_font)
             elif showing == "specialisation" or showing == "participation":
                 ax.set_ylim(-0.2, 1.2)
-                ax.set_ylabel("Team Specialisation")
+                ax.set_ylabel("Team Specialisation", fontsize=label_font)
 
             num_agents = (col+1) * 2
             parts = ax.violinplot([scores[f"{setup}-{num_agents}"] for setup in setups])
 
             for id,pc in enumerate(parts['bodies']):
                 if setups[id] == "Centralised":
-                    pc.set_color('red')
+                    pc.set_color(ctde_colour)
                 elif setups[id] == "Decentralised":
-                    pc.set_color('blue')
+                    pc.set_color(decentralised_colour)
                 elif setups[id] == "Fully-centralised":
-                    pc.set_color('green')
-                elif setups[id] == "Homogeneous":
-                    pc.set_color('black')
+                    pc.set_color(fully_centralised_colour)
+                #elif setups[id] == "Homogeneous":
+                #    pc.set_color('black')
 
             for pc in ('cbars', 'cmins', 'cmaxes'):
                 parts[pc].set_color('black')
 
             set_axis_style(ax, setup_labels)
-            ax.set_title(f"{num_agents} Agents")
+            ax.set_title(f"{num_agents} Agents", fontsize=label_font)
 
-        plt.suptitle(f"{showing.capitalize()} Distribution")
+        plt.suptitle(f"{showing.capitalize()} Distribution", fontsize=title_font)
         plt.savefig(path_to_graph)
 
 

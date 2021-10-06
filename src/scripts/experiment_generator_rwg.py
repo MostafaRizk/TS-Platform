@@ -33,6 +33,9 @@ def generate_rwg_experiments(experiment_directory, core_parameter_filename, lear
         parameter_dictionary["algorithm"]["agent_population_size"] *= (num_agents // 2)
         parameter_dictionary["general"]["learning_type"] = learning_type
 
+        #TODO: WARNING! CHANGE WHEN NOT DOING FC
+        default_hidden_units = 8 #parameter_dictionary["agent"]["nn"]["hidden_units_per_layer"]
+
         num_experiments = num_seeds_for_team
         np_random = np.random.RandomState(generator_seed)
         g = open(f"{experiment_directory}/data/{list_file_name}", "a")
@@ -47,6 +50,11 @@ def generate_rwg_experiments(experiment_directory, core_parameter_filename, lear
                         parameter_dictionary["agent"]["nn"]["architecture"] = architecture
                         parameter_dictionary["agent"]["nn"]["bias"] = bias
                         parameter_dictionary["agent"]["nn"]["hidden_layers"] = layers
+
+                        if layers == 0:
+                            parameter_dictionary["agent"]["nn"]["hidden_units_per_layer"] = 0
+                        else:
+                            parameter_dictionary["agent"]["nn"]["hidden_units_per_layer"] = default_hidden_units
 
                         parameters_in_filename = []
                         if not many_architectures:

@@ -602,10 +602,15 @@ def walk_multi_dir(results_dir, bias, params_dict_list, **kwargs):
     else:
         env = kwargs.get('env', None)
 
+    if kwargs.get('learning_type', None) is None:
+        raise RuntimeError("No learning type passed")
+    else:
+        learning_type = kwargs.get('learning_type', None)
+
     params_results_dict_list = []
     for params_dict in params_dict_list:
 
-        stat_file_prefix = f'all_genomes_centralised_rwg_heterogeneous_team_nn_{env}*{params_dict["NN"].lower()}_{bias}_{params_dict["N_hidden_layers"]}_{params_dict["N_hidden_units"]}'
+        stat_file_prefix = f'all_genomes_{learning_type}_rwg_heterogeneous_team_nn_{env}*{params_dict["NN"].lower()}_{bias}_{params_dict["N_hidden_layers"]}_{params_dict["N_hidden_units"]}'
         regex_string = f'{results_dir}/{stat_file_prefix}_*_stats.json'
         stat_files = glob(regex_string)
 
@@ -680,6 +685,11 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     else:
         env = kwargs.get('env', None)
 
+    if kwargs.get('learning_type', None) is None:
+        raise RuntimeError("No learning type passed")
+    else:
+        learning_type = kwargs.get('learning_type', None)
+
     print(f'Making plots for {spec_metric_key}')
 
     if env == "slope":
@@ -704,21 +714,39 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
         'N_hidden_units' : 2
     },
     '''
-    arch_dict_list = [
-        {
-            'N_hidden_layers': 0,
-            'N_hidden_units': 0
-        },
+    if learning_type == "centralised":
+        arch_dict_list = [
+            {
+                'N_hidden_layers': 0,
+                'N_hidden_units': 0
+            },
 
-        {
-            'N_hidden_layers': 1,
-            'N_hidden_units': 4
-        },
-        {
-            'N_hidden_layers': 2,
-            'N_hidden_units': 4
-        },
-    ]
+            {
+                'N_hidden_layers': 1,
+                'N_hidden_units': 4
+            },
+            {
+                'N_hidden_layers': 2,
+                'N_hidden_units': 4
+            },
+        ]
+
+    elif learning_type == "fully-centralised":
+        arch_dict_list = [
+            {
+                'N_hidden_layers': 0,
+                'N_hidden_units': 0
+            },
+
+            {
+                'N_hidden_layers': 1,
+                'N_hidden_units': 8
+            },
+            {
+                'N_hidden_layers': 2,
+                'N_hidden_units': 8
+            },
+        ]
 
     params_dict_list = []
 
@@ -854,10 +882,18 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     ######################### Plot variance for 2HL4HU
     j = 0
     for i, env_name in enumerate(envs_list):
-        arch_dict = {
-            'N_hidden_layers': 2,
-            'N_hidden_units': 4
-        }
+        if learning_type == "centralised":
+            arch_dict = {
+                'N_hidden_layers': 2,
+                'N_hidden_units': 4
+            }
+
+        elif learning_type == "fully-centralised":
+            arch_dict = {
+                'N_hidden_layers': 2,
+                'N_hidden_units': 8
+            }
+
         env_arch_tuple = (env_name, *list(arch_dict.values()))
         print(f'Plotting mean and trials of {env_arch_tuple}...')
         scores = env_arch_score_dict[env_arch_tuple][:10000]
@@ -894,10 +930,17 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     ##################################### Plot histograms for 2HL4HU
     j = 1
     for i, env_name in enumerate(envs_list):
-        arch_dict = {
-            'N_hidden_layers': 2,
-            'N_hidden_units': 4
-        }
+        if learning_type == "centralised":
+            arch_dict = {
+                'N_hidden_layers': 2,
+                'N_hidden_units': 4
+            }
+
+        elif learning_type == "fully-centralised":
+            arch_dict = {
+                'N_hidden_layers': 2,
+                'N_hidden_units': 8
+            }
         env_arch_tuple = (env_name, *list(arch_dict.values()))
         print(f'Plotting mean and trials of {env_arch_tuple}...')
         scores = env_arch_score_dict[env_arch_tuple][:10000]
