@@ -1,19 +1,28 @@
-import numpy as np
-import subprocess
-import os
+import argparse
 
-generator_seed = 2
-num_seeds = 30
-path = "results/2021_10_06_b_aamas_data/2021_10_04_scalability_constant_arena_correct_neurons/data/"
-np_random = np.random.RandomState(generator_seed)
-#os.chdir(path)
+from scripts.benchmarking import plot_envs_vs_NN_arch
 
-array_string = ""
 
-for i in range(30):
-    new_seed = np_random.randint(low=1, high=2 ** 32 - 1)
-    if i != 0:
-        array_string += " "
-    array_string += f"\"{new_seed}\""
+def generate_plots(genome_directory, metric=None):
+    biases = [False, True]
+    if metric is None:
+        #metrics = ["R_coop", "R_coop_eff", "R_spec"]
+        metrics = ["R_coop"]
+    else:
+        metrics = [metric]
 
-print(array_string)
+    for learning_type in ["centralised"]:
+        for bias in biases:
+            for m in metrics:
+                plot_envs_vs_NN_arch(genome_directory, bias,
+                                     N_bins=list(range(-20000, 160000, 10000)),
+                                     mean_lim=(-20000, 150000), var_lim=(0, 50000), dist_lim=(10 ** -1, 10000), spec_metric_key=m, num_samples=10000, num_episodes=20, env="slope", learning_type=learning_type)
+
+
+parser = argparse.ArgumentParser(description='Generate RWG Analysis Plots')
+parser.add_argument('--genome_directory', action="store", dest="genome_directory")
+parser.add_argument('--metric', action="store", dest="metric")
+genome_directory = parser.parse_args().genome_directory
+metric = parser.parse_args().metric
+generate_plots(genome_directory, metric)
+

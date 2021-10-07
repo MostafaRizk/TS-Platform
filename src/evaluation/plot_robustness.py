@@ -12,8 +12,13 @@ from operator import add
 
 setups = ["Centralised", "Decentralised", "Fully-centralised"]
 setup_labels = ["CTDE", "FD", "FC"]
-spec_metric_index = 2 # R_spec
+spec_metric_index = 0 # R_coop
+# spec_metric_index = 2 # R_spec
 # spec_metric_index = 5 # R_spec_P
+
+ctde_colour = '#d55e00'
+decentralised_colour = '#0071b2'
+fully_centralised_colour = '#009E73'
 
 
 def plot_robustness(data_path, file_list, path_to_graph, plot_type, min_agents, max_agents, agents_removed, y_min_height, y_height, showing="fitness"):
@@ -71,8 +76,16 @@ def plot_robustness(data_path, file_list, path_to_graph, plot_type, min_agents, 
     #cols = math.ceil((max_agents / 2) / rows)
     cols = (max_agents//2 - min_agents//2) + 1
 
+    # Plot
+    suptitle_font = 60
+    title_font = 55
+    label_font = 50
+    tick_font = 45
+    legend_font = 45
+    label_padding = 1.08
+
     fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30, 15))
-    fig.suptitle(f"Robustness of {showing.capitalize()}", fontsize=60)
+    #fig.suptitle(f"Robustness of {showing.capitalize()}", fontsize=suptitle_font)
 
     scores = {}
 
@@ -180,39 +193,38 @@ def plot_robustness(data_path, file_list, path_to_graph, plot_type, min_agents, 
 
         # Add data to plot
         axis.label_outer()
-        axis.set_title(f"{num_agents} Agents", fontsize=58)
-        axis.set_xlabel("Num Agents Removed", fontsize=56)
+        #axis.set_title(f"{num_agents} Agents", fontsize=title_font)
+        axis.set_title(f"Robustness of {showing.capitalize()} for {num_agents} Agents", fontsize=suptitle_font, y=label_padding)
+        axis.set_xlabel("Num Agents Removed", fontsize=title_font)
         axis.set_xticks(np.arange(0, agents_removed + 1))
         axis.set_xticklabels([str(k) for k in range(agents_removed+1)])
 
         for tick in axis.xaxis.get_major_ticks():
-            tick.label.set_fontsize(54)
+            tick.label.set_fontsize(tick_font)
 
         for tick in axis.yaxis.get_major_ticks():
-            tick.label.set_fontsize(54)
+            tick.label.set_fontsize(tick_font)
 
         if showing == "fitness":
-            axis.set_ylabel("Fitness per agent", fontsize=56)
+            axis.set_ylabel("Fitness per agent", fontsize=label_font)
             axis.set_ylim(y_min_height, y_height)
 
         elif showing == "specialisation":
-            axis.set_ylabel("Specialisation", fontsize=56)
+            axis.set_ylabel("Specialisation", fontsize=label_font)
             axis.set_ylim(0, 1.1)
 
-        if plot_type == "mean" or plot_type == "error":
-            axis.errorbar(x, y_centralised, yerr_centralised, fmt='r-', label="CTDE")
-            axis.errorbar(x, y_decentralised, yerr_decentralised, fmt='b-', label="Fully-Decentralised")
-            axis.errorbar(x, y_fully_centralised, yerr_fully_centralised, fmt='g-', label="Fully-Centralised")
-            #axis.errorbar(x, y_onepop, yerr_onepop, fmt='g-', label="One-pop")
-            #axis.errorbar(x, y_homogeneous, yerr_homogeneous, fmt='k-', label="Homogeneous")
+        linewidth = 8
+        markersize = 26
 
+        if plot_type == "error":
+            axis.errorbar(x, y_centralised, yerr_centralised, color=ctde_colour, linestyle='-', label="CTDE", marker='^', markersize=markersize, linewidth=linewidth)
+            axis.errorbar(x, y_decentralised, yerr_decentralised, color=decentralised_colour, linestyle='-', label="Fully Decentralised", marker='s', markersize=markersize, linewidth=linewidth)
+            axis.errorbar(x, y_fully_centralised, yerr_fully_centralised, color=fully_centralised_colour, linestyle='-', label="Fully Centralised", marker='o', markersize=markersize, linewidth=linewidth)
 
-        elif plot_type == "best" or plot_type == "median":
-            axis.plot(x, y_centralised, 'ro-', label=f"CTDE ({plot_type})")
-            axis.plot(x, y_decentralised, 'bo-', label=f"Fully-Decentralised ({plot_type})")
-            #axis.plot(x, y_onepop, 'go-', label=f"One-pop ({plot_type})")
-            #axis.plot(x, y_homogeneous, 'ko-', label=f"Homogeneous ({plot_type})")
-            axis.plot(x, y_fully_centralised, 'go-', label=f"Fully-Centralised ({plot_type})")
+        elif plot_type == "mean":
+            axis.plot(x, y_centralised, color=ctde_colour, linestyle='-', label="CTDE", marker='^', markersize=markersize, linewidth=linewidth)
+            axis.plot(x, y_decentralised, color=decentralised_colour, linestyle='-', label="Fully Decentralised", marker='s', markersize=markersize, linewidth=linewidth)
+            axis.plot(x, y_fully_centralised, color=fully_centralised_colour, linestyle='-', label="Fully Centralised", marker='o', markersize=markersize, linewidth=linewidth)
 
         else:
             axis.plot(x, y_centralised, 'ro-', label="CTDE")
@@ -221,7 +233,7 @@ def plot_robustness(data_path, file_list, path_to_graph, plot_type, min_agents, 
             #axis.plot(x, y_homogeneous, 'ko-', label="Homogeneous")
             axis.plot(x, y_fully_centralised, 'go-', label="Fully-Centralised")
 
-        axis.legend(loc='upper right', fontsize=50)
+        axis.legend(loc='upper right', fontsize=legend_font)
 
     # Save
     #filename = f"robustness_of_{showing}.png"

@@ -13,12 +13,13 @@ ctde_colour = '#d55e00'
 decentralised_colour = '#0071b2'
 fully_centralised_colour = '#009E73'
 
-spec_metric_index = 2 # R_spec
+spec_metric_index = 0 # R_coop
+#spec_metric_index = 2 # R_spec
 #spec_metric_index = 5 # R_spec_P
 #spec_metric_index = 0
 
-spec_index_with_participation = 5
-spec_index_without_participation = 2
+spec_index_with_participation = spec_metric_index + 3
+spec_index_without_participation = spec_metric_index
 
 
 def from_string(arr_str, dim=2):
@@ -205,7 +206,7 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
     ''''''
     if not violin:
         fig1, ax1 = plt.subplots(figsize=(16, 10))
-        ax1.set_title(f'Scalability of Evolved {showing.capitalize()} with Number of Agents', fontsize=title_font, y=label_padding)
+        ax1.set_title(f'Scalability of {showing.capitalize()} with Number of Agents', fontsize=title_font, y=label_padding)
 
         if showing == "fitness":
             ax1.set_ylim(0, y_height)
@@ -228,8 +229,8 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
         for tick in ax1.yaxis.get_major_ticks():
             tick.label.set_fontsize(tick_font)
 
-        linewidth = 2
-        markersize = 14
+        linewidth = 5
+        markersize = 17
 
         if plot_type == "error":
             plt.errorbar(x, y_centralised, yerr_centralised, color=ctde_colour, linestyle='-', label="CTDE", marker='^', markersize=markersize, linewidth=linewidth)
@@ -256,7 +257,7 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
             #plt.plot(x, y_homogeneous, 'ko-', label="Homogeneous")
             plt.plot(x, y_fully_centralised, 'go-', label="Fully Centralised")
 
-        plt.legend(loc='upper right', fontsize=legend_font)
+        plt.legend(fontsize=legend_font)# loc='upper right',
         plt.savefig(path_to_graph)
 
     else:

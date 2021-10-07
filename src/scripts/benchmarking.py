@@ -778,7 +778,7 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     grid_fig_size = (unit_plot_w * len(envs_list), unit_plot_h * len(arch_dict_list))
     plot_pt_alpha = 0.1
     plot_label_params = {
-        'fontsize': 13
+        'fontsize': 16
     }
     plot_ylabel_params = {
         'fontsize': 12
@@ -804,7 +804,7 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     part_2_w = (3 / 4.0) * part_1_w * 1.0
     plot_tick_params = {
         'axis': 'both',
-        'labelsize': 6,
+        'labelsize': 10,
         'which': 'major',
         'pad': 0
 

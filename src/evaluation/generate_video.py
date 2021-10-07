@@ -12,7 +12,8 @@ from array2gif import write_gif
 from PIL import Image
 import moviepy.editor as mp
 
-spec_metric_index = 2  # R_spec
+spec_metric_index = 0 # R_coop
+#spec_metric_index = 2  # R_spec
 
 
 def generate_video(results, path_to_video_folder, learning_type, num_agents, run_number, episode_numbers, agents_to_remove=0):
@@ -68,16 +69,30 @@ def generate_video(results, path_to_video_folder, learning_type, num_agents, run
 
 if __name__ == "__main__":
     #results = load_results(path_to_results="/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_08_06_a_scalability_variable_arena/data/results_reevaluated_30ep_final.csv", max_agents=8)
-    results = load_results(path_to_results="/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_08_19_a_scalability_constant_arena_60_samples/data/results_reevaluated_30ep_final.csv", max_agents=8)
+    parent_path = "/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_10_06_b_aamas_data/2021_10_05_scalability_variable_arena_correct_neurons"
+    results = load_results(path_to_results=f"{parent_path}/data/results_reevaluated_30ep_final.csv", max_agents=8)
 
 
     configs = [{
                 "learning_type": "Fully-centralised",
-                "num_agents": 8,
-                "run_number": 29,
+                "num_agents": 2,
+                "run_number": 15,
                 "episode_numbers": [29, 0],
-                "agents_to_remove": 4}
-    ]
+                "agents_to_remove": 0},
+        ]
+    '''{
+    "learning_type": "Decentralised",
+    "num_agents": 2,
+    "run_number": 15,
+    "episode_numbers": [29, 0],
+    "agents_to_remove": 0},
+    {
+    "learning_type": "Fully-centralised",
+    "num_agents": 8,
+    "run_number": 29,
+    "episode_numbers": [29, 0],
+    "agents_to_remove": 0}
+    ]'''
 
     for config in configs:
         learning_type = config["learning_type"]
@@ -86,18 +101,18 @@ if __name__ == "__main__":
         episode_numbers = config["episode_numbers"]
         agents_to_remove = config["agents_to_remove"]
 
-        """plot_trajectory(results=results,
-                        path_to_graph=f"/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_08_06_a_scalability_variable_arena/analysis/behaviour_inspection_{learning_type}_{num_agents}_{run_number}_{episode_numbers}.png",
+        plot_trajectory(results=results,
+                        path_to_graph=f"{parent_path}/analysis/behaviour_inspection_{learning_type}_{num_agents}_{run_number}_{episode_numbers}.pdf",
                         learning_type=learning_type,
                         num_agents=num_agents,
                         run_number=run_number,
                         episode_numbers=episode_numbers,
-                        max_fitness=40000)"""
+                        max_fitness=30000)
 
-        generate_video(results=results,
-                        path_to_video_folder=f"/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_08_06_a_scalability_variable_arena/analysis",
+        '''generate_video(results=results,
+                        path_to_video_folder=f"{parent_path}/analysis",
                         learning_type=learning_type,
                         num_agents=num_agents,
                         run_number=run_number,
                         episode_numbers=episode_numbers,
-                        agents_to_remove=agents_to_remove)
+                        agents_to_remove=agents_to_remove)'''
