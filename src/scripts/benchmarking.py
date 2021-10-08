@@ -993,7 +993,7 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
         axes_list[j].hist(all_trials_mean, color='dodgerblue', edgecolor='gray', log=True,
                         bins=kwargs.get('N_bins', None))
         axes_list[j].tick_params(**plot_tick_params)
-        axes_list[j].tick_params(axis='x', labelsize=15)
+        axes_list[j].tick_params(axis='x', labelsize=14, rotation=45)
 
         axes_list[j].set_ylabel('', **plot_label_params)
         if i == len(envs_list) - 1:
