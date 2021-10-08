@@ -8,8 +8,8 @@ from matplotlib.colors import ListedColormap
 from scipy import stats
 from operator import add
 
-setups = ["Centralised", "Decentralised", "Fully-centralised"]
-setup_labels = ["CTDE", "Fully Decentralised", "Fully Centralised"]
+setups = ["Fully-centralised", "Centralised", "Decentralised"]
+setup_labels = ["Fully Centralised", "CTDE", "Fully Decentralised"]
 alpha = 0.2
 background_alpha = 0.5
 spec_metric_index = 0 # R_coop
@@ -80,7 +80,8 @@ def plot_episodes(path_to_results, path_to_graph, min_agents, max_agents, y_heig
     if exclude_middle_plots and min_agents!=max_agents:
         fig = plt.figure(figsize=(9.5, 9))
     elif exclude_middle_plots:
-        fig = plt.figure(figsize=(5, 9))
+        #fig = plt.figure(figsize=(5, 9))
+        fig = plt.figure(figsize=(18, 4))
     else:
         fig = plt.figure(figsize=(19, 9))
 
@@ -124,10 +125,13 @@ def plot_episodes(path_to_results, path_to_graph, min_agents, max_agents, y_heig
         col_range = range(1, col_max)
 
         for col in col_range:
-            plot = ((row - 1) * (col_max-1)) + col
+            #plot = ((row - 1) * (col_max-1)) + col
+            plot = ((row - 1) * (col_max - 1)) + col
+            plot = ((col - 1) * (len(setups))) + row
 
             setup = setups[row-1]
-            ax = fig.add_subplot(len(setups), col_max - 1, plot)#, sharey=True)#, sharex=True)
+            #ax = fig.add_subplot(len(setups), col_max - 1, plot)#, sharey=True)#, sharex=True)
+            ax = fig.add_subplot(col_max - 1, len(setups),  plot)
 
             if exclude_middle_plots and col == 2:
                 num_agents = max_agents
@@ -137,7 +141,8 @@ def plot_episodes(path_to_results, path_to_graph, min_agents, max_agents, y_heig
                 num_agents = col*2
 
             key = f"{setup}-{num_agents}"
-            plot_name = f"{setup_labels[row-1]}-{num_agents} agents"
+            #plot_name = f"{setup_labels[row-1]}-{num_agents} agents"
+            plot_name = f"{setup_labels[row - 1]}"
 
             all_runs = [None]*len(results[key])
 
@@ -173,14 +178,22 @@ def plot_episodes(path_to_results, path_to_graph, min_agents, max_agents, y_heig
             ax.set_ylim(-2000, y_height)
 
             #if col==1:
-            ax.set_ylabel("Fitness per Agent", fontsize=label_font, x=title_padding)
+
             plt.setp(ax.get_xticklabels(), fontsize=tick_font)
 
-            if row==(len(setups)):
-                ax.set_xlabel("Evolutionary Run Number", fontsize=label_font)
+            #if row==(len(setups)):
+
+
+            #else:
+            #    ax.set_xticklabels([])
+
+            if row != 1:
+                ax.set_yticklabels([])
 
             else:
-                ax.set_xticklabels([])
+                ax.set_ylabel("Fitness per Agent", fontsize=label_font, x=title_padding)
+
+            ax.set_xlabel("Evolutionary Run Number", fontsize=label_font)
 
             plt.setp(ax.get_yticklabels(), fontsize=tick_font)
 

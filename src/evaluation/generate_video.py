@@ -74,11 +74,17 @@ if __name__ == "__main__":
 
 
     configs = [{
-                "learning_type": "Fully-centralised",
+                "learning_type": "Decentralised",
                 "num_agents": 2,
                 "run_number": 15,
                 "episode_numbers": [29, 0],
                 "agents_to_remove": 0},
+        {
+            "learning_type": "Fully-centralised",
+            "num_agents": 2,
+            "run_number": 15,
+            "episode_numbers": [29, 0],
+            "agents_to_remove": 0},
         ]
     '''{
     "learning_type": "Decentralised",

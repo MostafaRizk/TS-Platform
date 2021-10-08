@@ -206,7 +206,7 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
     ''''''
     if not violin:
         fig1, ax1 = plt.subplots(figsize=(16, 10))
-        ax1.set_title(f'Scalability of {showing.capitalize()} with Number of Agents', fontsize=title_font, y=label_padding)
+        #ax1.set_title(f'Scalability of {showing.capitalize()} with Number of Agents', fontsize=title_font, y=label_padding)
 
         if showing == "fitness":
             ax1.set_ylim(0, y_height)

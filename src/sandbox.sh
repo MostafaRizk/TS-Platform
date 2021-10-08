@@ -1,8 +1,8 @@
 #!/bin/bash
 
-path="/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_10_06_b_aamas_data/2021_10_04_scalability_constant_arena_correct_neurons/data/"
-pwd
-for seed in "1872583849" #"794921488" "111352302" "4000937545" "2360782359" "4070471980" "1869695443" "2081981516" "1805465961" "1376693512" "1418777251" "663257522" "878959200" "3001592396" "2659748566" "515183664" "1287007040" "2083814688" "1146014427" "2717587861" "2667749501" "3514257013" "2272647974" "2933574312" "578016452" "2141303911" "2205801221" "2520273835" "792163180" "3091320884"
-do
-ls $path"*"$seed"*"
-done
+python3 experiment.py --parameters CTDE_rnn_False_0.json
+python3 experiment.py --parameters CTDE_rnn_False_1.json
+python3 experiment.py --parameters CTDE_rnn_False_2.json
+python3 experiment.py --parameters CTDE_ffnn_False_0.json
+python3 experiment.py --parameters CTDE_ffnn_False_1.json
+python3 experiment.py --parameters CTDE_ffnn_False_2.json

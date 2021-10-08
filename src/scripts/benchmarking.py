@@ -12,6 +12,7 @@ import cv2
 
 from datetime import datetime
 from glob import glob
+from matplotlib.colors import ListedColormap
 
 
 class BenchmarkPlotter:
@@ -699,8 +700,10 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
         ]
 
         env_name_title_dict = {
-            'SlopeForaging-FFNN': f'SlopeForaging\n(FFNN)',
-            'SlopeForaging-RNN': f'SlopeForaging\n(RNN)'
+            #'SlopeForaging-FFNN': f'SlopeForaging\n(FFNN)',
+            #'SlopeForaging-RNN': f'SlopeForaging\n(RNN)'
+            'SlopeForaging-FFNN': f'FFNN',
+            'SlopeForaging-RNN': f'RNN'
         }
 
     elif env == "tmaze":
@@ -780,7 +783,7 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     plot_label_params = {
         'fontsize': 16
     }
-    plot_ylabel_params = {
+    '''plot_ylabel_params = {
         'fontsize': 12
     }
     plot_tick_params = {
@@ -789,7 +792,7 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     }
     plot_title_params = {
         'fontsize': 12
-    }
+    }'''
 
     print('\nPlotting big combo plot...')
 
@@ -804,18 +807,20 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     part_2_w = (3 / 4.0) * part_1_w * 1.0
     plot_tick_params = {
         'axis': 'both',
-        'labelsize': 10,
+        'labelsize': 14,
         'which': 'major',
         'pad': 0
 
     }
+
+    hspace = 0.25
 
     ############################# First part
     plt.close('all')
     N_row = len(envs_list)
     N_col = len(arch_dict_list)
     fig, axes = plt.subplots(N_row, N_col, sharex='all', sharey='row',
-                             gridspec_kw={'hspace': 0, 'wspace': w_space}, figsize=(part_1_w, fig_height))
+                             gridspec_kw={'hspace': hspace, 'wspace': w_space}, figsize=(part_1_w, fig_height))
 
     ###################### plot main episode/mean plots
     for i, env_name in enumerate(envs_list):
@@ -850,7 +855,23 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
             lims = kwargs.get('mean_lim', None)
             axes_list[j].set_ylim(lims[0], lims[1])
 
-            cm = plt.cm.get_cmap('RdYlGn')
+            vermillion = (213, 94, 0)
+            bluish_green = (0, 158, 115)
+
+            generalist_colour = vermillion
+            specialist_colour = bluish_green
+
+            # Divide RGB value by 256 to map it to 0-1 range
+            N = 256
+            vals = np.ones((N, 4))
+            vals[:, 0] = np.linspace(generalist_colour[0] / N, specialist_colour[0] / N, N)
+            vals[:, 1] = np.linspace(generalist_colour[1] / N, specialist_colour[1] / N, N)
+            vals[:, 2] = np.linspace(generalist_colour[2] / N, specialist_colour[2] / N, N)
+
+            # Create custom colour map
+            cm = ListedColormap(vals)
+
+            #cm = plt.cm.get_cmap('RdYlGn')
             norm = colours.Normalize(vmin=0, vmax=1)
             m = plt.cm.ScalarMappable(norm=norm, cmap=cm)
 
@@ -877,11 +898,17 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     plt.close('all')
     N_row = len(envs_list)
     N_col = 2
-    fig, axes = plt.subplots(N_row, N_col, sharex=False, sharey=False, gridspec_kw={'hspace': 0, 'wspace': 0.23}, figsize=(part_2_w, fig_height))
+    fig, axes = plt.subplots(N_row, N_col, sharex=False, sharey=False, gridspec_kw={'hspace': hspace, 'wspace': 0.23}, figsize=(part_2_w, fig_height))
 
     ######################### Plot variance for 2HL4HU
     j = 0
     for i, env_name in enumerate(envs_list):
+
+        if len(envs_list) == 1:
+            axes_list = axes
+        else:
+            axes_list = axes[i]
+
         if learning_type == "centralised":
             arch_dict = {
                 'N_hidden_layers': 2,
@@ -930,6 +957,12 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     ##################################### Plot histograms for 2HL4HU
     j = 1
     for i, env_name in enumerate(envs_list):
+
+        if len(envs_list) == 1:
+            axes_list = axes
+        else:
+            axes_list = axes[i]
+
         if learning_type == "centralised":
             arch_dict = {
                 'N_hidden_layers': 2,
@@ -960,7 +993,7 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
         axes_list[j].hist(all_trials_mean, color='dodgerblue', edgecolor='gray', log=True,
                         bins=kwargs.get('N_bins', None))
         axes_list[j].tick_params(**plot_tick_params)
-        axes_list[j].tick_params(axis='x', labelsize=0)
+        axes_list[j].tick_params(axis='x', labelsize=15)
 
         axes_list[j].set_ylabel('', **plot_label_params)
         if i == len(envs_list) - 1:

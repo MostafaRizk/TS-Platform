@@ -34,7 +34,10 @@ def generate_rwg_experiments(experiment_directory, core_parameter_filename, lear
         parameter_dictionary["general"]["learning_type"] = learning_type
 
         #TODO: WARNING! CHANGE WHEN NOT DOING FC
-        default_hidden_units = 8 #parameter_dictionary["agent"]["nn"]["hidden_units_per_layer"]
+        if learning_type == "fully-centralised":
+            default_hidden_units = 8
+        else:
+            default_hidden_units = parameter_dictionary["agent"]["nn"]["hidden_units_per_layer"]
 
         num_experiments = num_seeds_for_team
         np_random = np.random.RandomState(generator_seed)

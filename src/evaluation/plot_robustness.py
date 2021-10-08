@@ -193,9 +193,8 @@ def plot_robustness(data_path, file_list, path_to_graph, plot_type, min_agents, 
 
         # Add data to plot
         axis.label_outer()
-        #axis.set_title(f"{num_agents} Agents", fontsize=title_font)
-        axis.set_title(f"Robustness of {showing.capitalize()} for {num_agents} Agents", fontsize=suptitle_font, y=label_padding)
-        axis.set_xlabel("Num Agents Removed", fontsize=title_font)
+        #axis.set_title(f"Robustness of {showing.capitalize()} for {num_agents} Agents", fontsize=suptitle_font, y=label_padding)
+        axis.set_xlabel("Number of Agents Removed", fontsize=title_font)
         axis.set_xticks(np.arange(0, agents_removed + 1))
         axis.set_xticklabels([str(k) for k in range(agents_removed+1)])
 

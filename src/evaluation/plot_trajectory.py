@@ -96,6 +96,7 @@ def plot_trajectory(results, path_to_graph, learning_type, num_agents, run_numbe
     num_cols = len(episode_numbers)
     #num_rows = 4
     num_rows = 2
+    linewidth=3
 
     for episode_index, episode in enumerate(episode_numbers):
         data = all_runs[run_number][1][episode]
@@ -106,7 +107,7 @@ def plot_trajectory(results, path_to_graph, learning_type, num_agents, run_numbe
         ax = fig.add_subplot(num_rows, num_cols, subplot_id)
 
         for agent_id in range(len(data["agent_trajectories"])):
-            ax.plot(t, data["agent_trajectories"][agent_id], label=f"Agent {agent_id+1}")
+            ax.plot(t, data["agent_trajectories"][agent_id], label=f"Agent {agent_id+1}", linewidth=linewidth)
 
         plt.title(f"Episode {episode}- Trajectory", fontsize=title_font, y=label_padding)
         plt.xlabel("Time step", fontsize=label_font)
@@ -119,7 +120,7 @@ def plot_trajectory(results, path_to_graph, learning_type, num_agents, run_numbe
         plt.ylim(-1, 8)
         plt.setp(ax.get_xticklabels(), fontsize=tick_font)
         plt.setp(ax.get_yticklabels(), fontsize=tick_font)
-        plt.legend(fontsize=legend_font)
+        #plt.legend(fontsize=legend_font)
 
         '''
         # Plot actions of each agent
