@@ -900,7 +900,7 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     N_col = 2
     fig, axes = plt.subplots(N_row, N_col, sharex=False, sharey=False, gridspec_kw={'hspace': hspace, 'wspace': 0.23}, figsize=(part_2_w, fig_height))
 
-    ######################### Plot variance for 2HL4HU
+    ######################### Plot variance for 1HL4HU
     j = 0
     for i, env_name in enumerate(envs_list):
 
@@ -909,7 +909,7 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
         else:
             axes_list = axes[i]
 
-        if learning_type == "centralised":
+        '''if learning_type == "centralised":
             arch_dict = {
                 'N_hidden_layers': 2,
                 'N_hidden_units': 4
@@ -918,6 +918,18 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
         elif learning_type == "fully-centralised":
             arch_dict = {
                 'N_hidden_layers': 2,
+                'N_hidden_units': 8
+            }'''
+
+        if learning_type == "centralised":
+            arch_dict = {
+                'N_hidden_layers': 1,
+                'N_hidden_units': 4
+            }
+
+        elif learning_type == "fully-centralised":
+            arch_dict = {
+                'N_hidden_layers': 1,
                 'N_hidden_units': 8
             }
 
@@ -954,7 +966,7 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
 
         # axes_list[j].label_outer()
 
-    ##################################### Plot histograms for 2HL4HU
+    ##################################### Plot histograms for 1HL4HU
     j = 1
     for i, env_name in enumerate(envs_list):
 
@@ -963,7 +975,7 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
         else:
             axes_list = axes[i]
 
-        if learning_type == "centralised":
+        '''if learning_type == "centralised":
             arch_dict = {
                 'N_hidden_layers': 2,
                 'N_hidden_units': 4
@@ -973,7 +985,20 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
             arch_dict = {
                 'N_hidden_layers': 2,
                 'N_hidden_units': 8
+            }'''
+
+        if learning_type == "centralised":
+            arch_dict = {
+                'N_hidden_layers': 1,
+                'N_hidden_units': 4
             }
+
+        elif learning_type == "fully-centralised":
+            arch_dict = {
+                'N_hidden_layers': 1,
+                'N_hidden_units': 8
+            }
+
         env_arch_tuple = (env_name, *list(arch_dict.values()))
         print(f'Plotting mean and trials of {env_arch_tuple}...')
         scores = env_arch_score_dict[env_arch_tuple][:10000]
