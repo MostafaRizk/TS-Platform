@@ -720,18 +720,17 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     if learning_type == "centralised":
         arch_dict_list = [
             {
-                'N_hidden_layers': 0,
-                'N_hidden_units': 0
-            },
-
-            {
                 'N_hidden_layers': 1,
                 'N_hidden_units': 4
             },
             {
+                'N_hidden_layers': 0,
+                'N_hidden_units': 0
+            },
+            {
                 'N_hidden_layers': 2,
                 'N_hidden_units': 4
-            },
+            }
         ]
 
     elif learning_type == "fully-centralised":
@@ -796,7 +795,7 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
 
     print('\nPlotting big combo plot...')
 
-    w_space = 0
+    w_space = 0.1
     fig_height = 8
     adjust_kwargs = {
         'bottom': 0.12,
@@ -820,7 +819,7 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     N_row = len(envs_list)
     N_col = len(arch_dict_list)
     fig, axes = plt.subplots(N_row, N_col, sharex='all', sharey='row',
-                             gridspec_kw={'hspace': hspace, 'wspace': w_space}, figsize=(part_1_w, fig_height))
+                             gridspec_kw={'hspace': hspace, 'wspace': w_space}, figsize=(part_1_w*2, fig_height))
 
     ###################### plot main episode/mean plots
     for i, env_name in enumerate(envs_list):
@@ -885,9 +884,11 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
 
             # arch_dict_to_label(arch_dict)
             if i == len(envs_list) - 1:
-                axes_list[j].set_xlabel('$R_a(n)$,\n\n' + arch_dict_to_label(arch_dict), **plot_label_params)
+                #axes_list[j].set_xlabel('$R_a(n)$,\n\n' + arch_dict_to_label(arch_dict), **plot_label_params)
+                axes_list[j].set_xlabel('Solutions sorted by mean fitness\n\n' + arch_dict_to_label(arch_dict), **plot_label_params)
             if j == 0:
-                axes_list[j].set_ylabel(env_name_title_dict[env_name] + '\n\n$S_{a,n,e}$ and $M_{a,n}$', **plot_label_params)
+                #axes_list[j].set_ylabel(env_name_title_dict[env_name] + '\n\n$S_{a,n,e}$ and $M_{a,n}$', **plot_label_params)
+                axes_list[j].set_ylabel("Team fitness", **plot_label_params)
 
     plt.subplots_adjust(left=0.2, **adjust_kwargs)
     print('Plotting part 1 png...')
@@ -898,76 +899,10 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     plt.close('all')
     N_row = len(envs_list)
     N_col = 2
-    fig, axes = plt.subplots(N_row, N_col, sharex=False, sharey=False, gridspec_kw={'hspace': hspace, 'wspace': 0.23}, figsize=(part_2_w, fig_height))
-
-    ######################### Plot variance for 1HL4HU
-    j = 0
-    for i, env_name in enumerate(envs_list):
-
-        if len(envs_list) == 1:
-            axes_list = axes
-        else:
-            axes_list = axes[i]
-
-        '''if learning_type == "centralised":
-            arch_dict = {
-                'N_hidden_layers': 2,
-                'N_hidden_units': 4
-            }
-
-        elif learning_type == "fully-centralised":
-            arch_dict = {
-                'N_hidden_layers': 2,
-                'N_hidden_units': 8
-            }'''
-
-        if learning_type == "centralised":
-            arch_dict = {
-                'N_hidden_layers': 1,
-                'N_hidden_units': 4
-            }
-
-        elif learning_type == "fully-centralised":
-            arch_dict = {
-                'N_hidden_layers': 1,
-                'N_hidden_units': 8
-            }
-
-        env_arch_tuple = (env_name, *list(arch_dict.values()))
-        print(f'Plotting mean and trials of {env_arch_tuple}...')
-        scores = env_arch_score_dict[env_arch_tuple][:10000]
-
-        all_trials = sorted(scores, key=lambda x: np.mean(x))
-        all_trials_mean = np.mean(all_trials, axis=1)
-        all_trials_std = np.std(all_trials, axis=1)
-
-        if kwargs.get('var_lim', None) is None:
-            raise RuntimeError("Did not specify y-limits for variance plot")
-
-        lims = kwargs.get('var_lim', None)
-        axes_list[j].set_ylim(lims[0], lims[1])
-
-        if kwargs.get('mean_lim', None) is None:
-            raise RuntimeError("Did not specify x-limits for variance plot")
-
-        lims = kwargs.get('mean_lim', None)
-        axes_list[j].set_xlim(lims[0], lims[1])
-
-        axes_list[j].tick_params(**plot_tick_params)
-        axes_list[j].tick_params(axis='x', labelsize=0)
-
-        axes_list[j].plot(all_trials_mean, all_trials_std, 'o', color='mediumorchid', alpha=plot_pt_alpha,
-                        markersize=3)
-
-        # axes_list[j].set_xlabel('$M_{a,n}$', **plot_label_params)
-        axes_list[j].set_ylabel('$V_{a,n}$', **plot_label_params)
-        if i == len(envs_list) - 1:
-            axes_list[j].set_xlabel('$M_{a,n}$\n\n' + arch_dict_to_label(arch_dict), **plot_label_params)
-
-        # axes_list[j].label_outer()
+    fig, axes = plt.subplots(N_row, N_col, sharex=False, sharey=False, gridspec_kw={'hspace': hspace, 'wspace': 0.5}, figsize=(part_2_w, fig_height))
 
     ##################################### Plot histograms for 1HL4HU
-    j = 1
+    j = 0
     for i, env_name in enumerate(envs_list):
 
         if len(envs_list) == 1:
@@ -1016,15 +951,73 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
             raise RuntimeError("Did not specify bins for histogram")
 
         axes_list[j].hist(all_trials_mean, color='dodgerblue', edgecolor='gray', log=True,
-                        bins=kwargs.get('N_bins', None))
+                          bins=kwargs.get('N_bins', None))
         axes_list[j].tick_params(**plot_tick_params)
-        axes_list[j].tick_params(axis='x', labelsize=14, rotation=45)
+        axes_list[j].tick_params(axis='x', labelsize=14, rotation=0)
 
         axes_list[j].set_ylabel('', **plot_label_params)
         if i == len(envs_list) - 1:
             axes_list[j].set_xlabel('$M_{a,n}$\n\n' + arch_dict_to_label(arch_dict), **plot_label_params)
 
         # axes_list[j].label_outer()
+
+    ######################### Plot variance for 1HL4HU
+    ''''''
+    j = 1
+    for i, env_name in enumerate(envs_list):
+
+        if len(envs_list) == 1:
+            axes_list = axes
+        else:
+            axes_list = axes[i]
+
+        if learning_type == "centralised":
+            arch_dict = {
+                'N_hidden_layers': 1,
+                'N_hidden_units': 4
+            }
+
+        elif learning_type == "fully-centralised":
+            arch_dict = {
+                'N_hidden_layers': 1,
+                'N_hidden_units': 8
+            }
+
+        env_arch_tuple = (env_name, *list(arch_dict.values()))
+        print(f'Plotting mean and trials of {env_arch_tuple}...')
+        scores = env_arch_score_dict[env_arch_tuple][:10000]
+
+        all_trials = sorted(scores, key=lambda x: np.mean(x))
+        all_trials_mean = np.mean(all_trials, axis=1)
+        all_trials_std = np.std(all_trials, axis=1)
+
+        if kwargs.get('var_lim', None) is None:
+            raise RuntimeError("Did not specify y-limits for variance plot")
+
+        lims = kwargs.get('var_lim', None)
+        axes_list[j].set_ylim(lims[0], lims[1])
+
+        if kwargs.get('mean_lim', None) is None:
+            raise RuntimeError("Did not specify x-limits for variance plot")
+
+        lims = kwargs.get('mean_lim', None)
+        axes_list[j].set_xlim(lims[0], lims[1])
+
+        axes_list[j].tick_params(**plot_tick_params)
+        axes_list[j].tick_params(axis='x', labelsize=0)
+        axes_list[j].tick_params(axis='y', labelsize=0, rotation=90)
+
+        axes_list[j].plot(all_trials_mean, all_trials_std, 'o', color='mediumorchid', alpha=plot_pt_alpha,
+                        markersize=3)
+
+        # axes_list[j].set_xlabel('$M_{a,n}$', **plot_label_params)
+        axes_list[j].set_ylabel('$V_{a,n}$', **plot_label_params)
+        if i == len(envs_list) - 1:
+            axes_list[j].set_xlabel('$M_{a,n}$\n\n' + arch_dict_to_label(arch_dict), **plot_label_params)
+
+        # axes_list[j].label_outer()
+
+
 
     # plt.tight_layout()
     plt.subplots_adjust(left=0.2, **adjust_kwargs)
