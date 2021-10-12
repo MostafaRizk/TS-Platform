@@ -14,8 +14,11 @@ from glob import glob
 from agents.hardcoded.hitchhiker import HardcodedHitchhikerAgent
 from array2gif import write_gif
 
+metric_index = 2  # R_spec
+#metric_index = 0 # T-Maze
 
-def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, print_scores=None, ids_to_remove=None):
+
+def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, print_scores=None, ids_to_remove=None, dummy_observations=False, bc_measure=None, save_video=False):
     if rendering == "True":
         rendering = True
     else:
@@ -35,7 +38,7 @@ def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, p
     if algorithm_selected != "rwg":
         generation = model_filename.split("_")[-1].strip(".npy")
 
-        if learning_type == "centralised":
+        if learning_type == "centralised" or learning_type == "fully-centralised":
             parameter_list = model_filename.split("_")[:-2]
             parameter_filename = "_".join(parameter_list) + ".json"
             agent_index = "None"
@@ -44,7 +47,7 @@ def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, p
             parameter_filename = "_".join(parameter_list) + ".json"
             agent_index = model_filename.split("_")[-3]
         else:
-            raise RuntimeError("Learning type must be centralised or decentralised")
+            raise RuntimeError("Learning type must be centralised, decentralised or fully centralised")
 
     else:
         parameter_list = model_filename.split("_")[:-1]
@@ -57,8 +60,17 @@ def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, p
     num_agents = parameter_dictionary["environment"][environment]["num_agents"]
     agent_list = []
 
+    dictionary_changed = False
+
     if episodes and parameter_dictionary["environment"][environment]["num_episodes"] != episodes:
         parameter_dictionary["environment"][environment]["num_episodes"] = episodes
+        dictionary_changed = True
+
+    if bc_measure and parameter_dictionary["environment"][environment]["bc_measure"] != bc_measure:
+        parameter_dictionary["environment"][environment]["bc_measure"] = bc_measure
+        dictionary_changed = True
+
+    if dictionary_changed:
         new_parameter_path = os.path.join(data_directory, "temp.json")
         f = open(new_parameter_path, "w")
         dictionary_string = json.dumps(parameter_dictionary, indent=4)
@@ -125,16 +137,29 @@ def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, p
 
             agent_list += [agent]
 
-    results = fitness_calculator.calculate_fitness(agent_list=agent_list, render=rendering, time_delay=time_delay,
-                                                   measure_specialisation=True, logging=False, logfilename=None,
-                                                   render_mode="human")
+    elif parameter_dictionary["general"]["learning_type"] == "fully-centralised":
+        genome = np.load(model_path)
 
-    '''results = fitness_calculator.calculate_fitness(agent_list=agent_list, render=True, time_delay=0,
-                                                   render_mode="rgb_array")
+        if ids_to_remove:
+            agent = NNAgent(fitness_calculator.get_observation_size() * num_agents,
+                            fitness_calculator.get_action_size() * num_agents, parameter_path, genome, ids_to_remove, HardcodedHitchhikerAgent, dummy_observations)
 
-    video_data = results['video_frames']
-    save_to = f"./matching_specialist.gif"
-    write_gif(video_data, save_to, fps=5)'''
+        else:
+            agent = NNAgent(fitness_calculator.get_observation_size() * num_agents,
+                            fitness_calculator.get_action_size() * num_agents, parameter_path, genome)
+
+        agent_list = [agent]
+
+    if not save_video:
+
+        results = fitness_calculator.calculate_fitness(controller_list=agent_list, render=rendering, time_delay=time_delay,
+                                                       measure_specialisation=True, logging=False, logfilename=None,
+                                                       render_mode="human")
+
+    else:
+        results = fitness_calculator.calculate_fitness(controller_list=agent_list, render=rendering, time_delay=time_delay,
+                                                       measure_specialisation=True, logging=False, logfilename=None,
+                                                       render_mode="rgb_array")
 
     team_fitness_list = [0] * len(results['fitness_matrix'][0])
 
@@ -143,7 +168,6 @@ def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, p
 
     team_score = np.mean(team_fitness_list)
     agent_scores = [np.mean(scores) for scores in results['fitness_matrix']]
-    metric_index = 2  # R_spec
     specialisation_each_episode = [spec[metric_index] for spec in results['specialisation_list']]
     specialisation = np.mean(specialisation_each_episode)
 

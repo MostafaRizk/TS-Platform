@@ -6,41 +6,80 @@ import argparse
 from scipy import stats
 from operator import add
 
-setups = ["Centralised", "Decentralised", "One-pop", "Homogeneous"]
-spec_metric_index = 2 # R_spec
+setups = ["Centralised", "Decentralised", "Fully-centralised"]
+setup_labels = ["CTDE", "FD", "FC"]
+
+ctde_colour = '#d55e00'
+decentralised_colour = '#0071b2'
+fully_centralised_colour = '#009E73'
+
+spec_metric_index = 0 # R_coop
+#spec_metric_index = 2 # R_spec
 #spec_metric_index = 5 # R_spec_P
+#spec_metric_index = 0
+
+spec_index_with_participation = spec_metric_index + 3
+spec_index_without_participation = spec_metric_index
 
 
-def from_string(arr_str):
+def from_string(arr_str, dim=2):
     """
-    Convert string to a 2D array
+    Convert string to an array with dimension dim
     @param arr_str:
+    @param dim: Dimension size of new array
     @return:
     """
-    arr_str = arr_str[1:-1]
-    a = []
-    list_to_parse = arr_str.strip('').split("]")[:-1]
+    if dim == 1:
+        arr_str = arr_str[1:-1]
+        a = []
+        list_to_parse = arr_str.split()
 
-    for el in list_to_parse:
-        new_el = el.replace("[","")
-        new_el = [float(item) for item in new_el.split()]
-        a += [new_el]
+        for el in list_to_parse:
+            a += [float(el)]
 
-    return a
+        return a
+
+    if dim == 2:
+        arr_str = arr_str[1:-1]
+        a = []
+        list_to_parse = arr_str.strip('').split("]")[:-1]
+
+        for el in list_to_parse:
+            new_el = el.replace("[","")
+            new_el = [float(item) for item in new_el.split()]
+            a += [new_el]
+
+        return a
+
+    if dim == 3:
+        arr_str = arr_str[1:-1]
+        a = []
+        list_to_parse = arr_str.strip('').split("]]")[:-1]
+
+        for el in list_to_parse:
+            new_el = from_string(el+"]]")
+            a += [new_el]
+
+        return a
 
 
-def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, violin=False, y_height=15000, showing="fitness"):
+
+
+
+def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, violin=False, y_min_height=-2000, y_height=15000, showing="fitness"):
     # Prepare data lists
     x = [i for i in range(2, max_agents+2, 2)]
     y_centralised = []
     y_decentralised = []
     y_onepop = []
     y_homogeneous = []
+    y_fully_centralised = []
 
     yerr_centralised = []
     yerr_decentralised = []
     yerr_onepop = []
     yerr_homogeneous = []
+    yerr_fully_centralised = []
 
     # Read data from results file
     data = pd.read_csv(path_to_results)
@@ -69,8 +108,14 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
         if seed not in results[key]:
             results[key][seed] = None
 
-        results[key][seed] = {"fitness": from_string(row["fitness"]),
-                              "specialisation": from_string(row["specialisation"])}
+        if type(row["fitness"]) == float:
+            results[key][seed] = {"fitness": row["fitness"],
+                                  "specialisation": row["specialisation"],
+                                  "participation": row["participation"]}
+        else:
+            results[key][seed] = {"fitness": from_string(row["fitness"]),
+                                  "specialisation": from_string(row["specialisation"]),
+                                  "participation": from_string(row["participation"])}
 
     scores = {}
 
@@ -97,6 +142,22 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
                     specialisation = np.mean(specialisation_each_episode)
                     scores[key] += [specialisation]
 
+                elif showing == "participation":
+                    participation_each_episode = []
+
+                    for episode in results[key][seed]["participation"]:
+                        agents_participated = 0
+
+                        for agent_res_count in episode:
+                            if agent_res_count != 0:
+                                agents_participated += 1
+
+                        participation_each_episode += [agents_participated / num_agents]
+
+                    participation = np.mean(participation_each_episode)
+                    scores[key] += [participation]
+
+
             if setup == "Centralised":
                 y = y_centralised
                 yerr = yerr_centralised
@@ -113,9 +174,13 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
                 y = y_homogeneous
                 yerr = yerr_homogeneous
 
+            elif setup == "Fully-centralised":
+                y = y_fully_centralised
+                yerr = yerr_fully_centralised
+
             if plot_type == "mean":
                 y += [np.mean(scores[key])]
-                yerr += [np.std(scores[key])]
+                #yerr += [np.std(scores[key])]
             elif plot_type == "best":
                 y += [np.max(scores[key])]
                 yerr += [stats.sem(scores[key])]
@@ -132,44 +197,67 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
         print(f"{key}: {len(results[key])}")
 
     # Plot
+    title_font = 40
+    label_font = 36
+    tick_font = 30
+    legend_font = 30
+    label_padding = 1.08
+
     ''''''
     if not violin:
-        fig1, ax1 = plt.subplots(figsize=(12, 8))
-        ax1.set_title(f'Scalability of Evolved {showing.capitalize()} with Number of Agents', fontsize=20)
+        fig1, ax1 = plt.subplots(figsize=(16, 10))
+        #ax1.set_title(f'Scalability of {showing.capitalize()} with Number of Agents', fontsize=title_font, y=label_padding)
+
         if showing == "fitness":
             ax1.set_ylim(0, y_height)
-            ax1.set_ylabel('Fitness per agent', fontsize=18)
+            ax1.set_ylabel('Fitness per agent', fontsize=label_font, x=label_padding)
+
         elif showing == "specialisation":
             ax1.set_ylim(0, 1.1)
-            ax1.set_ylabel('Team Specialisation', fontsize=18)
+            ax1.set_ylabel('Team Specialisation', fontsize=label_font)
+
+        elif showing == "participation":
+            ax1.set_ylim(0, 1.1)
+            ax1.set_ylabel('Team Participation', fontsize=label_font)
+
         ax1.set_xticks([x for x in range(2, max_agents+2, 2)])
-        ax1.set_xlabel('Number of Agents', fontsize=18)
+        ax1.set_xlabel('Number of Agents', fontsize=label_font, y=label_padding)
 
         for tick in ax1.xaxis.get_major_ticks():
-            tick.label.set_fontsize(16)
+            tick.label.set_fontsize(tick_font)
 
         for tick in ax1.yaxis.get_major_ticks():
-            tick.label.set_fontsize(16)
+            tick.label.set_fontsize(tick_font)
 
-        if plot_type == "mean" or plot_type == "error":
-            plt.errorbar(x, y_centralised, yerr_centralised, fmt='r-', label="Centralised")
-            plt.errorbar(x, y_decentralised, yerr_decentralised, fmt='b-', label="Decentralised")
-            plt.errorbar(x, y_onepop, yerr_onepop, fmt='g-', label="One-pop")
-            plt.errorbar(x, y_homogeneous, yerr_homogeneous, fmt='k-', label="Homogeneous")
+        linewidth = 5
+        markersize = 17
+
+        if plot_type == "error":
+            plt.errorbar(x, y_centralised, yerr_centralised, color=ctde_colour, linestyle='-', label="CTDE", marker='^', markersize=markersize, linewidth=linewidth)
+            plt.errorbar(x, y_decentralised, yerr_decentralised, color=decentralised_colour, linestyle='-', label="Fully Decentralised", marker='s', markersize=markersize, linewidth=linewidth)
+            plt.errorbar(x, y_fully_centralised, yerr_fully_centralised, color=fully_centralised_colour, linestyle='-', label="Fully Centralised", marker='o', markersize=markersize, linewidth=linewidth)
+
+        elif plot_type == "mean":
+            plt.plot(x, y_centralised, color=ctde_colour, linestyle='-', label="CTDE", marker='^', markersize=markersize, linewidth=linewidth)
+            plt.plot(x, y_decentralised, color=decentralised_colour, linestyle='-', label="Fully Decentralised", marker='s', markersize=markersize, linewidth=linewidth)
+            plt.plot(x, y_fully_centralised, color=fully_centralised_colour, linestyle='-', label="Fully Centralised", marker='o', markersize=markersize, linewidth=linewidth)
+
 
         elif plot_type == "best" or plot_type == "median":
-            plt.plot(x, y_centralised, 'ro-', label=f"Centralised ({plot_type})")
-            plt.plot(x, y_decentralised, 'bo-', label=f"Decentralised ({plot_type})")
-            plt.plot(x, y_onepop, 'go-', label=f"One-pop ({plot_type})")
-            plt.plot(x, y_homogeneous, 'ko-', label=f"Homogeneous ({plot_type})")
+            plt.plot(x, y_centralised, 'ro-', label=f"CTDE ({plot_type})")
+            plt.plot(x, y_decentralised, 'bo-', label=f"Fully Decentralised ({plot_type})")
+            plt.plot(x, y_fully_centralised, 'go-', label=f"Fully Centralised ({plot_type})")
+            # plt.plot(x, y_onepop, 'go-', label=f"One-pop ({plot_type})")
+            # plt.plot(x, y_homogeneous, 'ko-', label=f"Homogeneous ({plot_type})")
 
         else:
-            plt.plot(x, y_centralised, 'ro-', label="Centralised")
-            plt.plot(x, y_decentralised, 'bo-', label="Decentralised")
-            plt.plot(x, y_onepop, 'go-', label="One-pop")
-            plt.plot(x, y_homogeneous, 'ko-', label="Homogeneous")
+            plt.plot(x, y_centralised, 'ro-', label="CTDE")
+            plt.plot(x, y_decentralised, 'bo-', label="Fully Decentralised")
+            #plt.plot(x, y_onepop, 'go-', label="One-pop")
+            #plt.plot(x, y_homogeneous, 'ko-', label="Homogeneous")
+            plt.plot(x, y_fully_centralised, 'go-', label="Fully Centralised")
 
-        plt.legend(loc='upper right', fontsize=16)
+        plt.legend(fontsize=legend_font)# loc='upper right',
         plt.savefig(path_to_graph)
 
     else:
@@ -177,10 +265,10 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
             ax.get_xaxis().set_tick_params(direction='out')
             ax.xaxis.set_ticks_position('bottom')
             ax.set_xticks(np.arange(1, len(labels) + 1))
-            ax.set_xticklabels(labels, fontsize=12)
+            ax.set_xticklabels(labels, fontsize=tick_font)
             ax.set_xlim(0.25, len(labels) + 0.75)
             for tick in ax.yaxis.get_major_ticks():
-                tick.label.set_fontsize(12)
+                tick.label.set_fontsize(tick_font)
 
         #fig = plt.figure(figsize=(19, 9))
         fig, axs = plt.subplots(1, 4, sharey=True, figsize=(19,9))
@@ -189,32 +277,32 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
         for col,ax in enumerate(axs):
 
             if showing == "fitness":
-                ax.set_ylim(-2000, y_height)
-                ax.set_ylabel("Fitness per Agent")
-            elif showing == "specialisation":
+                ax.set_ylim(y_min_height, y_height)
+                ax.set_ylabel("Fitness per Agent", fontsize=label_font)
+            elif showing == "specialisation" or showing == "participation":
                 ax.set_ylim(-0.2, 1.2)
-                ax.set_ylabel("Team Specialisation")
+                ax.set_ylabel("Team Specialisation", fontsize=label_font)
 
             num_agents = (col+1) * 2
             parts = ax.violinplot([scores[f"{setup}-{num_agents}"] for setup in setups])
 
             for id,pc in enumerate(parts['bodies']):
                 if setups[id] == "Centralised":
-                    pc.set_color('red')
+                    pc.set_color(ctde_colour)
                 elif setups[id] == "Decentralised":
-                    pc.set_color('blue')
-                elif setups[id] == "One-pop":
-                    pc.set_color('green')
-                elif setups[id] == "Homogeneous":
-                    pc.set_color('black')
+                    pc.set_color(decentralised_colour)
+                elif setups[id] == "Fully-centralised":
+                    pc.set_color(fully_centralised_colour)
+                #elif setups[id] == "Homogeneous":
+                #    pc.set_color('black')
 
             for pc in ('cbars', 'cmins', 'cmaxes'):
                 parts[pc].set_color('black')
 
-            set_axis_style(ax, setups)
-            ax.set_title(f"{num_agents} Agents")
+            set_axis_style(ax, setup_labels)
+            ax.set_title(f"{num_agents} Agents", fontsize=label_font)
 
-        plt.suptitle(f"{showing.capitalize()} Distribution")
+        plt.suptitle(f"{showing.capitalize()} Distribution", fontsize=title_font)
         plt.savefig(path_to_graph)
 
 
@@ -225,7 +313,8 @@ if __name__ == "__main__":
     parser.add_argument('--plot_type', action="store")
     parser.add_argument('--max_agents', action="store")
     parser.add_argument('--violin', action="store")
-    parser.add_argument('--y_height', action="store")
+    parser.add_argument('--y_height_min', action="store")
+    parser.add_argument('--y_height_max', action="store")
     parser.add_argument('--showing', action="store")
 
     results_path = parser.parse_args().results_path
@@ -239,11 +328,15 @@ if __name__ == "__main__":
     else:
         violin = True
 
-    y_height = parser.parse_args().y_height
+    y_height_min = parser.parse_args().y_height_min
+    y_height_max = parser.parse_args().y_height_max
 
-    if y_height:
-        y_height = int(y_height)
+    if y_height_min:
+        y_height_min = int(y_height_min)
+
+    if y_height_max:
+        y_height_max = int(y_height_max)
 
     showing = parser.parse_args().showing
 
-    plot_scalability(results_path, graph_path, plot_type, max_agents, violin, y_height, showing)
+    plot_scalability(results_path, graph_path, plot_type, max_agents, violin, y_height_min, y_height_max, showing)

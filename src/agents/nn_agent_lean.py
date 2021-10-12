@@ -7,12 +7,15 @@ from agents.lean_networks.RNN_multilayer import RNN_multilayer
 
 
 class NNAgent(Agent):
-    def __init__(self, observation_size, action_size, parameter_filename, genome=None):
+    def __init__(self, observation_size, action_size, parameter_filename, genome=None, ids_to_remove=None, dummy_policy=None, dummy_observations=None):
         # Load parameters
         if parameter_filename is None:
             raise RuntimeError("No parameter file specified for the neural network")
 
         self.parameter_dictionary = json.loads(open(parameter_filename).read())
+
+        self.observation_size = observation_size
+        self.action_size = action_size
 
         # Set activation
         activation_function = self.parameter_dictionary['agent']['nn']['activation_function']
@@ -47,16 +50,71 @@ class NNAgent(Agent):
         else:
             self.net.set_weights_by_list(genome)
 
+        if ids_to_remove and dummy_policy:
+            self.ids_to_remove = ids_to_remove
+            self.dummy_agents = [None for _ in range(len(ids_to_remove))]
+
+            for i in ids_to_remove:
+                self.dummy_agents[i] = dummy_policy()
+
+            self.dummy_observations = dummy_observations
+
+        elif ids_to_remove or dummy_policy:
+            raise RuntimeError("Must name ids of agents to be removed AND the policy replacing them")
+
+        else:
+            self.ids_to_remove = None
+            self.dummy_agents = None
+            self.dummy_observations = None
+
     def get_genome(self):
         return self.net.get_weights_as_list()
 
     def get_num_weights(self):
         return self.net.get_num_weights()
 
-    def act(self, observation):
+    def act(self, observation, num_agents=1):
+        """
+        Returns an action given an observation. If the network represents a team of agents, returns a list of actions
+        and should receive a concatenated list of all their observations.
+
+        @param observation: Observation of all agents represented by the network
+        @param num_agents: Number of agents represented by the network
+        @return: A single action or a list of actions
+        """
+        if self.ids_to_remove and self.dummy_observations:
+            for i in self.ids_to_remove:
+                observation_size = len(observation) // num_agents
+                start_index = i * observation_size
+                end_index = (i + 1) * observation_size
+
+                for j in range(start_index, end_index):
+                    observation[j] = -1
+
         activation_values = self.net.forward(observation)
-        action = activation_values.argmax()
-        return action
+
+        if num_agents == 1:
+            action = activation_values.argmax()
+            return action
+
+        elif num_agents > 1:
+            actions = [None] * num_agents
+            num_actions = self.action_size // num_agents
+
+            for i in range(num_agents):
+                start_index = i * num_actions
+                end_index = (i + 1) * num_actions
+                actions[i] = activation_values[start_index:end_index].argmax()
+
+            if self.ids_to_remove:
+                for i in self.ids_to_remove:
+                    observation_size = len(observation) // num_agents
+                    start_index = i * observation_size
+                    end_index = (i+1) * observation_size
+                    agent_observation = [int(obs) for obs in observation[start_index:end_index]]
+                    actions[i] = self.dummy_agents[i].act(agent_observation)
+
+            return actions
 
     def get_all_activation_values(self, observation):
         return self.net.forward(observation)

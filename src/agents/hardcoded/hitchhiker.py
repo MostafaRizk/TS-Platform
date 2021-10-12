@@ -15,7 +15,7 @@ class HardcodedHitchhikerAgent(HardcodedAgent):
         :return:
         """
 
-        super().act(observation)
+        #super().act(observation)
 
         action = self.action_index["DROP"]
 

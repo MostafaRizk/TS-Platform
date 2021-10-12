@@ -1,15 +1,25 @@
 #!/bin/bash
 
-#python3 create_reevaluated_results.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/data --generation final --episodes 50
-#python3 plot_scalability.py --results_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/data/results_reevaluated_final.csv --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/analysis/magic_plot_reevaluated_8_agents_50_episodes.png --plot_type error --max_agents 8 --violin False --y_height 8000 --showing fitness
-#python3 plot_scalability.py --results_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/data/results_reevaluated_final.csv --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/analysis/magic_plot_reevaluated_spec_8_agents__50_episodes.png --plot_type error --max_agents 8 --violin False --showing specialisation
-#python3 plot_scalability.py --results_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/data/results_reevaluated_final.csv --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/analysis/magic_plot_reevaluated_8_agents_50_episodes_violin.png --plot_type error --max_agents 8 --violin True --y_height 8000 --showing fitness
+for folder_name in "2021_10_06_b_aamas_data/2021_10_05_scalability_variable_arena_correct_neurons" #"2021_10_06_b_aamas_data/2021_10_04_scalability_constant_arena_correct_neurons" #"2021_10_06_b_aamas_data/2021_08_06_a_scalability_variable_arena"
+do
+  episodes=30
+  results_file="results_reevaluated_"$episodes"ep_final.csv"
+  #python3 create_reevaluated_results.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/$folder_name/data --generation final --episodes $episodes --num_agents_to_remove 0 --min_team_size 2 --max_team_size 8 --env slope --bc_measure agent_action_count
 
-#python3 plot_scalability.py --results_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/data/results_reevaluated_final.csv --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/analysis/magic_plot_reevaluated_8_agents_50_episodes_no_participation.png --plot_type error --max_agents 8 --violin False --y_height 8000 --showing fitness
-#python3 plot_scalability.py --results_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/data/results_reevaluated_final.csv --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/analysis/magic_plot_reevaluated_8_agents_50_episodes_no_participation_spec.png --plot_type error --max_agents 8 --violin False --showing specialisation
-#python3 plot_episodes.py --results_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/data/results_reevaluated_final.csv --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_09_b_magic_plot_combined/analysis/episode_rollout_50_episodes.png --max_agents 8 --y_height 20000
+  # Fitness plots
+  python3 plot_scalability.py --results_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/$folder_name/data/$results_file --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/$folder_name/analysis/magic_plot_reeval_${episodes}_error_RCoop.pdf --plot_type error --max_agents 8 --violin False --y_height_min -10000 --y_height_max 20000 --showing fitness
 
-#python3 create_reevaluated_results.py --data_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_20_homogeneous_evolution/data --generation final --episodes 50 --num_agents_to_remove 0 --max_team_size 8
-#python3 plot_scalability.py --results_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_29_magic_combined_homogeneous/data/results_reevaluated_final_50_episodes_all_episodes.csv --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_29_magic_combined_homogeneous/analysis/magic_plot_reevaluated_8_agents_50_episodes.png --plot_type error --max_agents 8 --violin False --y_height 8000 --showing fitness
-#python3 plot_scalability.py --results_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_29_magic_combined_homogeneous/data/results_reevaluated_final_50_episodes_all_episodes.csv --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_29_magic_combined_homogeneous/analysis/magic_plot_reevaluated_spec_8_agents__50_episodes.png --plot_type error --max_agents 8 --violin False --showing specialisation
-python3 plot_episodes.py --results_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_29_magic_combined_homogeneous/data/results_reevaluated_final_50_episodes_all_episodes.csv --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_04_29_magic_combined_homogeneous/analysis/episode_rollout_50_episodes.png --max_agents 8 --y_height 20000
+  # Spec plots
+  python3 plot_scalability.py --results_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/$folder_name/data/$results_file --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/$folder_name/analysis/magic_plot_reeval_${episodes}_spec_RCoop.pdf --plot_type error --max_agents 8 --violin False --showing specialisation
+
+  # Rollout
+  #python3 plot_episodes.py --results_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/$folder_name/data/$results_file --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/$folder_name/analysis/episode_rollout_${episodes}_episodes_full_RCoop_left.pdf --min_agents 2 --max_agents 2 --y_height 30000 --exclude_middle_plots True
+  #python3 plot_episodes.py --results_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/$folder_name/data/$results_file --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/$folder_name/analysis/episode_rollout_${episodes}_episodes_full_RCoop_right.pdf --min_agents 8 --max_agents 8 --y_height 30000 --exclude_middle_plots True
+
+
+
+  #python3 plot_scalability.py --results_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/$folder_name/data/$results_file --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/$folder_name/analysis/magic_plot_reeval_${episodes}_best.png --plot_type best --max_agents 8 --violin False --y_height_min -10000 --y_height_max 40000 --showing fitness
+  #python3 plot_scalability.py --results_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/$folder_name/data/$results_file --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/$folder_name/analysis/magic_plot_reeval_${episodes}_participation.png --plot_type error --max_agents 8 --violin False --showing participation
+  #python3 plot_scalability.py --results_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/$folder_name/data/$results_file --graph_path /Users/mostafa/Documents/Code/PhD/TS-Platform/results/$folder_name/analysis/magic_plot_reeval_${episodes}_violin_participation.png --plot_type None --max_agents 8 --violin True --showing participation
+
+done

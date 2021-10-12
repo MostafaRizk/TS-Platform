@@ -12,8 +12,9 @@ from learning.learner_centralised import CentralisedLearner
 from learning.cma_parent import CMALearner
 from glob import glob
 from io import StringIO
-
-from learning.rwg import RWGLearner
+from operator import add
+from learning.rwg_centralised import CentralisedRWGLearner
+from collections import deque
 
 
 @ray.remote
@@ -43,7 +44,9 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
                    'tolx': self.parameter_dictionary['algorithm']['cma']['tolx'],
                    'tolfunhist': self.parameter_dictionary['algorithm']['cma']['tolfunhist'],
                    'tolflatfitness': self.parameter_dictionary['algorithm']['cma']['tolflatfitness'],
-                   'tolfun': self.parameter_dictionary['algorithm']['cma']['tolfun']}
+                   'tolfun': self.parameter_dictionary['algorithm']['cma']['tolfun'],
+                   'tolstagnation': self.parameter_dictionary['algorithm']['cma']['tolstagnation'],
+                   'tolfacupx': self.parameter_dictionary['algorithm']['cma']['tolfacupx']}
 
         # Initialise cma with a mean genome and sigma
         seed_genome, seed_fitness = self.get_seed_genome()
@@ -52,6 +55,15 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
 
         if self.parameter_dictionary["algorithm"]["agent_population_size"] % num_threads != 0:
             raise RuntimeError("Agent population is not divisible by the number of parallel threads")
+
+        best_genome = None
+        best_genome_fitness = float('-inf')
+
+        generation = 0
+
+        if self.using_novelty:
+            recent_insertions = deque(maxlen=self.novelty_params['insertions_before_increase'])
+            np_random = np.random.RandomState(self.parameter_dictionary['general']['seed'])
 
         # Learning loop
         while not es.stop():
@@ -73,62 +85,193 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
                 raise RuntimeError("This configuration is not supported yet")
 
             # Convert genomes to agents
-            agent_population = self.convert_genomes_to_agents(genome_population)
-            agent_pop_size = len(agent_population)
+            controller_population = self.convert_genomes_to_controllers(genome_population)
+
+            if self.learning_type == "centralised":
+                agent_population = controller_population
+                agent_pop_size = len(agent_population)
+
             agent_fitness_lists = []
 
             if self.multithreading:
-                remainder_agents = agent_pop_size % (self.num_agents**2)
-                divisible_pop_size = agent_pop_size - remainder_agents
-                parallel_threads = []
+                if self.learning_type == "fully-centralised":
+                    raise RuntimeError("Multithreading not supported yet for fully centralised learning")
 
-                for i in range(0, num_threads+1):
-                    start = i * (divisible_pop_size//num_threads)
-                    end = (i+1) * (divisible_pop_size//num_threads)
-                    mini_pop = agent_population[start:end]
+                else:
+                    remainder_agents = agent_pop_size % (self.num_agents**2)
+                    divisible_pop_size = agent_pop_size - remainder_agents
+                    parallel_threads = []
 
-                    # Makes sure that each core gets a population that can be divided into teams of size self.num_agents
-                    if i == num_threads and remainder_agents != 0:
-                        mini_pop += agent_population[end:end+remainder_agents]
+                    for i in range(0, num_threads+1):
+                        start = i * (divisible_pop_size//num_threads)
+                        end = (i+1) * (divisible_pop_size//num_threads)
+                        mini_pop = agent_population[start:end]
 
-                    parallel_threads += [learn_in_parallel.remote(self.fitness_calculator, mini_pop, self.calculate_specialisation)]
+                        # Makes sure that each core gets a population that can be divided into teams of size self.num_agents
+                        if i == num_threads and remainder_agents != 0:
+                            mini_pop += agent_population[end:end+remainder_agents]
 
-                parallel_results = ray.get(parallel_threads)
-                #team_specialisations = []
+                        parallel_threads += [learn_in_parallel.remote(self.fitness_calculator, mini_pop, self.calculate_specialisation)]
 
-                for element in parallel_results:
-                    agent_fitness_lists += element[0]
-                    #team_specialisations += element[1]
+                    parallel_results = ray.get(parallel_threads)
+                    #team_specialisations = []
+
+                    for element in parallel_results:
+                        agent_fitness_lists += element[0]
+                        #team_specialisations += element[1]
 
             else:
-                agent_fitness_lists, team_specialisations = self.fitness_calculator.calculate_fitness_of_agent_population(agent_population, self.calculate_specialisation)
+                agent_fitness_lists, team_specialisations, participations, agent_bc_vectors, trajectories = self.fitness_calculator.calculate_fitness_of_agent_population(controller_population, self.calculate_specialisation)
 
             # Convert agent fitnesses into genome fitnesses
             genome_fitness_lists = self.get_genome_fitnesses_from_agent_fitnesses(agent_fitness_lists)
             genome_fitness_average = [np.mean(fitness_list) for fitness_list in genome_fitness_lists]
+            team_bc_vectors = self.get_team_bc_from_agent_bc(agent_bc_vectors)
 
             # Update the algorithm with the new fitness evaluations
             # CMA minimises fitness so we negate the fitness values
-            es.tell(genome_population, [-f for f in genome_fitness_average])
+            if not self.using_novelty:
+                es.tell(genome_population, [-f for f in genome_fitness_average])
+                best_genome = es.result[0]
+                best_genome_fitness = -es.result[1]
 
-            generation = es.result.iterations
+            else:
+                novelties = [0] * len(team_bc_vectors)
+                min_fitness = float('inf')
+                max_fitness = float('-inf')
+                max_fitness_genome = None
+                min_novelty = float('inf')
+                max_novelty = float('-inf')
+
+                # Get each genome's novelty
+                for index, bc in enumerate(team_bc_vectors):
+                    # Calculate distance to each behaviour in the archive.
+                    distances = {}
+
+                    if len(self.novelty_archive) > 0:
+                        for key in self.novelty_archive.keys():
+                            distances[str(key)] = self.calculate_behaviour_distance(a=bc, b=self.novelty_archive[key]['bc'])
+
+                    # Calculate distances to the current population if the archive is empty
+                    else:
+                        for other_index,genome in enumerate(genome_population):
+                            if other_index != index:
+                                distances[str(genome)] = self.calculate_behaviour_distance(a=bc, b=team_bc_vectors[other_index])
+
+                    # Find k-nearest-neighbours in the archive
+                    # TODO: Make this more efficient
+                    nearest_neighbours = {}
+
+                    for i in range(self.novelty_params['k']):
+                        min_dist = float('inf')
+                        min_key = None
+
+                        if len(self.novelty_archive) > 0:
+                            for key in self.novelty_archive.keys():
+                                if distances[key] < min_dist and key not in nearest_neighbours:
+                                    min_dist = distances[key]
+                                    min_key = key
+
+                        else:
+                            for other_index, genome in enumerate(genome_population):
+                                key = str(genome)
+                                if other_index != index:
+                                    if distances[key] < min_dist and key not in nearest_neighbours:
+                                        min_dist = distances[key]
+                                        min_key = key
+
+                        if min_key:
+                            nearest_neighbours[min_key] = min_key
+
+                    # Calculate novelty (average distance to k nearest neighbours)
+                    avg_distance = 0
+
+                    for key in nearest_neighbours.keys():
+                        avg_distance += distances[key]
+
+                    avg_distance /= self.novelty_params['k']
+                    novelties[index] = avg_distance
+
+                    if novelties[index] < min_novelty:
+                        min_novelty = novelties[index]
+
+                    if novelties[index] > max_novelty:
+                        max_novelty = novelties[index]
+
+                    if genome_fitness_average[index] < min_fitness:
+                        min_fitness = genome_fitness_average[index]
+
+                    if genome_fitness_average[index] > max_fitness:
+                        max_fitness = genome_fitness_average[index]
+                        max_fitness_genome = genome_population[index]
+
+                # Normalise novelties and fitnesses
+                novelty_range = max_novelty-min_novelty
+                fitness_range = max_fitness-min_fitness
+
+                for index in range(len(genome_fitness_average)):
+                    novelties[index] = (novelties[index] - min_novelty) / novelty_range
+                    genome_fitness_average[index] = (genome_fitness_average[index] - min_fitness) / fitness_range
+
+                # Store best fitness if it's better than the best so far
+                if max_fitness > best_genome_fitness:
+                    best_genome_fitness = max_fitness
+                    best_genome = list(max_fitness_genome)
+
+                # Calculate weighted score of each solution and add to archive if it passes the threshold
+                weighted_scores = [0] * len(genome_fitness_average)
+
+                for index in range(len(genome_fitness_average)):
+                    weighted_scores[index] = (1 - self.novelty_params['novelty_weight']) * genome_fitness_average[index] + self.novelty_params['novelty_weight'] * novelties[index]
+
+                    if weighted_scores[index] > self.novelty_params['archive_threshold']:
+                        key = str(genome_population[index])
+                        self.novelty_archive[key] = {'bc': team_bc_vectors[index],
+                                                     'fitness': genome_fitness_average[index]}
+                        recent_insertions.append(generation)
+
+                    else:
+                        # Insert genome into archive with certain probability, regardless of threshold
+                        if np_random.random() < self.novelty_params['random_insertion_chance']:
+                            recent_insertions.append(generation)
+
+                # Update population distribution
+                es.tell(genome_population, [-s for s in weighted_scores])
+
+                # Increase archive threshold if too many things have been recently inserted
+                if len(recent_insertions) >= self.novelty_params['insertions_before_increase']:
+                    insertion_window_start = recent_insertions.popleft()
+
+                    if (generation - insertion_window_start) <= self.novelty_params['gens_before_change']:
+                        increased_threshold = self.novelty_params['archive_threshold'] + self.novelty_params['threshold_increase_amount']
+                        self.novelty_params['archive_threshold'] = min(1.0, increased_threshold)
+
+                # Decrease archive threshold if not enough things have been recently inserted
+                if len(recent_insertions) > 0:
+                    last_insertion_time = recent_insertions.pop()
+                    recent_insertions.append(last_insertion_time)
+
+                else:
+                    last_insertion_time = -1
+
+                if (generation - last_insertion_time) >= self.novelty_params['gens_before_change']:
+                    decreased_threshold = self.novelty_params['archive_threshold'] - self.novelty_params['threshold_decrease_amount']
+                    self.novelty_params['archive_threshold'] = max(0.0, decreased_threshold)
+
+            generation += 1
 
             if generation % self.logging_rate == 0:
-                self.log(es.result[0], -es.result[1], generation, seed_fitness)
+                self.log(best_genome, best_genome_fitness, generation, seed_fitness)
 
             es.disp()
 
-        # Get best genome and its fitness value
-        best_genome = es.result[0]
-        best_fitness = -es.result[1]
-
-        print(f"Best fitness is {best_fitness}")
+        print(f"Best fitness is {best_genome_fitness}")
 
         print(es.stop())
 
         # Save best model
-        model_name = self.generate_model_name(best_fitness)
-        self.log(best_genome, best_fitness, "final", seed_fitness)
+        model_name = self.generate_model_name(best_genome_fitness)
+        self.log(best_genome, best_genome_fitness, "final", seed_fitness)
 
         # Log evolution details to file
         log_file_name = model_name + ".log"
@@ -139,7 +282,7 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
         # Reset output stream
         sys.stdout = old_stdout
 
-        return best_genome, best_fitness
+        return best_genome, best_genome_fitness
 
     # Helpers ---------------------------------------------------------------------------------------------------------
 
@@ -156,6 +299,30 @@ class CentralisedCMALearner(CentralisedLearner, CMALearner):
         # For most configurations, each genome is either copied onto multiple agents or split across multiple agents
         else:
             return self.parameter_dictionary['algorithm']['agent_population_size'] / self.num_agents
+
+    def get_team_bc_from_agent_bc(self, agent_bc_vectors):
+        """
+        Given a list of behaviour characterisation vectors (one for each agent), concatenates the vectors for all the
+        agents on a team so that each team has a vector.
+
+        @param agent_bc_vectors: List of behaviour characterisation vectors (one for each agent)
+        @return: List of behaviour characterisation vectors (one for each team)
+        """
+        team_bc_vectors = []
+
+        if self.reward_level == "team":
+            for i in range(0, len(agent_bc_vectors) - 1, self.num_agents):
+                team_i_vector = []
+
+                for j in range(self.num_agents):
+                    team_i_vector += agent_bc_vectors[i+j]
+
+                team_bc_vectors += [team_i_vector]
+
+            return team_bc_vectors
+
+        else:
+            raise RuntimeError('Cannot calculate team behaviour characterisation when rewards are not at the team level')
 
     def log(self, genome, genome_fitness, generation, seed_fitness):
         """

@@ -1,34 +1,39 @@
 {
     "general": {
-        "learning_type": "centralised",
+        "learning_type": "fully-centralised",
         "algorithm_selected": "cma",
         "team_type": "heterogeneous",
         "reward_level": "team",
         "agent_type": "nn",
-        "environment": "fork",
+        "environment": "tmaze",
         "calculate_specialisation": "False",
-        "seed": 0
+        "seed": 1,
+        "using_novelty": "True"
     },
     "environment": {
-        "fork": {
+        "tmaze": {
             "num_agents": 2,
+            "num_obstacles_per_hall": 1,
             "hall_size": 9,
             "start_zone_size": 3,
             "episode_length": 10,
-            "num_episodes": 5,
+            "num_episodes": 1,
+            "env_seed": 1,
+            "reward_structure": "dense",
+            "bc_measure": "avg_pos"
         }
     },
     "agent": {
         "nn": {
             "architecture": "ffnn",
-            "bias": "False",
+            "bias": "True",
             "hidden_layers": 0,
             "hidden_units_per_layer": 4,
             "activation_function": "tanh"
         }
     },
     "algorithm": {
-        "agent_population_size": 100,
+        "agent_population_size": 10,
         "rwg": {
             "sampling_distribution": "normal",
             "normal": {
@@ -42,16 +47,29 @@
         },
         "cma": {
             "sigma": 0.2,
-            "generations": 1000,
+            "generations": 5,
             "tolx": 0.001,
             "tolfunhist": 0.0,
             "tolflatfitness": 1000,
             "tolfun": 0.0,
+            "tolstagnation": 1000,
+            "tolfacupx": 1e9,
             "logging_rate": 50,
-            "seeding_required": "True",
-            "seeding_included": "True",
+            "seeding_required": "False",
+            "seeding_included": "False",
             "partial": "False",
             "multithreading": "False"
         }
+    },
+    "novelty": {
+        "distance_metric": "euclidean",
+        "k": 15,
+        "novelty_weight": 0.5,
+        "archive_threshold": 0.9,
+        "gens_before_change": 5,
+        "insertions_before_increase": 4,
+        "threshold_increase_amount": 0.2,
+        "threshold_decrease_amount": 0.05,
+        "random_insertion_chance": 0.01
     }
 }

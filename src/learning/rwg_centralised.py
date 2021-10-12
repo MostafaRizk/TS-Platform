@@ -6,7 +6,7 @@ from operator import add
 from helpers.lhs import LHS
 
 
-class RWGLearner(CentralisedLearner):
+class CentralisedRWGLearner(CentralisedLearner):
     def __init__(self, calculator):
         super().__init__(calculator)
 
@@ -26,10 +26,10 @@ class RWGLearner(CentralisedLearner):
         genome_population = self.create_genome_population()
 
         # Convert genomes to agents
-        agent_population = self.convert_genomes_to_agents(genome_population)
+        agent_population = self.convert_genomes_to_controllers(genome_population)
 
         # Get fitnesses of agents
-        agent_fitness_lists, team_specialisations = self.fitness_calculator.calculate_fitness_of_agent_population(agent_population, self.calculate_specialisation)
+        agent_fitness_lists, team_specialisations, participations, agent_bc_vectors, trajectories = self.fitness_calculator.calculate_fitness_of_agent_population(agent_population, self.calculate_specialisation)
         agent_fitness_average = [np.mean(fitness_list) for fitness_list in agent_fitness_lists]
 
         best_genome = None
@@ -184,7 +184,7 @@ class RWGLearner(CentralisedLearner):
 
         parameters_in_name = ["all_genomes"]
         parameters_in_name += CentralisedLearner.get_core_params_in_model_name(self.parameter_dictionary)
-        parameters_in_name += RWGLearner.get_additional_params_in_model_name(self.parameter_dictionary)
+        parameters_in_name += CentralisedRWGLearner.get_additional_params_in_model_name(self.parameter_dictionary)
         parameters_in_name += [".csv"]
         filename = "_".join([str(param) for param in parameters_in_name])
 
@@ -213,7 +213,7 @@ class RWGLearner(CentralisedLearner):
         @return:
         """
         parameters_in_name = CentralisedLearner.get_core_params_in_model_name(self.parameter_dictionary)
-        parameters_in_name += RWGLearner.get_additional_params_in_model_name(self.parameter_dictionary)
+        parameters_in_name += CentralisedRWGLearner.get_additional_params_in_model_name(self.parameter_dictionary)
 
         # Get fitness
         parameters_in_name += [fitness]

@@ -3,7 +3,7 @@ import json
 import os
 
 from learning.learner_parent import Learner
-from learning.rwg import RWGLearner
+from learning.rwg_centralised import CentralisedRWGLearner
 from glob import glob
 
 
@@ -42,7 +42,7 @@ def get_best_of_k_samples(results_file, parameter_filename, k, N_episodes):
         parameter_dictionary['algorithm']['agent_population_size'] = k
 
     parameters_in_name = Learner.get_core_params_in_model_name(parameter_dictionary)
-    parameters_in_name += RWGLearner.get_additional_params_in_model_name(parameter_dictionary)
+    parameters_in_name += CentralisedRWGLearner.get_additional_params_in_model_name(parameter_dictionary)
     parameters_in_name += [best_score]
     model_name = "_".join([str(param) for param in parameters_in_name])
 

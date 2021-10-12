@@ -4,7 +4,8 @@ import os
 import numpy as np
 import time
 from envs.slope import SlopeEnv
-from envs.fork import ForkEnv
+from envs.tmaze import TMazeEnv
+from envs.box_pushing import BoxPushingEnv
 
 
 class FitnessCalculator:
@@ -19,8 +20,10 @@ class FitnessCalculator:
 
         if self.parameter_dictionary["general"]["environment"] == "slope":
             self.env = SlopeEnv(parameter_filename)
-        elif self.parameter_dictionary["general"]["environment"] == "fork":
-            self.env = ForkEnv(parameter_filename)
+        elif self.parameter_dictionary["general"]["environment"] == "tmaze":
+            self.env = TMazeEnv(parameter_filename)
+        elif self.parameter_dictionary["general"]["environment"] == "box_pushing":
+            self.env = BoxPushingEnv(parameter_filename)
 
         environment_name = self.parameter_dictionary['general']['environment']
         self.num_agents = self.parameter_dictionary['environment'][environment_name]['num_agents']
@@ -33,37 +36,65 @@ class FitnessCalculator:
         self.random_seed = self.parameter_dictionary['general']['seed']
         self.np_random = np.random.RandomState(self.random_seed)
 
-        self.episode_length = self.parameter_dictionary['environment'][environment_name]['episode_length']
+        #self.episode_length = self.parameter_dictionary['environment'][environment_name]['episode_length']
+        self.episode_length = self.env.get_episode_length()
         self.num_episodes = self.parameter_dictionary['environment'][environment_name]['num_episodes']
+
+        self.learning_type = self.parameter_dictionary['general']['learning_type']
 
     def calculate_fitness_of_agent_population(self, population, calculate_specialisation):
         """
-        Takes a population of Agent objects, places each group in a team and calculates the fitnesses of each
+        Takes a population of controller objects, if each controller is an agent of the environment then places each
+        group of agents in a team and calculates the fitnesses of each. If each controller is a team, then calculates
+        the fitness of each agent on that team
 
         @param population: List of Agent objects
-        @return: List containing fitness value of each Agent in the population
+        @return: List containing fitness value of each agent
         """
 
-        assert len(population) % self.num_agents == 0, "Population needs to be divisible by the number of agents per team"
+        if self.learning_type != "fully-centralised":
+            assert len(population) % self.num_agents == 0, "Population needs to be divisible by the number of agents per team"
 
         fitnesses = []
         specialisations = []
+        participations = []
+        behaviour_characterisations = []
+        trajectories = []
         agents_per_team = self.num_agents
 
-        for i in range(0, len(population), agents_per_team):
-            agent_list = [population[i+j] for j in range(0, agents_per_team)]
-            results_dict = self.calculate_fitness(agent_list, measure_specialisation=calculate_specialisation)
-            fitness_matrix = results_dict['fitness_matrix']
+        if self.learning_type != "fully-centralised":
+            for i in range(0, len(population), agents_per_team):
+                agent_list = [population[i+j] for j in range(0, agents_per_team)]
+                results_dict = self.calculate_fitness(agent_list, measure_specialisation=calculate_specialisation)
+                fitness_matrix = results_dict['fitness_matrix']
 
-            # Specialisation of the team calculated through several measures. List of lists. One list of measures for each episode
-            specialisation_measures = results_dict["specialisation_list"]
+                # Specialisation of the team calculated through several measures. List of lists. One list of measures for each episode
+                specialisation_measures = results_dict["specialisation_list"]
 
-            fitnesses += fitness_matrix
-            specialisations += [specialisation_measures]
+                behaviour_characterisation_matrix = results_dict['behaviour_characterisation_matrix']
 
-        return fitnesses, specialisations
+                fitnesses += fitness_matrix
+                specialisations += [specialisation_measures]
+                participations += results_dict["participation_list"]
+                behaviour_characterisations += behaviour_characterisation_matrix
+                trajectories += results_dict["trajectory_matrix"]
 
-    def calculate_fitness(self, agent_list, render=False, time_delay=0, measure_specialisation=False,
+        else:
+            for controller in population:
+                results_dict = self.calculate_fitness([controller], measure_specialisation=calculate_specialisation)
+                fitness_matrix = results_dict['fitness_matrix']
+                specialisation_measures = results_dict["specialisation_list"]
+                behaviour_characterisation_matrix = results_dict['behaviour_characterisation_matrix']
+
+                fitnesses += fitness_matrix
+                specialisations += [specialisation_measures]
+                participations += results_dict["participation_list"]
+                behaviour_characterisations += behaviour_characterisation_matrix
+                trajectories += results_dict["trajectory_matrix"]
+
+        return fitnesses, specialisations, participations, behaviour_characterisations, trajectories
+
+    def calculate_fitness(self, controller_list, render=False, time_delay=0, measure_specialisation=False,
                           logging=False, logfilename=None, render_mode="human"):
         """
         Calculates the fitness of a team of agents. Fitness is calculated
@@ -72,7 +103,7 @@ class FitnessCalculator:
         times (according to the parameter file). This is done without resetting the random number generator so that
         there are new initial positions for agents and resources in each simulation run.
 
-        @param agent_list: List of Agent objects
+        @param controller_list: List of controller objects. One per agent unless fully centralised.
         @param render: Boolean indicating whether or not simulations will be visualised
         @param time_delay: Integer indicating how many seconds delay (for smoother visualisation)
         @param measure_specialisation: Boolean indicating whether or not specialisation is being measured
@@ -84,14 +115,27 @@ class FitnessCalculator:
         specialisation observed for the team for each episode)
         """
 
-        assert len(agent_list) == self.num_agents, "Agents passed to function do not match parameter file"
+        if self.learning_type != "fully-centralised":
+            assert len(controller_list) == self.num_agents, "Agents passed to function do not match parameter file"
+        else:
+            assert len(controller_list) == 1, "Must only have 1 controller for fully centralised learning"
 
         # Initialise major variables
         file_reader = None
-        fitness_matrix = [[0]*self.num_episodes for i in range(len(agent_list))]
+        fitness_matrix = [[0]*self.num_episodes for _ in range(self.num_agents)]
         specialisation_list = []
-        agent_copies = [copy.deepcopy(agent) for agent in agent_list]
-        video_frames = []
+        participation_list = []
+        total_resources_per_episode = [0]*self.num_episodes
+
+        # For each agent, contains its BC value in every episode
+        # Concatenate if evaluating team novelty
+        behaviour_characterisation_matrix = [[] for _ in range(self.num_agents)]
+
+        # Trajectory of each
+        trajectory_matrix = [[[None for _ in range(self.episode_length)] for _ in range(self.num_episodes)] for _ in range(self.num_agents)]
+
+        controller_copies = [copy.deepcopy(controller) for controller in controller_list]
+        video_frames = [None]*self.num_episodes
         self.env.reset_rng()
 
         # Create logging file if logging
@@ -111,24 +155,37 @@ class FitnessCalculator:
             observations = self.env.reset()
 
             # Initialise variables
-            agent_action_matrix = [[-1]*self.episode_length for i in range(len(agent_list))]
-            current_episode_reward_matrix = [[0]*self.episode_length for i in range(len(agent_list))]
+            agent_action_matrix = [[-1]*self.episode_length for _ in range(self.num_agents)]
+            current_episode_reward_matrix = [[0]*self.episode_length for _ in range(self.num_agents)]
+            frames = []
 
             # Do 1 run of the simulation
             for t in range(self.episode_length):
-                if render and render_mode == "rgb_array" and episode == 0:
-                    video_frames += [self.env.render(mode=render_mode)]
+                if render and render_mode == "rgb_array":
+                    frames += [self.env.render(mode=render_mode)]
                 elif render:
                     self.env.render(mode=render_mode)
 
-                robot_actions = []
+                agent_actions = []
 
-                for i in range(len(observations)):
-                    robot_actions += [agent_copies[i].act(observations[i])]
-                    agent_action_matrix[i][t] = [robot_actions[-1]]
+                if self.learning_type != "fully-centralised":
+                    for i in range(len(observations)):
+                        agent_actions += [controller_copies[i].act(observations[i])]
+                        agent_action_matrix[i][t] = [agent_actions[-1]]
+
+                else:
+                    full_observation = []
+
+                    for obs in observations:
+                        full_observation = np.append(full_observation, obs)
+
+                    agent_actions = controller_copies[0].act(full_observation, self.num_agents)
+
+                    for i in range(len(observations)):
+                        agent_action_matrix[i][t] = [agent_actions[i]]
 
                 # The environment changes according to all their actions
-                observations, rewards = self.env.step(robot_actions)
+                observations, rewards = self.env.step(agent_actions)
 
                 # Calculate how much of the rewards go to each agent type
                 for i in range(len(rewards)):
@@ -139,11 +196,21 @@ class FitnessCalculator:
                     time.sleep(time_delay)
 
             # Reset agent networks
-            agent_copies = [copy.deepcopy(agent) for agent in agent_list]
+            controller_copies = [copy.deepcopy(controller) for controller in controller_list]
 
             # Extra computations if calculating specialisation or logging actions
             if measure_specialisation:
                 specialisation_list += [self.env.calculate_specialisation()]
+
+            participation_list += [self.env.calculate_participation()]
+            bc_for_agent = self.env.get_behaviour_characterisation()
+            trajectories = self.env.get_trajectories()
+            total_resources_per_episode[episode] = self.env.get_total_resources_retrieved()
+            video_frames[episode] = np.array(frames)
+
+            for i in range(self.num_agents):
+                behaviour_characterisation_matrix[i] += [bc_for_agent[i]]
+                trajectory_matrix[i][episode] = trajectories[i]
 
             if logging:
                 #for agent_action_list in agent_action_matrix:
@@ -156,7 +223,7 @@ class FitnessCalculator:
         if logging:
             file_reader.close()
 
-        return {"fitness_matrix": fitness_matrix, "specialisation_list": specialisation_list, "video_frames": video_frames}
+        return {"fitness_matrix": fitness_matrix, "specialisation_list": specialisation_list, "participation_list": participation_list, "video_frames": video_frames, "behaviour_characterisation_matrix": behaviour_characterisation_matrix, "trajectory_matrix": trajectory_matrix, "total_resources": total_resources_per_episode}
 
     # Helpers ---------------------------------------------------------------------------------------------------------
 

@@ -108,6 +108,9 @@ class SlopeEnv:
                                   "collector_index": -1, # index of agent who last picked it up on the cache (if the resource is delivered, this will also be the agent that delivers it)
                                   "retrieved": False # Was the resource retrieved
                                   } for i in range(self.max_resources)]
+        self.agent_trajectories = [[None for _ in range(self.episode_length)] for _ in range(self.num_agents)]
+        self.last_trajectory_recorded = 0
+        self.total_resources_retrieved = 0
 
 
         # Step variables
@@ -115,7 +118,8 @@ class SlopeEnv:
         self.action_name = ["FORWARD", "BACKWARD", "LEFT", "RIGHT", "PICKUP", "DROP"]
         self.has_resource = [None] * self.num_agents
 
-        self.seed_value = parameter_dictionary['general']['seed']
+        #self.seed_value = parameter_dictionary['general']['seed']
+        self.seed_value = parameter_dictionary['environment']['slope']['env_seed']
         self.np_random = np.random.RandomState(self.seed_value)
 
         # Observation space (additional details explained in self.get_agent_observations())
@@ -129,6 +133,11 @@ class SlopeEnv:
         # Action space
         # 0- Forward, 1- Backward, 2- Left, 3- Right, 4- Pick up, 5- Drop
         self.action_space_size = 6
+
+        # Novelty constants
+        self.bc_measure = parameter_dictionary['environment']['slope']['bc_measure']
+        self.avg_pos_for_agent = [[0, 0] for _ in range(self.num_agents)]
+        self.agent_action_count = [[0 for _ in range(self.action_space_size)] for _ in range(self.num_agents)]
 
     def step(self, agent_actions):
         """
@@ -218,6 +227,17 @@ class SlopeEnv:
         # Reset variables that were changed during runtime
         self.has_resource = [None] * self.num_agents
         self.current_num_resources = self.default_num_resources
+        self.agent_trajectories = [[None for _ in range(self.episode_length)] for _ in range(self.num_agents)]
+        
+        for agent_id in range(self.num_agents):
+            self.agent_trajectories[agent_id][0] = self.agent_positions[agent_id][1]
+
+        self.last_trajectory_recorded = 0
+        self.total_resources_retrieved = 0
+
+        # Reset BC
+        self.avg_pos_for_agent = [[0, 0] for _ in range(self.num_agents)]
+        self.agent_action_count = [[0 for _ in range(self.action_space_size)] for _ in range(self.num_agents)]
 
         return self.get_agent_observations()
 
@@ -261,6 +281,10 @@ class SlopeEnv:
             else:
                 rewards[i] -= self.base_cost
 
+            # Count how many of each action was done by each agent
+            action_index = agent_actions[i]
+            self.agent_action_count[i][action_index] += 1
+
         return rewards
 
     def wipe_old_positions(self, old_agent_positions):
@@ -294,6 +318,14 @@ class SlopeEnv:
             self.agent_map[agent_collision_positions[i][1]][agent_collision_positions[i][0]] = i + 1
 
         self.agent_positions = agent_collision_positions
+        
+        for i in range(len(self.agent_positions)):
+            self.avg_pos_for_agent[i][0] += self.agent_positions[i][0] / self.episode_length
+            self.avg_pos_for_agent[i][1] += self.agent_positions[i][1] / self.episode_length
+            
+            self.agent_trajectories[i][self.last_trajectory_recorded] = self.agent_positions[i][1]
+
+        self.last_trajectory_recorded += 1
 
     def update_resource_positions(self, agent_actions, old_agent_positions, rewards):
         """
@@ -364,6 +396,7 @@ class SlopeEnv:
 
             self.delete_resource(resource_id)
             self.resource_history[resource_id]["retrieved"] = True
+            self.total_resources_retrieved += 1
 
         return rewards
 
@@ -538,6 +571,9 @@ class SlopeEnv:
 
     def get_action_size(self):
         return self.action_space_size
+
+    def get_episode_length(self):
+        return self.episode_length
 
     # Helpers ---------------------------------------------------------------------------------------------------------
     def get_area_from_position(self, position):
@@ -760,6 +796,36 @@ class SlopeEnv:
             participation = sum(agent_participated) / self.num_agents
 
         return [r_coop, r_coop_eff, r_spec, r_coop * participation, r_coop_eff * participation, r_spec * participation]
+
+    def calculate_participation(self):
+        """
+        For every agent, count how many resources it helped retrieve
+        @return: List containing participation count for each agent
+        """
+        agent_participated = [0 for _ in range(self.num_agents)]
+
+        for i in range(self.latest_resource_id + 1):
+            if self.resource_history[i]["retrieved"]:
+                # Increment the participation count for each agent that helped carry this resource
+                for agent_index in range(self.num_agents):
+                    if self.resource_carried_by[i][agent_index]:
+                        agent_participated[agent_index] += 1
+
+        return agent_participated
+
+    # Calculate behaviour characterisation
+    def get_behaviour_characterisation(self):
+        if self.bc_measure == "avg_pos":
+            return self.avg_pos_for_agent
+
+        elif self.bc_measure == "agent_action_count":
+            return self.agent_action_count
+    
+    def get_trajectories(self):
+        return self.agent_trajectories
+
+    def get_total_resources_retrieved(self):
+        return self.total_resources_retrieved
 
     # Rendering Functions ---------------------------------------------------------------------------------------------
     def draw_arena_segment(self, top, bottom, rgb_tuple):

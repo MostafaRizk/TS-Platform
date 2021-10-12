@@ -11,8 +11,11 @@ from fitness import FitnessCalculator
 from learning.learner_parent import Learner
 from glob import glob
 from io import StringIO
-
-from learning.rwg import RWGLearner
+from learning.rwg_centralised import CentralisedRWGLearner
+from learning.rwg_fully_centralised import FullyCentralisedRWGLearner
+from helpers import novelty_helpers
+from functools import partial
+from scipy.stats import multivariate_normal
 
 
 class CMALearner(Learner):
@@ -33,6 +36,9 @@ class CMALearner(Learner):
 
         # Log every x many generations
         self.logging_rate = self.parameter_dictionary['algorithm']['cma']['logging_rate']
+
+        if self.using_novelty:
+            self.calculate_behaviour_distance = partial(novelty_helpers.calculate_distance, metric=self.novelty_params['distance_metric'])
 
     def get_seed_genome(self):
         """
@@ -82,33 +88,14 @@ class CMALearner(Learner):
                 return self.Agent.load_model_from_file(possible_seedfiles[0]), seed_fitness
 
         else:
-            # Set mini-rwg parameters
-            temporary_parameter_dictionary = copy.deepcopy(self.parameter_dictionary)
-            temporary_parameter_dictionary['general']['learning_type'] = "centralised"
-            temporary_parameter_dictionary['general']['algorithm_selected'] = "rwg"
+            mean = 0
+            std = 1
+            seed = self.parameter_dictionary['general']['seed']
 
-            env_name = temporary_parameter_dictionary['general']['environment']
-            num_agents = temporary_parameter_dictionary['environment'][env_name]['num_agents']
-            temporary_parameter_dictionary['algorithm']['agent_population_size'] = num_agents
-
-            temporary_parameter_dictionary['algorithm']['rwg']['sampling_distribution'] = "normal"
-            temporary_parameter_dictionary['algorithm']['rwg']['normal']['mean'] = 0
-            temporary_parameter_dictionary['algorithm']['rwg']['normal']['std'] = 1
-
-            # Write mini-rwg parameters to file
-            temporary_parameter_file = f"temporary_parameter_file_{temporary_parameter_dictionary['general']['seed']}.json"
-            f = open(temporary_parameter_file, "w")
-            dictionary_string = json.dumps(temporary_parameter_dictionary, indent=4)
-            f.write(dictionary_string)
-            f.close()
-
-            # Generate seed genome
-            temporary_calculator = FitnessCalculator(temporary_parameter_file)
-            learner = RWGLearner(temporary_calculator)
-            seed_genome, seed_fitness = learner.learn(logging=False)
-
-            # Delete temporary paramter file
-            #os.remove(temporary_parameter_file)
+            mean_array = [mean] * self.genome_length
+            random_variable = multivariate_normal(mean=mean_array, cov=np.identity(self.genome_length) * std)
+            seed_genome = random_variable.rvs(1, seed)
+            seed_fitness = None
 
             return seed_genome, seed_fitness
 
@@ -148,6 +135,7 @@ class CMALearner(Learner):
                      "tolx",
                      "tolfunhist",
                      "tolflatfitness"
-                     "tolfun"]
+                     "tolfun",
+                     "tolstagnation"]
 
         return headings

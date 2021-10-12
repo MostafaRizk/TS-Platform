@@ -1,0 +1,84 @@
+{
+    "general": {
+        "learning_type": "centralised",
+        "algorithm_selected": "cma",
+        "team_type": "heterogeneous",
+        "reward_level": "team",
+        "agent_type": "nn",
+        "environment": "box_pushing",
+        "calculate_specialisation": "False",
+        "seed": 1,
+        "using_novelty": "False"
+    },
+    "environment": {
+        "box_pushing": {
+            "defection": "True",
+            "partial_cooperation": "False",
+            "sensing": "local",
+            "specialisation": "False",
+            "environment_scaling": "variable",
+            "reward_sharing": "True",
+            "time_scaling": "variable",
+            "sparse_rewards": "True",
+            "num_agents": 6,
+            "arena_length": 8,
+            "min_arena_width": 4,
+            "medium_box_size": 2,
+            "small_reward_per_agent": 5,
+            "big_reward_per_agent": 50,
+            "cost_per_time_step": -0.1,
+            "min_episode_length": 15,
+            "num_episodes": 5,
+            "env_seed": 1
+        }
+    },
+    "agent": {
+        "nn": {
+            "architecture": "rnn",
+            "bias": "False",
+            "hidden_layers": 1,
+            "hidden_units_per_layer": 4,
+            "activation_function": "tanh"
+        }
+    },
+    "algorithm": {
+        "agent_population_size": 100,
+        "rwg": {
+            "sampling_distribution": "normal",
+            "normal": {
+                "mean": 0,
+                "std": 1
+            },
+            "uniform": {
+                "min": -3,
+                "max": 3
+            }
+        },
+        "cma": {
+            "sigma": 0.2,
+            "generations": 1000,
+            "tolx": 0.001,
+            "tolfunhist": 0.0,
+            "tolflatfitness": 1000,
+            "tolfun": 0.0,
+            "tolstagnation": 1000,
+            "tolfacupx": 1e9,
+            "logging_rate": 50,
+            "seeding_required": "True",
+            "seeding_included": "True",
+            "partial": "False",
+            "multithreading": "False"
+        }
+    },
+        "novelty": {
+            "distance_metric": "euclidean",
+            "k": 15,
+            "novelty_weight": 0.5,
+            "archive_threshold": 0.9,
+            "gens_before_change": 10,
+            "insertions_before_increase": 4,
+            "threshold_increase_amount": 0.2,
+            "threshold_decrease_amount": 0.05,
+            "random_insertion_chance": 0.01
+        }
+}
