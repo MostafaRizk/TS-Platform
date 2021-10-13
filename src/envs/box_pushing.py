@@ -67,10 +67,10 @@ class BoxPushingEnv:
         if self.partial_cooperation:
             self.medium_box_size = parameter_dictionary['environment']['box_pushing']['medium_box_size']
             self.num_medium_boxes = self.num_agents // self.medium_box_size
-            self.num_big_boxes = 0
+            self.num_large_boxes = 0
         else:
             self.num_medium_boxes = 0
-            self.num_big_boxes = 1  # 1 box pushed by all agents
+            self.num_large_boxes = 1  # 1 box pushed by all agents
 
         if self.time_scaling == "variable":
             self.episode_length = parameter_dictionary['environment']['box_pushing']['min_episode_length'] * self.num_agents
@@ -89,18 +89,16 @@ class BoxPushingEnv:
         self.home_length = self.goal_length = 1
 
         self.agent_width = 0.8
-
-        if self.defection:
-            self.small_box_width = 0.8
+        self.small_box_width = 0.8
 
         if self.partial_cooperation:
             self.medium_box_width = self.medium_box_size - 0.2
 
-        self.big_box_width = self.num_agents - 0.2
+        self.large_box_width = self.num_agents - 0.2
         self.agent_height = 0.4
 
         # Rewards
-        self.big_reward_per_agent = parameter_dictionary['environment']['box_pushing']['big_reward_per_agent']
+        self.large_reward_per_agent = parameter_dictionary['environment']['box_pushing']['large_reward_per_agent']
         self.small_reward_per_agent = parameter_dictionary['environment']['box_pushing']['small_reward_per_agent']
         self.cost_per_time_step = parameter_dictionary['environment']['box_pushing']['cost_per_time_step']
 
@@ -119,7 +117,7 @@ class BoxPushingEnv:
 
         try:
             self.agent_transforms = [rendering.Transform() for _ in range(self.num_agents)]
-            self.box_transforms = [rendering.Transform() for _ in range(self.num_big_boxes + self.num_medium_boxes + self.num_small_boxes)]
+            self.box_transforms = [rendering.Transform() for _ in range(self.num_large_boxes + self.num_medium_boxes + self.num_small_boxes)]
 
         except:
             pass
@@ -133,11 +131,18 @@ class BoxPushingEnv:
 
         # Observation space
         if self.sensing == "local":
-            self.observation_space_size = 1  # The item in front of the agent
+            # Onehotencoded vector, with possibilities for each of the 3 box sizes, an agent, a wall, or an empty spot
+            self.observation_space_size = 6
 
         # Action space
         # 0- Forward, 1- Rotate right, 2- Rotate left, 3- Stay
         self.action_space_size = 4
+
+        # Given an agent's orientation, add these values to the agent's x and y to get the block in front of them
+        self.orientation_map = {"NORTH": (0, 1),
+                                "SOUTH": (0, -1),
+                                "EAST": (1, 0),
+                                "WEST": (-1, 0)}
 
     def step(self, agent_actions):
         observations = [0] * self.observation_space_size
@@ -161,14 +166,14 @@ class BoxPushingEnv:
         for i in range(self.num_agents):
             agent_placed = False
             while not agent_placed:
-                x, y = self.generate_agent_position()
+                x, y, orientation = self.generate_agent_position()
                 if self.agent_map[y][x] == 0:
                     self.agent_map[y][x] = i + 1
-                    self.agent_positions[i] = (x, y)
+                    self.agent_positions[i] = (x, y, orientation)
                     agent_placed = True
 
         # Places all boxes
-        for i in range(self.num_small_boxes + self.num_medium_boxes + self.num_big_boxes):
+        for i in range(self.num_small_boxes + self.num_medium_boxes + self.num_large_boxes):
             box_placed = False
 
             while not box_placed:
@@ -194,8 +199,8 @@ class BoxPushingEnv:
                             self.boxes_in_arena[i] = (x, y, "medium")
                             box_placed = True
 
-                # Place big box
-                elif i >= self.num_small_boxes and self.num_big_boxes > 0:
+                # Place large box
+                elif i >= self.num_small_boxes and self.num_large_boxes > 0:
                     if (x + self.num_agents - 1) < self.arena_constraints["x_max"]:
                         if all([self.box_map[y][x+j] == 0 for j in range(self.num_agents)]) and \
                                 all([all([self.box_map[k][x+j] == 0 for j in range(self.num_agents)]) for k in range(self.arena_constraints["y_max"])]):
@@ -203,7 +208,7 @@ class BoxPushingEnv:
                             for j in range(self.num_agents):
                                 self.box_map[y][x+j] = i + 1
 
-                            self.boxes_in_arena[i] = (x, y, "big")
+                            self.boxes_in_arena[i] = (x, y, "large")
                             box_placed = True
 
         return self.get_agent_observations()
@@ -224,7 +229,8 @@ class BoxPushingEnv:
         """
         x = self.np_random.randint(low=self.arena_constraints["x_min"], high=self.arena_constraints["x_max"])
         y = self.arena_constraints["y_min"]
-        return x, y
+        orientation = "NORTH"
+        return x, y, orientation
 
     def generate_box_position(self):
         """
@@ -240,18 +246,67 @@ class BoxPushingEnv:
         Generate a list containing each agent's observation. Depending on the sensing parameter, each agent observes:
 
         Sensing = local
-        The contents of the tile in front of it (Wall, Agent, Big box, Medium box, Little box, Empty)
+        The contents of the tile in front of it (Empty, Wall, Agent, Small box, Medium box, Large box)
 
-        Sensing = partial
+        Sensing = partial (Needs to be implemented)
         The locations of all resources and its own location
 
-        Sensing = full
+        Sensing = full (Needs to be implemented)
         The whole state space
 
         :return:
         """
         observations = []
         readable_observations = []
+
+        for j in range(len(self.agent_positions)):
+            position = self.agent_positions[j]
+            agent_x = position[0]
+            agent_y = position[1]
+            agent_orientation = position[2]
+            agent_observation = [0]*self.get_observation_size()
+
+            # x and y of whatever is in front of the agent
+            y_in_front = agent_y + self.orientation_map[agent_orientation][1]
+            x_in_front = agent_x + self.orientation_map[agent_orientation][0]
+
+            if y_in_front < self.arena_constraints["y_min"] or y_in_front >= self.arena_constraints["y_max"] or \
+                    x_in_front < self.arena_constraints["x_min"] or x_in_front >= self.arena_constraints["x_max"]:
+                agent_observation[1] = 1
+                readable_agent_observation = "Wall"
+
+            # if there is a box in front of the agent
+            elif self.box_map[y_in_front][x_in_front] != 0:
+                box_id = self.box_map[y_in_front][x_in_front]
+                box_size = self.boxes_in_arena[box_id-1][2]
+
+                if box_size == "small":
+                    agent_observation[3] = 1
+                    readable_agent_observation = "Small box"
+
+                elif box_size == "medium":
+                    agent_observation[4] = 1
+                    readable_agent_observation = "Medium box"
+
+                elif box_size == "large":
+                    agent_observation[5] = 1
+                    readable_agent_observation = "Large box"
+
+                else:
+                    raise RuntimeError("Box size not supported")
+
+            # If there is an agent in front
+            elif self.agent_map[y_in_front][x_in_front] != 0:
+                agent_observation[2] = 1
+                readable_agent_observation = "Agent"
+
+            # If there is nothing in front
+            else:
+                agent_observation[0] = 1
+                readable_agent_observation = "Empty"
+
+            observations += [np.array(agent_observation)]
+            readable_observations += [readable_agent_observation]
 
         return observations
 
@@ -401,15 +456,15 @@ class BoxPushingEnv:
                 self.viewer.add_geom(agent)
 
             # Draw box(es)
-            for i in range(self.num_small_boxes + self.num_medium_boxes + self.num_big_boxes):
-                if i < self.num_small_boxes:
+            for i in range(self.num_small_boxes + self.num_medium_boxes + self.num_large_boxes):
+                if i < self.num_small_boxes and self.num_small_boxes > 0:
                     l, r, t, b = -self.small_box_width / 2 * self.scale, self.small_box_width / 2 * self.scale, self.small_box_width * self.scale, 0
 
                 elif i >= self.num_small_boxes and self.num_medium_boxes > 0:
                     l, r, t, b = -self.medium_box_width / 2 * self.scale, self.medium_box_width / 2 * self.scale, self.small_box_width * self.scale, 0
 
-                elif i >= self.num_small_boxes and self.num_big_boxes > 0:
-                    l, r, t, b = -self.big_box_width / 2 * self.scale, self.big_box_width / 2 * self.scale, self.small_box_width * self.scale, 0
+                elif i >= self.num_small_boxes and self.num_large_boxes > 0:
+                    l, r, t, b = -self.large_box_width / 2 * self.scale, self.large_box_width / 2 * self.scale, self.small_box_width * self.scale, 0
 
                 box = rendering.FilledPolygon([(l, b), (l, t), (r, t), (r, b)])
                 box.set_color(self.box_colour[0], self.box_colour[1], self.box_colour[2])
@@ -439,7 +494,7 @@ class BoxPushingEnv:
                     (box_details[0] - self.arena_constraints["x_min"] + (0.5 * self.medium_box_size)) * self.scale,
                     (box_details[1] - self.arena_constraints["y_min"] + 0.125) * self.scale)
 
-            elif box_details[2] == "big":
+            elif box_details[2] == "large":
                 self.box_transforms[box_id].set_translation(
                     (box_details[0] - self.arena_constraints["x_min"] + (0.5 * self.num_agents)) * self.scale,
                     (box_details[1] - self.arena_constraints["y_min"] + 0.125) * self.scale)
