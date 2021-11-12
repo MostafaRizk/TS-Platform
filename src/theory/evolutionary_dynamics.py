@@ -79,9 +79,11 @@ def theta(s):
     @param s: Sliding speed (i.e. slope)
     @return: 1 if the slope is non-zero. 0 if slope is 0 (i.e. arena is flat)
     """
-    if s == 0:
+    if s < 0:
+        raise RuntimeError("Cannot have a negative value for s")
+    elif s == 0 or s >= 5:
         return 0
-    elif s > 0:
+    elif 0 < s < 5:
         return 1
 
 
@@ -105,24 +107,16 @@ def generate_constants(parameter_dictionary, team_size=None, slope=None):
     if slope is None:
         slope = parameter_dictionary["default_slope"]
 
-    # Novice always has the same cost, the cost of being idle every time step.
-    cost["Novice"] = parameter_dictionary["novice_base_cost"]
+    cost["Novice"] = parameter_dictionary["novice_base_cost"] + \
+                     parameter_dictionary["novice_cost_multiplier"] * slope
 
-    # Generalist should have a slightly higher base cost (because it carries resources around) and an additional cost
-    # proportional to the slope.
     cost["Generalist"] = parameter_dictionary["generalist_base_cost"] + \
                          parameter_dictionary["generalist_cost_multiplier"] * slope
 
-    # Droppers have the same cost as novices when there's no slope because they don't carry things while moving and the
-    # cost of going to the source is the same as idling if there's no slope. When there is a slope they pay an
-    # additional cost proportional to it.
-    cost["Dropper"] = parameter_dictionary["novice_base_cost"] + \
+    cost["Dropper"] = parameter_dictionary["dropper_base_cost"] + \
                       parameter_dictionary["dropper_cost_multiplier"] * slope
 
-    # Collectors have the same cost as novices when there's no slope because no resources make it to the nest so they
-    # are basically idle. When there is a slope they pay a small additional cost for moving resources that are
-    # successfully dropped (if any). This cost is the same regardless of the slope.
-    cost["Collector"] = parameter_dictionary["novice_base_cost"] + \
+    cost["Collector"] = parameter_dictionary["collector_base_cost"] + \
                         parameter_dictionary["collector_cost_multiplier"] * theta(slope)
 
     if team_size is None:
@@ -131,7 +125,7 @@ def generate_constants(parameter_dictionary, team_size=None, slope=None):
         num_agents = team_size
 
     generalist_reward = parameter_dictionary["generalist_reward"]
-    specialist_reward = parameter_dictionary["specialist_reward"] * theta(slope)
+    specialist_reward = parameter_dictionary["specialist_base_reward"] * theta(slope)
 
     sorted_strategies = strategies[:]
     sorted_strategies.sort()
@@ -567,12 +561,12 @@ if __name__ == "__main__":
         calculate_price_of_anarchy(parameter_dictionary, axis=axs[row_id][col_id], plot_type="agents", slope=slope)
         axs[row_id][col_id].label_outer()
 
-    filename = "Price of Anarchy vs Agents"
+    filename = "Price of Anarchy vs Team Size"
     plt.rcParams.update({'font.size': 18})
     plt.savefig(os.path.join(path, filename))
 
     # Make plots slope but holding team size constant (for each team size)
-    rows = math.ceil(len(team_list) / cols)
+    '''rows = math.ceil(len(team_list) / cols)
     fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30,15))
     fig.suptitle("Price of Anarchy vs Slope")
 
@@ -587,6 +581,6 @@ if __name__ == "__main__":
 
     filename = "Price of Anarchy vs Slope"
     plt.rcParams.update({'font.size': 18})
-    plt.savefig(os.path.join(path, filename))
+    plt.savefig(os.path.join(path, filename))'''
 
 
