@@ -100,6 +100,7 @@ def generate_constants(parameter_dictionary, team_size=None, slope=None):
     global specialist_reward
     global combos
     global random_state
+    global payoff_dict
 
     if slope is None:
         slope = parameter_dictionary["default_slope"]
@@ -137,6 +138,7 @@ def generate_constants(parameter_dictionary, team_size=None, slope=None):
 
     combos = list(combinations_with_replacement(sorted_strategies, num_agents-1))
     random_state = parameter_dictionary["random_state"]
+    payoff_dict = {}
 
     return
 
@@ -405,8 +407,9 @@ def get_optimal_via_brute_force():
             generate_recursively([strategy_distribution[j] + mask_3[j] for j in range(4)])
 
     generate_recursively([100, 0, 0, 0])
-    print(distribution_fitness['best'])
-    print("Did it work?")
+    #print(distribution_fitness['best'])
+    #print(distribution_fitness['[0, 0, 50, 50]'])
+    #print("Did it work?")
 
     return distribution_fitness['best']['distribution']
 
@@ -464,6 +467,7 @@ def get_optimal_distribution(parameter_dictionary):
 
     sys.stdout = old_stdout'''
 
+    # Use brute force
     final_distribution = get_optimal_via_brute_force()
 
     return final_distribution
@@ -483,6 +487,7 @@ def calculate_price_of_anarchy(parameter_dictionary, plot_type, axis, team_size=
         xs = team_list
 
     for x in xs:
+        print(f'{plot_type}: {x}')
         if plot_type == "slopes":
             if prices_of_anarchy[x][team_size]:
                 price_list += [prices_of_anarchy[x][team_size]]
@@ -504,6 +509,19 @@ def calculate_price_of_anarchy(parameter_dictionary, plot_type, axis, team_size=
         selfish_payoffs = -1. * np.array(list(map(round,list(map(get_avg_fitness, selfish_distributions)))))
         price_of_anarchy = np.mean([optimal_payoff / selfish_payoff for selfish_payoff in selfish_payoffs])
         price_list += [price_of_anarchy]
+        '''print(f"Optimal distribution: {optimal_distribution}")
+        print(f"Optimal payoff = {optimal_payoff}")
+        print(f"Avg team payoff = {round(optimal_payoff / price_of_anarchy)}")
+        print(f"Price of Anarchy = {round(price_of_anarchy, 2)}")
+        print()
+        print(f"Dropper-Collector Payoff = {-1.0 * get_avg_fitness([0,0,0.5,0.5])}")
+        print(f"Generalist Payoff = {-1.0 * get_avg_fitness([0, 1.0, 0, 0])}")
+        print(f"Generalist 10% Payoff = {-1.0 * get_avg_fitness([0, 0.1, 0.45, 0.45])}")
+        print(f"Generalist 20% Payoff = {-1.0 * get_avg_fitness([0, 0.2, 0.4, 0.4])}")
+        print(f"Generalist 30% Payoff = {-1.0 * get_avg_fitness([0, 0.3, 0.35, 0.35])}")
+        print(f"Generalist 40% Payoff = {-1.0 * get_avg_fitness([0, 0.4, 0.3, 0.3])}")
+        print(f"Generalist 50% Payoff = {-1.0 * get_avg_fitness([0, 0.5, 0.25, 0.25])}")
+        print()'''
 
         if plot_type == "slopes":
             prices_of_anarchy[x][team_size] = price_of_anarchy
@@ -536,8 +554,9 @@ if __name__ == "__main__":
     cols = 3
 
     # Make plots varying team size but holding slope constant (for each slope)
+    ''''''
     rows = math.ceil(len(slope_list) / cols)
-    fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30,15))
+    fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30, 15))
     fig.suptitle("Price of Anarchy vs Team Size")
 
     print("Price of Anarchy vs Team Size")
@@ -562,6 +581,7 @@ if __name__ == "__main__":
         print(f"Team size {team_size}")
         row_id = i // rows
         col_id = i % cols
+        #if team_size == 2:
         calculate_price_of_anarchy(parameter_dictionary, axis=axs[row_id][col_id], plot_type="slopes", team_size=team_size)
         axs[row_id][col_id].label_outer()
 
