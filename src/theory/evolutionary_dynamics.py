@@ -77,14 +77,19 @@ def theta(s):
     """
     Step function used to help compute payoff in different slopes
     @param s: Sliding speed (i.e. slope)
-    @return: 1 if the slope is non-zero. 0 if slope is 0 (i.e. arena is flat)
+    @return: s if the sliding speed is greater than 0 and lower than the saturation point, 0 otherwise
     """
     if s < 0:
         raise RuntimeError("Cannot have a negative value for s")
     elif s == 0:
         return 0
-    elif s > 0:
-        return 1
+    # Slope saturation- At this sliding speed, resources slide so fast, they arrive right next to (but not on) the nest.
+    # Collectors don't have to move to pick them up. Below the saturation point, collectors have to move more
+    # because more resources are being dropped
+    elif 0 < s < parameter_dictionary["slope_saturation_point"]:
+        return s
+    else:
+        return 0
 
 
 def generate_constants(parameter_dictionary, team_size=None, slope=None):
@@ -321,6 +326,19 @@ def get_change(P, t=0):
     ])
 
 
+def get_distribution_history(parameter_dictionary, P0):
+    total_time = parameter_dictionary["total_time"]
+    intervals = parameter_dictionary["intervals"]
+    t = np.linspace(0, intervals, total_time)
+    history = odeint(get_change, P0, t)
+
+    for i in range(len(history)):
+        for j in range(len(history[i])):
+            history[i][j] = round(history[i][j], distribution_precision)
+
+    return t, history
+
+
 def get_many_final_distributions(parameter_dictionary):
     """
     Samples several initial population distributions and calculates the final distribution of each using the replicator
@@ -536,19 +554,10 @@ def calculate_price_of_anarchy(parameter_dictionary, plot_type, axis, team_size=
     # filename = parameter_file.split("/")[-1].strip(".json") + "_price_of_anarchy.png"
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Plot evolutionary dynamics')
-    parser.add_argument('--parameters', action="store", dest="parameters")
-
-    parameter_file = parser.parse_args().parameters
-    parameter_dictionary = json.loads(open(parameter_file).read())
-
-    path = "/".join([el for el in parameter_file.split("/")[:-1]]) + "/analysis"
-
+def plot_price_of_anarchy(parameter_dictionary, path):
     cols = 3
 
     # Make plots varying team size but holding slope constant (for each slope)
-    '''
     rows = math.ceil(len(slope_list) / cols)
     fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30, 15))
     fig.suptitle("Price of Anarchy vs Team Size")
@@ -563,11 +572,11 @@ if __name__ == "__main__":
 
     filename = "Price of Anarchy vs Team Size"
     plt.rcParams.update({'font.size': 18})
-    plt.savefig(os.path.join(path, filename))'''
+    plt.savefig(os.path.join(path, filename))
 
     # Make plots slope but holding team size constant (for each team size)
     rows = math.ceil(len(team_list) / cols)
-    fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30,15))
+    fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30, 15))
     fig.suptitle("Price of Anarchy vs Slope")
 
     print("Price of Anarchy vs Slope")
@@ -575,12 +584,128 @@ if __name__ == "__main__":
         print(f"Team size {team_size}")
         row_id = i // rows
         col_id = i % cols
-        #if team_size == 2:
-        calculate_price_of_anarchy(parameter_dictionary, axis=axs[row_id][col_id], plot_type="slopes", team_size=team_size)
+        # if team_size == 2:
+        calculate_price_of_anarchy(parameter_dictionary, axis=axs[row_id][col_id], plot_type="slopes",
+                                   team_size=team_size)
         axs[row_id][col_id].label_outer()
 
     filename = "Price of Anarchy vs Slope"
     plt.rcParams.update({'font.size': 18})
     plt.savefig(os.path.join(path, filename))
+
+
+def plot_trend(parameter_dictionary, P0, path):
+    generate_constants(parameter_dictionary, team_size=parameter_dictionary["default_num_agents"], slope=parameter_dictionary["default_slope"])
+    t, history = get_distribution_history(parameter_dictionary, P0)
+
+    novice, generalist, dropper, collector = history.T
+    plt.plot(t, novice, label='Novice')
+    plt.plot(t, generalist, label='Generalist')
+    plt.plot(t, dropper, label='Dropper')
+    plt.plot(t, collector, label='Collector')
+    plt.grid()
+    plt.ylim(-0.1, 1.1)
+    plt.title("Distribution of Strategies Over Time")
+    plt.ylabel("Proportion of population")
+    plt.xlabel("Time")
+    plt.legend(loc='best')
+    filename = f"Trend_{str(P0)}.pdf"
+    plt.savefig(os.path.join(path, filename))
+    # plt.show()
+
+
+def get_distribution_frequency(parameter_dictionary, team_size=None, slope=None):
+    if not team_size:
+        team_size = parameter_dictionary["default_num_agents"]
+
+    if not slope:
+        slope = parameter_dictionary["default_slope"]
+
+    generate_constants(parameter_dictionary, team_size, slope)
+    final_distributions = get_many_final_distributions(parameter_dictionary)
+    distribution_dictionary = {}
+
+    for dist in final_distributions:
+        key = str(abs(dist))
+
+        if key in distribution_dictionary:
+            distribution_dictionary[key] += 1
+        else:
+            distribution_dictionary[key] = 1
+
+    return distribution_dictionary
+
+
+def plot_distribution_frequency(parameter_dictionary, path, plot_type=None):
+    if not plot_type:
+        fig, ax = plt.subplots()
+        distribution_dictionary = get_distribution_frequency(parameter_dictionary)
+
+        for i, key in enumerate(distribution_dictionary):
+            ax.bar(i, distribution_dictionary[key], label=key)
+
+        ax.set_xticks(np.arange(len(distribution_dictionary.keys())))
+        ax.set_xticklabels(distribution_dictionary.keys())
+        ax.set_title("Frequency of Convergence to Nash Equilibria")
+        ax.set_ylabel("Number of Distributions")
+        ax.set_xlabel("Nash Equilibria")
+        ax.legend(loc='best')
+        slope = parameter_dictionary["default_slope"]
+        filename = f"Distribution_Frequency_agents={num_agents}_slope={slope}.pdf"
+        #plt.savefig(os.path.join(path, filename))
+
+    elif plot_type == "slopes":
+        cols = 3
+
+        # Make plots varying team size but holding slope constant (for each slope)
+        rows = math.ceil(len(slope_list) / cols)
+        fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30, 15))
+        fig.suptitle("Convergence to Nash Equilibria vs Slope")
+
+        for i, slope in enumerate(slope_list):
+            print(f"Slope: {slope}")
+            row_id = i // rows
+            col_id = i % cols
+            ax = axs[row_id][col_id]
+            distribution_dictionary = get_distribution_frequency(parameter_dictionary, slope=slope)
+
+            for j, key in enumerate(distribution_dictionary):
+                ax.bar(j, distribution_dictionary[key], label=key)
+
+            ax.set_xticks(np.arange(len(distribution_dictionary.keys())))
+            ax.set_xticklabels(distribution_dictionary.keys())
+            ax.set_title(f"Slope {slope}")
+            ax.set_ylabel("Number of Distributions")
+            ax.set_xlabel("Nash Equilibria")
+            ax.legend(loc='best')
+
+    plt.show()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Plot evolutionary dynamics')
+    parser.add_argument('--parameters', action="store", dest="parameters")
+
+    parameter_file = parser.parse_args().parameters
+    parameter_dictionary = json.loads(open(parameter_file).read())
+
+    path = "/".join([el for el in parameter_file.split("/")[:-1]]) + "/analysis"
+
+
+    #plot_trend(parameter_dictionary, [0.85, 0.05, 0.05, 0.05], path)
+    #plot_trend(parameter_dictionary, [0.7, 0.2, 0.05, 0.05], path)
+    #plot_distribution_frequency(parameter_dictionary, path, plot_type="slopes")
+    for s in slope_list:
+        print(f"Slope = {s}")
+        generate_constants(parameter_dictionary, slope=s)
+        a=get_avg_fitness([0.0, 1.0, 0.0, 0.0])
+        b=get_avg_fitness([0.0, 0.0, 0.5, 0.5])
+        print(f"Generalists: {a}")
+        print(f"Cooperation: {b}")
+        print()
+
+    # plot_price_of_anarchy(parameter_dictionary, path)
+
+
 
 
