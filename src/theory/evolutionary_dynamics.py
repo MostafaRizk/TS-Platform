@@ -81,9 +81,9 @@ def theta(s):
     """
     if s < 0:
         raise RuntimeError("Cannot have a negative value for s")
-    elif s == 0 or s >= 5:
+    elif s == 0:
         return 0
-    elif 0 < s < 5:
+    elif s > 0:
         return 1
 
 
@@ -125,7 +125,7 @@ def generate_constants(parameter_dictionary, team_size=None, slope=None):
         num_agents = team_size
 
     generalist_reward = parameter_dictionary["generalist_reward"]
-    specialist_reward = parameter_dictionary["specialist_base_reward"] * theta(slope)
+    specialist_reward = parameter_dictionary["specialist_base_reward"] * slope
 
     sorted_strategies = strategies[:]
     sorted_strategies.sort()
@@ -548,7 +548,7 @@ if __name__ == "__main__":
     cols = 3
 
     # Make plots varying team size but holding slope constant (for each slope)
-    ''''''
+    '''
     rows = math.ceil(len(slope_list) / cols)
     fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30, 15))
     fig.suptitle("Price of Anarchy vs Team Size")
@@ -563,10 +563,10 @@ if __name__ == "__main__":
 
     filename = "Price of Anarchy vs Team Size"
     plt.rcParams.update({'font.size': 18})
-    plt.savefig(os.path.join(path, filename))
+    plt.savefig(os.path.join(path, filename))'''
 
     # Make plots slope but holding team size constant (for each team size)
-    '''rows = math.ceil(len(team_list) / cols)
+    rows = math.ceil(len(team_list) / cols)
     fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30,15))
     fig.suptitle("Price of Anarchy vs Slope")
 
@@ -581,6 +581,6 @@ if __name__ == "__main__":
 
     filename = "Price of Anarchy vs Slope"
     plt.rcParams.update({'font.size': 18})
-    plt.savefig(os.path.join(path, filename))'''
+    plt.savefig(os.path.join(path, filename))
 
 
