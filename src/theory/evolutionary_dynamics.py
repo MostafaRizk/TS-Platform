@@ -36,6 +36,14 @@ from io import StringIO
 
 strategies = ["Novice", "Generalist", "Dropper", "Collector"]
 strategy_id = {"Novice": 0, "Generalist": 1, "Dropper": 2, "Collector": 3}
+distribution_name = {"[0.0 1.0 0.0 0.0]": "Selfish Equilibrium",
+                     "[0.0 0.0 0.5 0.5]": "Cooperative Equilibrium"}
+N = 256
+vermillion = (213/N, 94/N, 0)
+bluish_green = (0, 158/N, 115/N)
+blue = (0, 114/N, 178/N)
+equilibrium_colour = {"Selfish Equilibrium": vermillion,
+                      "Cooperative Equilibrium": bluish_green}
 cost = {}
 payoff_dict = {}
 num_agents = 0
@@ -46,7 +54,16 @@ slope_list = [i for i in range(9)]
 team_list = [i for i in range(2, 9)]
 random_state = None
 distribution_precision = 2  # Number of decimal places when expressing the proportion of each strategy in the population
-#archive = {}
+
+# Formatting
+suptitle_font = 40
+title_font = 30
+label_font = 26
+tick_font = 20
+legend_font = 20
+label_padding = 1.08
+linewidth = 5
+markersize = 17
 
 prices_of_anarchy = {}
 
@@ -541,15 +558,19 @@ def calculate_price_of_anarchy(parameter_dictionary, plot_type, axis, team_size=
         elif plot_type == "agents":
             prices_of_anarchy[slope][x] = price_of_anarchy
 
-    axis.plot(xs, price_list, 'o-')
+    axis.plot(xs, price_list, 'o-', markersize=markersize, linewidth=linewidth, color=blue)
 
     if plot_type == "slopes":
-        axis.set_title(f"{team_size} Agents")
-        axis.set(xlabel="Slope", ylabel="Price of Anarchy")
+        axis.set_title(f"{team_size} Agents", fontsize=title_font)
+        axis.set_xlabel("Slope", fontsize=label_font)
+        axis.set_ylabel("Price of Anarchy", fontsize=label_font)
+        #axis.set(xlabel="Slope", ylabel="Price of Anarchy")
 
     elif plot_type == "agents":
-        axis.set_title(f"Slope {slope}")
-        axis.set(xlabel="Num Agents", ylabel="Price of Anarchy")
+        axis.set_title(f"Slope {slope}", fontsize=title_font)
+        axis.set_xlabel("Num Agents", fontsize=label_font)
+        axis.set_ylabel("Price of Anarchy", fontsize=label_font)
+        #axis.set(xlabel="Num Agents", ylabel="Price of Anarchy")
 
     # filename = parameter_file.split("/")[-1].strip(".json") + "_price_of_anarchy.png"
 
@@ -560,7 +581,7 @@ def plot_price_of_anarchy(parameter_dictionary, path):
     # Make plots varying team size but holding slope constant (for each slope)
     rows = math.ceil(len(slope_list) / cols)
     fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30, 15))
-    fig.suptitle("Price of Anarchy vs Team Size")
+    fig.suptitle("Price of Anarchy vs Team Size", fontsize=suptitle_font)
 
     print("Price of Anarchy vs Team Size")
     for i, slope in enumerate(slope_list):
@@ -570,8 +591,14 @@ def plot_price_of_anarchy(parameter_dictionary, path):
         calculate_price_of_anarchy(parameter_dictionary, axis=axs[row_id][col_id], plot_type="agents", slope=slope)
         axs[row_id][col_id].label_outer()
 
+        for tick in axs[row_id][col_id].xaxis.get_major_ticks():
+            tick.label.set_fontsize(tick_font)
+
+        for tick in axs[row_id][col_id].yaxis.get_major_ticks():
+            tick.label.set_fontsize(tick_font)
+
     filename = "Price of Anarchy vs Team Size"
-    plt.rcParams.update({'font.size': 18})
+    #plt.rcParams.update({'font.size': 18})
     plt.savefig(os.path.join(path, filename))
 
     # Make plots slope but holding team size constant (for each team size)
@@ -589,8 +616,14 @@ def plot_price_of_anarchy(parameter_dictionary, path):
                                    team_size=team_size)
         axs[row_id][col_id].label_outer()
 
+        for tick in axs[row_id][col_id].xaxis.get_major_ticks():
+            tick.label.set_fontsize(tick_font)
+
+        for tick in axs[row_id][col_id].yaxis.get_major_ticks():
+            tick.label.set_fontsize(tick_font)
+
     filename = "Price of Anarchy vs Slope"
-    plt.rcParams.update({'font.size': 18})
+    #plt.rcParams.update({'font.size': 18})
     plt.savefig(os.path.join(path, filename))
 
 
@@ -608,6 +641,8 @@ def plot_trend(parameter_dictionary, P0, path):
     plt.title("Distribution of Strategies Over Time")
     plt.ylabel("Proportion of population")
     plt.xlabel("Time")
+    #plt.xticks(fontsize=tick_font)
+    #plt.yticks(fontsize=tick_font)
     plt.legend(loc='best')
     filename = f"Trend_{str(P0)}.pdf"
     plt.savefig(os.path.join(path, filename))
@@ -615,10 +650,10 @@ def plot_trend(parameter_dictionary, P0, path):
 
 
 def get_distribution_frequency(parameter_dictionary, team_size=None, slope=None):
-    if not team_size:
+    if team_size is None:
         team_size = parameter_dictionary["default_num_agents"]
 
-    if not slope:
+    if slope is None:
         slope = parameter_dictionary["default_slope"]
 
     generate_constants(parameter_dictionary, team_size, slope)
@@ -626,7 +661,7 @@ def get_distribution_frequency(parameter_dictionary, team_size=None, slope=None)
     distribution_dictionary = {}
 
     for dist in final_distributions:
-        key = str(abs(dist))
+        key = "[" + " ".join([str(el) for el in abs(dist)]) + "]"
 
         if key in distribution_dictionary:
             distribution_dictionary[key] += 1
@@ -638,21 +673,28 @@ def get_distribution_frequency(parameter_dictionary, team_size=None, slope=None)
 
 def plot_distribution_frequency(parameter_dictionary, path, plot_type=None):
     if not plot_type:
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(30, 15))
         distribution_dictionary = get_distribution_frequency(parameter_dictionary)
 
         for i, key in enumerate(distribution_dictionary):
-            ax.bar(i, distribution_dictionary[key], label=key)
+            label_name = distribution_name[key]
+            colour = equilibrium_colour[label_name]
+            ax.bar(i, distribution_dictionary[key], color=colour)
 
         ax.set_xticks(np.arange(len(distribution_dictionary.keys())))
-        ax.set_xticklabels(distribution_dictionary.keys())
-        ax.set_title("Frequency of Convergence to Nash Equilibria")
-        ax.set_ylabel("Number of Distributions")
-        ax.set_xlabel("Nash Equilibria")
-        ax.legend(loc='best')
+        ax.set_xticklabels([distribution_name[key] for key in distribution_dictionary.keys()], fontsize=tick_font)
+        ax.set_title("Frequency of Convergence to Nash Equilibria", fontsize=title_font, y=label_padding)
+        ax.set_ylabel("Number of \n Distributions", fontsize=label_font)
+        ax.set_xlabel("Nash Equilibria", fontsize=label_font)
+
+        for tick in ax.yaxis.get_major_ticks():
+            tick.label.set_fontsize(tick_font)
+
+        #ax.legend(loc='best', fontsize=legend_font)
         slope = parameter_dictionary["default_slope"]
         filename = f"Distribution_Frequency_agents={num_agents}_slope={slope}.pdf"
-        #plt.savefig(os.path.join(path, filename))
+        plt.savefig(os.path.join(path, filename))
+        #plt.show()
 
     elif plot_type == "slopes":
         cols = 3
@@ -660,7 +702,7 @@ def plot_distribution_frequency(parameter_dictionary, path, plot_type=None):
         # Make plots varying team size but holding slope constant (for each slope)
         rows = math.ceil(len(slope_list) / cols)
         fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30, 15))
-        fig.suptitle("Convergence to Nash Equilibria vs Slope")
+        fig.suptitle("Convergence to Nash Equilibria vs Slope", fontsize=suptitle_font)
 
         for i, slope in enumerate(slope_list):
             print(f"Slope: {slope}")
@@ -670,16 +712,58 @@ def plot_distribution_frequency(parameter_dictionary, path, plot_type=None):
             distribution_dictionary = get_distribution_frequency(parameter_dictionary, slope=slope)
 
             for j, key in enumerate(distribution_dictionary):
-                ax.bar(j, distribution_dictionary[key], label=key)
+                label_name = distribution_name[key]
+                colour = equilibrium_colour[label_name]
+                ax.bar(j, distribution_dictionary[key], color=colour)
 
             ax.set_xticks(np.arange(len(distribution_dictionary.keys())))
-            ax.set_xticklabels(distribution_dictionary.keys())
-            ax.set_title(f"Slope {slope}")
-            ax.set_ylabel("Number of Distributions")
-            ax.set_xlabel("Nash Equilibria")
-            ax.legend(loc='best')
+            ax.set_xticklabels([distribution_name[key] for key in distribution_dictionary.keys()], fontsize=tick_font)
+            ax.set_title(f"Slope {slope}", fontsize=title_font, y=label_padding)
+            ax.set_ylabel("Number of \n Distributions", fontsize=label_font)
+            ax.set_xlabel("Nash Equilibria", fontsize=label_font)
 
-    plt.show()
+            for tick in ax.yaxis.get_major_ticks():
+                tick.label.set_fontsize(tick_font)
+
+            #ax.legend(loc='best', fontsize=legend_font)
+            ax.label_outer()
+            filename = f"Distribution_Frequency_agents={num_agents}_all_slopes.pdf"
+            plt.savefig(os.path.join(path, filename))
+
+    elif plot_type == "agents":
+        cols = 3
+
+        # Make plots varying team size but holding slope constant (for each slope)
+        rows = math.ceil(len(slope_list) / cols)
+        fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30, 15))
+        fig.suptitle("Convergence to Nash Equilibria vs Team Size")
+
+        for i, team_size in enumerate(team_list):
+            print(f"Team Size: {team_size}")
+            row_id = i // rows
+            col_id = i % cols
+            ax = axs[row_id][col_id]
+            distribution_dictionary = get_distribution_frequency(parameter_dictionary, team_size=team_size)
+
+            for j, key in enumerate(distribution_dictionary):
+                label_name = distribution_name[key]
+                colour = equilibrium_colour[label_name]
+                ax.bar(j, distribution_dictionary[key], label=label_name, color=colour)
+
+            ax.set_xticks(np.arange(len(distribution_dictionary.keys())))
+            ax.set_xticklabels([distribution_name[key] for key in distribution_dictionary.keys()], fontsize=tick_font)
+            ax.set_title(f"{team_size} Agents", fontsize=title_font, y=label_padding)
+            ax.set_ylabel("Number of \n Distributions", fontsize=label_font)
+            ax.set_xlabel("Nash Equilibria", fontsize=label_font)
+
+            for tick in ax.yaxis.get_major_ticks():
+                tick.label.set_fontsize(tick_font)
+
+            #ax.legend(loc='best', fontsize=legend_font)
+            ax.label_outer()
+            slope = parameter_dictionary["default_slope"]
+            filename = f"Distribution_Frequency_slope={slope}_all_team_sizes.pdf"
+            plt.savefig(os.path.join(path, filename))
 
 
 if __name__ == "__main__":
@@ -691,20 +775,14 @@ if __name__ == "__main__":
 
     path = "/".join([el for el in parameter_file.split("/")[:-1]]) + "/analysis"
 
-
     #plot_trend(parameter_dictionary, [0.85, 0.05, 0.05, 0.05], path)
     #plot_trend(parameter_dictionary, [0.7, 0.2, 0.05, 0.05], path)
-    #plot_distribution_frequency(parameter_dictionary, path, plot_type="slopes")
-    for s in slope_list:
-        print(f"Slope = {s}")
-        generate_constants(parameter_dictionary, slope=s)
-        a=get_avg_fitness([0.0, 1.0, 0.0, 0.0])
-        b=get_avg_fitness([0.0, 0.0, 0.5, 0.5])
-        print(f"Generalists: {a}")
-        print(f"Cooperation: {b}")
-        print()
 
-    # plot_price_of_anarchy(parameter_dictionary, path)
+    #plot_distribution_frequency(parameter_dictionary, path)
+    #plot_distribution_frequency(parameter_dictionary, path, plot_type="slopes")
+    #plot_distribution_frequency(parameter_dictionary, path, plot_type="agents")
+
+    plot_price_of_anarchy(parameter_dictionary, path)
 
 
 
