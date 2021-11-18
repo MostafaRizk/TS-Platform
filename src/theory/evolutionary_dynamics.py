@@ -597,7 +597,7 @@ def plot_price_of_anarchy(parameter_dictionary, path):
         for tick in axs[row_id][col_id].yaxis.get_major_ticks():
             tick.label.set_fontsize(tick_font)
 
-    filename = "Price of Anarchy vs Team Size"
+    filename = "price_of_anarchy_vs_team_size.pdf"
     #plt.rcParams.update({'font.size': 18})
     plt.savefig(os.path.join(path, filename))
 
@@ -622,7 +622,7 @@ def plot_price_of_anarchy(parameter_dictionary, path):
         for tick in axs[row_id][col_id].yaxis.get_major_ticks():
             tick.label.set_fontsize(tick_font)
 
-    filename = "Price of Anarchy vs Slope"
+    filename = "price_of_anarchy_vs_slope.pdf"
     #plt.rcParams.update({'font.size': 18})
     plt.savefig(os.path.join(path, filename))
 
@@ -766,6 +766,68 @@ def plot_distribution_frequency(parameter_dictionary, path, plot_type=None):
             plt.savefig(os.path.join(path, filename))
 
 
+def plot_fitness(parameter_dictionary, path, team_size, slope, plot_name, plot_title):
+    generate_constants(parameter_dictionary, team_size=team_size, slope=slope)
+    xs = [i/100 for i in range(0, 105, 5)]
+    fit_generalists = [None for _ in range(len(xs))]
+    fit_droppers = [None for _ in range(len(xs))]
+    fit_collectors = [None for _ in range(len(xs))]
+    fit_avg = [None for _ in range(len(xs))]
+
+    # Get fitness of each strategy as the ratio of cooperator to generalist increases
+    for i, x in enumerate(xs):
+        p_generalists = 1.0-x
+        p_droppers = p_collectors = x/2
+        p = [0.0, p_generalists, p_droppers, p_collectors]
+        f_n, f_g, f_d, f_c, f_avg = get_fitnesses(p)
+        fit_generalists[i] = f_g
+        fit_droppers[i] = f_d
+        fit_collectors[i] = f_c
+        fit_avg[i] = f_avg
+
+    fig, ax = plt.subplots()
+    ax.plot(xs, fit_generalists, label='Generalist')
+    ax.plot(xs, fit_droppers, label='Dropper')
+    ax.plot(xs, fit_collectors, label='Collector')
+    ax.plot(xs, fit_avg, label='Average')
+    ax.set_title(plot_title)
+    ax.set_xlabel("Ratio of cooperators to generalists")
+    ax.set_ylabel("Fitness")
+    ax.set_ylim(0, 10000)
+    ax.grid()
+    ax.legend(loc='best')
+    filename = f"ratio_vs_fitness_{plot_name}.pdf"
+    plt.savefig(os.path.join(path, filename))
+
+
+    # For every combination of coop and generalist
+    # Calculate fitnesses
+    # Store fitnesses in a list
+    # Plot each list
+
+def plot_probability(parameter_dictionary, path, slope, population_distribution):
+    probs = [None] * len(team_list)
+
+    for i, team_size in enumerate(team_list):
+        generate_constants(parameter_dictionary, team_size=team_size, slope=slope)
+        probability_of_collector = 0
+
+        for combo in combos:
+            if "Collector" in combo:
+                probability_of_collector += get_probability_of_teammate_combo(combo, population_distribution)
+
+        probs[i] = probability_of_collector
+
+    fig, ax = plt.subplots()
+    ax.plot(team_list, probs, marker='o', markersize=markersize, linewidth=linewidth)
+    ax.set_ylim(0, 1)
+    ax.set_title("Probability of A Collector Team-mate")
+    ax.set_xlabel("Team Size")
+    ax.set_ylabel("Probability")
+    filename = f"probability_vs_team_size.pdf"
+    plt.savefig(os.path.join(path, filename))
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Plot evolutionary dynamics')
     parser.add_argument('--parameters', action="store", dest="parameters")
@@ -782,7 +844,15 @@ if __name__ == "__main__":
     #plot_distribution_frequency(parameter_dictionary, path, plot_type="slopes")
     #plot_distribution_frequency(parameter_dictionary, path, plot_type="agents")
 
-    plot_price_of_anarchy(parameter_dictionary, path)
+    #plot_price_of_anarchy(parameter_dictionary, path)
+
+    #plot_fitness(parameter_dictionary, path, team_size=2, slope=8, plot_name="slope_8", plot_title="Fitness vs Strategy Ratio when Slope=8")
+    #plot_fitness(parameter_dictionary, path, team_size=2, slope=4, plot_name="slope_4", plot_title="Fitness vs Strategy Ratio when Slope=4")
+    #plot_fitness(parameter_dictionary, path, team_size=2, slope=1, plot_name="slope_1", plot_title="Fitness vs Strategy Ratio when Slope=1")
+    #plot_fitness(parameter_dictionary, path, team_size=2, slope=2, plot_name="slope_2", plot_title="Fitness vs Strategy Ratio when Slope=2")
+
+    #plot_probability(parameter_dictionary, path, slope=4, population_distribution=[0.25, 0.25, 0.25, 0.25])
+    plot_fitness(parameter_dictionary, path, team_size=8, slope=4, plot_name="slope_4_team_8", plot_title="Fitness vs Strategy Ratio when Slope=4 and Team=8")
 
 
 
