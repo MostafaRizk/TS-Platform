@@ -1,19 +1,28 @@
-import numpy as np
-import os
+import argparse
 
-from fitness import FitnessCalculator
-from agents.nn_agent_lean import NNAgent
+from scripts.benchmarking import plot_envs_vs_NN_arch
 
-parameter_path = "/Users/mostafa/Documents/Code/PhD/TS-Platform/src/default_box_pushing_parameters.json"
 
-fitness_calculator = FitnessCalculator(parameter_path)
+def generate_plots(genome_directory, metric=None):
+    biases = [False]  # , True]
+    if metric is None:
+        # metrics = ["R_coop", "R_coop_eff", "R_spec"]
+        metrics = ["R_coop"]
+    else:
+        metrics = [metric]
 
-num_agents = 4
-agent_list = []
-for i in range(num_agents):
-    agent = NNAgent(fitness_calculator.get_observation_size(), fitness_calculator.get_action_size(), parameter_path)
-    agent_list += [agent]
+    for learning_type in ["centralised"]:
+        for bias in biases:
+            for m in metrics:
+                # Proper code
+                # plot_envs_vs_NN_arch(genome_directory, bias, N_bins=list(range(-2000, 45000, 10000)), mean_lim=(-2000, 45000), var_lim=(0, 15000), dist_lim=(10 ** -1, 10000), spec_metric_key=m, num_samples=10000, num_episodes=20, env="slope", learning_type=learning_type)
 
-results = fitness_calculator.calculate_fitness(controller_list=agent_list, render=True, time_delay=0.1,
-                                                       measure_specialisation=False, logging=False, logfilename=None,
-                                                       render_mode="human")
+                # Dummy code for testing
+                plot_envs_vs_NN_arch(genome_directory, bias, N_bins=list(range(-2000, 45000, 10000)), mean_lim=(-2000, 45000), var_lim=(0, 15000), dist_lim=(10 ** -1, 20000), spec_metric_key=m, num_samples=50, num_episodes=5, env="slope", learning_type=learning_type)
+
+parser = argparse.ArgumentParser(description='Generate RWG Analysis Plots')
+parser.add_argument('--genome_directory', action="store", dest="genome_directory")
+parser.add_argument('--metric', action="store", dest="metric")
+genome_directory = parser.parse_args().genome_directory
+metric = parser.parse_args().metric
+generate_plots(genome_directory, metric)

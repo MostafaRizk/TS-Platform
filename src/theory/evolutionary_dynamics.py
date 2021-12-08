@@ -502,7 +502,7 @@ def get_optimal_distribution(parameter_dictionary):
     return final_distribution
 
 
-def calculate_price_of_anarchy(parameter_dictionary, plot_type, axis, team_size=None, slope=None):
+def calculate_price_of_anarchy(parameter_dictionary, plot_type, axis, use_payoff=False, team_size=None, slope=None):
     assert None in [team_size, slope], "Can only hold team size or slope size constant. Not both."
     assert team_size is not None or slope is not None, "Must specify either slope or team size to be held constant"
     assert ((plot_type=="slopes" and team_size is not None) or (plot_type=="agents" and slope is not None)), "Plot type must match variables"
@@ -531,26 +531,31 @@ def calculate_price_of_anarchy(parameter_dictionary, plot_type, axis, team_size=
 
             generate_constants(parameter_dictionary, team_size=x, slope=slope)
 
-        optimal_distribution = get_optimal_distribution(parameter_dictionary)
-        optimal_payoff = round(-1. * get_avg_fitness(optimal_distribution))
+        if not use_payoff:
+            optimal_distribution = get_optimal_distribution(parameter_dictionary)
+            optimal_fitness = round(-1. * get_avg_fitness(optimal_distribution))
+
+        else:
+            optimal_team = None
+            optimal_payoff = float('-Inf')
+
+            for strat in strategies:
+                for combo in combos:
+                    team = tuple([strat]) + combo
+                    team_payoff = get_payoff(team, all=True)
+
+                    if team_payoff > optimal_payoff:
+                        optimal_payoff = team_payoff
+                        optimal_team = team
+
+            optimal_fitness = optimal_payoff
 
         selfish_distributions = get_many_final_distributions(parameter_dictionary)
-        selfish_payoffs = -1. * np.array(list(map(round,list(map(get_avg_fitness, selfish_distributions)))))
-        price_of_anarchy = np.mean([optimal_payoff / selfish_payoff for selfish_payoff in selfish_payoffs])
+        selfish_fitnesses = -1. * np.array(list(map(round, list(map(get_avg_fitness, selfish_distributions)))))
+        selfish_average = np.mean([selfish_fitness for selfish_fitness in selfish_fitnesses])
+        price_of_anarchy = optimal_fitness / selfish_average
         price_list += [price_of_anarchy]
-        '''print(f"Optimal distribution: {optimal_distribution}")
-        print(f"Optimal payoff = {optimal_payoff}")
-        print(f"Avg team payoff = {round(optimal_payoff / price_of_anarchy)}")
-        print(f"Price of Anarchy = {round(price_of_anarchy, 2)}")
-        print()
-        print(f"Dropper-Collector Payoff = {-1.0 * get_avg_fitness([0,0,0.5,0.5])}")
-        print(f"Generalist Payoff = {-1.0 * get_avg_fitness([0, 1.0, 0, 0])}")
-        print(f"Generalist 10% Payoff = {-1.0 * get_avg_fitness([0, 0.1, 0.45, 0.45])}")
-        print(f"Generalist 20% Payoff = {-1.0 * get_avg_fitness([0, 0.2, 0.4, 0.4])}")
-        print(f"Generalist 30% Payoff = {-1.0 * get_avg_fitness([0, 0.3, 0.35, 0.35])}")
-        print(f"Generalist 40% Payoff = {-1.0 * get_avg_fitness([0, 0.4, 0.3, 0.3])}")
-        print(f"Generalist 50% Payoff = {-1.0 * get_avg_fitness([0, 0.5, 0.25, 0.25])}")
-        print()'''
+        print(f"{optimal_fitness} / {selfish_average} = {price_of_anarchy}")
 
         if plot_type == "slopes":
             prices_of_anarchy[x][team_size] = price_of_anarchy
@@ -575,7 +580,7 @@ def calculate_price_of_anarchy(parameter_dictionary, plot_type, axis, team_size=
     # filename = parameter_file.split("/")[-1].strip(".json") + "_price_of_anarchy.png"
 
 
-def plot_price_of_anarchy(parameter_dictionary, path):
+def plot_price_of_anarchy(parameter_dictionary, path, use_payoff=False):
     cols = 3
 
     # Make plots varying team size but holding slope constant (for each slope)
@@ -588,7 +593,7 @@ def plot_price_of_anarchy(parameter_dictionary, path):
         print(f"Slope {slope}")
         row_id = i // rows
         col_id = i % cols
-        calculate_price_of_anarchy(parameter_dictionary, axis=axs[row_id][col_id], plot_type="agents", slope=slope)
+        calculate_price_of_anarchy(parameter_dictionary, axis=axs[row_id][col_id], plot_type="agents", use_payoff=use_payoff, slope=slope)
         axs[row_id][col_id].label_outer()
 
         for tick in axs[row_id][col_id].xaxis.get_major_ticks():
@@ -597,7 +602,7 @@ def plot_price_of_anarchy(parameter_dictionary, path):
         for tick in axs[row_id][col_id].yaxis.get_major_ticks():
             tick.label.set_fontsize(tick_font)
 
-    filename = "price_of_anarchy_vs_team_size.pdf"
+    filename = f"price_of_anarchy_vs_team_size_use_payoff={use_payoff}.pdf"
     #plt.rcParams.update({'font.size': 18})
     plt.savefig(os.path.join(path, filename))
 
@@ -612,8 +617,7 @@ def plot_price_of_anarchy(parameter_dictionary, path):
         row_id = i // rows
         col_id = i % cols
         # if team_size == 2:
-        calculate_price_of_anarchy(parameter_dictionary, axis=axs[row_id][col_id], plot_type="slopes",
-                                   team_size=team_size)
+        calculate_price_of_anarchy(parameter_dictionary, axis=axs[row_id][col_id], plot_type="slopes", use_payoff=use_payoff, team_size=team_size)
         axs[row_id][col_id].label_outer()
 
         for tick in axs[row_id][col_id].xaxis.get_major_ticks():
@@ -622,7 +626,7 @@ def plot_price_of_anarchy(parameter_dictionary, path):
         for tick in axs[row_id][col_id].yaxis.get_major_ticks():
             tick.label.set_fontsize(tick_font)
 
-    filename = "price_of_anarchy_vs_slope.pdf"
+    filename = f"price_of_anarchy_vs_slope_use_payoff={use_payoff}.pdf"
     #plt.rcParams.update({'font.size': 18})
     plt.savefig(os.path.join(path, filename))
 
@@ -671,10 +675,14 @@ def get_distribution_frequency(parameter_dictionary, team_size=None, slope=None)
     return distribution_dictionary
 
 
-def plot_distribution_frequency(parameter_dictionary, path, plot_type=None):
+def plot_distribution_frequency(parameter_dictionary, path, plot_type=None, team_size=None, slope=None):
     if not plot_type:
         fig, ax = plt.subplots(figsize=(30, 15))
-        distribution_dictionary = get_distribution_frequency(parameter_dictionary)
+        if team_size is None:
+            team_size = parameter_dictionary["default_num_agents"]
+        if slope is None:
+            slope = parameter_dictionary["default_slope"]
+        distribution_dictionary = get_distribution_frequency(parameter_dictionary, team_size, slope)
 
         for i, key in enumerate(distribution_dictionary):
             label_name = distribution_name[key]
@@ -691,8 +699,7 @@ def plot_distribution_frequency(parameter_dictionary, path, plot_type=None):
             tick.label.set_fontsize(tick_font)
 
         #ax.legend(loc='best', fontsize=legend_font)
-        slope = parameter_dictionary["default_slope"]
-        filename = f"Distribution_Frequency_agents={num_agents}_slope={slope}.pdf"
+        filename = f"Distribution_Frequency_agents={team_size}_slope={slope}.pdf"
         plt.savefig(os.path.join(path, filename))
         #plt.show()
 
@@ -704,12 +711,15 @@ def plot_distribution_frequency(parameter_dictionary, path, plot_type=None):
         fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30, 15))
         fig.suptitle("Convergence to Nash Equilibria vs Slope", fontsize=suptitle_font)
 
-        for i, slope in enumerate(slope_list):
-            print(f"Slope: {slope}")
+        if team_size is None:
+            team_size = parameter_dictionary["default_num_agents"]
+
+        for i, s in enumerate(slope_list):
+            print(f"Slope: {s}")
             row_id = i // rows
             col_id = i % cols
             ax = axs[row_id][col_id]
-            distribution_dictionary = get_distribution_frequency(parameter_dictionary, slope=slope)
+            distribution_dictionary = get_distribution_frequency(parameter_dictionary, team_size=team_size, slope=s)
 
             for j, key in enumerate(distribution_dictionary):
                 label_name = distribution_name[key]
@@ -718,7 +728,7 @@ def plot_distribution_frequency(parameter_dictionary, path, plot_type=None):
 
             ax.set_xticks(np.arange(len(distribution_dictionary.keys())))
             ax.set_xticklabels([distribution_name[key] for key in distribution_dictionary.keys()], fontsize=tick_font)
-            ax.set_title(f"Slope {slope}", fontsize=title_font, y=label_padding)
+            ax.set_title(f"Slope {s}", fontsize=title_font, y=label_padding)
             ax.set_ylabel("Number of \n Distributions", fontsize=label_font)
             ax.set_xlabel("Nash Equilibria", fontsize=label_font)
 
@@ -727,7 +737,7 @@ def plot_distribution_frequency(parameter_dictionary, path, plot_type=None):
 
             #ax.legend(loc='best', fontsize=legend_font)
             ax.label_outer()
-            filename = f"Distribution_Frequency_agents={num_agents}_all_slopes.pdf"
+            filename = f"Distribution_Frequency_agents={team_size}_all_slopes.pdf"
             plt.savefig(os.path.join(path, filename))
 
     elif plot_type == "agents":
@@ -738,12 +748,15 @@ def plot_distribution_frequency(parameter_dictionary, path, plot_type=None):
         fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30, 15))
         fig.suptitle("Convergence to Nash Equilibria vs Team Size")
 
-        for i, team_size in enumerate(team_list):
-            print(f"Team Size: {team_size}")
+        if slope is None:
+            slope = parameter_dictionary["default_slope"]
+
+        for i, n in enumerate(team_list):
+            print(f"Team Size: {n}")
             row_id = i // rows
             col_id = i % cols
             ax = axs[row_id][col_id]
-            distribution_dictionary = get_distribution_frequency(parameter_dictionary, team_size=team_size)
+            distribution_dictionary = get_distribution_frequency(parameter_dictionary, team_size=n, slope=slope)
 
             for j, key in enumerate(distribution_dictionary):
                 label_name = distribution_name[key]
@@ -752,7 +765,7 @@ def plot_distribution_frequency(parameter_dictionary, path, plot_type=None):
 
             ax.set_xticks(np.arange(len(distribution_dictionary.keys())))
             ax.set_xticklabels([distribution_name[key] for key in distribution_dictionary.keys()], fontsize=tick_font)
-            ax.set_title(f"{team_size} Agents", fontsize=title_font, y=label_padding)
+            ax.set_title(f"{n} Agents", fontsize=title_font, y=label_padding)
             ax.set_ylabel("Number of \n Distributions", fontsize=label_font)
             ax.set_xlabel("Nash Equilibria", fontsize=label_font)
 
@@ -761,7 +774,6 @@ def plot_distribution_frequency(parameter_dictionary, path, plot_type=None):
 
             #ax.legend(loc='best', fontsize=legend_font)
             ax.label_outer()
-            slope = parameter_dictionary["default_slope"]
             filename = f"Distribution_Frequency_slope={slope}_all_team_sizes.pdf"
             plt.savefig(os.path.join(path, filename))
 
@@ -844,15 +856,49 @@ if __name__ == "__main__":
     #plot_distribution_frequency(parameter_dictionary, path, plot_type="slopes")
     #plot_distribution_frequency(parameter_dictionary, path, plot_type="agents")
 
-    #plot_price_of_anarchy(parameter_dictionary, path)
-
     #plot_fitness(parameter_dictionary, path, team_size=2, slope=8, plot_name="slope_8", plot_title="Fitness vs Strategy Ratio when Slope=8")
     #plot_fitness(parameter_dictionary, path, team_size=2, slope=4, plot_name="slope_4", plot_title="Fitness vs Strategy Ratio when Slope=4")
     #plot_fitness(parameter_dictionary, path, team_size=2, slope=1, plot_name="slope_1", plot_title="Fitness vs Strategy Ratio when Slope=1")
     #plot_fitness(parameter_dictionary, path, team_size=2, slope=2, plot_name="slope_2", plot_title="Fitness vs Strategy Ratio when Slope=2")
 
     #plot_probability(parameter_dictionary, path, slope=4, population_distribution=[0.25, 0.25, 0.25, 0.25])
-    plot_fitness(parameter_dictionary, path, team_size=8, slope=4, plot_name="slope_4_team_8", plot_title="Fitness vs Strategy Ratio when Slope=4 and Team=8")
+    #plot_fitness(parameter_dictionary, path, team_size=8, slope=4, plot_name="slope_4_team_8", plot_title="Fitness vs Strategy Ratio when Slope=4 and Team=8")
+
+    #plot_price_of_anarchy(parameter_dictionary, path)
+
+    # Why is price of anarchy weird?
+    #plot_distribution_frequency(parameter_dictionary, path, plot_type="agents", slope=2)
+    #plot_fitness(parameter_dictionary, path, team_size=2, slope=2, plot_name="slope_2_team_2", plot_title="Fitness vs Strategy Ratio when Slope=2 and Team size=2")
+    #plot_fitness(parameter_dictionary, path, team_size=3, slope=2, plot_name="slope_2_team_3", plot_title="Fitness vs Strategy Ratio when Slope=2 and Team size=3")
+    #plot_fitness(parameter_dictionary, path, team_size=4, slope=2, plot_name="slope_2_team_4", plot_title="Fitness vs Strategy Ratio when Slope=2 and Team size=4")
+    #plot_fitness(parameter_dictionary, path, team_size=8, slope=2, plot_name="slope_2_team_8", plot_title="Fitness vs Strategy Ratio when Slope=2 and Team size=8")
+
+    '''generate_constants(parameter_dictionary, team_size=3, slope=2)
+    a = get_payoff(('Generalist', 'Generalist', 'Generalist'), all=True)
+    b = get_payoff(('Dropper', 'Collector', 'Generalist'), all=True)
+    c = get_avg_fitness([0.0, 1.0, 0.0, 0.0])
+    d = get_avg_fitness([0.0, 0.33, 0.33, 0.33])
+    e = get_optimal_via_brute_force()
+    print(f"All generalists = {a}")
+    print(f"Mixed = {b}")
+    print(f"Generalist Fitness = {c}")
+    print(f"Mixed Fitness = {d}")
+    print(f"Optimal = {e}")'''
+
+    '''generate_constants(parameter_dictionary, team_size=4, slope=2)
+    a = get_payoff(('Generalist', 'Generalist', 'Generalist', 'Generalist'), all=True)
+    b = get_payoff(('Dropper', 'Collector', 'Dropper', 'Collector'), all=True)
+    c = get_avg_fitness([0.0, 1.0, 0.0, 0.0])
+    d = get_avg_fitness([0.0, 0.0, 0.5, 0.5])
+    e = get_optimal_via_brute_force()
+    print(f"All generalists = {a}")
+    print(f"Cooperator = {b}")
+    print(f"Generalist Fitness = {c}")
+    print(f"Cooperator Fitness = {d}")
+    print(f"Optimal = {e}")'''
+
+    plot_price_of_anarchy(parameter_dictionary, path, use_payoff=True)
+
 
 
 

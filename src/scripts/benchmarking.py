@@ -720,12 +720,12 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     if learning_type == "centralised":
         arch_dict_list = [
             {
-                'N_hidden_layers': 1,
-                'N_hidden_units': 4
-            },
-            {
                 'N_hidden_layers': 0,
                 'N_hidden_units': 0
+            },
+            {
+                'N_hidden_layers': 1,
+                'N_hidden_units': 4
             },
             {
                 'N_hidden_layers': 2,
@@ -795,7 +795,8 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
 
     print('\nPlotting big combo plot...')
 
-    w_space = 0.1
+    hspace = 0
+    w_space = 0
     fig_height = 8
     adjust_kwargs = {
         'bottom': 0.12,
@@ -811,8 +812,6 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
         'pad': 0
 
     }
-
-    hspace = 0.25
 
     ############################# First part
     plt.close('all')
@@ -884,15 +883,15 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
 
             # arch_dict_to_label(arch_dict)
             if i == len(envs_list) - 1:
-                #axes_list[j].set_xlabel('$R_a(n)$,\n\n' + arch_dict_to_label(arch_dict), **plot_label_params)
-                axes_list[j].set_xlabel('Solutions sorted by mean fitness\n\n' + arch_dict_to_label(arch_dict), **plot_label_params)
+                axes_list[j].set_xlabel('$R_a(n)$,\n' + arch_dict_to_label(arch_dict), **plot_label_params)
+                #axes_list[j].set_xlabel('Solutions sorted by mean fitness\n\n' + arch_dict_to_label(arch_dict), **plot_label_params)
             if j == 0:
-                #axes_list[j].set_ylabel(env_name_title_dict[env_name] + '\n\n$S_{a,n,e}$ and $M_{a,n}$', **plot_label_params)
-                axes_list[j].set_ylabel("Team fitness", **plot_label_params)
+                axes_list[j].set_ylabel(env_name_title_dict[env_name] + '\n$S_{a,n,e}$ and $M_{a,n}$', **plot_label_params)
+                #axes_list[j].set_ylabel("Team fitness", **plot_label_params)
 
     plt.subplots_adjust(left=0.2, **adjust_kwargs)
     print('Plotting part 1 png...')
-    part_1_path = os.path.join(figures_dir, f'combo_part1_{spec_metric_key}.png')
+    part_1_path = os.path.join(figures_dir, f'combo_part1_{spec_metric_key}.pdf')
     plt.savefig(part_1_path, dpi=300)
 
     ################################ second part
@@ -902,7 +901,7 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     fig, axes = plt.subplots(N_row, N_col, sharex=False, sharey=False, gridspec_kw={'hspace': hspace, 'wspace': 0.5}, figsize=(part_2_w, fig_height))
 
     ##################################### Plot histograms for 1HL4HU
-    j = 0
+    j = 1
     for i, env_name in enumerate(envs_list):
 
         if len(envs_list) == 1:
@@ -957,13 +956,13 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
 
         axes_list[j].set_ylabel('', **plot_label_params)
         if i == len(envs_list) - 1:
-            axes_list[j].set_xlabel('$M_{a,n}$\n\n' + arch_dict_to_label(arch_dict), **plot_label_params)
+            axes_list[j].set_xlabel('$M_{a,n}$\n' + arch_dict_to_label(arch_dict), **plot_label_params)
 
         # axes_list[j].label_outer()
 
     ######################### Plot variance for 1HL4HU
     ''''''
-    j = 1
+    j = 0
     for i, env_name in enumerate(envs_list):
 
         if len(envs_list) == 1:
@@ -1004,8 +1003,8 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
         axes_list[j].set_xlim(lims[0], lims[1])
 
         axes_list[j].tick_params(**plot_tick_params)
-        axes_list[j].tick_params(axis='x', labelsize=0)
-        axes_list[j].tick_params(axis='y', labelsize=0, rotation=90)
+        axes_list[j].tick_params(axis='x', labelsize=14)
+        axes_list[j].tick_params(axis='y', labelsize=14)#, rotation=90)
 
         axes_list[j].plot(all_trials_mean, all_trials_std, 'o', color='mediumorchid', alpha=plot_pt_alpha,
                         markersize=3)
@@ -1013,7 +1012,7 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
         # axes_list[j].set_xlabel('$M_{a,n}$', **plot_label_params)
         axes_list[j].set_ylabel('$V_{a,n}$', **plot_label_params)
         if i == len(envs_list) - 1:
-            axes_list[j].set_xlabel('$M_{a,n}$\n\n' + arch_dict_to_label(arch_dict), **plot_label_params)
+            axes_list[j].set_xlabel('$M_{a,n}$\n' + arch_dict_to_label(arch_dict), **plot_label_params)
 
         # axes_list[j].label_outer()
 
@@ -1022,12 +1021,12 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     # plt.tight_layout()
     plt.subplots_adjust(left=0.2, **adjust_kwargs)
     print('Plotting part 2 png...')
-    part_2_path = os.path.join(figures_dir, f'combo_part2_{spec_metric_key}.png')
+    part_2_path = os.path.join(figures_dir, f'combo_part2_{spec_metric_key}.pdf')
     plt.savefig(part_2_path, dpi=300)
 
     # Save combined plots
     im1 = cv2.imread(part_1_path)
     im2 = cv2.imread(part_2_path)
-    combined_path = os.path.join(figures_dir, f'combo_full_{spec_metric_key}.png')
+    combined_path = os.path.join(figures_dir, f'combo_full_{spec_metric_key}.pdf')
     combined_plot = cv2.hconcat([im1, im2])
     cv2.imwrite(combined_path, combined_plot)
