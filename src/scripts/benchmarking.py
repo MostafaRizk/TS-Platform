@@ -691,20 +691,31 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     else:
         learning_type = kwargs.get('learning_type', None)
 
+    if kwargs.get('arch', None) is None:
+        raise RuntimeError("No architecture passed")
+    else:
+        arch = kwargs.get('arch', None)
+
     print(f'Making plots for {spec_metric_key}')
 
     if env == "slope":
-        envs_list = [
-            'SlopeForaging-FFNN',
-            'SlopeForaging-RNN'
-        ]
+        if arch == "FFNN":
+            envs_list = [
+                'SlopeForaging-FFNN'
+            ]
 
-        env_name_title_dict = {
-            #'SlopeForaging-FFNN': f'SlopeForaging\n(FFNN)',
-            #'SlopeForaging-RNN': f'SlopeForaging\n(RNN)'
-            'SlopeForaging-FFNN': f'FFNN',
-            'SlopeForaging-RNN': f'RNN'
-        }
+            env_name_title_dict = {
+                'SlopeForaging-FFNN': f'FFNN'
+            }
+
+        elif arch == "RNN":
+            envs_list = [
+                'SlopeForaging-RNN'
+            ]
+
+            env_name_title_dict = {
+                'SlopeForaging-RNN': f'RNN'
+            }
 
     elif env == "tmaze":
         envs_list = ["TMaze-FFNN"]
@@ -893,7 +904,7 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
 
     plt.subplots_adjust(**adjust_kwargs)
     print('Plotting part 1 png...')
-    part_1_path = os.path.join(figures_dir, f'combo_part1_{spec_metric_key}.pdf')
+    part_1_path = os.path.join(figures_dir, f'combo_part1_{spec_metric_key}_{arch}.pdf')
     plt.savefig(part_1_path, dpi=300)
 
     ################################ second part
@@ -1035,7 +1046,7 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     # plt.tight_layout()
     plt.subplots_adjust(**adjust_kwargs)
     print('Plotting part 2 png...')
-    part_2_path = os.path.join(figures_dir, f'combo_part2_{spec_metric_key}.pdf')
+    part_2_path = os.path.join(figures_dir, f'combo_part2_{spec_metric_key}_{arch}.pdf')
     plt.savefig(part_2_path, dpi=300)
 
     # Save combined plots
