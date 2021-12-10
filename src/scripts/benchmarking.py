@@ -798,11 +798,6 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     hspace = 0
     w_space = 0
     fig_height = 8
-    adjust_kwargs = {
-        'bottom': 0.12,
-        'right': 0.98,
-        'top': 0.99
-    }
     part_1_w = fig_height / 1.0
     part_2_w = (3 / 4.0) * part_1_w * 1.0
     plot_tick_params = {
@@ -889,7 +884,14 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
                 axes_list[j].set_ylabel(env_name_title_dict[env_name] + '\n$S_{a,n,e}$ and $M_{a,n}$', **plot_label_params)
                 #axes_list[j].set_ylabel("Team fitness", **plot_label_params)
 
-    plt.subplots_adjust(left=0.2, **adjust_kwargs)
+    adjust_kwargs = {
+        'bottom': 0.125,
+        'right': 0.975,
+        'top': 0.95,
+        'left': 0.1
+    }
+
+    plt.subplots_adjust(**adjust_kwargs)
     print('Plotting part 1 png...')
     part_1_path = os.path.join(figures_dir, f'combo_part1_{spec_metric_key}.pdf')
     plt.savefig(part_1_path, dpi=300)
@@ -949,10 +951,13 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
         if kwargs.get('N_bins', None) is None:
             raise RuntimeError("Did not specify bins for histogram")
 
-        axes_list[j].hist(all_trials_mean, color='dodgerblue', edgecolor='gray', log=True,
-                          bins=kwargs.get('N_bins', None))
+        axes_list[j].hist(all_trials_mean, color='dodgerblue', edgecolor='gray', log=True, bins=kwargs.get('N_bins', None))
         axes_list[j].tick_params(**plot_tick_params)
-        axes_list[j].tick_params(axis='x', labelsize=14, rotation=0)
+
+        if i == len(envs_list) - 1:
+            axes_list[j].tick_params(axis='x', labelsize=14, rotation=0)
+        else:
+            axes_list[j].tick_params(axis='x', labelsize=0, rotation=0)
 
         axes_list[j].set_ylabel('', **plot_label_params)
         if i == len(envs_list) - 1:
@@ -1003,7 +1008,11 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
         axes_list[j].set_xlim(lims[0], lims[1])
 
         axes_list[j].tick_params(**plot_tick_params)
-        axes_list[j].tick_params(axis='x', labelsize=14)
+        if i == len(envs_list) - 1:
+            axes_list[j].tick_params(axis='x', labelsize=14)
+        else:
+            axes_list[j].tick_params(axis='x', labelsize=0)
+
         axes_list[j].tick_params(axis='y', labelsize=14)#, rotation=90)
 
         axes_list[j].plot(all_trials_mean, all_trials_std, 'o', color='mediumorchid', alpha=plot_pt_alpha,
@@ -1016,17 +1025,22 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
 
         # axes_list[j].label_outer()
 
-
+    adjust_kwargs = {
+        'bottom': 0.125,
+        'right': 0.9,
+        'top': 0.95,
+        'left': 0.2
+    }
 
     # plt.tight_layout()
-    plt.subplots_adjust(left=0.2, **adjust_kwargs)
+    plt.subplots_adjust(**adjust_kwargs)
     print('Plotting part 2 png...')
     part_2_path = os.path.join(figures_dir, f'combo_part2_{spec_metric_key}.pdf')
     plt.savefig(part_2_path, dpi=300)
 
     # Save combined plots
-    im1 = cv2.imread(part_1_path)
+    '''im1 = cv2.imread(part_1_path)
     im2 = cv2.imread(part_2_path)
     combined_path = os.path.join(figures_dir, f'combo_full_{spec_metric_key}.pdf')
     combined_plot = cv2.hconcat([im1, im2])
-    cv2.imwrite(combined_path, combined_plot)
+    cv2.imwrite(combined_path, combined_plot)'''
