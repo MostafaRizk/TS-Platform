@@ -904,7 +904,7 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
 
     plt.subplots_adjust(**adjust_kwargs)
     print('Plotting part 1 png...')
-    part_1_path = os.path.join(figures_dir, f'combo_part1_{spec_metric_key}_{arch}.pdf')
+    part_1_path = os.path.join(figures_dir, f'combo_part1_{spec_metric_key}_{arch}.png')
     plt.savefig(part_1_path, dpi=300)
 
     ################################ second part
@@ -936,13 +936,13 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
 
         if learning_type == "centralised":
             arch_dict = {
-                'N_hidden_layers': 1,
+                'N_hidden_layers': 2,
                 'N_hidden_units': 4
             }
 
         elif learning_type == "fully-centralised":
             arch_dict = {
-                'N_hidden_layers': 1,
+                'N_hidden_layers': 2,
                 'N_hidden_units': 8
             }
 
@@ -988,13 +988,13 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
 
         if learning_type == "centralised":
             arch_dict = {
-                'N_hidden_layers': 1,
+                'N_hidden_layers': 2,
                 'N_hidden_units': 4
             }
 
         elif learning_type == "fully-centralised":
             arch_dict = {
-                'N_hidden_layers': 1,
+                'N_hidden_layers': 2,
                 'N_hidden_units': 8
             }
 
@@ -1046,7 +1046,7 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
     # plt.tight_layout()
     plt.subplots_adjust(**adjust_kwargs)
     print('Plotting part 2 png...')
-    part_2_path = os.path.join(figures_dir, f'combo_part2_{spec_metric_key}_{arch}.pdf')
+    part_2_path = os.path.join(figures_dir, f'combo_part2_{spec_metric_key}_{arch}.png')
     plt.savefig(part_2_path, dpi=300)
 
     # Save combined plots

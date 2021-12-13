@@ -16,7 +16,13 @@ def generate_plots(genome_directory, metric=None):
             for m in metrics:
                 for arch in ["FFNN", "RNN"]:
                     # Proper code
-                    plot_envs_vs_NN_arch(genome_directory, bias, N_bins=list(range(-2000, 45000, 10000)), mean_lim=(-2000, 45000), var_lim=(0, 15000), dist_lim=(10 ** -1, 20000), spec_metric_key=m, num_samples=10000, num_episodes=20, env="slope", learning_type=learning_type, arch=arch)
+                    if arch == "FFNN":
+                        mean_upper = 10000
+                        var_upper = 2000
+                    elif arch == "RNN":
+                        mean_upper = 45000
+                        var_upper = 15000
+                    plot_envs_vs_NN_arch(genome_directory, bias, N_bins=list(range(-5000, 45000, 10000)), mean_lim=(-5000, 45000), var_lim=(0, var_upper), dist_lim=(10 ** -1, 20000), spec_metric_key=m, num_samples=10000, num_episodes=20, env="slope", learning_type=learning_type, arch=arch)
 
                     # Dummy code for testing
                     #plot_envs_vs_NN_arch(genome_directory, bias, N_bins=list(range(-2000, 45000, 10000)), mean_lim=(-2000, 45000), var_lim=(0, 15000), dist_lim=(10 ** -1, 20000), spec_metric_key=m, num_samples=50, num_episodes=5, env="slope", learning_type=learning_type, arch=arch)
