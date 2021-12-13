@@ -1012,10 +1012,10 @@ def plot_envs_vs_NN_arch(parent_dir, bias, **kwargs):
         lims = kwargs.get('var_lim', None)
         axes_list[j].set_ylim(lims[0], lims[1])
 
-        if kwargs.get('mean_lim', None) is None:
+        if kwargs.get('var_mean_lim', None) is None:
             raise RuntimeError("Did not specify x-limits for variance plot")
 
-        lims = kwargs.get('mean_lim', None)
+        lims = kwargs.get('var_mean_lim', None)
         axes_list[j].set_xlim(lims[0], lims[1])
 
         axes_list[j].tick_params(**plot_tick_params)
