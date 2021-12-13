@@ -376,7 +376,7 @@ class SlopeEnv:
                 self.slide_resource(resource_id)
 
             if self.incremental_rewards:
-                distance_travelled_by_resource = self.closest_y_for_resource[resource_id] - self.resource_positions[resource_id][1]
+                distance_travelled_by_resource = self.closest_y_for_resource[resource_id] - resource_position[1]
 
                 if distance_travelled_by_resource > 0:
                     reward_for_travel = (self.reward_for_resource / self.arena_constraints["y_max"]) * distance_travelled_by_resource
@@ -384,7 +384,7 @@ class SlopeEnv:
                     for j in range(self.num_agents):
                         rewards[j] += reward_for_travel / self.num_agents
 
-                    self.closest_y_for_resource[resource_id] = self.resource_positions[resource_id][1]
+                    self.closest_y_for_resource[resource_id] = resource_position[1]
 
         for resource_id in resources_to_delete:
             for k in range(self.num_agents):
