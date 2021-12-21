@@ -204,7 +204,7 @@ def plot_robustness(data_path, file_list, path_to_graph, plot_type, min_agents, 
             axis.set_ylim(y_min_height, y_height)
 
         elif showing == "specialisation":
-            axis.set_ylabel("Specialisation", fontsize=label_font)
+            axis.set_ylabel("Degree of Cooperation", fontsize=label_font)
             axis.set_ylim(0, 1.1)
 
         linewidth = 8

@@ -346,7 +346,7 @@ def get_change(P, t=0):
 def get_distribution_history(parameter_dictionary, P0):
     total_time = parameter_dictionary["total_time"]
     intervals = parameter_dictionary["intervals"]
-    t = np.linspace(0, intervals, total_time)
+    t = np.linspace(0, total_time, intervals)
     history = odeint(get_change, P0, t)
 
     for i in range(len(history)):
@@ -368,7 +368,7 @@ def get_many_final_distributions(parameter_dictionary):
     intervals = parameter_dictionary["intervals"]
     num_samples = parameter_dictionary["num_samples"]
 
-    t = np.linspace(0, intervals, total_time)
+    t = np.linspace(0, total_time, intervals)
     initial_distributions = sample_distributions(num_samples)
     final_distributions = [None] * num_samples
 
@@ -849,6 +849,7 @@ if __name__ == "__main__":
 
     path = "/".join([el for el in parameter_file.split("/")[:-1]]) + "/analysis"
 
+    plot_trend(parameter_dictionary, [0.925, 0.25, 0.25, 0.25], path)
     #plot_trend(parameter_dictionary, [0.85, 0.05, 0.05, 0.05], path)
     #plot_trend(parameter_dictionary, [0.7, 0.2, 0.05, 0.05], path)
 
@@ -897,7 +898,7 @@ if __name__ == "__main__":
     print(f"Cooperator Fitness = {d}")
     print(f"Optimal = {e}")'''
 
-    plot_price_of_anarchy(parameter_dictionary, path, use_payoff=True)
+    #plot_price_of_anarchy(parameter_dictionary, path, use_payoff=True)
 
 
 

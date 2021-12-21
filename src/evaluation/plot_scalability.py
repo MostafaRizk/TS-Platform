@@ -214,7 +214,7 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
 
         elif showing == "specialisation":
             ax1.set_ylim(0, 1.1)
-            ax1.set_ylabel('Team Specialisation', fontsize=label_font)
+            ax1.set_ylabel('Degree of Cooperation', fontsize=label_font)
 
         elif showing == "participation":
             ax1.set_ylim(0, 1.1)
@@ -281,7 +281,7 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
                 ax.set_ylabel("Fitness per Agent", fontsize=label_font)
             elif showing == "specialisation" or showing == "participation":
                 ax.set_ylim(-0.2, 1.2)
-                ax.set_ylabel("Team Specialisation", fontsize=label_font)
+                ax.set_ylabel("Team Cooperation", fontsize=label_font)
 
             num_agents = (col+1) * 2
             parts = ax.violinplot([scores[f"{setup}-{num_agents}"] for setup in setups])

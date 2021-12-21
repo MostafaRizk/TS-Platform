@@ -35,7 +35,7 @@ def from_string(arr_str):
     return a
 
 
-def plot_episodes(path_to_results, path_to_graph, min_agents, max_agents, y_height=15000, exclude_middle_plots=False):
+def plot_episodes(path_to_results, path_to_graph, min_agents, max_agents, y_height=15000, exclude_middle_plots=False, vertical=True):
     # Prepare data lists
     x = [i for i in range(2, max_agents + 2, 2)]
     y_centralised = []
@@ -80,8 +80,10 @@ def plot_episodes(path_to_results, path_to_graph, min_agents, max_agents, y_heig
     if exclude_middle_plots and min_agents!=max_agents:
         fig = plt.figure(figsize=(9.5, 9))
     elif exclude_middle_plots:
-        #fig = plt.figure(figsize=(5, 9))
-        fig = plt.figure(figsize=(18, 4))
+        if vertical:
+            fig = plt.figure(figsize=(5, 9)) # Vertical
+        else:
+            fig = plt.figure(figsize=(18, 4)) # Horizontal
     else:
         fig = plt.figure(figsize=(19, 9))
 
@@ -125,13 +127,14 @@ def plot_episodes(path_to_results, path_to_graph, min_agents, max_agents, y_heig
         col_range = range(1, col_max)
 
         for col in col_range:
-            #plot = ((row - 1) * (col_max-1)) + col
-            plot = ((row - 1) * (col_max - 1)) + col
-            plot = ((col - 1) * (len(setups))) + row
+            if vertical:
+                plot = ((row - 1) * (col_max-1)) + col # Vertical
+            else:
+                plot = ((col - 1) * (len(setups))) + row # Horizontal
 
             setup = setups[row-1]
-            #ax = fig.add_subplot(len(setups), col_max - 1, plot)#, sharey=True)#, sharex=True)
-            ax = fig.add_subplot(col_max - 1, len(setups),  plot)
+            ax = fig.add_subplot(len(setups), col_max - 1, plot)#, sharey=True, sharex=True)
+            #ax = fig.add_subplot(col_max - 1, len(setups),  plot)
 
             if exclude_middle_plots and col == 2:
                 num_agents = max_agents
@@ -177,30 +180,34 @@ def plot_episodes(path_to_results, path_to_graph, min_agents, max_agents, y_heig
 
             ax.set_ylim(-2000, y_height)
 
-            #if col==1:
+            if vertical:
+                if row != len(setups):
+                    ax.set_xticklabels([])
+                else:
+                    plt.setp(ax.get_xticklabels(), fontsize=tick_font)
+                    ax.set_xlabel("Evolutionary run \n(sorted by mean fitness)", fontsize=label_font)
 
-            plt.setp(ax.get_xticklabels(), fontsize=tick_font)
+                if col == 1:
+                    ax.set_ylabel("Fitness per Agent", fontsize=label_font, x=title_padding)
+                    plt.setp(ax.get_yticklabels(), fontsize=tick_font)
 
-            #if row==(len(setups)):
-
-
-            #else:
-            #    ax.set_xticklabels([])
-
-            if row != 1:
-                ax.set_yticklabels([])
+                else:
+                    ax.set_yticklabels([])
 
             else:
-                ax.set_ylabel("Fitness per Agent", fontsize=label_font, x=title_padding)
+                if row != 1:
+                    ax.set_yticklabels([])
 
-            ax.set_xlabel("Evolutionary Run Number", fontsize=label_font)
-
-            plt.setp(ax.get_yticklabels(), fontsize=tick_font)
+                else:
+                    ax.set_ylabel("Fitness per Agent", fontsize=label_font, x=title_padding)
 
             ax.set_title(plot_name, fontsize=title_font, y=title_padding)
 
     #fig.colorbar(m)
-    plt.tight_layout(pad=1.5)
+    if vertical:
+        plt.tight_layout(pad=2)
+    else:
+        plt.tight_layout(pad=1.5)
     #plt.suptitle("Performance Across Episodes", fontsize=suptitle_font, y=suptitle_padding)
     plt.savefig(path_to_graph)
 
