@@ -224,12 +224,12 @@ def get_payoff(team, all=False):
             # How many columns are available for a specialist pair when j-1 Droppers and Collectors have already paired up
             # e.g. If the arena is 8-wide and one pair have matched up, 7 columns are available
             original_available_spaces = arena_width - num_generalists
-            available_spaces = [original_available_spaces, original_available_spaces] + [j for j in range(original_available_spaces, original_available_spaces-num_droppers-1, -1)]
+            available_spaces = [original_available_spaces] + [j for j in range(original_available_spaces, original_available_spaces-num_spec_pairs-1, -1)]
 
             total_probability = 0
 
             for i in range(1, num_spec_pairs+1):
-                total_probability += pair_alignment_probability * (base_arena_width/available_spaces[0]) * (available_spaces[i-1]/available_spaces[i]) * (num_droppers-i+1)
+                total_probability += pair_alignment_probability * (base_arena_width/available_spaces[0]) * (available_spaces[i-1]/available_spaces[i]) * (num_spec_pairs-i+1)
 
             payoff_from_specialists = (total_probability * specialist_reward) / num_agents
 
@@ -936,9 +936,9 @@ if __name__ == "__main__":
     #plot_trend(parameter_dictionary, [0.85, 0.05, 0.05, 0.05], path)
     #plot_trend(parameter_dictionary, [0.7, 0.2, 0.05, 0.05], path)
 
-    plot_trend(parameter_dictionary, [0.5, 0.1, 0.2, 0.2], path)
+    #plot_trend(parameter_dictionary, [0.91, 0.0, 0.05, 0.05], path)
 
-    #plot_distribution_frequency(parameter_dictionary, path)
+    plot_distribution_frequency(parameter_dictionary, path)
     #plot_distribution_frequency(parameter_dictionary, path, plot_type="slopes")
     #plot_distribution_frequency(parameter_dictionary, path, plot_type="agents")
 
@@ -984,6 +984,11 @@ if __name__ == "__main__":
     print(f"Optimal = {e}")'''
 
     #plot_price_of_anarchy(parameter_dictionary, path, use_payoff=True)
+
+    generate_constants(parameter_dictionary, team_size=4, slope=8)
+    print(get_fitnesses([0.0, 0.0, 0.5, 0.5]))
+    #print(get_payoff(tuple(["Dropper", "Dropper", "Collector", "Dropper"])))
+    #print(get_payoff(tuple(["Collector", "Dropper", "Collector", "Dropper"])))
 
 
 
