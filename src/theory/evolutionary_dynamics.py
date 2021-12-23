@@ -23,6 +23,8 @@ import cma
 import time
 import bisect
 import sys
+import cProfile
+import re
 
 from scipy.optimize import differential_evolution
 from scipy.optimize import minimize
@@ -35,6 +37,8 @@ from itertools import combinations_with_replacement
 from io import StringIO
 
 strategies = ["Novice", "Generalist", "Dropper", "Collector"]
+sorted_strategies = strategies[:]
+sorted_strategies.sort()
 strategy_id = {"Novice": 0, "Generalist": 1, "Dropper": 2, "Collector": 3}
 distribution_name = {"[0.0 1.0 0.0 0.0]": "Selfish Equilibrium",
                      "[0.0 0.0 0.5 0.5]": "Cooperative Equilibrium"}
@@ -54,13 +58,15 @@ slope_list = [i for i in range(9)]
 team_list = [i for i in range(2, 9)]
 random_state = None
 distribution_precision = 2  # Number of decimal places when expressing the proportion of each strategy in the population
+factorial_list = None
+multinomial_coefficient_list = {}
 
 # Formatting
-suptitle_font = 40
-title_font = 30
-label_font = 26
-tick_font = 20
-legend_font = 20
+suptitle_font = 55
+title_font = 45
+label_font = 40
+tick_font = 35
+legend_font = 35
 label_padding = 1.08
 linewidth = 5
 markersize = 17
@@ -125,6 +131,12 @@ def generate_constants(parameter_dictionary, team_size=None, slope=None):
     global combos
     global random_state
     global payoff_dict
+    global pair_alignment_probability
+    global base_arena_width
+    global arena_width
+    #global total_alignment_probability
+    global factorial_list
+    global multinomial_coefficient_list
 
     if slope is None:
         slope = parameter_dictionary["default_slope"]
@@ -147,14 +159,37 @@ def generate_constants(parameter_dictionary, team_size=None, slope=None):
         num_agents = team_size
 
     generalist_reward = parameter_dictionary["generalist_reward"]
-    specialist_reward = parameter_dictionary["specialist_base_reward"] * slope
 
-    sorted_strategies = strategies[:]
-    sorted_strategies.sort()
+    slope_saturation_point = parameter_dictionary["slope_saturation_point"]
+
+    if slope >= slope_saturation_point:
+        specialist_reward = parameter_dictionary["specialist_reward_high"]
+    elif 0 < slope < slope_saturation_point:
+        specialist_reward = parameter_dictionary["specialist_reward_low"]
+    elif slope == 0:
+        specialist_reward = 0
+    else:
+        raise RuntimeError("Slope must be greater than 0")
+
+    #pair_alignment_probability = 1 / (num_agents * 2)
+    pair_alignment_probability = parameter_dictionary["pair_alignment_probability"]
+    #total_alignment_probability = parameter_dictionary["total_alignment_probability"]
+
+    base_arena_width = parameter_dictionary["base_arena_width"]
+    arena_width = base_arena_width * num_agents // 2  # Arena width scales linearly with the number of pairs of agents
 
     combos = list(combinations_with_replacement(sorted_strategies, num_agents-1))
     random_state = parameter_dictionary["random_state"]
     payoff_dict = {}
+
+    factorial_list = [1 for _ in range(num_agents)]
+
+    for i in range(2, num_agents):
+        factorial_list[i] = i * factorial_list[i-1]
+
+    for combo in combos:
+        multinomial_coefficient_list[combo] = multinomial_coefficient(combo)
+
 
     return
 
@@ -179,7 +214,24 @@ def get_payoff(team, all=False):
     payoff_from_generalists = (num_generalists * generalist_reward) / num_agents
 
     if num_collectors != 0:
-        payoff_from_specialists = (num_spec_pairs * specialist_reward) / num_agents
+        # payoff_from_specialists = (num_spec_pairs * specialist_reward) * (num_spec_pairs * pair_alignment_probability) / num_agents
+        # payoff_from_specialists = num_spec_pairs * specialist_reward * total_alignment_probability / num_agents
+
+        if pair_alignment_probability == 1.0:
+            payoff_from_specialists = (num_spec_pairs * specialist_reward) / num_agents
+
+        else:
+            # How many columns are available for a specialist pair when j-1 Droppers and Collectors have already paired up
+            # e.g. If the arena is 8-wide and one pair have matched up, 7 columns are available
+            original_available_spaces = arena_width - num_generalists
+            available_spaces = [original_available_spaces, original_available_spaces] + [j for j in range(original_available_spaces, original_available_spaces-num_droppers-1, -1)]
+
+            total_probability = 0
+
+            for i in range(1, num_spec_pairs+1):
+                total_probability += pair_alignment_probability * (base_arena_width/available_spaces[0]) * (available_spaces[i-1]/available_spaces[i]) * (num_droppers-i+1)
+
+            payoff_from_specialists = (total_probability * specialist_reward) / num_agents
 
     else:
         payoff_from_specialists = 0
@@ -260,19 +312,21 @@ def multinomial_coefficient(combo):
     """
     n = len(combo)
     denominator = 1
-    unique_strategies = {}
+    unique_strategies = {"Novice": 0,
+                         "Generalist": 0,
+                         "Dropper": 0,
+                         "Collector": 0}
 
     for agent_strategy in combo:
-        if agent_strategy in unique_strategies:
-            unique_strategies[agent_strategy] += 1
-        else:
-            unique_strategies[agent_strategy] = 1
+        unique_strategies[agent_strategy] += 1
 
     for key in unique_strategies:
-        denominator *= math.factorial(unique_strategies[key])
+        #denominator *= math.factorial(unique_strategies[key])
+        denominator *= factorial_list[unique_strategies[key]]
 
     # TODO: Can this be more efficient?
-    return math.factorial(n) // denominator
+    #return math.factorial(n) // denominator
+    return factorial_list[n] // denominator
 
 
 def get_probability_of_teammate_combo(teammate_combo, probability_of_strategies):
@@ -288,7 +342,8 @@ def get_probability_of_teammate_combo(teammate_combo, probability_of_strategies)
     for strategy in teammate_combo:
         product *= probability_of_strategies[strategy_id[strategy]]
 
-    return product * multinomial_coefficient(teammate_combo)
+    #return product * multinomial_coefficient(teammate_combo)
+    return product * multinomial_coefficient_list[teammate_combo]
 
 
 def get_fitnesses(P):
@@ -650,7 +705,7 @@ def plot_trend(parameter_dictionary, P0, path):
     plt.legend(loc='best')
     filename = f"Trend_{str(P0)}.pdf"
     plt.savefig(os.path.join(path, filename))
-    # plt.show()
+    #plt.show()
 
 
 def get_distribution_frequency(parameter_dictionary, team_size=None, slope=None):
@@ -685,9 +740,18 @@ def plot_distribution_frequency(parameter_dictionary, path, plot_type=None, team
         distribution_dictionary = get_distribution_frequency(parameter_dictionary, team_size, slope)
 
         for i, key in enumerate(distribution_dictionary):
-            label_name = distribution_name[key]
-            colour = equilibrium_colour[label_name]
+            if key in distribution_name:
+                label_name = distribution_name[key]
+                colour = equilibrium_colour[label_name]
+            else:
+                label_name = key
+                colour = 'Black'
+                distribution_name[key] = key
+                equilibrium_colour[key] = colour
+                print(label_name)
+
             ax.bar(i, distribution_dictionary[key], color=colour)
+
 
         ax.set_xticks(np.arange(len(distribution_dictionary.keys())))
         ax.set_xticklabels([distribution_name[key] for key in distribution_dictionary.keys()], fontsize=tick_font)
@@ -699,7 +763,7 @@ def plot_distribution_frequency(parameter_dictionary, path, plot_type=None, team
             tick.label.set_fontsize(tick_font)
 
         #ax.legend(loc='best', fontsize=legend_font)
-        filename = f"Distribution_Frequency_agents={team_size}_slope={slope}.pdf"
+        filename = f"Distribution_Frequency_agents={team_size}_slope={slope}_{pair_alignment_probability}.pdf"
         plt.savefig(os.path.join(path, filename))
         #plt.show()
 
@@ -759,8 +823,15 @@ def plot_distribution_frequency(parameter_dictionary, path, plot_type=None, team
             distribution_dictionary = get_distribution_frequency(parameter_dictionary, team_size=n, slope=slope)
 
             for j, key in enumerate(distribution_dictionary):
-                label_name = distribution_name[key]
-                colour = equilibrium_colour[label_name]
+                if key in distribution_name:
+                    label_name = distribution_name[key]
+                    colour = equilibrium_colour[label_name]
+                else:
+                    label_name = key
+                    colour = 'Black'
+                    distribution_name[key] = key
+                    equilibrium_colour[key] = colour
+
                 ax.bar(j, distribution_dictionary[key], label=label_name, color=colour)
 
             ax.set_xticks(np.arange(len(distribution_dictionary.keys())))
@@ -849,9 +920,23 @@ if __name__ == "__main__":
 
     path = "/".join([el for el in parameter_file.split("/")[:-1]]) + "/analysis"
 
-    plot_trend(parameter_dictionary, [0.925, 0.25, 0.25, 0.25], path)
+    # Investigating how quickly the distribution changes
+    '''generate_constants(parameter_dictionary)
+    change = get_change([0.925, 0.025, 0.025, 0.025])
+    print(change)'''
+
+    # Profiling
+    #profiling_file = os.path.join(path, "profiling_v2_dynamic_programming.csv")
+    #cProfile.run('plot_distribution_frequency(parameter_dictionary, path)', profiling_file, 1)
+    #p = pstats.Stats(profiling_file)
+    #p.sort_stats('cumtime').print_stats(20)
+    #p.sort_stats('tottime').print_stats(20)
+
+    #plot_trend(parameter_dictionary, [0.97, 0.01, 0.01, 0.01], path)
     #plot_trend(parameter_dictionary, [0.85, 0.05, 0.05, 0.05], path)
     #plot_trend(parameter_dictionary, [0.7, 0.2, 0.05, 0.05], path)
+
+    plot_trend(parameter_dictionary, [0.5, 0.1, 0.2, 0.2], path)
 
     #plot_distribution_frequency(parameter_dictionary, path)
     #plot_distribution_frequency(parameter_dictionary, path, plot_type="slopes")
