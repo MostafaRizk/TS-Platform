@@ -35,6 +35,7 @@ from functools import partial
 from scipy.stats import dirichlet
 from itertools import combinations_with_replacement
 from io import StringIO
+from matplotlib.ticker import PercentFormatter
 
 strategies = ["Novice", "Generalist", "Dropper", "Collector"]
 sorted_strategies = strategies[:]
@@ -54,7 +55,7 @@ num_agents = 0
 generalist_reward = None  # The reward (i.e. resources retrieved) for an individual generalist
 specialist_reward = None  # The reward for a dropper and collector pair together
 combos = None  # Sorted list of possible strategy combinations for num_agents-1 agents
-slope_list = [i for i in range(9)]
+slope_list = [0, 4, 8]
 team_list = [i for i in range(2, 9)]
 random_state = None
 distribution_precision = 2  # Number of decimal places when expressing the proportion of each strategy in the population
@@ -83,15 +84,21 @@ for slope in slope_list:
     prices_of_anarchy[slope] = temp_dict
 
 
-def sample_distributions(num_samples=1000):
+def sample_distributions(num_samples=1000, subset_of_population=False):
     """
     Sample a bunch of initial distributions. Each sample is an array of floats summing to 1. Each float represents the
-    proportion of the population that uses that particular strategy.
+    proportion of the population that uses that particular strategy. If a portion of the population is pre-set to
+    Novice (subset_of_population=True) then only sample the remaining strategies
 
     @param num_samples: Number of distributions to sample
+    @param subset_of_population: If true, sample all strategies except Novice
     @return: List of lists of distributions
     """
-    num_strategies = len(strategies)
+    if subset_of_population:
+        num_strategies = len(strategies) - 1
+    else:
+        num_strategies = len(strategies)
+
     sample_format = np.ones(num_strategies)
     return dirichlet.rvs(size=num_samples, alpha=sample_format, random_state=random_state)
 
@@ -115,7 +122,7 @@ def theta(s):
         return 0
 
 
-def generate_constants(parameter_dictionary, team_size=None, slope=None):
+def generate_constants(parameter_dictionary, team_size=None, slope=None, alignment_probability=None):
     """
     Use the given parameters to generate the rewards and costs of each strategy.
 
@@ -172,7 +179,10 @@ def generate_constants(parameter_dictionary, team_size=None, slope=None):
         raise RuntimeError("Slope must be greater than 0")
 
     #pair_alignment_probability = 1 / (num_agents * 2)
-    pair_alignment_probability = parameter_dictionary["pair_alignment_probability"]
+    if alignment_probability is None:
+        pair_alignment_probability = parameter_dictionary["pair_alignment_probability"]
+    else:
+        pair_alignment_probability = alignment_probability
     #total_alignment_probability = parameter_dictionary["total_alignment_probability"]
 
     base_arena_width = parameter_dictionary["base_arena_width"]
@@ -422,9 +432,18 @@ def get_many_final_distributions(parameter_dictionary):
     total_time = parameter_dictionary["total_time"]
     intervals = parameter_dictionary["intervals"]
     num_samples = parameter_dictionary["num_samples"]
+    proportion_of_novices = parameter_dictionary["proportion_of_novices"]
 
     t = np.linspace(0, total_time, intervals)
-    initial_distributions = sample_distributions(num_samples)
+
+    if 0.0 <= proportion_of_novices < 1.0:
+        subset_distributions = (1.0 - proportion_of_novices) * sample_distributions(num_samples, subset_of_population=True)
+        novice_list = proportion_of_novices * np.ones(num_samples).reshape(num_samples, 1)
+        initial_distributions = np.concatenate((novice_list, subset_distributions), axis=1)
+
+    else:
+        initial_distributions = sample_distributions(num_samples)
+
     final_distributions = [None] * num_samples
 
     for index in range(len(initial_distributions)):
@@ -708,14 +727,14 @@ def plot_trend(parameter_dictionary, P0, path):
     #plt.show()
 
 
-def get_distribution_frequency(parameter_dictionary, team_size=None, slope=None):
+def get_distribution_frequency(parameter_dictionary, team_size=None, slope=None, alignment_probability=None):
     if team_size is None:
         team_size = parameter_dictionary["default_num_agents"]
 
     if slope is None:
         slope = parameter_dictionary["default_slope"]
 
-    generate_constants(parameter_dictionary, team_size, slope)
+    generate_constants(parameter_dictionary, team_size, slope, alignment_probability)
     final_distributions = get_many_final_distributions(parameter_dictionary)
     distribution_dictionary = {}
 
@@ -737,7 +756,10 @@ def plot_distribution_frequency(parameter_dictionary, path, plot_type=None, team
             team_size = parameter_dictionary["default_num_agents"]
         if slope is None:
             slope = parameter_dictionary["default_slope"]
+
         distribution_dictionary = get_distribution_frequency(parameter_dictionary, team_size, slope)
+        proportion_of_novices = parameter_dictionary["proportion_of_novices"]
+        total_samples = parameter_dictionary["num_samples"]
 
         for i, key in enumerate(distribution_dictionary):
             if key in distribution_name:
@@ -750,20 +772,21 @@ def plot_distribution_frequency(parameter_dictionary, path, plot_type=None, team
                 equilibrium_colour[key] = colour
                 print(label_name)
 
-            ax.bar(i, distribution_dictionary[key], color=colour)
-
+            ax.bar(i, distribution_dictionary[key]/total_samples, color=colour)
+            print(distribution_dictionary[key]/total_samples * 100)
 
         ax.set_xticks(np.arange(len(distribution_dictionary.keys())))
         ax.set_xticklabels([distribution_name[key] for key in distribution_dictionary.keys()], fontsize=tick_font)
         ax.set_title("Frequency of Convergence to Nash Equilibria", fontsize=title_font, y=label_padding)
         ax.set_ylabel("Number of \n Distributions", fontsize=label_font)
         ax.set_xlabel("Nash Equilibria", fontsize=label_font)
+        plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
 
         for tick in ax.yaxis.get_major_ticks():
             tick.label.set_fontsize(tick_font)
 
         #ax.legend(loc='best', fontsize=legend_font)
-        filename = f"Distribution_Frequency_agents={team_size}_slope={slope}_{pair_alignment_probability}.pdf"
+        filename = f"Distribution_Frequency_agents={team_size}_slope={slope}_{pair_alignment_probability}_novices={proportion_of_novices}.pdf"
         plt.savefig(os.path.join(path, filename))
         #plt.show()
 
@@ -849,6 +872,56 @@ def plot_distribution_frequency(parameter_dictionary, path, plot_type=None, team
             plt.savefig(os.path.join(path, filename))
 
 
+def get_alignment_vs_frequency(parameter_dictionary, path, team_size=None, slope=None):
+    total_samples = parameter_dictionary["num_samples"]
+
+    coop_values = [None] * 20
+    alignment_probabilities = np.linspace(0, 100, 20)
+    alignment_probabilities /= 100
+
+    for i, alignment_probability in enumerate(alignment_probabilities):
+        distribution_dictionary = get_distribution_frequency(parameter_dictionary, team_size, slope, alignment_probability)
+
+        coop_count = 0
+        selfish_count = 0
+
+        for j, key in enumerate(distribution_dictionary):
+            if key in distribution_name and distribution_name[key] == "Cooperative Equilibrium":
+                coop_count += distribution_dictionary[key]
+
+            elif key in distribution_name and distribution_name[key] == "Selfish Equilibrium":
+                selfish_count += distribution_dictionary[key]
+
+            else:
+                raise RuntimeError("Unknown Equilibrium")
+
+        coop_values[i] = coop_count/total_samples
+        print(coop_values[i])
+
+    fig, ax = plt.subplots(figsize=(30, 15))
+    ax.plot(alignment_probabilities, coop_values, marker='o', markersize=markersize, linewidth=linewidth)
+
+    ax.set_title("Impact of Alignment Probability on Degree of Cooperation", fontsize=title_font, y=label_padding)
+    ax.set_ylabel("Percentage of Cooperative Solutions", fontsize=label_font)
+    ax.set_xlabel("Alignment Probability", fontsize=label_font)
+    plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
+
+    for tick in ax.yaxis.get_major_ticks():
+        tick.label.set_fontsize(tick_font)
+
+    for tick in ax.xaxis.get_major_ticks():
+        tick.label.set_fontsize(tick_font)
+
+    filename = f"Alignment_probability.pdf"
+    plt.savefig(os.path.join(path, filename))
+    # plt.show()
+
+
+
+
+
+
+
 def plot_fitness(parameter_dictionary, path, team_size, slope, plot_name, plot_title):
     generate_constants(parameter_dictionary, team_size=team_size, slope=slope)
     xs = [i/100 for i in range(0, 105, 5)]
@@ -932,7 +1005,8 @@ if __name__ == "__main__":
     #p.sort_stats('cumtime').print_stats(20)
     #p.sort_stats('tottime').print_stats(20)
 
-    #plot_trend(parameter_dictionary, [0.97, 0.01, 0.01, 0.01], path)
+    #plot_trend(parameter_dictionary, [0.91, 0.03, 0.03, 0.03], path)
+    #plot_trend(parameter_dictionary, [0.91, 0.06, 0.015, 0.015], path)
     #plot_trend(parameter_dictionary, [0.85, 0.05, 0.05, 0.05], path)
     #plot_trend(parameter_dictionary, [0.7, 0.2, 0.05, 0.05], path)
 
@@ -941,6 +1015,8 @@ if __name__ == "__main__":
     plot_distribution_frequency(parameter_dictionary, path)
     #plot_distribution_frequency(parameter_dictionary, path, plot_type="slopes")
     #plot_distribution_frequency(parameter_dictionary, path, plot_type="agents")
+
+    #get_alignment_vs_frequency(parameter_dictionary, path)
 
     #plot_fitness(parameter_dictionary, path, team_size=2, slope=8, plot_name="slope_8", plot_title="Fitness vs Strategy Ratio when Slope=8")
     #plot_fitness(parameter_dictionary, path, team_size=2, slope=4, plot_name="slope_4", plot_title="Fitness vs Strategy Ratio when Slope=4")
@@ -985,8 +1061,8 @@ if __name__ == "__main__":
 
     #plot_price_of_anarchy(parameter_dictionary, path, use_payoff=True)
 
-    generate_constants(parameter_dictionary, team_size=4, slope=8)
-    print(get_fitnesses([0.0, 0.0, 0.5, 0.5]))
+    #generate_constants(parameter_dictionary, team_size=4, slope=8)
+    #print(get_fitnesses([0.0, 0.0, 0.5, 0.5]))
     #print(get_payoff(tuple(["Dropper", "Dropper", "Collector", "Dropper"])))
     #print(get_payoff(tuple(["Collector", "Dropper", "Collector", "Dropper"])))
 
