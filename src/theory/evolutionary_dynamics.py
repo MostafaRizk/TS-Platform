@@ -36,6 +36,7 @@ from scipy.stats import dirichlet
 from itertools import combinations_with_replacement
 from io import StringIO
 from matplotlib.ticker import PercentFormatter
+from helpers import egtsimplex
 
 strategies = ["Novice", "Generalist", "Dropper", "Collector"]
 sorted_strategies = strategies[:]
@@ -56,11 +57,12 @@ generalist_reward = None  # The reward (i.e. resources retrieved) for an individ
 specialist_reward = None  # The reward for a dropper and collector pair together
 combos = None  # Sorted list of possible strategy combinations for num_agents-1 agents
 slope_list = [0, 4, 8]
-team_list = [i for i in range(2, 9)]
+team_list = [i for i in range(2, 10, 2)]
 random_state = None
 distribution_precision = 2  # Number of decimal places when expressing the proportion of each strategy in the population
 factorial_list = None
 multinomial_coefficient_list = {}
+partial_cooperation = None
 
 # Formatting
 suptitle_font = 55
@@ -122,7 +124,7 @@ def theta(s):
         return 0
 
 
-def generate_constants(parameter_dictionary, team_size=None, slope=None, alignment_probability=None):
+def generate_constants(parameter_dictionary, team_size=None, slope=None, alignment_probability=None, partial=None):
     """
     Use the given parameters to generate the rewards and costs of each strategy.
 
@@ -144,6 +146,7 @@ def generate_constants(parameter_dictionary, team_size=None, slope=None, alignme
     #global total_alignment_probability
     global factorial_list
     global multinomial_coefficient_list
+    global partial_cooperation
 
     if slope is None:
         slope = parameter_dictionary["default_slope"]
@@ -200,6 +203,21 @@ def generate_constants(parameter_dictionary, team_size=None, slope=None, alignme
     for combo in combos:
         multinomial_coefficient_list[combo] = multinomial_coefficient(combo)
 
+    if partial is None:
+        partial_cooperation = parameter_dictionary["partial_cooperation"]
+
+        if partial_cooperation == "True":
+            partial_cooperation = True
+
+        elif partial_cooperation == "False":
+            partial_cooperation = False
+
+        else:
+            raise RuntimeError("Invalid setting for parameter: partial_cooperation")
+
+    else:
+        partial_cooperation = partial
+
 
     return
 
@@ -228,7 +246,11 @@ def get_payoff(team, all=False):
         # payoff_from_specialists = num_spec_pairs * specialist_reward * total_alignment_probability / num_agents
 
         if pair_alignment_probability == 1.0:
-            payoff_from_specialists = (num_spec_pairs * specialist_reward) / num_agents
+            if partial_cooperation or (num_spec_pairs == num_agents//2):
+                payoff_from_specialists = (num_spec_pairs * specialist_reward) / num_agents
+
+            else:
+                payoff_from_specialists = 0
 
         else:
             # How many columns are available for a specialist pair when j-1 Droppers and Collectors have already paired up
@@ -406,6 +428,40 @@ def get_change(P, t=0):
         P[2] * (f_dropper - f_avg),
         P[3] * (f_collector - f_avg)
     ])
+
+
+def get_change_simplex(P, t=0):
+    """
+    Same as get_change but P is a vector of 3 strategies (all except Novices).
+    It calls the normal get_change assuming that the number of Novices is defined in the parameter file
+    @param P:
+    @param t:
+    @return:
+    """
+
+    proportion_of_novices = parameter_dictionary["proportion_of_novices"]
+
+    if proportion_of_novices != 0.0:
+        new_P = np.concatenate(([proportion_of_novices], (1.0 - proportion_of_novices) * P))
+        results = get_change(new_P, t)
+        return results[1:] / (1.0 - results[0])
+
+    else:
+        new_P = np.concatenate(([0],P))
+        return get_change(new_P, t)[1:]
+
+
+def plot_simplex(parameter_dictionary, team_size=None):
+    if team_size is None:
+        team_size = parameter_dictionary["default_num_agents"]
+
+    generate_constants(parameter_dictionary, team_size=team_size, slope=parameter_dictionary["default_slope"])
+    dynamics = egtsimplex.simplex_dynamics(get_change_simplex)
+
+    # plot the simplex dynamics
+    fig, ax = plt.subplots()
+    dynamics.plot_simplex(ax, typelabels=["Generalist", "Dropper", "Collector"])
+    plt.show()
 
 
 def get_distribution_history(parameter_dictionary, P0):
@@ -727,12 +783,24 @@ def plot_trend(parameter_dictionary, P0, path):
     #plt.show()
 
 
-def get_distribution_frequency(parameter_dictionary, team_size=None, slope=None, alignment_probability=None):
+def get_distribution_frequency(parameter_dictionary, team_size=None, slope=None, alignment_probability=None, partial_cooperation=None):
     if team_size is None:
         team_size = parameter_dictionary["default_num_agents"]
 
     if slope is None:
         slope = parameter_dictionary["default_slope"]
+
+    if partial_cooperation is None:
+        partial_cooperation = parameter_dictionary["partial_cooperation"]
+
+        if partial_cooperation == "True":
+            partial_cooperation = True
+
+        elif partial_cooperation == "False":
+            partial_cooperation = False
+
+        else:
+            raise RuntimeError("Invalid setting for parameter: partial_cooperation")
 
     generate_constants(parameter_dictionary, team_size, slope, alignment_probability)
     final_distributions = get_many_final_distributions(parameter_dictionary)
@@ -749,7 +817,9 @@ def get_distribution_frequency(parameter_dictionary, team_size=None, slope=None,
     return distribution_dictionary
 
 
-def plot_distribution_frequency(parameter_dictionary, path, plot_type=None, team_size=None, slope=None):
+def plot_distribution_frequency(parameter_dictionary, path, plot_type=None, team_size=None, slope=None, partial_cooperation=None):
+    total_samples = parameter_dictionary["num_samples"]
+
     if not plot_type:
         fig, ax = plt.subplots(figsize=(30, 15))
         if team_size is None:
@@ -828,48 +898,58 @@ def plot_distribution_frequency(parameter_dictionary, path, plot_type=None, team
             plt.savefig(os.path.join(path, filename))
 
     elif plot_type == "agents":
-        cols = 3
-
         # Make plots varying team size but holding slope constant (for each slope)
-        rows = math.ceil(len(slope_list) / cols)
-        fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30, 15))
-        fig.suptitle("Convergence to Nash Equilibria vs Team Size")
+        fig, ax = plt.subplots(figsize=(30, 15))
 
         if slope is None:
             slope = parameter_dictionary["default_slope"]
 
+        if partial_cooperation is None:
+            partial_cooperation = parameter_dictionary["partial_cooperation"]
+
+            if partial_cooperation == "True":
+                partial_cooperation = True
+
+            elif partial_cooperation == "False":
+                partial_cooperation = False
+
+            else:
+                raise RuntimeError("Invalid setting for parameter: partial_cooperation")
+
+        cooperation_rates = [None] * len(team_list)
+
         for i, n in enumerate(team_list):
             print(f"Team Size: {n}")
-            row_id = i // rows
-            col_id = i % cols
-            ax = axs[row_id][col_id]
-            distribution_dictionary = get_distribution_frequency(parameter_dictionary, team_size=n, slope=slope)
+            distribution_dictionary = get_distribution_frequency(parameter_dictionary, team_size=n, slope=slope, partial_cooperation=partial_cooperation)
+
+            coop_count = 0
+            selfish_count = 0
 
             for j, key in enumerate(distribution_dictionary):
-                if key in distribution_name:
-                    label_name = distribution_name[key]
-                    colour = equilibrium_colour[label_name]
+                if key in distribution_name and distribution_name[key] == "Cooperative Equilibrium":
+                    coop_count += distribution_dictionary[key]
+
+                elif key in distribution_name and distribution_name[key] == "Selfish Equilibrium":
+                    selfish_count += distribution_dictionary[key]
+
                 else:
-                    label_name = key
-                    colour = 'Black'
-                    distribution_name[key] = key
-                    equilibrium_colour[key] = colour
+                    raise RuntimeError("Unknown Equilibrium")
 
-                ax.bar(j, distribution_dictionary[key], label=label_name, color=colour)
+            cooperation_rates[i] = coop_count / total_samples
 
-            ax.set_xticks(np.arange(len(distribution_dictionary.keys())))
-            ax.set_xticklabels([distribution_name[key] for key in distribution_dictionary.keys()], fontsize=tick_font)
-            ax.set_title(f"{n} Agents", fontsize=title_font, y=label_padding)
-            ax.set_ylabel("Number of \n Distributions", fontsize=label_font)
-            ax.set_xlabel("Nash Equilibria", fontsize=label_font)
+        plt.plot(team_list, cooperation_rates, marker='o', markersize=markersize, linewidth=linewidth)
 
-            for tick in ax.yaxis.get_major_ticks():
-                tick.label.set_fontsize(tick_font)
+        #ax.set_xticklabels(team_list)
+        plt.setp(ax.get_xticklabels(), fontsize=tick_font)
+        plt.setp(ax.get_yticklabels(), fontsize=tick_font)
 
-            #ax.legend(loc='best', fontsize=legend_font)
-            ax.label_outer()
-            filename = f"Distribution_Frequency_slope={slope}_all_team_sizes.pdf"
-            plt.savefig(os.path.join(path, filename))
+        ax.set_title("Frequency of Cooperation vs Team Size", fontsize=title_font, y=label_padding)
+        ax.set_ylabel("Frequency of Cooperation", fontsize=label_font)
+        ax.set_xlabel("Team Size", fontsize=label_font)
+        plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
+
+        filename = f"Distribution_Frequency_slope={slope}_all_team_sizes_partial={partial_cooperation}.pdf"
+        plt.savefig(os.path.join(path, filename))
 
 
 def get_alignment_vs_frequency(parameter_dictionary, path, team_size=None, slope=None):
@@ -917,11 +997,6 @@ def get_alignment_vs_frequency(parameter_dictionary, path, team_size=None, slope
     # plt.show()
 
 
-
-
-
-
-
 def plot_fitness(parameter_dictionary, path, team_size, slope, plot_name, plot_title):
     generate_constants(parameter_dictionary, team_size=team_size, slope=slope)
     xs = [i/100 for i in range(0, 105, 5)]
@@ -961,6 +1036,7 @@ def plot_fitness(parameter_dictionary, path, team_size, slope, plot_name, plot_t
     # Store fitnesses in a list
     # Plot each list
 
+
 def plot_probability(parameter_dictionary, path, slope, population_distribution):
     probs = [None] * len(team_list)
 
@@ -984,6 +1060,35 @@ def plot_probability(parameter_dictionary, path, slope, population_distribution)
     plt.savefig(os.path.join(path, filename))
 
 
+def plot_payoff_vs_agents(parameter_dictionary, path, max_team_size, alignment_probability, slope=None):
+    payoff_list = [None] * (max_team_size//2)
+    parameter_dictionary["pair_alignment_probability"] = alignment_probability
+
+    for i in range(1, max_team_size//2 + 1):
+        generate_constants(parameter_dictionary, team_size=i*2, slope=slope)
+        team = tuple(["Dropper"] * i + ["Collector"] * i)
+        payoff_list[i-1] = get_payoff(team=team, all=True) / (i*2)
+
+    fig, ax = plt.subplots(figsize=(16, 8))
+    xs = [x for x in range(2, max_team_size + 2, 2)]
+    plt.plot(xs, payoff_list, marker='o', markersize=markersize-2, linewidth=linewidth)
+    #ax.set_xlim(xs[0], xs[-1])
+    plt.setp(ax.get_xticklabels(), fontsize=tick_font-20)
+    plt.setp(ax.get_yticklabels(), fontsize=tick_font-20)
+    ax.set_ylim(0, 25000)
+
+    if alignment_probability != 1.0:
+        ax.set_title("Scalability of Performance When Agents Fail to Coordinate", fontsize=title_font-20)
+    else:
+        ax.set_title("Scalability of Performance When Agents Always Coordinate", fontsize=title_font-20)
+
+    ax.set_xlabel("Team Size", fontsize=label_font-20)
+    ax.set_ylabel("Payoff per Agent", fontsize=label_font-20)
+    filename = f"payoff_vs_agents_{pair_alignment_probability}.pdf"
+    plt.savefig(os.path.join(path, filename))
+    #plt.show()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Plot evolutionary dynamics')
     parser.add_argument('--parameters', action="store", dest="parameters")
@@ -992,11 +1097,6 @@ if __name__ == "__main__":
     parameter_dictionary = json.loads(open(parameter_file).read())
 
     path = "/".join([el for el in parameter_file.split("/")[:-1]]) + "/analysis"
-
-    # Investigating how quickly the distribution changes
-    '''generate_constants(parameter_dictionary)
-    change = get_change([0.925, 0.025, 0.025, 0.025])
-    print(change)'''
 
     # Profiling
     #profiling_file = os.path.join(path, "profiling_v2_dynamic_programming.csv")
@@ -1007,16 +1107,20 @@ if __name__ == "__main__":
 
     #plot_trend(parameter_dictionary, [0.91, 0.03, 0.03, 0.03], path)
     #plot_trend(parameter_dictionary, [0.91, 0.06, 0.015, 0.015], path)
-    #plot_trend(parameter_dictionary, [0.85, 0.05, 0.05, 0.05], path)
-    #plot_trend(parameter_dictionary, [0.7, 0.2, 0.05, 0.05], path)
 
-    #plot_trend(parameter_dictionary, [0.91, 0.0, 0.05, 0.05], path)
-
-    plot_distribution_frequency(parameter_dictionary, path)
+    #plot_distribution_frequency(parameter_dictionary, path)
     #plot_distribution_frequency(parameter_dictionary, path, plot_type="slopes")
-    #plot_distribution_frequency(parameter_dictionary, path, plot_type="agents")
+    plot_distribution_frequency(parameter_dictionary, path, plot_type="agents")
 
     #get_alignment_vs_frequency(parameter_dictionary, path)
+
+    #plot_simplex(parameter_dictionary)
+
+    #plot_payoff_vs_agents(parameter_dictionary, path, max_team_size=50, alignment_probability=0.9)
+    #plot_payoff_vs_agents(parameter_dictionary, path, max_team_size=50, alignment_probability=1.0)
+
+    #plot_distribution_frequency(parameter_dictionary, path, plot_type="agents", partial_cooperation=False)
+    #plot_simplex(parameter_dictionary, team_size=4)
 
     #plot_fitness(parameter_dictionary, path, team_size=2, slope=8, plot_name="slope_8", plot_title="Fitness vs Strategy Ratio when Slope=8")
     #plot_fitness(parameter_dictionary, path, team_size=2, slope=4, plot_name="slope_4", plot_title="Fitness vs Strategy Ratio when Slope=4")
@@ -1027,44 +1131,6 @@ if __name__ == "__main__":
     #plot_fitness(parameter_dictionary, path, team_size=8, slope=4, plot_name="slope_4_team_8", plot_title="Fitness vs Strategy Ratio when Slope=4 and Team=8")
 
     #plot_price_of_anarchy(parameter_dictionary, path)
-
-    # Why is price of anarchy weird?
-    #plot_distribution_frequency(parameter_dictionary, path, plot_type="agents", slope=2)
-    #plot_fitness(parameter_dictionary, path, team_size=2, slope=2, plot_name="slope_2_team_2", plot_title="Fitness vs Strategy Ratio when Slope=2 and Team size=2")
-    #plot_fitness(parameter_dictionary, path, team_size=3, slope=2, plot_name="slope_2_team_3", plot_title="Fitness vs Strategy Ratio when Slope=2 and Team size=3")
-    #plot_fitness(parameter_dictionary, path, team_size=4, slope=2, plot_name="slope_2_team_4", plot_title="Fitness vs Strategy Ratio when Slope=2 and Team size=4")
-    #plot_fitness(parameter_dictionary, path, team_size=8, slope=2, plot_name="slope_2_team_8", plot_title="Fitness vs Strategy Ratio when Slope=2 and Team size=8")
-
-    '''generate_constants(parameter_dictionary, team_size=3, slope=2)
-    a = get_payoff(('Generalist', 'Generalist', 'Generalist'), all=True)
-    b = get_payoff(('Dropper', 'Collector', 'Generalist'), all=True)
-    c = get_avg_fitness([0.0, 1.0, 0.0, 0.0])
-    d = get_avg_fitness([0.0, 0.33, 0.33, 0.33])
-    e = get_optimal_via_brute_force()
-    print(f"All generalists = {a}")
-    print(f"Mixed = {b}")
-    print(f"Generalist Fitness = {c}")
-    print(f"Mixed Fitness = {d}")
-    print(f"Optimal = {e}")'''
-
-    '''generate_constants(parameter_dictionary, team_size=4, slope=2)
-    a = get_payoff(('Generalist', 'Generalist', 'Generalist', 'Generalist'), all=True)
-    b = get_payoff(('Dropper', 'Collector', 'Dropper', 'Collector'), all=True)
-    c = get_avg_fitness([0.0, 1.0, 0.0, 0.0])
-    d = get_avg_fitness([0.0, 0.0, 0.5, 0.5])
-    e = get_optimal_via_brute_force()
-    print(f"All generalists = {a}")
-    print(f"Cooperator = {b}")
-    print(f"Generalist Fitness = {c}")
-    print(f"Cooperator Fitness = {d}")
-    print(f"Optimal = {e}")'''
-
-    #plot_price_of_anarchy(parameter_dictionary, path, use_payoff=True)
-
-    #generate_constants(parameter_dictionary, team_size=4, slope=8)
-    #print(get_fitnesses([0.0, 0.0, 0.5, 0.5]))
-    #print(get_payoff(tuple(["Dropper", "Dropper", "Collector", "Dropper"])))
-    #print(get_payoff(tuple(["Collector", "Dropper", "Collector", "Dropper"])))
 
 
 
