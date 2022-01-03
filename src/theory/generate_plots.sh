@@ -59,12 +59,13 @@ folder_name=/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_11_09_a_g
 
 #time python3 evolutionary_dynamics.py --parameters $folder_name/price_of_anarchy_a_fitness.json --function plot_price_of_anarchy --args_to_pass fitness
 
-
 # Price of anarchy (Payoff)
 #time python3 evolutionary_dynamics.py --parameters $folder_name/price_of_anarchy_b_payoff.json --function calculate_price_of_anarchy --args_to_pass payoff --num_agents 2 --slope 8
 #time python3 evolutionary_dynamics.py --parameters $folder_name/price_of_anarchy_b_payoff.json --function calculate_price_of_anarchy --args_to_pass payoff --num_agents 4 --slope 8
 #time python3 evolutionary_dynamics.py --parameters $folder_name/price_of_anarchy_b_payoff.json --function calculate_price_of_anarchy --args_to_pass payoff --num_agents 6 --slope 8
 #time python3 evolutionary_dynamics.py --parameters $folder_name/price_of_anarchy_b_payoff.json --function calculate_price_of_anarchy --args_to_pass payoff --num_agents 8 --slope 8
+#time python3 evolutionary_dynamics.py --parameters $folder_name/price_of_anarchy_b_payoff.json --function calculate_price_of_anarchy --args_to_pass payoff --num_agents 10 --slope 8
+#time python3 evolutionary_dynamics.py --parameters $folder_name/price_of_anarchy_b_payoff.json --function calculate_price_of_anarchy --args_to_pass payoff --num_agents 12 --slope 8
 
 #slopes=(0 1 2 3 4 5 6 7 8)
 

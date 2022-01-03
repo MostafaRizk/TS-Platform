@@ -500,12 +500,11 @@ def get_optimal_via_brute_force():
     distribution_fitness = {}
     distribution_fitness['best'] = {'distribution': None,
                                    'score': float('Inf')}
-    mask_1 = [-1, 1, 0, 0]
-    mask_2 = [-1, 0, 1, 0]
-    mask_3 = [-1, 0, 0, 1]
+    mask_1 = [0, -1, 0, 1]
+    mask_2 = [0, -1, 1, 0]
 
     def generate_recursively(strategy_distribution):
-        if strategy_distribution[0] < 0:
+        if strategy_distribution[1] < 0:
             return
 
         key = str(strategy_distribution)
@@ -524,12 +523,8 @@ def get_optimal_via_brute_force():
 
             generate_recursively([strategy_distribution[j] + mask_1[j] for j in range(4)])
             generate_recursively([strategy_distribution[j] + mask_2[j] for j in range(4)])
-            generate_recursively([strategy_distribution[j] + mask_3[j] for j in range(4)])
 
-    generate_recursively([100, 0, 0, 0])
-    #print(distribution_fitness['best'])
-    #print(distribution_fitness['[0, 0, 50, 50]'])
-    #print("Did it work?")
+    generate_recursively([0, 100, 0, 0])
 
     return distribution_fitness['best']['distribution']
 
