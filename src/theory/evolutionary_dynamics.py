@@ -37,6 +37,7 @@ from itertools import combinations_with_replacement
 from io import StringIO
 from matplotlib.ticker import PercentFormatter
 from helpers import egtsimplex
+from glob import glob
 
 strategies = ["Novice", "Generalist", "Dropper", "Collector"]
 sorted_strategies = strategies[:]
@@ -57,7 +58,6 @@ generalist_reward = None  # The reward (i.e. resources retrieved) for an individ
 specialist_reward = None  # The reward for a dropper and collector pair together
 combos = None  # Sorted list of possible strategy combinations for num_agents-1 agents
 slope_list = [0, 4, 8]
-team_list = [i for i in range(2, 10, 2)]
 random_state = None
 distribution_precision = 2  # Number of decimal places when expressing the proportion of each strategy in the population
 factorial_list = None
@@ -73,17 +73,6 @@ legend_font = 35
 label_padding = 1.08
 linewidth = 5
 markersize = 17
-
-prices_of_anarchy = {}
-
-for slope in slope_list:
-
-    temp_dict = {}
-
-    for agent in team_list:
-        temp_dict[agent] = None
-
-    prices_of_anarchy[slope] = temp_dict
 
 
 def sample_distributions(num_samples=1000, subset_of_population=False):
@@ -124,7 +113,7 @@ def theta(s):
         return 0
 
 
-def generate_constants(parameter_dictionary, team_size=None, slope=None, alignment_probability=None, partial=None):
+def generate_constants(parameter_dictionary):
     """
     Use the given parameters to generate the rewards and costs of each strategy.
 
@@ -143,34 +132,32 @@ def generate_constants(parameter_dictionary, team_size=None, slope=None, alignme
     global pair_alignment_probability
     global base_arena_width
     global arena_width
-    #global total_alignment_probability
     global factorial_list
     global multinomial_coefficient_list
     global partial_cooperation
 
-    if slope is None:
-        slope = parameter_dictionary["default_slope"]
-
-    cost["Novice"] = parameter_dictionary["novice_base_cost"] + \
-                     parameter_dictionary["novice_cost_multiplier"] * slope
-
-    cost["Generalist"] = parameter_dictionary["generalist_base_cost"] + \
-                         parameter_dictionary["generalist_cost_multiplier"] * slope
-
-    cost["Dropper"] = parameter_dictionary["dropper_base_cost"] + \
-                      parameter_dictionary["dropper_cost_multiplier"] * slope
-
-    cost["Collector"] = parameter_dictionary["collector_base_cost"] + \
-                        parameter_dictionary["collector_cost_multiplier"] * theta(slope)
-
-    if team_size is None:
-        num_agents = parameter_dictionary["default_num_agents"]
-    else:
-        num_agents = team_size
-
+    slope = parameter_dictionary["default_slope"]
+    num_agents = parameter_dictionary["default_num_agents"]
     generalist_reward = parameter_dictionary["generalist_reward"]
-
     slope_saturation_point = parameter_dictionary["slope_saturation_point"]
+    pair_alignment_probability = parameter_dictionary["pair_alignment_probability"]
+    base_arena_width = parameter_dictionary["base_arena_width"]
+    arena_width = base_arena_width * num_agents // 2  # Arena width scales linearly with the number of pairs of agents
+    partial_cooperation = parameter_dictionary["partial_cooperation"]
+
+    if partial_cooperation == "True":
+        partial_cooperation = True
+
+    elif partial_cooperation == "False":
+        partial_cooperation = False
+
+    else:
+        raise RuntimeError("Invalid setting for parameter: partial_cooperation")
+
+    cost["Novice"] = parameter_dictionary["novice_base_cost"] + parameter_dictionary["novice_cost_multiplier"] * slope
+    cost["Generalist"] = parameter_dictionary["generalist_base_cost"] + parameter_dictionary["generalist_cost_multiplier"] * slope
+    cost["Dropper"] = parameter_dictionary["dropper_base_cost"] + parameter_dictionary["dropper_cost_multiplier"] * slope
+    cost["Collector"] = parameter_dictionary["collector_base_cost"] + parameter_dictionary["collector_cost_multiplier"] * theta(slope)
 
     if slope >= slope_saturation_point:
         specialist_reward = parameter_dictionary["specialist_reward_high"]
@@ -180,16 +167,6 @@ def generate_constants(parameter_dictionary, team_size=None, slope=None, alignme
         specialist_reward = 0
     else:
         raise RuntimeError("Slope must be greater than 0")
-
-    #pair_alignment_probability = 1 / (num_agents * 2)
-    if alignment_probability is None:
-        pair_alignment_probability = parameter_dictionary["pair_alignment_probability"]
-    else:
-        pair_alignment_probability = alignment_probability
-    #total_alignment_probability = parameter_dictionary["total_alignment_probability"]
-
-    base_arena_width = parameter_dictionary["base_arena_width"]
-    arena_width = base_arena_width * num_agents // 2  # Arena width scales linearly with the number of pairs of agents
 
     combos = list(combinations_with_replacement(sorted_strategies, num_agents-1))
     random_state = parameter_dictionary["random_state"]
@@ -202,22 +179,6 @@ def generate_constants(parameter_dictionary, team_size=None, slope=None, alignme
 
     for combo in combos:
         multinomial_coefficient_list[combo] = multinomial_coefficient(combo)
-
-    if partial is None:
-        partial_cooperation = parameter_dictionary["partial_cooperation"]
-
-        if partial_cooperation == "True":
-            partial_cooperation = True
-
-        elif partial_cooperation == "False":
-            partial_cooperation = False
-
-        else:
-            raise RuntimeError("Invalid setting for parameter: partial_cooperation")
-
-    else:
-        partial_cooperation = partial
-
 
     return
 
@@ -492,7 +453,7 @@ def get_many_final_distributions(parameter_dictionary):
 
     t = np.linspace(0, total_time, intervals)
 
-    if 0.0 <= proportion_of_novices < 1.0:
+    if 0.0 <= proportion_of_novices <= 1.0:
         subset_distributions = (1.0 - proportion_of_novices) * sample_distributions(num_samples, subset_of_population=True)
         novice_list = proportion_of_novices * np.ones(num_samples).reshape(num_samples, 1)
         initial_distributions = np.concatenate((novice_list, subset_distributions), axis=1)
@@ -632,132 +593,87 @@ def get_optimal_distribution(parameter_dictionary):
     return final_distribution
 
 
-def calculate_price_of_anarchy(parameter_dictionary, plot_type, axis, use_payoff=False, team_size=None, slope=None):
-    assert None in [team_size, slope], "Can only hold team size or slope size constant. Not both."
-    assert team_size is not None or slope is not None, "Must specify either slope or team size to be held constant"
-    assert ((plot_type=="slopes" and team_size is not None) or (plot_type=="agents" and slope is not None)), "Plot type must match variables"
+def calculate_price_of_anarchy(parameter_dictionary):
+    generate_constants(parameter_dictionary)
+    use_payoff = parameter_dictionary["use_payoff"]
 
-    price_list = []
+    if use_payoff == "True":
+        use_payoff = True
+    elif use_payoff == "False":
+        use_payoff = False
+    else:
+        raise RuntimeError("Invalid value for parameter: use_payoff. Must be True or False")
 
-    if plot_type == "slopes":
-        xs = slope_list
+    if not use_payoff:
+        optimal_distribution = get_optimal_distribution(parameter_dictionary)
+        optimal_fitness = round(-1. * get_avg_fitness(optimal_distribution))
 
-    elif plot_type == "agents":
-        xs = team_list
+    else:
+        optimal_team = None
+        optimal_payoff = float('-Inf')
 
-    for x in xs:
-        print(f'{plot_type}: {x}')
-        if plot_type == "slopes":
-            if prices_of_anarchy[x][team_size]:
-                price_list += [prices_of_anarchy[x][team_size]]
-                continue
+        for strat in strategies:
+            for combo in combos:
+                team = tuple([strat]) + combo
+                team_payoff = get_payoff(team, all=True)
 
-            generate_constants(parameter_dictionary, team_size=team_size, slope=x)
+                if team_payoff > optimal_payoff:
+                    optimal_payoff = team_payoff
+                    optimal_team = team
 
-        elif plot_type == "agents":
-            if prices_of_anarchy[slope][x]:
-                price_list += [prices_of_anarchy[slope][x]]
-                continue
+        optimal_fitness = optimal_payoff
 
-            generate_constants(parameter_dictionary, team_size=x, slope=slope)
+    selfish_distributions = get_many_final_distributions(parameter_dictionary)
+    selfish_fitnesses = -1. * np.array(list(map(round, list(map(get_avg_fitness, selfish_distributions)))))
+    selfish_average = np.mean([selfish_fitness for selfish_fitness in selfish_fitnesses])
+    price_of_anarchy = optimal_fitness / selfish_average
+    print(f"{optimal_fitness} / {selfish_average} = {price_of_anarchy}")
 
-        if not use_payoff:
-            optimal_distribution = get_optimal_distribution(parameter_dictionary)
-            optimal_fitness = round(-1. * get_avg_fitness(optimal_distribution))
-
-        else:
-            optimal_team = None
-            optimal_payoff = float('-Inf')
-
-            for strat in strategies:
-                for combo in combos:
-                    team = tuple([strat]) + combo
-                    team_payoff = get_payoff(team, all=True)
-
-                    if team_payoff > optimal_payoff:
-                        optimal_payoff = team_payoff
-                        optimal_team = team
-
-            optimal_fitness = optimal_payoff
-
-        selfish_distributions = get_many_final_distributions(parameter_dictionary)
-        selfish_fitnesses = -1. * np.array(list(map(round, list(map(get_avg_fitness, selfish_distributions)))))
-        selfish_average = np.mean([selfish_fitness for selfish_fitness in selfish_fitnesses])
-        price_of_anarchy = optimal_fitness / selfish_average
-        price_list += [price_of_anarchy]
-        print(f"{optimal_fitness} / {selfish_average} = {price_of_anarchy}")
-
-        if plot_type == "slopes":
-            prices_of_anarchy[x][team_size] = price_of_anarchy
-
-        elif plot_type == "agents":
-            prices_of_anarchy[slope][x] = price_of_anarchy
-
-    axis.plot(xs, price_list, 'o-', markersize=markersize, linewidth=linewidth, color=blue)
-
-    if plot_type == "slopes":
-        axis.set_title(f"{team_size} Agents", fontsize=title_font)
-        axis.set_xlabel("Slope", fontsize=label_font)
-        axis.set_ylabel("Price of Anarchy", fontsize=label_font)
-        #axis.set(xlabel="Slope", ylabel="Price of Anarchy")
-
-    elif plot_type == "agents":
-        axis.set_title(f"Slope {slope}", fontsize=title_font)
-        axis.set_xlabel("Num Agents", fontsize=label_font)
-        axis.set_ylabel("Price of Anarchy", fontsize=label_font)
-        #axis.set(xlabel="Num Agents", ylabel="Price of Anarchy")
-
-    # filename = parameter_file.split("/")[-1].strip(".json") + "_price_of_anarchy.png"
+    return price_of_anarchy
 
 
-def plot_price_of_anarchy(parameter_dictionary, path, use_payoff=False):
-    cols = 3
+def plot_price_of_anarchy(parameter_dictionary, path, prices):
+    use_payoff = parameter_dictionary["use_payoff"]
+    partial_cooperation = parameter_dictionary["partial_cooperation"]
 
-    # Make plots varying team size but holding slope constant (for each slope)
-    rows = math.ceil(len(slope_list) / cols)
-    fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30, 15))
+    fig, ax = plt.subplots(figsize=(30, 15))
     fig.suptitle("Price of Anarchy vs Team Size", fontsize=suptitle_font)
 
     print("Price of Anarchy vs Team Size")
-    for i, slope in enumerate(slope_list):
-        print(f"Slope {slope}")
-        row_id = i // rows
-        col_id = i % cols
-        calculate_price_of_anarchy(parameter_dictionary, axis=axs[row_id][col_id], plot_type="agents", use_payoff=use_payoff, slope=slope)
-        axs[row_id][col_id].label_outer()
+    slopes = list(prices.keys())
+    slopes.sort()
 
-        for tick in axs[row_id][col_id].xaxis.get_major_ticks():
-            tick.label.set_fontsize(tick_font)
+    for slope in slopes:
+        team_sizes = list(prices[slope].keys())
+        team_sizes.sort()
+        data = [prices[slope][n] for n in team_sizes]
+        ax.plot(team_sizes, data, marker='o', markersize=markersize, linewidth=linewidth, label=f"Slope {slope}")
 
-        for tick in axs[row_id][col_id].yaxis.get_major_ticks():
-            tick.label.set_fontsize(tick_font)
-
-    filename = f"price_of_anarchy_vs_team_size_use_payoff={use_payoff}.pdf"
-    #plt.rcParams.update({'font.size': 18})
+    ax.set_xlabel("Team Size", fontsize=label_font)
+    ax.set_ylabel("Price of Anarchy", fontsize=label_font)
+    ax.set_ylim(0.9, 3.1)
+    plt.setp(ax.get_xticklabels(), fontsize=tick_font)
+    plt.setp(ax.get_yticklabels(), fontsize=tick_font)
+    plt.legend(fontsize=legend_font)
+    filename = f"price_of_anarchy_vs_team_size_use_payoff={use_payoff}_partial={partial_cooperation}.pdf"
     plt.savefig(os.path.join(path, filename))
 
-    # Make plots slope but holding team size constant (for each team size)
-    rows = math.ceil(len(team_list) / cols)
-    fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30, 15))
-    fig.suptitle("Price of Anarchy vs Slope")
+    fig, ax = plt.subplots(figsize=(30, 15))
+    fig.suptitle("Price of Anarchy vs Slope", fontsize=suptitle_font)
 
     print("Price of Anarchy vs Slope")
-    for i, team_size in enumerate(team_list):
-        print(f"Team size {team_size}")
-        row_id = i // rows
-        col_id = i % cols
-        # if team_size == 2:
-        calculate_price_of_anarchy(parameter_dictionary, axis=axs[row_id][col_id], plot_type="slopes", use_payoff=use_payoff, team_size=team_size)
-        axs[row_id][col_id].label_outer()
+    teams = [2]
+    for team in teams:
+        data = [prices[slope][team] for slope in slopes]
+        ax.plot(slopes, data, marker='o', markersize=markersize, linewidth=linewidth, label=f"{team} Agents")
 
-        for tick in axs[row_id][col_id].xaxis.get_major_ticks():
-            tick.label.set_fontsize(tick_font)
-
-        for tick in axs[row_id][col_id].yaxis.get_major_ticks():
-            tick.label.set_fontsize(tick_font)
-
-    filename = f"price_of_anarchy_vs_slope_use_payoff={use_payoff}.pdf"
-    #plt.rcParams.update({'font.size': 18})
+    ax.set_xlabel("Slope", fontsize=label_font)
+    ax.set_ylabel("Price of Anarchy", fontsize=label_font)
+    ax.set_ylim(0.9, 3.1)
+    plt.setp(ax.get_xticklabels(), fontsize=tick_font)
+    plt.setp(ax.get_yticklabels(), fontsize=tick_font)
+    plt.legend(fontsize=legend_font)
+    filename = f"price_of_anarchy_vs_slope_use_payoff={use_payoff}_partial={partial_cooperation}.pdf"
     plt.savefig(os.path.join(path, filename))
 
 
@@ -783,26 +699,8 @@ def plot_trend(parameter_dictionary, P0, path):
     #plt.show()
 
 
-def get_distribution_frequency(parameter_dictionary, team_size=None, slope=None, alignment_probability=None, partial_cooperation=None):
-    if team_size is None:
-        team_size = parameter_dictionary["default_num_agents"]
-
-    if slope is None:
-        slope = parameter_dictionary["default_slope"]
-
-    if partial_cooperation is None:
-        partial_cooperation = parameter_dictionary["partial_cooperation"]
-
-        if partial_cooperation == "True":
-            partial_cooperation = True
-
-        elif partial_cooperation == "False":
-            partial_cooperation = False
-
-        else:
-            raise RuntimeError("Invalid setting for parameter: partial_cooperation")
-
-    generate_constants(parameter_dictionary, team_size, slope, alignment_probability)
+def get_distribution_frequency(parameter_dictionary):
+    generate_constants(parameter_dictionary)
     final_distributions = get_many_final_distributions(parameter_dictionary)
     distribution_dictionary = {}
 
@@ -817,19 +715,19 @@ def get_distribution_frequency(parameter_dictionary, team_size=None, slope=None,
     return distribution_dictionary
 
 
-def plot_distribution_frequency(parameter_dictionary, path, plot_type=None, team_size=None, slope=None, partial_cooperation=None):
+def plot_distribution_frequency(parameter_dictionary, path, distribution_dictionary, plot_type=None):
+    generate_constants(parameter_dictionary)
     total_samples = parameter_dictionary["num_samples"]
+    slope = parameter_dictionary["default_slope"]
+    novices = parameter_dictionary["proportion_of_novices"]
 
     if not plot_type:
         fig, ax = plt.subplots(figsize=(30, 15))
-        if team_size is None:
-            team_size = parameter_dictionary["default_num_agents"]
-        if slope is None:
-            slope = parameter_dictionary["default_slope"]
-
-        distribution_dictionary = get_distribution_frequency(parameter_dictionary, team_size, slope)
+        team_size = parameter_dictionary["default_num_agents"]
+        slope = parameter_dictionary["default_slope"]
         proportion_of_novices = parameter_dictionary["proportion_of_novices"]
         total_samples = parameter_dictionary["num_samples"]
+        pair_alignment_probability = parameter_dictionary["pair_alignment_probability"]
 
         for i, key in enumerate(distribution_dictionary):
             if key in distribution_name:
@@ -842,7 +740,7 @@ def plot_distribution_frequency(parameter_dictionary, path, plot_type=None, team
                 equilibrium_colour[key] = colour
                 print(label_name)
 
-            ax.bar(i, distribution_dictionary[key]/total_samples, color=colour)
+            ax.bar(i, distribution_dictionary[i][key]/total_samples, color=colour)
             print(distribution_dictionary[key]/total_samples * 100)
 
         ax.set_xticks(np.arange(len(distribution_dictionary.keys())))
@@ -868,8 +766,7 @@ def plot_distribution_frequency(parameter_dictionary, path, plot_type=None, team
         fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30, 15))
         fig.suptitle("Convergence to Nash Equilibria vs Slope", fontsize=suptitle_font)
 
-        if team_size is None:
-            team_size = parameter_dictionary["default_num_agents"]
+        team_size = parameter_dictionary["default_num_agents"]
 
         for i, s in enumerate(slope_list):
             print(f"Slope: {s}")
@@ -900,46 +797,32 @@ def plot_distribution_frequency(parameter_dictionary, path, plot_type=None, team
     elif plot_type == "agents":
         # Make plots varying team size but holding slope constant (for each slope)
         fig, ax = plt.subplots(figsize=(30, 15))
+        cooperation_rates = [None] * len(distributions_dictionary.keys())
+        team_sizes = list(distribution_dictionary.keys())
+        team_sizes.sort()
 
-        if slope is None:
-            slope = parameter_dictionary["default_slope"]
-
-        if partial_cooperation is None:
-            partial_cooperation = parameter_dictionary["partial_cooperation"]
-
-            if partial_cooperation == "True":
-                partial_cooperation = True
-
-            elif partial_cooperation == "False":
-                partial_cooperation = False
-
-            else:
-                raise RuntimeError("Invalid setting for parameter: partial_cooperation")
-
-        cooperation_rates = [None] * len(team_list)
-
-        for i, n in enumerate(team_list):
+        for i, n in enumerate(team_sizes):
             print(f"Team Size: {n}")
-            distribution_dictionary = get_distribution_frequency(parameter_dictionary, team_size=n, slope=slope, partial_cooperation=partial_cooperation)
 
             coop_count = 0
             selfish_count = 0
 
-            for j, key in enumerate(distribution_dictionary):
+            for j, key in enumerate(distribution_dictionary[n]):
                 if key in distribution_name and distribution_name[key] == "Cooperative Equilibrium":
-                    coop_count += distribution_dictionary[key]
+                    coop_count += distribution_dictionary[n][key]
 
                 elif key in distribution_name and distribution_name[key] == "Selfish Equilibrium":
-                    selfish_count += distribution_dictionary[key]
+                    selfish_count += distribution_dictionary[n][key]
 
                 else:
                     raise RuntimeError("Unknown Equilibrium")
 
             cooperation_rates[i] = coop_count / total_samples
 
-        plt.plot(team_list, cooperation_rates, marker='o', markersize=markersize, linewidth=linewidth)
+        plt.plot(team_sizes, cooperation_rates, marker='o', markersize=markersize, linewidth=linewidth, color=equilibrium_colour["Cooperative Equilibrium"])
 
         #ax.set_xticklabels(team_list)
+        ax.set_ylim(0, 1)
         plt.setp(ax.get_xticklabels(), fontsize=tick_font)
         plt.setp(ax.get_yticklabels(), fontsize=tick_font)
 
@@ -948,11 +831,11 @@ def plot_distribution_frequency(parameter_dictionary, path, plot_type=None, team
         ax.set_xlabel("Team Size", fontsize=label_font)
         plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
 
-        filename = f"Distribution_Frequency_slope={slope}_all_team_sizes_partial={partial_cooperation}.pdf"
+        filename = f"Distribution_Frequency_slope={slope}_all_team_sizes_partial={partial_cooperation}_novices={novices}.pdf"
         plt.savefig(os.path.join(path, filename))
 
 
-def get_alignment_vs_frequency(parameter_dictionary, path, team_size=None, slope=None):
+def get_alignment_vs_frequency(parameter_dictionary, path):
     total_samples = parameter_dictionary["num_samples"]
 
     coop_values = [None] * 20
@@ -960,7 +843,8 @@ def get_alignment_vs_frequency(parameter_dictionary, path, team_size=None, slope
     alignment_probabilities /= 100
 
     for i, alignment_probability in enumerate(alignment_probabilities):
-        distribution_dictionary = get_distribution_frequency(parameter_dictionary, team_size, slope, alignment_probability)
+        parameter_dictionary["pair_alignment_probability"] = alignment_probability
+        distribution_dictionary = get_distribution_frequency(parameter_dictionary)
 
         coop_count = 0
         selfish_count = 0
@@ -1060,12 +944,13 @@ def plot_probability(parameter_dictionary, path, slope, population_distribution)
     plt.savefig(os.path.join(path, filename))
 
 
-def plot_payoff_vs_agents(parameter_dictionary, path, max_team_size, alignment_probability, slope=None):
+def plot_payoff_vs_agents(parameter_dictionary, path, max_team_size):
     payoff_list = [None] * (max_team_size//2)
-    parameter_dictionary["pair_alignment_probability"] = alignment_probability
+    alignment_probability = parameter_dictionary["pair_alignment_probability"]
 
     for i in range(1, max_team_size//2 + 1):
-        generate_constants(parameter_dictionary, team_size=i*2, slope=slope)
+        parameter_dictionary["default_num_agents"] = i*2
+        generate_constants(parameter_dictionary)
         team = tuple(["Dropper"] * i + ["Collector"] * i)
         payoff_list[i-1] = get_payoff(team=team, all=True) / (i*2)
 
@@ -1092,34 +977,123 @@ def plot_payoff_vs_agents(parameter_dictionary, path, max_team_size, alignment_p
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Plot evolutionary dynamics')
     parser.add_argument('--parameters', action="store", dest="parameters")
+    parser.add_argument('--function', action="store", dest="function")
+    parser.add_argument('--args_to_pass', action="store", dest="args_to_pass")
+    parser.add_argument('--num_agents', action="store", dest="num_agents")
+    parser.add_argument('--slope', action="store", dest="slope")
 
     parameter_file = parser.parse_args().parameters
+    function = parser.parse_args().function
+    args_to_pass = parser.parse_args().args_to_pass
+    num_agents = parser.parse_args().num_agents
+    slope = parser.parse_args().slope
     parameter_dictionary = json.loads(open(parameter_file).read())
-
     path = "/".join([el for el in parameter_file.split("/")[:-1]]) + "/analysis"
 
     # Profiling
-    #profiling_file = os.path.join(path, "profiling_v2_dynamic_programming.csv")
-    #cProfile.run('plot_distribution_frequency(parameter_dictionary, path)', profiling_file, 1)
-    #p = pstats.Stats(profiling_file)
-    #p.sort_stats('cumtime').print_stats(20)
-    #p.sort_stats('tottime').print_stats(20)
+    if function == "profile":
+        profiling_file = os.path.join(path, "profiling_v2_dynamic_programming.csv")
+        pstats = cProfile.run('plot_distribution_frequency(parameter_dictionary, path)', profiling_file, 1)
+        p = pstats.Stats(profiling_file)
+        p.sort_stats('cumtime').print_stats(20)
+        p.sort_stats('tottime').print_stats(20)
 
-    #plot_trend(parameter_dictionary, [0.91, 0.03, 0.03, 0.03], path)
-    #plot_trend(parameter_dictionary, [0.91, 0.06, 0.015, 0.015], path)
+    elif function == "trend":
+        args_to_pass = [float(x) for x in args_to_pass.strip("[]").split(",")]
+        plot_trend(parameter_dictionary, args_to_pass, path)
 
-    #plot_distribution_frequency(parameter_dictionary, path)
+    elif function == "get_distribution":
+        distribution_dictionary = get_distribution_frequency(parameter_dictionary)
+        results_file = os.path.join(path, args_to_pass)
+        output_file = open(results_file, "w")
+        json.dump(distribution_dictionary, output_file, indent=4)
+        output_file.close()
+
+    elif function == "plot_distribution":
+        distribution_file = args_to_pass
+        dict_path = os.path.join(path, distribution_file)
+        distribution_dictionary = json.loads(open(dict_path).read())
+        plot_distribution_frequency(parameter_dictionary, path, distribution_dictionary)
+
+    elif function == "get_distribution_agents":
+        directory = args_to_pass
+        num_agents = int(num_agents)
+        parameter_dictionary["default_num_agents"] = num_agents
+        distribution_dictionary = get_distribution_frequency(parameter_dictionary)
+        results_path = os.path.join(path, directory)
+
+        if not os.path.exists(results_path):
+            os.makedirs(results_path)
+
+        results_file = os.path.join(results_path, f"{num_agents}.json")
+        output_file = open(results_file, "w")
+        json.dump(distribution_dictionary, output_file, indent=4)
+        output_file.close()
+
+    elif function == "plot_distribution_agents":
+        directory = args_to_pass
+        data_path = os.path.join(path, directory)
+        distributions_dictionary = {}
+
+        for filename in glob(f"{data_path}/*.json"):
+            num_agents = int(filename.split("/")[-1].strip(".json"))
+            dict_path = os.path.join(data_path, filename)
+            distributions_dictionary[num_agents] = json.loads(open(dict_path).read())
+
+        plot_distribution_frequency(parameter_dictionary, path, distributions_dictionary, plot_type="agents")
+
+    elif function == "plot_alignment_frequency":
+        get_alignment_vs_frequency(parameter_dictionary, path)
+
+    elif function == "plot_payoff_vs_agents":
+        max_team_size = int(args_to_pass)
+        plot_payoff_vs_agents(parameter_dictionary, path, max_team_size)
+
+    elif function == "calculate_price_of_anarchy":
+        num_agents = int(num_agents)
+        slope = int(slope)
+        parameter_dictionary["default_num_agents"] = num_agents
+        parameter_dictionary["default_slope"] = slope
+        price_of_anarchy = {"poa": calculate_price_of_anarchy(parameter_dictionary),
+                            "agents": num_agents,
+                            "slope": slope}
+
+        directory = args_to_pass
+        results_path = os.path.join(path, directory)
+
+        if not os.path.exists(results_path):
+            os.makedirs(results_path)
+
+        results_file = os.path.join(results_path, f"agents={num_agents}_slope={slope}.json")
+        output_file = open(results_file, "w")
+        json.dump(price_of_anarchy, output_file, indent=4)
+        output_file.close()
+
+    elif function == "plot_price_of_anarchy":
+        directory = args_to_pass
+        data_path = os.path.join(path, directory)
+        prices = {}
+
+        for filename in glob(f"{data_path}/*.json"):
+            data = json.loads(open(filename).read())
+            num_agents = data["agents"]
+            slope = data["slope"]
+            poa = data["poa"]
+
+            if slope not in prices:
+                prices[slope] = {}
+
+            prices[slope][num_agents] = poa
+
+        plot_price_of_anarchy(parameter_dictionary, path, prices)
+
+
+
+
+    #
     #plot_distribution_frequency(parameter_dictionary, path, plot_type="slopes")
-    plot_distribution_frequency(parameter_dictionary, path, plot_type="agents")
-
-    #get_alignment_vs_frequency(parameter_dictionary, path)
 
     #plot_simplex(parameter_dictionary)
-
-    #plot_payoff_vs_agents(parameter_dictionary, path, max_team_size=50, alignment_probability=0.9)
-    #plot_payoff_vs_agents(parameter_dictionary, path, max_team_size=50, alignment_probability=1.0)
-
-    #plot_distribution_frequency(parameter_dictionary, path, plot_type="agents", partial_cooperation=False)
     #plot_simplex(parameter_dictionary, team_size=4)
 
     #plot_fitness(parameter_dictionary, path, team_size=2, slope=8, plot_name="slope_8", plot_title="Fitness vs Strategy Ratio when Slope=8")
