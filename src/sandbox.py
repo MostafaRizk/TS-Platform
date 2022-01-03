@@ -12,7 +12,7 @@ Strategies:
     Collector- Collects resources from the cache and deposits them at the nest
 """
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import json
 import argparse
 import os

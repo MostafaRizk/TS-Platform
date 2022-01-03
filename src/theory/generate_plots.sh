@@ -84,6 +84,9 @@ folder_name=/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_11_09_a_g
 
 #time python3 evolutionary_dynamics.py --parameters $folder_name/price_of_anarchy_c_payoff_no_partial.json --function plot_price_of_anarchy --args_to_pass no_partial
 
+# Plot simplex
+time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_b_2_agents_alignment=0.9.json --function plot_simplex
+
 
 
 

@@ -400,28 +400,29 @@ def get_change_simplex(P, t=0):
     @return:
     """
 
-    proportion_of_novices = parameter_dictionary["proportion_of_novices"]
+    #proportion_of_novices = parameter_dictionary["proportion_of_novices"]
 
-    if proportion_of_novices != 0.0:
+    '''if proportion_of_novices != 0.0:
         new_P = np.concatenate(([proportion_of_novices], (1.0 - proportion_of_novices) * P))
         results = get_change(new_P, t)
         return results[1:] / (1.0 - results[0])
 
     else:
         new_P = np.concatenate(([0],P))
-        return get_change(new_P, t)[1:]
+        return get_change(new_P, t)[1:]'''
+
+    new_P = np.concatenate((P[0:2], [P[2]/2], [P[2]/2]))
+    results = get_change(new_P, t)
+    return np.concatenate((results[0:2], [results[2] + results[3]]))
 
 
-def plot_simplex(parameter_dictionary, team_size=None):
-    if team_size is None:
-        team_size = parameter_dictionary["default_num_agents"]
-
-    generate_constants(parameter_dictionary, team_size=team_size, slope=parameter_dictionary["default_slope"])
+def plot_simplex(parameter_dictionary):
+    generate_constants(parameter_dictionary)
     dynamics = egtsimplex.simplex_dynamics(get_change_simplex)
 
     # plot the simplex dynamics
     fig, ax = plt.subplots()
-    dynamics.plot_simplex(ax, typelabels=["Generalist", "Dropper", "Collector"])
+    dynamics.plot_simplex(ax, typelabels=["Novice", "Generalist", "Cooperator"])
     plt.show()
 
 
@@ -1082,6 +1083,8 @@ if __name__ == "__main__":
 
         plot_price_of_anarchy(parameter_dictionary, path, prices)
 
+    elif function == "plot_simplex":
+        plot_simplex(parameter_dictionary)
 
 
 
