@@ -411,9 +411,14 @@ def get_change_simplex_generalists(P, t=0):
     @param t:
     @return:
     """
-    new_P = np.concatenate(([P[0]], [0], P[1:]))
+    #new_P = np.concatenate(([P[0]], [0], P[1:]))
+    #new_P = get_change(new_P, t)
+    #return np.concatenate(([new_P[0]], new_P[2:]))
+
+    # Dropper, Novice, Collector (
+    new_P = np.concatenate(([P[1]], [0], [P[0]], [P[2]]))
     new_P = get_change(new_P, t)
-    return np.concatenate(([new_P[0]], new_P[2:]))
+    return np.concatenate(([new_P[2]], [new_P[0]], [new_P[3]]))
 
 
 def get_change_simplex_droppers(P, t=0):
@@ -437,9 +442,14 @@ def get_change_simplex_collectors(P, t=0):
     @param t:
     @return:
     """
-    new_P = np.concatenate((P, [0]))
+    #new_P = np.concatenate((P, [0]))
+    #new_P = get_change(new_P, t)
+    #return new_P[0:3]
+
+    #Novice, Dropper, Generalist
+    new_P = np.concatenate(([P[0]], [P[2]], [P[1]], [0]))
     new_P = get_change(new_P, t)
-    return new_P[0:3]
+    return np.concatenate(([new_P[0]], [new_P[2]], [new_P[1]]))
 
 
 def get_change_simplex_cooperators(P, t=0):
@@ -482,39 +492,55 @@ def plot_simplex(parameter_dictionary, path):
 
     #-------Generate pyramid plot-------#
 
-    fig, axs = plt.subplots(2, 2, figsize=(10,10))
+    #fig, axs = plt.subplots(2, 2, figsize=(10,10))
     generate_constants(parameter_dictionary)
     slope = parameter_dictionary["default_slope"]
-    fig.suptitle(f'Phase Diagrams for Slope={slope} Using All Strategies')
+    #fig.suptitle(f'Phase Diagrams for Slope={slope} Using All Strategies')
+    f_size = (6, 6)
+
 
     # Novices=0
+    fig, ax = plt.subplots(figsize=f_size)
     dynamics = egtsimplex.simplex_dynamics(get_change_simplex_novices)
     typelabels = ["Generalist", "Dropper", "Collector"]
-    dynamics.plot_simplex(axs[0][0], typelabels=typelabels)
+    #dynamics.plot_simplex(axs[0][0], typelabels=typelabels)
+    dynamics.plot_simplex(ax, typelabels=typelabels)
+    figname = f"simplex_slope={slope}_pyramid_1.pdf"
+    plt.savefig(os.path.join(path, figname), transparent=True)
 
     # Generalists=0
+    fig, ax = plt.subplots(figsize=f_size)
     dynamics = egtsimplex.simplex_dynamics(get_change_simplex_generalists)
-    typelabels = ["Novice", "Dropper", "Collector"]
-    dynamics.plot_simplex(axs[0][1], typelabels=typelabels)
+    #typelabels = ["Novice", "Dropper", "Collector"]
+    typelabels = ["Dropper", "Novice", "Collector"]
+    dynamics.plot_simplex(ax, typelabels=typelabels)
+    figname = f"simplex_slope={slope}_pyramid_2.pdf"
+    plt.savefig(os.path.join(path, figname), transparent=True)
+
 
     # Droppers=0
+    fig, ax = plt.subplots(figsize=f_size)
     dynamics = egtsimplex.simplex_dynamics(get_change_simplex_droppers)
     typelabels = ["Novice", "Generalist", "Collector"]
-    dynamics.plot_simplex(axs[1][0], typelabels=typelabels)
+    dynamics.plot_simplex(ax, typelabels=typelabels)
+    figname = f"simplex_slope={slope}_pyramid_3.pdf"
+    plt.savefig(os.path.join(path, figname), transparent=True)
 
     # Collectors=0
+    fig, ax = plt.subplots(figsize=f_size)
     dynamics = egtsimplex.simplex_dynamics(get_change_simplex_collectors)
-    typelabels = ["Novice", "Generalist", "Dropper"]
-    dynamics.plot_simplex(axs[1][1], typelabels=typelabels)
+    #typelabels = ["Novice", "Generalist", "Dropper"]
+    typelabels = ["Novice", "Dropper", "Generalist"]
+    dynamics.plot_simplex(ax, typelabels=typelabels)
+    figname = f"simplex_slope={slope}_pyramid_4.pdf"
+    plt.savefig(os.path.join(path, figname), transparent=True)
 
-    fig.tight_layout()
+    #fig.tight_layout()
     #fig.subplots_adjust(top=1.2)
 
-    filename = f"simplex_slope={slope}_pyramid.pdf"
-    plt.savefig(os.path.join(path, filename))
-    plt.savefig(filename)
-
-
+    #filename = f"simplex_slope={slope}_pyramid.pdf"
+    #plt.savefig(os.path.join(path, filename))
+    #plt.savefig(filename)
 
 
 def get_distribution_history(parameter_dictionary, P0):

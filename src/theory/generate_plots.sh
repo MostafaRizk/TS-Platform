@@ -22,7 +22,7 @@ folder_name=/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_11_09_a_g
 #time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_b_2_agents_alignment=0.9.json --function plot_payoff_vs_agents --args_to_pass 50
 
 # Plot simplex
-#time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_b_2_agents_alignment=0.9.json --function plot_simplex
+time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_b_2_agents_alignment=0.9.json --function plot_simplex
 time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_e_2_agents_alignment=0.9_slope=4.json --function plot_simplex
 
 

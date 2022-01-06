@@ -18,7 +18,7 @@ metric_index = 2  # R_spec
 #metric_index = 0 # T-Maze
 
 
-def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, print_scores=None, ids_to_remove=None, dummy_observations=False, bc_measure=None, save_video=False):
+def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, print_scores=None, ids_to_remove=None, dummy_observations=False, bc_measure=None, save_video=False, slope=None):
     if rendering == "True":
         rendering = True
     else:
@@ -59,6 +59,9 @@ def evaluate_model(model_path, episodes=None, rendering=None, time_delay=None, p
     environment = parameter_dictionary["general"]["environment"]
     num_agents = parameter_dictionary["environment"][environment]["num_agents"]
     agent_list = []
+
+    if slope is not None:
+        parameter_dictionary["environment"][environment]["sliding_speed"] = slope
 
     dictionary_changed = False
 

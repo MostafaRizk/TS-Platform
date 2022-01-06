@@ -12,6 +12,7 @@ from evaluation.plot_scalability import from_string
 from operator import add
 from glob import glob
 from matplotlib.colors import ListedColormap
+from evaluation.evaluate_model import evaluate_model
 
 seed = 1
 sliding_speed = 8
@@ -72,7 +73,8 @@ def generate_matrix(rwg_genomes_file, evolved_genomes_directory, results_file, n
         # For each genome
         for index, row in evolved_data.iterrows():
             # Check if it has team reward and 2 agents
-            if row["num_agents"] == num_agents and row["sliding_speed"] == sliding_speed:
+            #if row["num_agents"] == num_agents and row["sliding_speed"] == sliding_speed:
+            if row["num_agents"] == num_agents:
                 ''''''
                 if row["reward_level"] == "team" and row["learning_type"] == "centralised":
                     # Get genome from corresponding model file
@@ -80,19 +82,37 @@ def generate_matrix(rwg_genomes_file, evolved_genomes_directory, results_file, n
                     genome = np.load(model_file)
                     # Add genome to matrix
                     matrix += [genome]
-                    fitness = from_string(row["fitness"])[0:N_episodes]
-                    specialisation = from_string(row["specialisation"])[0:N_episodes]
 
-                    team_fitness_list = [0] * len(fitness[0])
+                    reevaluate = True
+                    # Get fitness and specialisation from results file
+                    if not reevaluate:
+                        fitness = from_string(row["fitness"])[0:N_episodes]
+                        specialisation = from_string(row["specialisation"])[0:N_episodes]
 
-                    for j in range(num_agents):
-                        team_fitness_list = list(map(add, team_fitness_list, fitness[j]))
+                        team_fitness_list = [0] * len(fitness[0])
 
-                    scores += [np.mean(team_fitness_list)]
+                        for j in range(num_agents):
+                            team_fitness_list = list(map(add, team_fitness_list, fitness[j]))
 
-                    for key_index in range(len(spec_score_keys)):
-                        specialisation_for_key = [episode[key_index] for episode in specialisation]
-                        spec_scores[spec_score_keys[key_index]] += [np.mean(specialisation_for_key)]
+                        scores += [np.mean(team_fitness_list)]
+
+                        for key_index in range(len(spec_score_keys)):
+                            specialisation_for_key = [episode[key_index] for episode in specialisation]
+                            spec_scores[spec_score_keys[key_index]] += [np.mean(specialisation_for_key)]
+
+                    else:
+                        # Get fitness and specialisation from reevaluation
+                        new_results = evaluate_model(model_path=model_file, slope=8)
+
+                        team_fitness_list = [0] * len(new_results['fitness_matrix'][0])
+
+                        for j in range(num_agents):
+                            team_fitness_list = list(map(add, team_fitness_list, new_results['fitness_matrix'][j]))
+
+                        scores += [np.mean(team_fitness_list)]
+                        specialisation_each_episode = [spec_score_keys[chosen_key] for spec in new_results['specialisation_list']]
+                        specialisation_each_episode = [spec[chosen_key] for spec in new_results['specialisation_list']]
+                        spec_scores[spec_score_keys[chosen_key]] += [np.mean(specialisation_each_episode)]
 
                     num_ctde += 1
 
@@ -135,7 +155,6 @@ def generate_matrix(rwg_genomes_file, evolved_genomes_directory, results_file, n
                         spec_scores[spec_score_keys[key_index]] += [np.mean(specialisation_for_key)]
 
                     num_fd += 1
-
 
     scores = np.array(scores)
 
@@ -204,5 +223,6 @@ if __name__ == "__main__":
 
     matrix, scores = generate_matrix(rwg_genomes_file, evolved_genomes_directory, results_file, num_episodes)
     plot_dimensionality_reduction(matrix, scores, plot_destination)
+
 
 

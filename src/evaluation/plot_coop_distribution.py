@@ -111,10 +111,22 @@ def plot_coop_distribution(path_to_results, path_to_graph, agents, averaged=True
         else:
             list_of_coop_scores += coop_scores_this_run
 
-    n, bins, patches = plt.hist(list_of_coop_scores, 2, weights=np.ones(len(list_of_coop_scores)) / len(list_of_coop_scores))
+    all_bins = True
 
-    patches[0].set_facecolor(generalist_colour)
-    patches[1].set_facecolor(specialist_colour)
+    if all_bins:
+        n, bins, patches = plt.hist(list_of_coop_scores, 10, weights=np.ones(len(list_of_coop_scores)) / len(list_of_coop_scores))
+
+        print(len(bins))
+        print(len(patches))
+        for i in range(len(patches)//2):
+            patches[i].set_facecolor(generalist_colour)
+        for i in range(len(patches)//2, len(patches)):
+            patches[i].set_facecolor(specialist_colour)
+    else:
+        n, bins, patches = plt.hist(list_of_coop_scores, 2, weights=np.ones(len(list_of_coop_scores)) / len(list_of_coop_scores))
+
+        patches[0].set_facecolor(generalist_colour)
+        patches[1].set_facecolor(specialist_colour)
 
     handles = [Rectangle((0, 0), 1, 1, color=c, ec="k") for c in [generalist_colour, specialist_colour]]
     labels = ["Selfish Episodes", "Cooperative Episodes"]
