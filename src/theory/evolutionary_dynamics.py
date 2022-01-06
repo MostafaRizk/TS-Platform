@@ -44,7 +44,8 @@ sorted_strategies = strategies[:]
 sorted_strategies.sort()
 strategy_id = {"Novice": 0, "Generalist": 1, "Dropper": 2, "Collector": 3}
 distribution_name = {"[0.0 1.0 0.0 0.0]": "Selfish Equilibrium",
-                     "[0.0 0.0 0.5 0.5]": "Cooperative Equilibrium"}
+                     "[0.0 0.0 0.5 0.5]": "Cooperative Equilibrium",
+                     "[0.0 0.0 0.49 0.51]": "Cooperative Equilibrium"}
 N = 256
 vermillion = (213/N, 94/N, 0)
 bluish_green = (0, 158/N, 115/N)
@@ -57,7 +58,6 @@ num_agents = 0
 generalist_reward = None  # The reward (i.e. resources retrieved) for an individual generalist
 specialist_reward = None  # The reward for a dropper and collector pair together
 combos = None  # Sorted list of possible strategy combinations for num_agents-1 agents
-slope_list = [0, 4, 8]
 random_state = None
 distribution_precision = 2  # Number of decimal places when expressing the proportion of each strategy in the population
 factorial_list = None
@@ -391,39 +391,130 @@ def get_change(P, t=0):
     ])
 
 
-def get_change_simplex(P, t=0):
+def get_change_simplex_novices(P, t=0):
     """
-    Same as get_change but P is a vector of 3 strategies (all except Novices).
-    It calls the normal get_change assuming that the number of Novices is defined in the parameter file
+    Same as get_change but P is a vector of 3 strategies and holds Novices at 0%
+    It calls the normal get_change
     @param P:
     @param t:
     @return:
     """
+    new_P = np.concatenate(([0],P))
+    return get_change(new_P, t)[1:]
 
-    #proportion_of_novices = parameter_dictionary["proportion_of_novices"]
 
-    '''if proportion_of_novices != 0.0:
-        new_P = np.concatenate(([proportion_of_novices], (1.0 - proportion_of_novices) * P))
-        results = get_change(new_P, t)
-        return results[1:] / (1.0 - results[0])
+def get_change_simplex_generalists(P, t=0):
+    """
+    Same as get_change but P is a vector of 3 strategies and holds Generalists at 0%
+    It calls the normal get_change
+    @param P:
+    @param t:
+    @return:
+    """
+    new_P = np.concatenate(([P[0]], [0], P[1:]))
+    new_P = get_change(new_P, t)
+    return np.concatenate(([new_P[0]], new_P[2:]))
 
-    else:
-        new_P = np.concatenate(([0],P))
-        return get_change(new_P, t)[1:]'''
+
+def get_change_simplex_droppers(P, t=0):
+    """
+    Same as get_change but P is a vector of 3 strategies and holds Droppers at 0%
+    It calls the normal get_change
+    @param P:
+    @param t:
+    @return:
+    """
+    new_P = np.concatenate((P[0:2], [0], [P[2]]))
+    new_P = get_change(new_P, t)
+    return np.concatenate((new_P[0:2], [new_P[2]]))
+
+
+def get_change_simplex_collectors(P, t=0):
+    """
+    Same as get_change but P is a vector of 3 strategies and holds Collectors at 0%
+    It calls the normal get_change
+    @param P:
+    @param t:
+    @return:
+    """
+    new_P = np.concatenate((P, [0]))
+    new_P = get_change(new_P, t)
+    return new_P[0:3]
+
+
+def get_change_simplex_cooperators(P, t=0):
+    """
+    Same as get_change but P is a vector of 3 strategies, Novices, Generalists and Cooperators
+    (which is equal Droppers and Collectors)
+    It calls the normal get_change
+    @param P:
+    @param t:
+    @return:
+    """
 
     new_P = np.concatenate((P[0:2], [P[2]/2], [P[2]/2]))
     results = get_change(new_P, t)
     return np.concatenate((results[0:2], [results[2] + results[3]]))
 
 
-def plot_simplex(parameter_dictionary):
+def plot_simplex(parameter_dictionary, path):
+    fig, axs = plt.subplots(1, 2)
     generate_constants(parameter_dictionary)
-    dynamics = egtsimplex.simplex_dynamics(get_change_simplex)
+    slope = parameter_dictionary["default_slope"]
+    fig.suptitle(f'Phase Diagrams for Slope={slope}')
 
-    # plot the simplex dynamics
-    fig, ax = plt.subplots()
-    dynamics.plot_simplex(ax, typelabels=["Novice", "Generalist", "Cooperator"])
-    plt.show()
+    # Generate plot where Cooperator=Dropper+Collector
+    dynamics = egtsimplex.simplex_dynamics(get_change_simplex_cooperators)
+    typelabels = ["Novice", "Generalist", "Cooperator"]
+    dynamics.plot_simplex(axs[0], typelabels=typelabels)
+
+    # Generate plot where Novices=0
+    dynamics = egtsimplex.simplex_dynamics(get_change_simplex_novices)
+    typelabels = ["Generalist", "Dropper", "Collector"]
+    dynamics.plot_simplex(axs[1], typelabels=typelabels)
+
+    fig.tight_layout()
+    fig.subplots_adjust(top=1.2)
+
+    filename = f"simplex_slope={slope}.pdf"
+    plt.savefig(os.path.join(path, filename))
+    plt.savefig(filename)
+
+    #-------Generate pyramid plot-------#
+
+    fig, axs = plt.subplots(2, 2, figsize=(10,10))
+    generate_constants(parameter_dictionary)
+    slope = parameter_dictionary["default_slope"]
+    fig.suptitle(f'Phase Diagrams for Slope={slope} Using All Strategies')
+
+    # Novices=0
+    dynamics = egtsimplex.simplex_dynamics(get_change_simplex_novices)
+    typelabels = ["Generalist", "Dropper", "Collector"]
+    dynamics.plot_simplex(axs[0][0], typelabels=typelabels)
+
+    # Generalists=0
+    dynamics = egtsimplex.simplex_dynamics(get_change_simplex_generalists)
+    typelabels = ["Novice", "Dropper", "Collector"]
+    dynamics.plot_simplex(axs[0][1], typelabels=typelabels)
+
+    # Droppers=0
+    dynamics = egtsimplex.simplex_dynamics(get_change_simplex_droppers)
+    typelabels = ["Novice", "Generalist", "Collector"]
+    dynamics.plot_simplex(axs[1][0], typelabels=typelabels)
+
+    # Collectors=0
+    dynamics = egtsimplex.simplex_dynamics(get_change_simplex_collectors)
+    typelabels = ["Novice", "Generalist", "Dropper"]
+    dynamics.plot_simplex(axs[1][1], typelabels=typelabels)
+
+    fig.tight_layout()
+    #fig.subplots_adjust(top=1.2)
+
+    filename = f"simplex_slope={slope}_pyramid.pdf"
+    plt.savefig(os.path.join(path, filename))
+    plt.savefig(filename)
+
+
 
 
 def get_distribution_history(parameter_dictionary, P0):
@@ -639,12 +730,13 @@ def plot_price_of_anarchy(parameter_dictionary, path, prices):
     slopes = list(prices.keys())
     slopes.sort()
 
-    for slope in slopes:
+    for slope in [0, 2, 8]:
         team_sizes = list(prices[slope].keys())
         team_sizes.sort()
         data = [prices[slope][n] for n in team_sizes]
         ax.plot(team_sizes, data, marker='o', markersize=markersize, linewidth=linewidth, label=f"Slope {slope}")
 
+    ax.set_xticks([x for x in range(2, 22, 2)])
     ax.set_xlabel("Team Size", fontsize=label_font)
     ax.set_ylabel("Price of Anarchy", fontsize=label_font)
     ax.set_ylim(0.9, 3.1)
@@ -658,7 +750,7 @@ def plot_price_of_anarchy(parameter_dictionary, path, prices):
     fig.suptitle("Price of Anarchy vs Slope", fontsize=suptitle_font)
 
     print("Price of Anarchy vs Slope")
-    teams = [2]
+    teams = [2, 4, 8, 20]
     for team in teams:
         data = [prices[slope][team] for slope in slopes]
         ax.plot(slopes, data, marker='o', markersize=markersize, linewidth=linewidth, label=f"{team} Agents")
@@ -755,40 +847,44 @@ def plot_distribution_frequency(parameter_dictionary, path, distribution_diction
         #plt.show()
 
     elif plot_type == "slopes":
-        cols = 3
+        # Make plots varying slope but holding team size constant
+        fig, ax = plt.subplots(figsize=(30, 15))
+        cooperation_rates = [None] * len(distributions_dictionary.keys())
+        slopes = list(distribution_dictionary.keys())
+        slopes.sort()
 
-        # Make plots varying team size but holding slope constant (for each slope)
-        rows = math.ceil(len(slope_list) / cols)
-        fig, axs = plt.subplots(rows, cols, sharey=True, figsize=(30, 15))
-        fig.suptitle("Convergence to Nash Equilibria vs Slope", fontsize=suptitle_font)
+        for i, n in enumerate(slopes):
+            print(f"Slope: {n}")
 
-        team_size = parameter_dictionary["default_num_agents"]
+            coop_count = 0
+            selfish_count = 0
 
-        for i, s in enumerate(slope_list):
-            print(f"Slope: {s}")
-            row_id = i // rows
-            col_id = i % cols
-            ax = axs[row_id][col_id]
-            distribution_dictionary = get_distribution_frequency(parameter_dictionary, team_size=team_size, slope=s)
+            for j, key in enumerate(distribution_dictionary[n]):
+                if key in distribution_name and distribution_name[key] == "Cooperative Equilibrium":
+                    coop_count += distribution_dictionary[n][key]
 
-            for j, key in enumerate(distribution_dictionary):
-                label_name = distribution_name[key]
-                colour = equilibrium_colour[label_name]
-                ax.bar(j, distribution_dictionary[key], color=colour)
+                elif key in distribution_name and distribution_name[key] == "Selfish Equilibrium":
+                    selfish_count += distribution_dictionary[n][key]
 
-            ax.set_xticks(np.arange(len(distribution_dictionary.keys())))
-            ax.set_xticklabels([distribution_name[key] for key in distribution_dictionary.keys()], fontsize=tick_font)
-            ax.set_title(f"Slope {s}", fontsize=title_font, y=label_padding)
-            ax.set_ylabel("Number of \n Distributions", fontsize=label_font)
-            ax.set_xlabel("Nash Equilibria", fontsize=label_font)
+                else:
+                    raise RuntimeError("Unknown Equilibrium")
 
-            for tick in ax.yaxis.get_major_ticks():
-                tick.label.set_fontsize(tick_font)
+            cooperation_rates[i] = coop_count / total_samples
 
-            #ax.legend(loc='best', fontsize=legend_font)
-            ax.label_outer()
-            filename = f"Distribution_Frequency_agents={team_size}_all_slopes.pdf"
-            plt.savefig(os.path.join(path, filename))
+        plt.plot(slopes, cooperation_rates, marker='o', markersize=markersize, linewidth=linewidth, color=equilibrium_colour["Cooperative Equilibrium"])
+
+        ax.set_xticks(slopes)
+        ax.set_ylim(-0.1, 1.1)
+        plt.setp(ax.get_xticklabels(), fontsize=tick_font)
+        plt.setp(ax.get_yticklabels(), fontsize=tick_font)
+
+        ax.set_title("Frequency of Cooperation vs Slope", fontsize=title_font, y=label_padding)
+        ax.set_ylabel("Frequency of Cooperation", fontsize=label_font)
+        ax.set_xlabel("Slope", fontsize=label_font)
+        plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
+
+        filename = f"Distribution_Frequency_team_size={num_agents}_all_slopes_partial={partial_cooperation}_novices={novices}.pdf"
+        plt.savefig(os.path.join(path, filename))
 
     elif plot_type == "agents":
         # Make plots varying team size but holding slope constant (for each slope)
@@ -797,6 +893,7 @@ def plot_distribution_frequency(parameter_dictionary, path, distribution_diction
         team_sizes = list(distribution_dictionary.keys())
         team_sizes.sort()
 
+        #for i,n in enumerate([x for x in range(2,14,2)]):
         for i, n in enumerate(team_sizes):
             print(f"Team Size: {n}")
 
@@ -817,8 +914,9 @@ def plot_distribution_frequency(parameter_dictionary, path, distribution_diction
 
         plt.plot(team_sizes, cooperation_rates, marker='o', markersize=markersize, linewidth=linewidth, color=equilibrium_colour["Cooperative Equilibrium"])
 
-        #ax.set_xticklabels(team_list)
-        ax.set_ylim(0, 1)
+        ax.set_xticks([x for x in range(2,22,2)])
+        #ax.set_xticks([x for x in range(2, 14, 2)])
+        ax.set_ylim(-0.1, 1.1)
         plt.setp(ax.get_xticklabels(), fontsize=tick_font)
         plt.setp(ax.get_yticklabels(), fontsize=tick_font)
 
@@ -1026,17 +1124,46 @@ if __name__ == "__main__":
         json.dump(distribution_dictionary, output_file, indent=4)
         output_file.close()
 
+    elif function == "get_distribution_slopes":
+        directory = args_to_pass
+        slope = int(slope)
+        parameter_dictionary["default_slope"] = slope
+        distribution_dictionary = get_distribution_frequency(parameter_dictionary)
+        results_path = os.path.join(path, directory)
+
+        if not os.path.exists(results_path):
+            os.makedirs(results_path)
+
+        results_file = os.path.join(results_path, f"slope={slope}.json")
+        output_file = open(results_file, "w")
+        json.dump(distribution_dictionary, output_file, indent=4)
+        output_file.close()
+
     elif function == "plot_distribution_agents":
         directory = args_to_pass
         data_path = os.path.join(path, directory)
         distributions_dictionary = {}
 
         for filename in glob(f"{data_path}/*.json"):
-            num_agents = int(filename.split("/")[-1].strip(".json"))
-            dict_path = os.path.join(data_path, filename)
-            distributions_dictionary[num_agents] = json.loads(open(dict_path).read())
+            stripped_name = filename.split("/")[-1].strip(".json")
+            if "=" not in stripped_name:
+                num_agents = int(stripped_name)
+                dict_path = os.path.join(data_path, filename)
+                distributions_dictionary[num_agents] = json.loads(open(dict_path).read())
 
         plot_distribution_frequency(parameter_dictionary, path, distributions_dictionary, plot_type="agents")
+
+    elif function == "plot_distribution_slopes":
+        directory = args_to_pass
+        data_path = os.path.join(path, directory)
+        distributions_dictionary = {}
+
+        for filename in glob(f"{data_path}/*=*.json"):
+            slope = int(filename.split("/")[-1].strip(".json").split("=")[-1])
+            dict_path = os.path.join(data_path, filename)
+            distributions_dictionary[slope] = json.loads(open(dict_path).read())
+
+        plot_distribution_frequency(parameter_dictionary, path, distributions_dictionary, plot_type="slopes")
 
     elif function == "plot_alignment_frequency":
         get_alignment_vs_frequency(parameter_dictionary, path)
@@ -1084,7 +1211,7 @@ if __name__ == "__main__":
         plot_price_of_anarchy(parameter_dictionary, path, prices)
 
     elif function == "plot_simplex":
-        plot_simplex(parameter_dictionary)
+        plot_simplex(parameter_dictionary, path)
 
 
 
