@@ -13,6 +13,8 @@ Strategies:
 """
 
 import matplotlib.pyplot as plt
+plt.rcParams['pdf.fonttype'] = 42
+plt.rcParams['ps.fonttype'] = 42
 import json
 import argparse
 import os
@@ -938,17 +940,17 @@ def plot_distribution_frequency(parameter_dictionary, path, distribution_diction
 
             cooperation_rates[i] = coop_count / total_samples
 
-        plt.plot(team_sizes, cooperation_rates, marker='o', markersize=markersize, linewidth=linewidth, color=equilibrium_colour["Cooperative Equilibrium"])
+        plt.plot(team_sizes, cooperation_rates, marker='o', markersize=markersize+2, linewidth=linewidth, color=equilibrium_colour["Cooperative Equilibrium"])
 
         ax.set_xticks([x for x in range(2,22,2)])
         #ax.set_xticks([x for x in range(2, 14, 2)])
         ax.set_ylim(-0.1, 1.1)
-        plt.setp(ax.get_xticklabels(), fontsize=tick_font)
-        plt.setp(ax.get_yticklabels(), fontsize=tick_font)
+        plt.setp(ax.get_xticklabels(), fontsize=tick_font+10)
+        plt.setp(ax.get_yticklabels(), fontsize=tick_font+10)
 
-        ax.set_title("Frequency of Cooperation vs Team Size", fontsize=title_font, y=label_padding)
-        ax.set_ylabel("Frequency of Cooperation", fontsize=label_font)
-        ax.set_xlabel("Team Size", fontsize=label_font)
+        ax.set_title("Frequency of Cooperation vs Team Size", fontsize=title_font+10, y=label_padding)
+        ax.set_ylabel("Frequency of Cooperation", fontsize=label_font+10)
+        ax.set_xlabel("Team Size", fontsize=label_font+10)
         plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
 
         filename = f"Distribution_Frequency_slope={slope}_all_team_sizes_partial={partial_cooperation}_novices={novices}.pdf"
@@ -1094,6 +1096,36 @@ def plot_payoff_vs_agents(parameter_dictionary, path, max_team_size):
     #plt.show()
 
 
+def plot_payoff_vs_agents_combined(parameter_dictionary, path, max_team_size, alignments):
+    fig, ax = plt.subplots(figsize=(16, 8))
+    xs = [x for x in range(2, max_team_size + 2, 2)]
+
+    for alignment in alignments:
+        payoff_list = [None] * (max_team_size//2)
+        parameter_dictionary["pair_alignment_probability"] = alignment
+        alignment_probability = parameter_dictionary["pair_alignment_probability"]
+
+        for i in range(1, max_team_size//2 + 1):
+            parameter_dictionary["default_num_agents"] = i*2
+            generate_constants(parameter_dictionary)
+            team = tuple(["Dropper"] * i + ["Collector"] * i)
+            payoff_list[i-1] = get_payoff(team=team, all=True) / (i*2)
+
+        plt.plot(xs, payoff_list, marker='o', markersize=markersize-2, linewidth=linewidth, label=alignment)
+        #ax.set_xlim(xs[0], xs[-1])
+
+    plt.legend(loc='upper right', fontsize=legend_font-10)
+    plt.setp(ax.get_xticklabels(), fontsize=tick_font-10)
+    plt.setp(ax.get_yticklabels(), fontsize=tick_font-10)
+    ax.set_ylim(-1000, 25000)
+    ax.set_title("Scalability of Performance with Varying Alignment Challenge", fontsize=title_font-10, pad=30)
+    ax.set_xlabel("Team Size", fontsize=label_font-10)
+    ax.set_ylabel("Payoff per Agent", fontsize=label_font-10)
+    filename = f"payoff_vs_agents_combined.pdf"
+    plt.savefig(os.path.join(path, filename))
+    #plt.show()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Plot evolutionary dynamics')
     parser.add_argument('--parameters', action="store", dest="parameters")
@@ -1101,12 +1133,14 @@ if __name__ == "__main__":
     parser.add_argument('--args_to_pass', action="store", dest="args_to_pass")
     parser.add_argument('--num_agents', action="store", dest="num_agents")
     parser.add_argument('--slope', action="store", dest="slope")
+    parser.add_argument('--alignments', action="store", dest="alignments")
 
     parameter_file = parser.parse_args().parameters
     function = parser.parse_args().function
     args_to_pass = parser.parse_args().args_to_pass
     num_agents = parser.parse_args().num_agents
     slope = parser.parse_args().slope
+    alignments = parser.parse_args().alignments
     parameter_dictionary = json.loads(open(parameter_file).read())
     path = "/".join([el for el in parameter_file.split("/")[:-1]]) + "/analysis"
 
@@ -1197,6 +1231,16 @@ if __name__ == "__main__":
     elif function == "plot_payoff_vs_agents":
         max_team_size = int(args_to_pass)
         plot_payoff_vs_agents(parameter_dictionary, path, max_team_size)
+
+    elif function == "plot_payoff_vs_agents_combined":
+        max_team_size = int(args_to_pass)
+
+        if not alignments:
+            raise RuntimeError("Did not pass a list of alignments")
+
+        alignments = [float(a) for a in alignments.strip('[]').split(',')]
+
+        plot_payoff_vs_agents_combined(parameter_dictionary, path, max_team_size, alignments)
 
     elif function == "calculate_price_of_anarchy":
         num_agents = int(num_agents)

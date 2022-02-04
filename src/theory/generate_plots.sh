@@ -20,15 +20,16 @@ folder_name=/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_11_09_a_g
 # Payoff vs Agents
 #time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_a_2_agents_full_alignment.json --function plot_payoff_vs_agents --args_to_pass 50
 #time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_b_2_agents_alignment=0.9.json --function plot_payoff_vs_agents --args_to_pass 50
+time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_a_2_agents_full_alignment.json --function plot_payoff_vs_agents_combined --args_to_pass 50 --alignments [0.0,0.1,0.5,0.9,1.0]
 
 # Plot simplex
-time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_b_2_agents_alignment=0.9.json --function plot_simplex
-time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_e_2_agents_alignment=0.9_slope=4.json --function plot_simplex
+#time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_b_2_agents_alignment=0.9.json --function plot_simplex
+#time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_e_2_agents_alignment=0.9_slope=4.json --function plot_simplex
 
 
 # Partial Cooperation True
 # Plot team_size vs cooperation data
-#time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_b_2_agents_alignment=0.9.json --function plot_distribution_agents --args_to_pass team_size_vs_coop
+time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_b_2_agents_alignment=0.9.json --function plot_distribution_agents --args_to_pass team_size_vs_coop
 #Slopes
 #time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_b_2_agents_alignment=0.9.json --function get_distribution_slopes --args_to_pass team_size_vs_coop --slope 0
 #time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_b_2_agents_alignment=0.9.json --function get_distribution_slopes --args_to_pass team_size_vs_coop --slope 1

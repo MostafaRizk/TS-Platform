@@ -8,8 +8,6 @@ from matplotlib.colors import ListedColormap
 from scipy import stats
 from operator import add
 
-setups = ["Fully-centralised", "Centralised", "Decentralised"]
-setup_labels = ["Fully Centralised", "CTDE", "Fully Decentralised"]
 alpha = 0.2
 background_alpha = 0.5
 spec_metric_index = 0 # R_coop
@@ -35,14 +33,22 @@ def from_string(arr_str):
     return a
 
 
-def plot_episodes(path_to_results, path_to_graph, min_agents, max_agents, y_height=15000, exclude_middle_plots=False, vertical=True):
+def plot_episodes(path_to_results, path_to_graph, min_agents, max_agents, y_height=15000, exclude_middle_plots=False, remove_CTDE=False, vertical=True):
     # Prepare data lists
-    x = [i for i in range(2, max_agents + 2, 2)]
+    x = [i for i in range(min_agents, max_agents + 2, 2)]
     y_centralised = []
     y_decentralised = []
     y_onepop = []
     y_homogeneous = []
     y_fully_centralised = []
+
+    if remove_CTDE:
+        setups = ["Fully-centralised", "Decentralised"]
+        setup_labels = ["Fully Centralised", "Fully Decentralised"]
+
+    else:
+        setups = ["Fully-centralised", "Centralised", "Decentralised"]
+        setup_labels = ["Fully Centralised", "CTDE", "Fully Decentralised"]
 
     # Read data from results file
     data = pd.read_csv(path_to_results)
@@ -71,6 +77,9 @@ def plot_episodes(path_to_results, path_to_graph, min_agents, max_agents, y_heig
         else:
             key = f"{learning_type}-{num_agents}"
 
+        if learning_type == "Centralised" and reward_level == "Team" and remove_CTDE:
+            continue
+
         if seed not in results[key]:
             results[key][seed] = None
 
@@ -81,7 +90,10 @@ def plot_episodes(path_to_results, path_to_graph, min_agents, max_agents, y_heig
         fig = plt.figure(figsize=(9.5, 9))
     elif exclude_middle_plots:
         if vertical:
-            fig = plt.figure(figsize=(5, 9)) # Vertical
+            if not remove_CTDE:
+                fig = plt.figure(figsize=(5, 9)) # Vertical
+            else:
+                fig = plt.figure(figsize=(5, 6))  # Vertical without CTDE
         else:
             fig = plt.figure(figsize=(18, 4)) # Horizontal
     else:
@@ -220,6 +232,7 @@ if __name__ == "__main__":
     parser.add_argument('--max_agents', action="store")
     parser.add_argument('--y_height', action="store")
     parser.add_argument('--exclude_middle_plots', action="store")
+    parser.add_argument('--remove_CTDE', action="store")
 
     results_path = parser.parse_args().results_path
     graph_path = parser.parse_args().graph_path
@@ -227,6 +240,7 @@ if __name__ == "__main__":
     max_agents = int(parser.parse_args().max_agents)
     y_height = parser.parse_args().y_height
     exclude_middle_plots = parser.parse_args().exclude_middle_plots
+    remove_CTDE = parser.parse_args().remove_CTDE
 
     if y_height:
         y_height = int(y_height)
@@ -238,4 +252,11 @@ if __name__ == "__main__":
     else:
         raise RuntimeError("Add parameter for excluding (or not excluding) middle plots")
 
-    plot_episodes(results_path, graph_path, min_agents, max_agents, y_height, exclude_middle_plots)
+    if remove_CTDE == "True":
+        remove_CTDE = True
+    elif remove_CTDE == "False":
+        remove_CTDE = False
+    else:
+        remove_CTDE = False
+
+    plot_episodes(results_path, graph_path, min_agents, max_agents, y_height, exclude_middle_plots, remove_CTDE)

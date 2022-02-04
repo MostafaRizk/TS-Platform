@@ -37,14 +37,21 @@ def from_string(arr_str):
     return a
 
 
-def plot_coop_distribution(path_to_results, path_to_graph, agents, averaged=True):
+def plot_coop_distribution(path_to_results, path_to_graph, agents=None, averaged=True):
     # Read data from results file
     data = pd.read_csv(path_to_results)
 
     results = {}
 
+    if agents:
+        max_agents = agents + 2
+
+    else:
+        agents = 2
+        max_agents = 10
+
     for setup in setups:
-        for team_size in range(agents, agents + 2, 2):
+        for team_size in range(agents, max_agents, 2):
             key = f"{setup}-{team_size}"
             results[key] = {}
 
