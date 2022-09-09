@@ -1,13 +1,36 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+plt.rcParams['pdf.fonttype'] = 42
+plt.rcParams['ps.fonttype'] = 42
 import argparse
 
 from scipy import stats
 from operator import add
 
-setups = ["Centralised", "Decentralised", "Fully-centralised"]
-setup_labels = ["CTDE", "FD", "FC"]
+# With CTDE
+ignore_CTDE = True
+setups = None
+setup_labels = None
+shortened_labels = True
+legend_labels = None
+
+if shortened_labels:
+    legend_labels = {"Fully Centralised": "Centralised",
+                     "CTDE": "CTDE",
+                     "Fully Decentralised": "Decentralised"}
+else:
+    legend_labels = {"Fully Centralised": "Fully Centralised",
+                     "CTDE": "CTDE",
+                     "Fully Decentralised": "Fully Decentralised"}
+
+if ignore_CTDE:
+    setups = ["Decentralised", "Fully-centralised"]
+    setup_labels = ["FD", "FC"]
+else:
+    setups = ["Centralised", "Decentralised", "Fully-centralised"]
+    setup_labels = ["CTDE", "FD", "FC"]
+
 
 ctde_colour = '#d55e00'
 decentralised_colour = '#0071b2'
@@ -104,6 +127,9 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
             key = f"{team_type}-{num_agents}"
         else:
             key = f"{learning_type}-{num_agents}"
+
+        if learning_type not in setups:
+            continue
 
         if seed not in results[key]:
             results[key][seed] = None
@@ -214,7 +240,7 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
 
         elif showing == "specialisation":
             ax1.set_ylim(0, 1.1)
-            ax1.set_ylabel('Degree of Cooperation', fontsize=label_font)
+            ax1.set_ylabel('Degree of Specialisation', fontsize=label_font)
 
         elif showing == "participation":
             ax1.set_ylim(0, 1.1)
@@ -233,25 +259,29 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
         markersize = 17
 
         if plot_type == "error":
-            plt.errorbar(x, y_centralised, yerr_centralised, color=ctde_colour, linestyle='-', label="CTDE", marker='^', markersize=markersize, linewidth=linewidth)
-            plt.errorbar(x, y_decentralised, yerr_decentralised, color=decentralised_colour, linestyle='-', label="Fully Decentralised", marker='s', markersize=markersize, linewidth=linewidth)
-            plt.errorbar(x, y_fully_centralised, yerr_fully_centralised, color=fully_centralised_colour, linestyle='-', label="Fully Centralised", marker='o', markersize=markersize, linewidth=linewidth)
+            if not ignore_CTDE:
+                plt.errorbar(x, y_centralised, yerr_centralised, color=ctde_colour, linestyle='-', label=legend_labels["CTDE"], marker='^', markersize=markersize, linewidth=linewidth)
+            plt.errorbar(x, y_decentralised, yerr_decentralised, color=decentralised_colour, linestyle='-', label=legend_labels["Fully Decentralised"], marker='s', markersize=markersize, linewidth=linewidth)
+            plt.errorbar(x, y_fully_centralised, yerr_fully_centralised, color=fully_centralised_colour, linestyle='-', label=legend_labels["Fully Centralised"], marker='o', markersize=markersize, linewidth=linewidth)
 
         elif plot_type == "mean":
-            plt.plot(x, y_centralised, color=ctde_colour, linestyle='-', label="CTDE", marker='^', markersize=markersize, linewidth=linewidth)
-            plt.plot(x, y_decentralised, color=decentralised_colour, linestyle='-', label="Fully Decentralised", marker='s', markersize=markersize, linewidth=linewidth)
-            plt.plot(x, y_fully_centralised, color=fully_centralised_colour, linestyle='-', label="Fully Centralised", marker='o', markersize=markersize, linewidth=linewidth)
+            if not ignore_CTDE:
+                plt.plot(x, y_centralised, color=ctde_colour, linestyle='-', label=legend_labels["CTDE"], marker='^', markersize=markersize, linewidth=linewidth)
+            plt.plot(x, y_decentralised, color=decentralised_colour, linestyle='-', label=legend_labels["Fully Decentralised"], marker='s', markersize=markersize, linewidth=linewidth)
+            plt.plot(x, y_fully_centralised, color=fully_centralised_colour, linestyle='-', label=legend_labels["Fully Centralised"], marker='o', markersize=markersize, linewidth=linewidth)
 
 
         elif plot_type == "best" or plot_type == "median":
-            plt.plot(x, y_centralised, 'ro-', label=f"CTDE ({plot_type})")
+            if not ignore_CTDE:
+                plt.plot(x, y_centralised, 'ro-', label=f"CTDE ({plot_type})")
             plt.plot(x, y_decentralised, 'bo-', label=f"Fully Decentralised ({plot_type})")
             plt.plot(x, y_fully_centralised, 'go-', label=f"Fully Centralised ({plot_type})")
             # plt.plot(x, y_onepop, 'go-', label=f"One-pop ({plot_type})")
             # plt.plot(x, y_homogeneous, 'ko-', label=f"Homogeneous ({plot_type})")
 
         else:
-            plt.plot(x, y_centralised, 'ro-', label="CTDE")
+            if not ignore_CTDE:
+                plt.plot(x, y_centralised, 'ro-', label="CTDE")
             plt.plot(x, y_decentralised, 'bo-', label="Fully Decentralised")
             #plt.plot(x, y_onepop, 'go-', label="One-pop")
             #plt.plot(x, y_homogeneous, 'ko-', label="Homogeneous")
@@ -281,7 +311,7 @@ def plot_scalability(path_to_results, path_to_graph, plot_type, max_agents, viol
                 ax.set_ylabel("Fitness per Agent", fontsize=label_font)
             elif showing == "specialisation" or showing == "participation":
                 ax.set_ylim(-0.2, 1.2)
-                ax.set_ylabel("Team Cooperation", fontsize=label_font)
+                ax.set_ylabel("Team Specialisation", fontsize=label_font)
 
             num_agents = (col+1) * 2
             parts = ax.violinplot([scores[f"{setup}-{num_agents}"] for setup in setups])

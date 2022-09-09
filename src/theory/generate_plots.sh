@@ -20,7 +20,7 @@ folder_name=/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_11_09_a_g
 # Payoff vs Agents
 #time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_a_2_agents_full_alignment.json --function plot_payoff_vs_agents --args_to_pass 50
 #time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_b_2_agents_alignment=0.9.json --function plot_payoff_vs_agents --args_to_pass 50
-time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_a_2_agents_full_alignment.json --function plot_payoff_vs_agents_combined --args_to_pass 50 --alignments [0.0,0.1,0.5,0.9,1.0]
+#time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_a_2_agents_full_alignment.json --function plot_payoff_vs_agents_combined --args_to_pass 50 --alignments [0.0,0.1,0.5,0.9,1.0]
 
 # Plot simplex
 #time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_b_2_agents_alignment=0.9.json --function plot_simplex
