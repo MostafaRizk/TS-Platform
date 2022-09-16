@@ -1,9 +1,10 @@
 #!/bin/bash
 
-folder_name=/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_11_09_a_game_theory/
+folder_name=/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2022_09_14_replicator_mutator
 
 # Trend plots
 #time python3 evolutionary_dynamics.py --parameters $folder_name/trend_params.json --function trend --args_to_pass [0.91,0.03,0.03,0.03]
+#time python3 evolutionary_dynamics.py --parameters $folder_name/trend_params_no_mutation.json --function trend --args_to_pass [0.91,0.03,0.03,0.03]
 #time python3 evolutionary_dynamics.py --parameters $folder_name/trend_params.json --function trend --args_to_pass [0.91,0.06,0.015,0.015]
 
 # Distribution with alignment probability 1.0
@@ -24,12 +25,13 @@ folder_name=/Users/mostafa/Documents/Code/PhD/TS-Platform/results/2021_11_09_a_g
 
 # Plot simplex
 #time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_b_2_agents_alignment=0.9.json --function plot_simplex
+#time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_b_2_agents_alignment=1.0.json --function plot_simplex
 #time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_e_2_agents_alignment=0.9_slope=4.json --function plot_simplex
 
 
 # Partial Cooperation True
 # Plot team_size vs cooperation data
-time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_b_2_agents_alignment=0.9.json --function plot_distribution_agents --args_to_pass team_size_vs_coop
+#time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_b_2_agents_alignment=0.9.json --function plot_distribution_agents --args_to_pass team_size_vs_coop
 #Slopes
 #time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_b_2_agents_alignment=0.9.json --function get_distribution_slopes --args_to_pass team_size_vs_coop --slope 0
 #time python3 evolutionary_dynamics.py --parameters $folder_name/distribution_params_b_2_agents_alignment=0.9.json --function get_distribution_slopes --args_to_pass team_size_vs_coop --slope 1

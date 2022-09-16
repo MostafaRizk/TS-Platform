@@ -40,6 +40,7 @@ from io import StringIO
 from matplotlib.ticker import PercentFormatter
 from helpers import egtsimplex
 from glob import glob
+from decimal import Decimal
 
 strategies = ["Novice", "Generalist", "Dropper", "Collector"]
 sorted_strategies = strategies[:]
@@ -137,6 +138,7 @@ def generate_constants(parameter_dictionary):
     global factorial_list
     global multinomial_coefficient_list
     global partial_cooperation
+    global mutation_probability
 
     slope = parameter_dictionary["default_slope"]
     num_agents = parameter_dictionary["default_num_agents"]
@@ -146,6 +148,10 @@ def generate_constants(parameter_dictionary):
     base_arena_width = parameter_dictionary["base_arena_width"]
     arena_width = base_arena_width * num_agents // 2  # Arena width scales linearly with the number of pairs of agents
     partial_cooperation = parameter_dictionary["partial_cooperation"]
+    mutation_probability = parameter_dictionary["mutation_probability"]
+
+    for strategy in strategies:
+        assert float(np.sum([Decimal(str(prob)) for prob in mutation_probability[strategy.lower()].values()])) == 1.0, "Mutation probabilities do not sum to 1"
 
     if partial_cooperation == "True":
         partial_cooperation = True
@@ -358,7 +364,7 @@ def get_fitnesses(P):
 
 def get_change(P, t=0):
     """
-    Function to be passed to ODEINT. Calculates replicator dynamic equation for all strategies.
+    Function to be passed to ODEINT. Calculates replicator mutator equation for all strategies.
     i.e. Calculates rate of change for each strategy
     e.g.
 
@@ -374,7 +380,13 @@ def get_change(P, t=0):
 
     avg_fitness = the average fitness of all other strategies
 
+    Q(j,dropper) = the probability of strategy j mutating into a dropper.
+
     We then get
+
+    x_dropper' = sum_over_each_strategy_j( f(x_j) * x_j * Q(j,dropper)) - (x_dropper * average_fitness)
+
+    If the Q matrix is the identity matrix then we get the replicator equation:
 
     x_dropper' = x_dropper(f(x_dropper) - avg_fitness)
 
@@ -383,14 +395,22 @@ def get_change(P, t=0):
     @return: The derivative of each strategy
     """
 
-    f_novice, f_generalist, f_dropper, f_collector, f_avg = get_fitnesses(P)
+    f = get_fitnesses(P)
+    f_novice, f_generalist, f_dropper, f_collector, f_avg = f
 
-    return np.array([
+    '''return np.array([
         P[0] * (f_novice - f_avg),
         P[1] * (f_generalist - f_avg),
         P[2] * (f_dropper - f_avg),
         P[3] * (f_collector - f_avg)
+    ])'''
+    return np.array([
+        np.sum([f[j] * P[j] * mutation_probability[strategies[j].lower()]["novice"] for j in range(len(P))]) - (P[0] * f_avg),
+        np.sum([f[j] * P[j] * mutation_probability[strategies[j].lower()]["generalist"] for j in range(len(P))]) - (P[1] * f_avg),
+        np.sum([f[j] * P[j] * mutation_probability[strategies[j].lower()]["dropper"] for j in range(len(P))]) - (P[2] * f_avg),
+        np.sum([f[j] * P[j] * mutation_probability[strategies[j].lower()]["collector"] for j in range(len(P))]) - (P[3] * f_avg),
     ])
+
 
 
 def get_change_simplex_novices(P, t=0):
@@ -794,7 +814,8 @@ def plot_price_of_anarchy(parameter_dictionary, path, prices):
 
 
 def plot_trend(parameter_dictionary, P0, path):
-    generate_constants(parameter_dictionary, team_size=parameter_dictionary["default_num_agents"], slope=parameter_dictionary["default_slope"])
+    #generate_constants(parameter_dictionary, team_size=parameter_dictionary["default_num_agents"], slope=parameter_dictionary["default_slope"])
+    generate_constants(parameter_dictionary)
     t, history = get_distribution_history(parameter_dictionary, P0)
 
     novice, generalist, dropper, collector = history.T
