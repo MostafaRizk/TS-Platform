@@ -40,7 +40,8 @@ from io import StringIO
 from matplotlib.ticker import PercentFormatter
 from helpers import egtsimplex
 from glob import glob
-from decimal import Decimal
+from decimal import Decimal,getcontext
+getcontext().prec = 10
 
 strategies = ["Novice", "Generalist", "Dropper", "Collector"]
 sorted_strategies = strategies[:]
@@ -151,6 +152,7 @@ def generate_constants(parameter_dictionary):
     mutation_probability = parameter_dictionary["mutation_probability"]
 
     for strategy in strategies:
+        print(float(np.sum([Decimal(str(prob)) for prob in mutation_probability[strategy.lower()].values()])))
         assert float(np.sum([Decimal(str(prob)) for prob in mutation_probability[strategy.lower()].values()])) == 1.0, "Mutation probabilities do not sum to 1"
 
     if partial_cooperation == "True":
