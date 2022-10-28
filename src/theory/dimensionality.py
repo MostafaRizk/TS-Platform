@@ -122,29 +122,48 @@ def generate_cluster_plots(data_file_prefix, save_file_prefix):
     centroid_names = ["Novice", "Dropper", "Generalist", "Collector"]
 
     # Cluster centroids
-    '''fig, axs = plt.subplots(2, 2, sharex=True, sharey=True)
+    ''''''
+    fig, axs = plt.subplots(2, 2, sharex=True, sharey=True)
+    #fig.set_figheight(15)
+    #fig.set_figwidth(5)
     x = np.linspace(0, centroids.shape[1], centroids.shape[1])
 
     for i in range(centroids.shape[0]):
         axs[i // 2][i % 2].plot(x,centroids[i],)
-        axs[i // 2][i % 2].title.set_text(centroid_names[i])
+        #axs[i // 2][i % 2].title.set_text(centroid_names[i])
+        axs[i // 2][i % 2].set_title(centroid_names[i], fontsize=18, pad=5)
+        plt.setp(axs[i // 2][i % 2].get_xticklabels(), fontsize=12)
+        plt.setp(axs[i // 2][i % 2].get_yticklabels(), fontsize=12)
 
-    plt.suptitle("Observed Agent Phenotype Centroids")
-    plt.xlabel("Simulation Time Steps")
-    plt.ylabel("Y Location of Agent")
+
+    plt.suptitle("Observed Agent Phenotype Centroids", fontsize=18)
+    #plt.xlabel("Simulation Time Steps")
+    #plt.ylabel("Y Location of Agent")
+
+    fig.text(0.5, 0.01, "Simulation Time Steps", ha='center', fontsize=15)
+    fig.text(0.04, 0.5, "Y Location of Agent", va='center', rotation='vertical', fontsize=15)
+
+    #plt.tight_layout()
     plt.savefig(f"{save_file_prefix}_centroids.pdf")
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(30, 20))
     strategy_counts = [0]*len(centroid_names)
     for i in range(len(labels)):
         strategy_counts[labels[i]] += 1
 
+
+    #w=0.1
+    #x_coords = [0.25,0.5,0.75,1]
+    #plt.bar(x=x_coords, tick_label=centroid_names, height=strategy_counts, width=w)
     plt.bar(centroid_names, strategy_counts)
-    plt.xlabel("Phenotype")
-    plt.ylabel("Number of Episodes")
-    plt.title("Occurrences of Each Phenotype")
+    plt.xlabel("Phenotype", fontsize=80, labelpad=20)
+    plt.ylabel("Number of Episodes", fontsize=80, labelpad=20)
+    plt.title("Occurrences of Each Phenotype", fontsize=90, y=1.1)
+    plt.xticks(fontsize=80)
+    plt.yticks(fontsize=80)
+    plt.tight_layout()
     plt.savefig(f"{save_file_prefix}_counts.pdf")
-    print(strategy_counts)'''
+    print(strategy_counts)
 
     for i in range(len(centroids)):
         for j in range(i, len(centroids)):

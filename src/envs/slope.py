@@ -83,6 +83,12 @@ class SlopeEnv:
         self.cache_colour = [0.5, 0.5, 0.5]
         self.slope_colour = [0.5, 0.25, 0.25]
         self.source_colour = [0.25, 0.5, 0.5]
+
+        #self.nest_colour = [0.5, 0.25, 0.25]
+        #self.slope_colour = [0.25, 0.25, 0.25]
+        #self.cache_colour = [0.5, 0.5, 0.5]
+        #self.source_colour = [0.25, 0.5, 0.5]
+
         self.agent_colour = [0, 0, 0.25]
         self.resource_colour = [0, 0.25, 0]
 

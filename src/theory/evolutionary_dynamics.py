@@ -406,13 +406,14 @@ def get_change(P, t=0):
         P[2] * (f_dropper - f_avg),
         P[3] * (f_collector - f_avg)
     ])'''
-    return np.array([
+    changes = np.array([
         np.sum([f[j] * P[j] * mutation_probability[strategies[j].lower()]["novice"] for j in range(len(P))]) - (P[0] * f_avg),
         np.sum([f[j] * P[j] * mutation_probability[strategies[j].lower()]["generalist"] for j in range(len(P))]) - (P[1] * f_avg),
         np.sum([f[j] * P[j] * mutation_probability[strategies[j].lower()]["dropper"] for j in range(len(P))]) - (P[2] * f_avg),
         np.sum([f[j] * P[j] * mutation_probability[strategies[j].lower()]["collector"] for j in range(len(P))]) - (P[3] * f_avg),
     ])
 
+    return changes
 
 
 def get_change_simplex_novices(P, t=0):
@@ -607,7 +608,8 @@ def get_many_final_distributions(parameter_dictionary):
 
     for index in range(len(initial_distributions)):
         P0 = initial_distributions[index]
-        dist = odeint(get_change, P0, t)[-1]
+        all_dist = odeint(get_change, P0, t)
+        dist = all_dist[-1]
 
         for i in range(len(dist)):
             dist[i] = round(dist[i], distribution_precision)
@@ -983,8 +985,9 @@ def plot_distribution_frequency(parameter_dictionary, path, distribution_diction
 def get_alignment_vs_frequency(parameter_dictionary, path):
     total_samples = parameter_dictionary["num_samples"]
 
-    coop_values = [None] * 20
-    alignment_probabilities = np.linspace(0, 100, 20)
+    num_points = 20
+    coop_values = [None] * num_points
+    alignment_probabilities = np.linspace(0, 100, num_points)
     alignment_probabilities /= 100
 
     for i, alignment_probability in enumerate(alignment_probabilities):
@@ -1002,16 +1005,26 @@ def get_alignment_vs_frequency(parameter_dictionary, path):
                 selfish_count += distribution_dictionary[key]
 
             else:
+                print(f"Unknown equilibrium: {key}")
+                print(f"Alignment probability = {alignment_probability}")
                 raise RuntimeError("Unknown Equilibrium")
 
         coop_values[i] = coop_count/total_samples
         print(coop_values[i])
 
-    fig, ax = plt.subplots(figsize=(30, 15))
+    # Formatting for paper
+    title_font = 95
+    label_font = 90
+    tick_font = 90
+    label_padding = 1.08
+    linewidth = 10
+    markersize = 35
+
+    fig, ax = plt.subplots(figsize=(45, 25))
     ax.plot(alignment_probabilities, coop_values, marker='o', markersize=markersize, linewidth=linewidth)
 
     ax.set_title("Impact of Alignment Probability on Degree of Cooperation", fontsize=title_font, y=label_padding)
-    ax.set_ylabel("Percentage of Cooperative Solutions", fontsize=label_font)
+    ax.set_ylabel("Percentage of\n Cooperative Solutions", fontsize=label_font)
     ax.set_xlabel("Alignment Probability", fontsize=label_font)
     plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
 
@@ -1022,6 +1035,7 @@ def get_alignment_vs_frequency(parameter_dictionary, path):
         tick.label.set_fontsize(tick_font)
 
     filename = f"Alignment_probability.pdf"
+    plt.tight_layout()
     plt.savefig(os.path.join(path, filename))
     # plt.show()
 
